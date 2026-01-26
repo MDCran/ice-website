@@ -1019,3 +1019,364 @@ a.log-in-btn:hover:after {
   background-color: #fff;
 }
 
+.tekup-hero-section {
+  height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  color: white;
+}
+
+.hero-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom right, rgba(13, 21, 46, 0.7), rgba(13, 21, 46, 0.5));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 0;
+}
+
+/* Home page hero section - ensure gradient overlay scales properly */
+.tekup-hero-section.position-relative::before {
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
+
+.tekup-hero-content {
+  z-index: 1;
+  position: relative;
+}
+
+.white-color {
+  color: white;
+}
+.tekup-blog-content .email {
+  font-size: 0.95rem;
+  color: #555;
+  margin-top: 5px;
+}
+
+
+
+
+
+
+
+
+/* Clean and subtle custom scrollbar for dropdowns */
+.custom-scroll-menu {
+  max-height: 620px;
+  width: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #999 transparent;
+}
+
+/* Webkit scrollbar */
+.custom-scroll-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scroll-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+.custom-scroll-menu:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Make category titles smaller, all caps, non-bold, underlined */
+.menu-category-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  font-weight: 500;
+  padding: 8px 15px 4px;
+  border-bottom: 1px solid #ccc;
+  color: #313131;
+  margin-top: 0px;
+}
+
+/* Underline effect for span text only */
+.menu-item-text {
+  position: relative;
+  display: inline-block;
+}
+
+.menu-item-text::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: bottom right;
+  transition: transform 0.3s ease;
+}
+
+.sub-menu--item a:hover .menu-item-text::after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}
+
+/* Solutions page: scroll anchors below fixed header */
+#cloud, #dr, #backup, #hardware {
+  scroll-margin-top: 120px;
+}
+
+/* Terms / SMS / Solutions / Partners / Why ICE / Contact / Resources / SecurePortal: breadcrumb visible below sticky nav */
+.tekup-breadcrumb.breadcrumb-below-nav {
+  margin-top: 0 !important;
+  padding-top: 250px;
+}
+
+/* Secure portal file viewing page - remove white space */
+#secure-portal-result {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+#secure-portal-result .section.tekup-section-padding,
+#secure-portal-result.section.tekup-section-padding,
+#secure-portal-result > .section,
+#secure-portal-result > .container,
+#secure-portal-result .container,
+#secure-portal-result.section.tekup-section-padding > .container {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+/* Override any section padding that might be applied - most aggressive */
+body #secure-portal-result,
+body #secure-portal-result .section,
+body #secure-portal-result.section,
+body #secure-portal-result .section.tekup-section-padding,
+body #secure-portal-result.section.tekup-section-padding {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+/* Also target if section is a direct child */
+#secure-portal-result > div.section.tekup-section-padding {
+  padding: 0 0 2rem 0 !important;
+  margin: 0 !important;
+}
+
+/* Footer Get Updates from ICE form */
+.ice-updates-form {
+  margin-top: 15px;
+}
+.ice-updates-form input,
+.ice-updates-form button {
+  display: block;
+  width: 100%;
+  height: 48px;
+  margin-bottom: 10px;
+  border-radius: 0;
+  padding: 0 16px;
+  color: #ffffff !important;
+  border: 1px solid #252634;
+  background: transparent;
+  font-size: 16px;
+}
+.ice-updates-form input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+.ice-updates-form input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+.ice-updates-form input:focus {
+  border-color: var(--accent-color);
+  outline: none;
+}
+.ice-updates-form button {
+  margin-top: 15px;
+  margin-bottom: 0;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s, border-color 0.3s;
+}
+.ice-updates-form button:hover {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+}
+.ice-updates-form .form-msg {
+  margin-top: 10px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+}
+
+/* Contact page - fix address/contact grid */
+.tekup-contact-info-wrap.wrap2 {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+}
+.tekup-contact-info-wrap.wrap2 .tekup-contact-info {
+  flex: 1;
+  max-width: 50%;
+}
+
+/* SecurePortal form styling */
+#secure-portal-form-wrap .tekup-main-field input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+#secure-portal-form-wrap .tekup-main-field input:focus {
+  border-color: var(--accent-color) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(1, 25, 255, 0.1);
+}
+#secure-portal-form-wrap button {
+  position: relative;
+}
+#secure-portal-form-wrap button i {
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+#secure-portal-form-wrap button:hover i {
+  transform: translateX(5px);
+}
+
+/* Solutions page - spacing above Contact Us buttons */
+.tekup-icon-list + a.tekup-default-btn {
+  margin-top: 1.5rem;
+  display: inline-block;
+}
+
+/* Fix checkmark icon spacing */
+.tekup-icon-list ul li i {
+  margin-right: 12px !important;
+}
+
+/* Fix Access File button arrow - prevent double arrow on hover */
+#secure-portal-form button.tekup-default-btn i.ri-arrow-right-up-line {
+  position: relative;
+  z-index: 1;
+}
+#secure-portal-form button.tekup-default-btn::before {
+  display: none !important;
+}
+#secure-portal-form button.tekup-default-btn i.ri-arrow-right-up-line {
+  display: none !important;
+}
+
+/* Fix Access Another File button arrow - prevent double arrow on hover */
+#sp-back.tekup-default-btn i,
+#sp-back.tekup-default-btn::before {
+  position: relative;
+  z-index: 1;
+}
+#sp-back.tekup-default-btn::before {
+  display: none !important;
+}
+
+/* Remove hover arrow effects from resource page buttons */
+#wp-download.tekup-default-btn::before,
+#wp-copy.tekup-default-btn::before,
+.white-paper a.tekup-default-btn::before,
+#sp-back.tekup-default-btn::before,
+a.tekup-default-btn[href="resources.html"]::before,
+a.tekup-default-btn[href*="resources.html"]::before,
+.white-paper #wp-download.tekup-default-btn::before,
+.white-paper #wp-copy.tekup-default-btn::before,
+.white-paper a.tekup-default-btn[href="resources.html"]::before {
+  display: none !important;
+}
+
+/* Remove hover arrow from Back to Resources button */
+.white-paper a.tekup-default-btn[href="resources.html"]::before,
+.white-paper a.tekup-default-btn[href*="resources.html"]::before {
+  display: none !important;
+}
+
+/* Fix Having trouble box alignment - align to top */
+#sp-form-sidebar {
+  align-self: flex-start !important;
+}
+#sp-form-sidebar .tekup-service-contact {
+  margin-top: 0;
+}
+
+/* Remove pagination dots from home solutions slider */
+.tekup-4column-slider .slick-dots {
+  display: none !important;
+}
+
+/* IBM Business Partner boxes - IBM logo overlay */
+.tekup-cta-wrap:has(h2:contains("IBM Business Partner")) {
+  position: relative;
+  overflow: hidden;
+}
+.tekup-cta-wrap:has(h2:contains("IBM Business Partner"))::after {
+  content: '';
+  position: absolute;
+  bottom: 20px;
+  right: 30px;
+  width: 200px;
+  height: 200px;
+  background-image: url('../images/ibm.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.15;
+  filter: brightness(0);
+  z-index: 0;
+  pointer-events: none;
+}
+.tekup-cta-wrap:has(h2:contains("IBM Business Partner")) .tekup-cta-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* PDF download - minimal print styles */
+@media print {
+  @page {
+    margin: 1cm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-content, .print-content * {
+    visibility: visible;
+  }
+  .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  header, footer, nav, .tekup-header-section, .tekup-footer-section, .breadcrumb, .tekup-breadcrumb, .progress-bar-container, .paginacontainer, .tekup-preloader-wrap, .search-overlay, .tekup-sidemenu-wraper, .offcanves-menu, button, a.tekup-default-btn {
+    display: none !important;
+  }
+  .section {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  p, li {
+    page-break-inside: avoid;
+  }
+}

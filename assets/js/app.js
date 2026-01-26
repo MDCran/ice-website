@@ -111,7 +111,7 @@
         slidesToShow: 4,
         slidesToScroll: 1,
         arrows: false,
-        dots: true,
+        dots: false,
         autoplay: false,
         responsive: [{
           breakpoint: 1399,
@@ -248,7 +248,7 @@
         dots: false,
         autoplay: true,
         autoplaySpeed: 0,
-        speed: 10000,
+        speed: 2000,
         cssEase: 'linear',
         pauseOnHover: true,
         adaptiveHeight: true,
