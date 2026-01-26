@@ -1,3 +1,26 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Vercel
+.vercel
+.vercelignore
+
+# Local development
+.env
+.env.local
+
+# Data files (now using KV)
 data/submissions.json
 data/secure-portal.json
-node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
