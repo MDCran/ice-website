@@ -1,64 +1,36 @@
-# International Computer Exchange
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Static site + local Node server for form logging and ICE SecurePortal.
+## Getting Started
 
-## Run locally
+First, run the development server:
 
-1. **Static only (no form log, no SecurePortal API):**  
-   Open `index.html` in a browser or use any static server (e.g. `npx serve .`).  
-   Footer “Get Updates” submit will show a message that the server is required.
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-2. **With form log + SecurePortal:**  
-   ```bash
-   cd server && npm install && npm start
-   ```  
-   Then open `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-   **Port 3000 in use?**  
-   - Kill the process: `netstat -ano | findstr :3000` then `taskkill /F /PID <PID>`  
-   - Or use a different port: `PORT=3001 npm start` (then open `http://localhost:3001`)
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-   - **Get Updates form:** Submissions are appended to `data/submissions.json` (create `data/` if missing). Not deployed to Vercel; local only.
-   - **ICE SecurePortal:** `POST /api/secure-portal/access` with `{ fileId, password }`. Files and config live in `data/secure-portal.json`.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## ICE SecurePortal
+## Learn More
 
-- **Config:** `data/secure-portal.json`. Copy from `data/secure-portal.example.json` if you don’t have it.
-- **Demo:** FILE_ID `demo`, PASSWORD `demo123`.  
-- **Add/edit files:** Edit `data/secure-portal.json`:
+To learn more about Next.js, take a look at the following resources:
 
-  ```json
-  {
-    "files": {
-      "my-file-id": {
-        "password": "secret",
-        "path": "assets/path/to/file.pdf",
-        "name": "My File",
-        "prohibitDownload": false,
-        "limitViews": 10,
-        "viewCount": 0,
-        "expireAt": "2026-12-31T23:59:59Z"
-      }
-    }
-  }
-  ```
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-- **Options:** `prohibitDownload`, `limitViews`, `expireAt` (ISO date).  
-- **Manage:** Edit `data/secure-portal.json` (password, limits, expire, etc.) or delete an entry to remove a file.
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## White papers
+## Deploy on Vercel
 
-- **Data:** `assets/data/white-papers.js` → `window.WHITE_PAPERS`.
-- **Add:** Push `{ id, name, year, cover, file, fileType }` (`fileType`: `"pdf"` or `"image"`).
-- **Search:** White Papers page filters by `name`.
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-## Deploy to Vercel (static)
-
-- Build: none. Publish the repo as static.
-- Form log and SecurePortal **do not run on Vercel** unless you add serverless API routes and storage (e.g. Vercel Blob + KV).  
-- For production form + SecurePortal, run the Node server elsewhere or implement serverless equivalents.
-
-## Vercel free tier
-
-- Static hosting; no `data/` write.  
-- Use serverless functions + Blob/KV if you want form log or SecurePortal on Vercel.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

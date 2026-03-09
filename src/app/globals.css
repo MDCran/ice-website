@@ -1,0 +1,1602 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ev-950: #030303;
+  --color-ev-900: #0a1020;
+  --color-ev-800: #0f1729;
+  --color-ev-700: #1a1a1a;
+  --color-ev-600: #222222;
+  --color-ev-500: #333333;
+  --color-ev-400: #0474bc;
+  --color-ev-300: #818cf8;
+  --color-ev-200: #a5b4fc;
+  --color-ev-100: #e0e7ff;
+  --color-ev-50: #eef2ff;
+
+  --color-purple-glow: #049bfb;
+  --color-indigo-glow: #0474bc;
+  --color-teal-glow: #14b8a6;
+  --color-accent: #049bfb;
+
+  --font-sans: "Geist", "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+  --font-display: "Geist", "Inter", "SF Pro Display", sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME VARIABLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root,
+[data-theme="dark"] {
+  --bg-primary: #020617;
+  --bg-secondary: #0a1020;
+  --bg-tertiary: #0f1729;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --glass-bg: rgba(10, 16, 32, 0.5);
+  --glass-border: rgba(4, 155, 251, 0.08);
+  --glass-border-hover: rgba(4, 155, 251, 0.25);
+  --nav-bg: rgba(2, 6, 23, 0.88);
+  --card-bg: rgba(255, 255, 255, 0.02);
+  --card-border: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-tertiary: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(4, 155, 251, 0.12);
+  --glass-border-hover: rgba(4, 155, 251, 0.35);
+  --nav-bg: rgba(248, 250, 252, 0.9);
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-border: rgba(0, 0, 0, 0.06);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+[data-theme="dark"] body {
+  background: linear-gradient(180deg, #020617 0%, #030a1a 30%, #020617 60%, #010410 100%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgba(4, 155, 251, 0.3);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--color-purple-glow), var(--color-indigo-glow));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #0474bc, #0369a1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GRADIENT TEXT
+   ═══════════════════════════════════════════════════════════════════════════ */
+.gradient-text {
+  background: linear-gradient(135deg, #049bfb, #0474bc, #14b8a6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-glow {
+  background: linear-gradient(135deg, #049bfb, #0474bc, #14b8a6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 20px rgba(4, 155, 251, 0.3));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLASS CARD
+   ═══════════════════════════════════════════════════════════════════════════ */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card:hover {
+  border-color: var(--glass-border-hover);
+  box-shadow:
+    0 0 30px rgba(4, 155, 251, 0.08),
+    0 0 60px rgba(4, 155, 251, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+[data-theme="light"] .glass-card:hover {
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.08),
+    0 0 30px rgba(4, 155, 251, 0.06);
+}
+
+.glass-card-static {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid var(--glass-border);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLOW BORDER (animated gradient border)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.glow-border {
+  position: relative;
+}
+.glow-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--color-purple-glow), var(--color-indigo-glow), transparent, transparent);
+  z-index: -1;
+  opacity: 0.4;
+  transition: opacity 0.4s;
+}
+.glow-border:hover::before {
+  opacity: 1;
+}
+
+/* Animated rotating gradient border */
+.animated-border {
+  position: relative;
+  overflow: hidden;
+}
+.animated-border::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--border-angle, 0deg), transparent 40%, #049bfb 50%, #0474bc 55%, transparent 60%);
+  z-index: -1;
+  animation: rotate-border 4s linear infinite;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.animated-border:hover::before {
+  opacity: 1;
+}
+.animated-border::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: inherit;
+  z-index: -1;
+}
+
+@keyframes rotate-border {
+  to { --border-angle: 360deg; }
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GRADIENT LINES
+   ═══════════════════════════════════════════════════════════════════════════ */
+.gradient-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-purple-glow), var(--color-indigo-glow), transparent);
+}
+
+.gradient-line-vertical {
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--color-purple-glow), var(--color-indigo-glow), transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GRID & MESH PATTERNS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.grid-pattern {
+  background-image:
+    radial-gradient(rgba(4, 155, 251, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.dot-grid {
+  background-image:
+    radial-gradient(rgba(4, 155, 251, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.mesh-gradient {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(4, 155, 251, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(4, 116, 188, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 80%, rgba(20, 184, 166, 0.06) 0%, transparent 50%);
+}
+
+.dot-pattern {
+  background-image: radial-gradient(rgba(4, 155, 251, 0.15) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLOW EFFECTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.glow-purple {
+  box-shadow: 0 0 20px rgba(4, 155, 251, 0.15), 0 0 60px rgba(4, 155, 251, 0.08);
+}
+.glow-purple-strong {
+  box-shadow: 0 0 30px rgba(4, 155, 251, 0.3), 0 0 80px rgba(4, 155, 251, 0.15);
+}
+.glow-indigo {
+  box-shadow: 0 0 20px rgba(4, 116, 188, 0.15), 0 0 60px rgba(4, 116, 188, 0.08);
+}
+
+/* Legacy aliases */
+.glow-cyan { box-shadow: 0 0 20px rgba(4, 155, 251, 0.15), 0 0 60px rgba(4, 155, 251, 0.08); }
+.glow-cyan-strong { box-shadow: 0 0 30px rgba(4, 155, 251, 0.3), 0 0 80px rgba(4, 155, 251, 0.15); }
+.glow-blue { box-shadow: 0 0 20px rgba(4, 116, 188, 0.15), 0 0 60px rgba(4, 116, 188, 0.08); }
+
+.text-glow-purple {
+  text-shadow: 0 0 20px rgba(4, 155, 251, 0.5), 0 0 40px rgba(4, 155, 251, 0.2);
+}
+.text-glow-indigo {
+  text-shadow: 0 0 20px rgba(4, 116, 188, 0.5), 0 0 40px rgba(4, 116, 188, 0.2);
+}
+
+/* Legacy aliases */
+.text-glow-cyan { text-shadow: 0 0 20px rgba(4, 155, 251, 0.5), 0 0 40px rgba(4, 155, 251, 0.2); }
+.text-glow-blue { text-shadow: 0 0 20px rgba(4, 116, 188, 0.5), 0 0 40px rgba(4, 116, 188, 0.2); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCAN LINE & AMBIENT EFFECTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+.scan-line::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(4, 155, 251, 0.12), transparent);
+  animation: scan 8s linear infinite;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO OVERLAY
+   ═══════════════════════════════════════════════════════════════════════════ */
+.hero-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(2, 6, 23, 0.85) 0%,
+    rgba(2, 6, 23, 0.5) 40%,
+    rgba(2, 6, 23, 0.6) 70%,
+    rgba(2, 6, 23, 0.95) 100%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAV
+   ═══════════════════════════════════════════════════════════════════════════ */
+.nav-blur {
+  backdrop-filter: blur(24px) saturate(180%);
+  background: var(--nav-bg);
+  transition: background-color 0.3s;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.btn-primary {
+  background: linear-gradient(135deg, #049bfb, #0474bc);
+  color: white;
+  font-weight: 600;
+  padding: 0.875rem 2.25rem;
+  border-radius: 0.75rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.01em;
+}
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #0474bc, #0369a1);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.btn-primary:hover::before {
+  opacity: 1;
+}
+.btn-primary:hover {
+  box-shadow: 0 0 30px rgba(4, 155, 251, 0.4), 0 0 60px rgba(4, 155, 251, 0.15);
+  transform: translateY(-2px);
+}
+.btn-primary span {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-outline {
+  border: 1px solid rgba(4, 155, 251, 0.4);
+  color: #049bfb;
+  font-weight: 600;
+  padding: 0.875rem 2.25rem;
+  border-radius: 0.75rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-outline:hover {
+  background: rgba(4, 155, 251, 0.08);
+  border-color: #049bfb;
+  box-shadow: 0 0 25px rgba(4, 155, 251, 0.2), 0 0 50px rgba(4, 155, 251, 0.08);
+  transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer-text {
+  background: linear-gradient(90deg, #049bfb, #0474bc, #14b8a6, #0474bc, #049bfb);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 6s linear infinite;
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(var(--orbit-radius, 100px)) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(var(--orbit-radius, 100px)) rotate(-360deg); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Marquee animation */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 35s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION SPACING
+   ═══════════════════════════════════════════════════════════════════════════ */
+.section-padding {
+  padding: 7rem 0;
+}
+@media (max-width: 768px) {
+  .section-padding {
+    padding: 4rem 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PDF VIEWER
+   ═══════════════════════════════════════════════════════════════════════════ */
+.pdf-viewer {
+  border: 1px solid rgba(4, 155, 251, 0.2);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: rgba(15, 23, 41, 0.4);
+}
+.pdf-viewer iframe {
+  width: 100%;
+  height: 80vh;
+  border: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AMBIENT ORB BACKGROUNDS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  opacity: 0.4;
+}
+.ambient-orb-purple {
+  background: radial-gradient(circle, rgba(4, 155, 251, 0.3), transparent 70%);
+}
+.ambient-orb-indigo {
+  background: radial-gradient(circle, rgba(4, 116, 188, 0.3), transparent 70%);
+}
+.ambient-orb-teal {
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.2), transparent 70%);
+}
+
+/* Legacy aliases */
+.ambient-orb-cyan {
+  background: radial-gradient(circle, rgba(4, 155, 251, 0.3), transparent 70%);
+}
+.ambient-orb-blue {
+  background: radial-gradient(circle, rgba(4, 116, 188, 0.3), transparent 70%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MEGA MENU ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.mega-menu-item {
+  position: relative;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s;
+}
+.mega-menu-item:hover {
+  background: rgba(4, 155, 251, 0.06);
+}
+.mega-menu-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 0;
+  background: linear-gradient(180deg, #049bfb, #0474bc);
+  border-radius: 1px;
+  transition: height 0.3s;
+}
+.mega-menu-item:hover::before {
+  height: 60%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TIMELINE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.timeline-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #049bfb, #0474bc);
+  box-shadow: 0 0 12px rgba(4, 155, 251, 0.4), 0 0 24px rgba(4, 155, 251, 0.2);
+  border: 2px solid rgba(2, 6, 23, 0.8);
+}
+
+.timeline-line {
+  width: 2px;
+  background: linear-gradient(180deg, #049bfb, #0474bc, transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATED GRADIENT MESH
+   ═══════════════════════════════════════════════════════════════════════════ */
+@property --mesh-hue {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.mesh-gradient-animated {
+  background:
+    radial-gradient(ellipse at 20% 50%, hsla(calc(270 + var(--mesh-hue) / 3), 80%, 50%, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, hsla(calc(239 + var(--mesh-hue) / 2), 70%, 50%, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 80%, hsla(calc(168 + var(--mesh-hue)), 60%, 45%, 0.06) 0%, transparent 50%);
+  animation: mesh-rotate 25s linear infinite;
+}
+
+@keyframes mesh-rotate {
+  to { --mesh-hue: 360deg; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHINE SWEEP
+   ═══════════════════════════════════════════════════════════════════════════ */
+.shine-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.shine-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.04) 45%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 55%,
+    transparent 60%
+  );
+  translate: -100% 0;
+  transition: translate 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+.shine-sweep:hover::after {
+  translate: 100% 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RADAR ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes radar-sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes radar-ping {
+  0%, 100% { opacity: 0.3; r: 3; }
+  50% { opacity: 1; r: 5; }
+}
+
+@keyframes node-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; filter: drop-shadow(0 0 6px rgba(4, 155, 251, 0.3)); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INFRASTRUCTURE DIAGRAM ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes dash-flow {
+  to { stroke-dashoffset: -20; }
+}
+
+@keyframes dash-flow-v {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 20px; }
+}
+
+@keyframes flow-particle {
+  0% { offset-distance: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+.flow-dot {
+  animation: flow-particle 2.5s linear infinite;
+  offset-rotate: 0deg;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CURSOR GLOW
+   ═══════════════════════════════════════════════════════════════════════════ */
+.cursor-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(4, 155, 251, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 9998;
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SEARCH ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes border-glow-pulse {
+  0%, 100% { border-color: rgba(4, 155, 251, 0.2); }
+  50% { border-color: rgba(4, 155, 251, 0.5); }
+}
+
+.search-input-glow:focus {
+  animation: border-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes shimmer-loading {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-loading {
+  background: linear-gradient(90deg, rgba(4, 155, 251, 0.05) 25%, rgba(4, 155, 251, 0.1) 50%, rgba(4, 155, 251, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer-loading 1.5s infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NOISE OVERLAY (Evervault signature)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPOTLIGHT CARD (cursor-following inner glow)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.spotlight-card {
+  position: relative;
+  overflow: hidden;
+}
+.spotlight-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(4, 155, 251, 0.06),
+    transparent 40%
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * Strategy: Hero sections keep their dark cinematic look in both modes.
+ * Content sections (section-padding), nav, and footer all adapt to light mode.
+ * Hero text stays light/white since it's always over a dark video overlay.
+ */
+
+/* ── Hero: subpage heroes — dark enough for readable text, blend to light at bottom */
+[data-theme="light"] .hero-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(2, 6, 23, 0.8) 0%,
+    rgba(2, 6, 23, 0.65) 40%,
+    rgba(2, 6, 23, 0.4) 70%,
+    rgba(248, 250, 252, 1) 100%
+  ) !important;
+}
+/* Homepage hero: keep full dark cinematic look in light mode too */
+[data-theme="light"] .hero-overlay-home {
+  background: linear-gradient(
+    180deg,
+    rgba(2, 6, 23, 0.85) 0%,
+    rgba(2, 6, 23, 0.5) 40%,
+    rgba(2, 6, 23, 0.6) 70%,
+    rgba(2, 6, 23, 0.95) 100%
+  ) !important;
+}
+
+/* ── Nav ──────────────────────────────────────────────────────────────── */
+[data-theme="light"] .nav-blur {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Nav text - keep nav items readable */
+[data-theme="light"] nav .text-slate-300 {
+  color: #475569 !important;
+}
+[data-theme="light"] nav .text-slate-400 {
+  color: #64748b !important;
+}
+[data-theme="light"] nav .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+
+/* Mega menu in light mode */
+[data-theme="light"] .mega-menu-item:hover {
+  background: rgba(4, 155, 251, 0.04);
+}
+[data-theme="light"] .mega-menu-item .text-slate-400 {
+  color: #64748b !important;
+}
+
+/* ── Content sections: text colors ────────────────────────────────────── */
+/* Only override text-white OUTSIDE of hero sections, footer, and mobile menu */
+[data-theme="light"] .section-padding .text-white,
+[data-theme="light"] .grid-pattern .text-white,
+[data-theme="light"] main > section:not(:first-child) .text-white {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .section-padding .text-slate-300,
+[data-theme="light"] .section-padding .text-slate-300\/90,
+[data-theme="light"] main > section:not(:first-child) .text-slate-300 {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .section-padding .text-slate-400,
+[data-theme="light"] main > section:not(:first-child) .text-slate-400 {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .section-padding .text-slate-500,
+[data-theme="light"] main > section:not(:first-child) .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+[data-theme="light"] .section-padding .text-slate-600,
+[data-theme="light"] main > section:not(:first-child) .text-slate-600 {
+  color: #64748b !important;
+}
+
+/* Accent colors in content */
+[data-theme="light"] .section-padding .text-sky-400,
+[data-theme="light"] main > section:not(:first-child) .text-sky-400 {
+  color: #0474bc !important;
+}
+
+/* Solutions index page uses pt-28 instead of hero section — fix heading colors */
+/* Exclude sections with hero-overlay (video hero) */
+[data-theme="light"] main.min-h-screen > section:not(:has(.hero-overlay)) .text-white,
+[data-theme="light"] main[class*="pt-2"] > section:not(:has(.hero-overlay)) .text-white {
+  color: #0f172a !important;
+}
+[data-theme="light"] main.min-h-screen > section:not(:has(.hero-overlay)) .text-slate-400,
+[data-theme="light"] main[class*="pt-2"] > section:not(:has(.hero-overlay)) .text-slate-400 {
+  color: #64748b !important;
+}
+[data-theme="light"] main.min-h-screen > section:not(:has(.hero-overlay)) .text-slate-300,
+[data-theme="light"] main[class*="pt-2"] > section:not(:has(.hero-overlay)) .text-slate-300 {
+  color: #475569 !important;
+}
+[data-theme="light"] main.min-h-screen > section:not(:has(.hero-overlay)) .text-sky-400,
+[data-theme="light"] main[class*="pt-2"] > section:not(:has(.hero-overlay)) .text-sky-400 {
+  color: #0474bc !important;
+}
+
+/* ── Gradient text: deeper for light backgrounds ─────────────────────── */
+[data-theme="light"] .gradient-text {
+  background: linear-gradient(135deg, #0474bc, #0369a1, #0d9488);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+[data-theme="light"] .gradient-text-glow {
+  background: linear-gradient(135deg, #0474bc, #0369a1, #0d9488);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: none;
+}
+[data-theme="light"] .shimmer-text {
+  background: linear-gradient(90deg, #0474bc, #0369a1, #0d9488, #0369a1, #0474bc);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Patterns: lighter dots ──────────────────────────────────────────── */
+[data-theme="light"] .grid-pattern {
+  background-image: radial-gradient(rgba(4, 116, 188, 0.08) 1px, transparent 1px);
+}
+[data-theme="light"] .dot-grid {
+  background-image: radial-gradient(rgba(4, 116, 188, 0.08) 1px, transparent 1px);
+}
+[data-theme="light"] .dot-pattern {
+  background-image: radial-gradient(rgba(4, 116, 188, 0.12) 1px, transparent 1px);
+}
+[data-theme="light"] .mesh-gradient {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(4, 155, 251, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(4, 116, 188, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 80%, rgba(20, 184, 166, 0.03) 0%, transparent 50%);
+}
+
+/* ── Ambient effects ─────────────────────────────────────────────────── */
+[data-theme="light"] .ambient-orb {
+  opacity: 0.08;
+}
+[data-theme="light"] .scan-line::after {
+  background: linear-gradient(90deg, transparent, rgba(4, 155, 251, 0.06), transparent);
+}
+[data-theme="light"] .cursor-glow {
+  display: none;
+}
+[data-theme="light"] .noise-overlay {
+  opacity: 0.015;
+}
+
+/* ── Glass cards ─────────────────────────────────────────────────────── */
+[data-theme="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+[data-theme="light"] .glass-card-static {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+[data-theme="light"] .btn-outline {
+  border-color: rgba(4, 155, 251, 0.5);
+  color: #0474bc;
+}
+[data-theme="light"] .btn-outline:hover {
+  background: rgba(4, 155, 251, 0.06);
+  border-color: #049bfb;
+}
+
+/* ── Timeline ────────────────────────────────────────────────────────── */
+[data-theme="light"] .timeline-dot {
+  border-color: rgba(248, 250, 252, 0.9);
+}
+
+/* ── PDF viewer ──────────────────────────────────────────────────────── */
+[data-theme="light"] .pdf-viewer {
+  background: rgba(241, 245, 249, 0.8);
+  border-color: rgba(4, 155, 251, 0.15);
+}
+
+/* ── Border overrides ────────────────────────────────────────────────── */
+[data-theme="light"] .section-padding .border-white\/\[0\.04\],
+[data-theme="light"] .section-padding .border-white\/\[0\.06\],
+[data-theme="light"] main > section:not(:first-child) .border-white\/\[0\.04\],
+[data-theme="light"] main > section:not(:first-child) .border-white\/\[0\.06\] {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .section-padding .border-white\/5,
+[data-theme="light"] main > section:not(:first-child) .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+[data-theme="light"] .section-padding .border-white\/10,
+[data-theme="light"] main > section:not(:first-child) .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+[data-theme="light"] .border-sky-500\/10 {
+  border-color: rgba(4, 116, 188, 0.15) !important;
+}
+
+/* ── Translucent backgrounds ─────────────────────────────────────────── */
+[data-theme="light"] .section-padding .bg-white\/\[0\.02\],
+[data-theme="light"] .section-padding .bg-white\/\[0\.03\],
+[data-theme="light"] .section-padding .bg-white\/\[0\.04\],
+[data-theme="light"] .section-padding .bg-white\/\[0\.06\],
+[data-theme="light"] main > section:not(:first-child) .bg-white\/\[0\.02\],
+[data-theme="light"] main > section:not(:first-child) .bg-white\/\[0\.03\],
+[data-theme="light"] main > section:not(:first-child) .bg-white\/\[0\.04\],
+[data-theme="light"] main > section:not(:first-child) .bg-white\/\[0\.06\] {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* ── Section / gradient backgrounds ──────────────────────────────────── */
+[data-theme="light"] .section-padding .bg-\[\#020617\],
+[data-theme="light"] main > section:not(:first-child) .bg-\[\#020617\] {
+  background: var(--bg-primary) !important;
+}
+[data-theme="light"] .bg-\[\#0a1020\]\/30 {
+  background: rgba(241, 245, 249, 0.5) !important;
+}
+
+/* Nuke all hardcoded dark gradients in light mode (from/via/to) */
+/* Exclude homepage hero section — it stays dark in both modes */
+[data-theme="light"] .section-padding .from-\[\#020617\],
+[data-theme="light"] main > section:not(:has(.hero-overlay-home)) .from-\[\#020617\] {
+  --tw-gradient-from: var(--bg-primary) !important;
+}
+[data-theme="light"] .section-padding .to-\[\#020617\],
+[data-theme="light"] main > section:not(:has(.hero-overlay-home)) .to-\[\#020617\] {
+  --tw-gradient-to: var(--bg-primary) !important;
+}
+[data-theme="light"] .section-padding.from-\[\#020617\] {
+  --tw-gradient-from: var(--bg-primary) !important;
+}
+[data-theme="light"] .section-padding.to-\[\#020617\] {
+  --tw-gradient-to: var(--bg-primary) !important;
+}
+[data-theme="light"] .section-padding.via-\[\#0a1020\],
+[data-theme="light"] .section-padding.via-\[\#0a1020\]\/50,
+[data-theme="light"] .section-padding.via-\[\#0a1020\]\/40,
+[data-theme="light"] .section-padding.via-\[\#0a1020\]\/30,
+[data-theme="light"] main > section:not(:has(.hero-overlay-home)) .via-\[\#0a1020\]\/30 {
+  --tw-gradient-via: var(--bg-primary) !important;
+  --tw-gradient-via-position: 50% !important;
+}
+
+/* Sections that have hardcoded dark gradient backgrounds */
+[data-theme="light"] section.section-padding.bg-gradient-to-b,
+[data-theme="light"] main > section:not(:first-child).bg-gradient-to-b {
+  background: var(--bg-primary) !important;
+}
+
+/* Absolute positioned dark gradient overlays inside sections (not hero) */
+[data-theme="light"] main > section:not(:has(.hero-overlay)) .absolute.inset-0.bg-gradient-to-b {
+  background: transparent !important;
+}
+
+/* Data center image: keep dark overlay for readability */
+[data-theme="light"] .bg-gradient-to-t.from-\[\#020617\]\/60 {
+  --tw-gradient-from: rgba(2, 6, 23, 0.6) !important;
+}
+
+/* ── Marquee edge fades ──────────────────────────────────────────────── */
+[data-theme="light"] .bg-gradient-to-r.from-\[\#020617\] {
+  --tw-gradient-from: var(--bg-primary) !important;
+}
+[data-theme="light"] .bg-gradient-to-l.from-\[\#020617\] {
+  --tw-gradient-from: var(--bg-primary) !important;
+}
+
+/* ── Partner logos ───────────────────────────────────────────────────── */
+[data-theme="light"] .grayscale {
+  filter: grayscale(100%) brightness(0.3) !important;
+}
+[data-theme="light"] .grayscale:hover,
+[data-theme="light"] .group-hover\:grayscale-0:hover,
+[data-theme="light"] .group:hover .group-hover\:grayscale-0 {
+  filter: grayscale(0) brightness(1) !important;
+}
+
+/* ── Spotlight card ──────────────────────────────────────────────────── */
+[data-theme="light"] .spotlight-card::before {
+  background: radial-gradient(
+    300px circle at var(--mouse-x) var(--mouse-y),
+    rgba(4, 116, 188, 0.06),
+    transparent 60%
+  );
+}
+
+/* ── Data panel ──────────────────────────────────────────────────────── */
+[data-theme="light"] .data-panel {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(4, 116, 188, 0.1);
+}
+
+/* ── Input fields ────────────────────────────────────────────────────── */
+[data-theme="light"] .section-padding input,
+[data-theme="light"] .section-padding textarea,
+[data-theme="light"] .section-padding select {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .section-padding input::placeholder,
+[data-theme="light"] .section-padding textarea::placeholder {
+  color: transparent !important;
+}
+[data-theme="light"] .section-padding .floating-label {
+  color: #64748b !important;
+}
+[data-theme="light"] .section-padding input:focus ~ .floating-label,
+[data-theme="light"] .section-padding textarea:focus ~ .floating-label,
+[data-theme="light"] .section-padding select:focus ~ .floating-label {
+  color: #0474bc !important;
+}
+[data-theme="light"] .section-padding input:not(:placeholder-shown) ~ .floating-label,
+[data-theme="light"] .section-padding textarea:not(:placeholder-shown) ~ .floating-label {
+  color: rgba(4, 116, 188, 0.6) !important;
+}
+/* Select dropdown options: ensure visibility in both modes */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+select option {
+  background: #0a1020;
+  color: #e2e8f0;
+  padding: 8px 12px;
+}
+[data-theme="light"] select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+[data-theme="light"] .section-padding select,
+[data-theme="light"] .fixed.bottom-6 select {
+  background: white !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .section-padding select:focus,
+[data-theme="light"] .fixed.bottom-6 select:focus {
+  border-color: rgba(4, 116, 188, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(4, 116, 188, 0.15) !important;
+}
+/* Dark mode select clean styling */
+select {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+select:focus {
+  outline: none;
+  border-color: rgba(4, 155, 251, 0.4) !important;
+  box-shadow: 0 0 0 2px rgba(4, 155, 251, 0.1) !important;
+}
+
+/* ── Contact widget light mode ──────────────────────────────────────── */
+[data-theme="light"] .fixed.bottom-6 .rounded-2xl.border {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1) !important;
+}
+[data-theme="light"] .fixed.bottom-6 h3 {
+  color: #0f172a !important;
+}
+/* Only override text inside the panel, not the FAB button */
+[data-theme="light"] .fixed.bottom-6 .rounded-2xl .text-white {
+  color: #0f172a !important;
+}
+[data-theme="light"] .fixed.bottom-6 .text-slate-400,
+[data-theme="light"] .fixed.bottom-6 .text-slate-500 {
+  color: #64748b !important;
+}
+[data-theme="light"] .fixed.bottom-6 .text-slate-900 {
+  color: #0f172a !important;
+}
+[data-theme="light"] .fixed.bottom-6 input,
+[data-theme="light"] .fixed.bottom-6 textarea {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .fixed.bottom-6 select {
+  background: white !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .fixed.bottom-6 input::placeholder,
+[data-theme="light"] .fixed.bottom-6 textarea::placeholder {
+  color: #94a3b8 !important;
+}
+[data-theme="light"] .fixed.bottom-6 .bg-\[\#020617\]\/95 {
+  background: rgba(255, 255, 255, 0.97) !important;
+}
+[data-theme="light"] .fixed.bottom-6 .border-sky-500\/15 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ── Glint effects ───────────────────────────────────────────────────── */
+[data-theme="light"] .glint-card::after,
+[data-theme="light"] .glint-btn::after {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.15) 45%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0.15) 55%,
+    transparent 60%
+  );
+}
+
+/* ── Mobile menu: adapt to light mode ─────────────────────────────── */
+[data-theme="light"] .mobile-menu-backdrop {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+[data-theme="light"] .mobile-menu {
+  background: #f8fafc !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+}
+[data-theme="light"] .mobile-menu-header {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .mobile-menu-close {
+  color: #475569 !important;
+}
+[data-theme="light"] .mobile-menu-close:hover {
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+[data-theme="light"] .mobile-menu .mobile-menu-link {
+  color: #475569 !important;
+}
+[data-theme="light"] .mobile-menu .mobile-menu-link:hover {
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+[data-theme="light"] .mobile-menu .mobile-menu-link.text-sky-400 {
+  color: #0474bc !important;
+}
+[data-theme="light"] .mobile-menu .mobile-menu-sublink {
+  color: #64748b !important;
+}
+[data-theme="light"] .mobile-menu .mobile-menu-sublink:hover {
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+[data-theme="light"] .mobile-menu .text-sky-400,
+[data-theme="light"] .mobile-menu .text-sky-400\/70 {
+  color: #0474bc !important;
+}
+[data-theme="light"] .mobile-menu-footer {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .mobile-menu-footer .text-slate-400 {
+  color: #64748b !important;
+}
+[data-theme="light"] .mobile-menu-footer .text-slate-400:hover {
+  color: #0474bc !important;
+}
+[data-theme="light"] .mobile-menu .logo-container {
+  box-shadow: none !important;
+}
+
+/* ── Hero text: ALWAYS keep light over dark video overlay ─────────── */
+/* Hero sections have .hero-overlay — keep text light in both modes */
+[data-theme="light"] section:has(.hero-overlay) .text-white {
+  color: white !important;
+}
+[data-theme="light"] section:has(.hero-overlay) .text-slate-400 {
+  color: #94a3b8 !important;
+}
+[data-theme="light"] section:has(.hero-overlay) .text-slate-300,
+[data-theme="light"] section:has(.hero-overlay) .text-slate-300\/90 {
+  color: #cbd5e1 !important;
+}
+[data-theme="light"] section:has(.hero-overlay) .text-sky-400 {
+  color: #38bdf8 !important;
+}
+[data-theme="light"] section:has(.hero-overlay) .text-slate-600 {
+  color: #94a3b8 !important;
+}
+[data-theme="light"] section:has(.hero-overlay) .shimmer-text {
+  background: linear-gradient(90deg, #049bfb, #0474bc, #14b8a6, #0474bc, #049bfb) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+[data-theme="light"] section:has(.hero-overlay) .gradient-text {
+  background: linear-gradient(135deg, #049bfb, #0474bc, #14b8a6) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+[data-theme="light"] section:has(.hero-overlay) .gradient-text-glow {
+  background: linear-gradient(135deg, #049bfb, #0474bc, #14b8a6) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  filter: drop-shadow(0 0 20px rgba(4, 155, 251, 0.3)) !important;
+}
+
+/* ── Terms page TOC light mode ─────────────────────────────────── */
+[data-theme="light"] .terms-page .section-padding .border-white\/\[0\.06\] {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .terms-page .section-padding .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .terms-page .section-padding .border-sky-400 {
+  border-color: #0474bc !important;
+}
+
+/* ── Solutions mega dropdown ─────────────────────────────────────── */
+[data-theme="light"] .bg-\[\#020617\]\/97 {
+  background: rgba(248, 250, 252, 0.97) !important;
+}
+
+/* ── Footer: adapt to light mode ─────────────────────────────────── */
+[data-theme="light"] footer {
+  background: var(--bg-secondary);
+}
+[data-theme="light"] footer .bg-gradient-to-b {
+  background: linear-gradient(to bottom, var(--bg-secondary), var(--bg-primary)) !important;
+}
+[data-theme="light"] footer .text-white {
+  color: #0f172a !important;
+}
+[data-theme="light"] footer .text-slate-400 {
+  color: #64748b !important;
+}
+[data-theme="light"] footer .text-slate-500 {
+  color: #94a3b8 !important;
+}
+[data-theme="light"] footer .text-sky-400 {
+  color: #0474bc !important;
+}
+[data-theme="light"] footer .border-white\/\[0\.06\],
+[data-theme="light"] footer .border-white\/\[0\.04\] {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] footer .bg-white\/\[0\.02\] {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+[data-theme="light"] footer .bg-\[\#020617\] {
+  background: var(--bg-primary) !important;
+}
+
+/* ── Dark overlay badges (resource cards, etc.) ──────────────────── */
+[data-theme="light"] .section-padding .bg-\[\#020617\]\/80,
+[data-theme="light"] main > section:not(:first-child) .bg-\[\#020617\]\/80 {
+  background: rgba(241, 245, 249, 0.9) !important;
+}
+
+/* ── Inline dark gradient sections (By the Numbers, Our Journey, CTAs) ── */
+[data-theme="light"] .section-padding[style*="background"] {
+  background: linear-gradient(180deg, rgba(241,245,249,0.5), var(--bg-primary)) !important;
+}
+
+/* ── Partner marquee logos ────────────────────────────────────────────── */
+.partner-logo-marquee {
+  filter: grayscale(100%);
+  transition: filter 0.3s, opacity 0.3s;
+}
+.partner-logo-marquee:hover {
+  filter: brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1250%) hue-rotate(185deg) brightness(92%) contrast(95%);
+}
+/* Light mode: darken grayscale so visible, hover → ICE blue #0475BC */
+[data-theme="light"] .partner-logo-marquee {
+  filter: grayscale(100%) brightness(0.3);
+}
+[data-theme="light"] .partner-logo-marquee:hover {
+  filter: brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1250%) hue-rotate(185deg) brightness(92%) contrast(95%);
+}
+
+/* ── Partner card logos ──────────────────────────────────────────────── */
+.partner-card-logo {
+  filter: grayscale(100%);
+  transition: filter 0.3s;
+}
+.group:hover .partner-card-logo {
+  filter: brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1250%) hue-rotate(185deg) brightness(92%) contrast(95%);
+}
+[data-theme="light"] .partner-card-logo {
+  filter: grayscale(100%) brightness(0.4);
+}
+[data-theme="light"] .group:hover .partner-card-logo {
+  filter: brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1250%) hue-rotate(185deg) brightness(92%) contrast(95%);
+}
+
+/* ── SMS consent page TOC light mode ──────────────────────────────────── */
+[data-theme="light"] .sms-consent-page .section-padding .border-white\/\[0\.06\] {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .sms-consent-page .section-padding .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .sms-consent-page .section-padding .border-sky-400 {
+  border-color: #0474bc !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   METRIC WIDGET KEYFRAMES (used by EnterpriseMetrics & SolutionMetrics)
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* ── Metric widgets light mode ───────────────────────────────────────── */
+[data-theme="light"] .section-padding .fill-white {
+  fill: #0f172a !important;
+}
+[data-theme="light"] .section-padding .text-white\/\[0\.06\] {
+  color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ── Search Modal light mode ─────────────────────────────────────────── */
+[data-theme="light"] .search-modal {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12) !important;
+}
+[data-theme="light"] .search-modal-input {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .search-modal-field {
+  color: #0f172a !important;
+}
+[data-theme="light"] .search-modal-field::placeholder {
+  color: #94a3b8 !important;
+}
+[data-theme="light"] .search-modal-kbd {
+  background: #f1f5f9 !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #64748b !important;
+}
+[data-theme="light"] .search-modal-close:hover {
+  color: #0f172a !important;
+}
+[data-theme="light"] .search-modal-title {
+  color: #0f172a !important;
+}
+[data-theme="light"] .search-modal-result:hover .search-modal-title,
+[data-theme="light"] .search-modal-result.group:hover .search-modal-title {
+  color: #0474bc !important;
+}
+[data-theme="light"] .search-modal-desc {
+  color: #64748b !important;
+}
+[data-theme="light"] .search-modal-result:hover {
+  background: #f1f5f9 !important;
+}
+[data-theme="light"] .search-modal-footer {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  color: #64748b !important;
+}
+[data-theme="light"] .search-modal-empty-icon {
+  color: #cbd5e1 !important;
+}
+[data-theme="light"] .search-modal-empty-text {
+  color: #94a3b8 !important;
+}
+[data-theme="light"] .search-highlight {
+  background: rgba(4, 155, 251, 0.15) !important;
+  color: #0474bc !important;
+}
+
+/* ── Logo container soft-edge blend ──────────────────────────────────── */
+.logo-container {
+  box-shadow: 0 0 12px 8px rgba(2, 6, 23, 0.88);
+}
+[data-theme="light"] .logo-container {
+  box-shadow: none;
+}
+
+@keyframes clockHour { to { transform: rotate(360deg); } }
+@keyframes clockMinute { to { transform: rotate(360deg); } }
+@keyframes radar-sweep { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLINT / SHINE EFFECTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes glint-sweep {
+  0% { translate: -100% 0; }
+  100% { translate: 100% 0; }
+}
+
+.glint-card {
+  position: relative;
+  overflow: hidden;
+}
+.glint-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.05) 45%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 55%,
+    transparent 60%
+  );
+  translate: -100% 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.glint-card:hover::after {
+  animation: glint-sweep 0.6s ease-out forwards;
+}
+
+.glint-btn {
+  position: relative;
+  overflow: hidden;
+}
+.glint-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 70%
+  );
+  translate: -100% 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.glint-btn:hover::after {
+  animation: glint-sweep 0.5s ease-out forwards;
+}
+
+[data-theme="light"] .glint-card::after,
+[data-theme="light"] .glint-btn::after {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.15) 45%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0.15) 55%,
+    transparent 60%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOVER LIFT & DATA PANEL UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+.hover-lift {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-4px) scale(1.01);
+}
+
+.data-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(4, 155, 251, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACTIVE NAV INDICATOR
+   ═══════════════════════════════════════════════════════════════════════════ */
+.nav-link-active {
+  position: relative;
+}
+.nav-link-active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 2px;
+  background: linear-gradient(90deg, #049bfb, #0474bc);
+  border-radius: 1px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREFERS REDUCED MOTION
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .scan-line::after,
+  .animate-marquee,
+  .animate-float,
+  .pulse-glow,
+  .shimmer-text {
+    animation: none !important;
+  }
+}
+
+/* .no-js fallback */
+.no-js * {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRINT STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  /* Hide non-content elements */
+  .scan-line::after,
+  .ambient-orb,
+  .cursor-glow,
+  .noise-overlay,
+  .grid-pattern,
+  .dot-grid,
+  .mesh-gradient,
+  .mesh-gradient-animated,
+  .dot-pattern,
+  .nav-blur,
+  header,
+  footer,
+  .hero-overlay,
+  video,
+  .btn-outline,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+    color: #1a1a1a !important;
+  }
+
+  main {
+    padding-top: 0 !important;
+  }
+
+  /* Hide hero section in print */
+  .terms-page section:first-child {
+    display: none !important;
+  }
+
+  /* Glass cards → clean white */
+  .glass-card,
+  .glass-card-static {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Gradient text → solid blue */
+  .gradient-text,
+  .gradient-text-glow,
+  .shimmer-text {
+    -webkit-text-fill-color: #0474bc !important;
+    background: none !important;
+  }
+
+  /* Text colors for print */
+  .text-white {
+    color: #0f172a !important;
+  }
+  .text-slate-300,
+  .text-slate-400 {
+    color: #475569 !important;
+  }
+  .text-sky-400 {
+    color: #0369a1 !important;
+  }
+
+  /* Section borders */
+  .border-white\/10,
+  .border-white\/\[0\.06\] {
+    border-color: #e2e8f0 !important;
+  }
+
+  /* Gradient dividers → solid light gray */
+  .bg-gradient-to-r {
+    background: #e2e8f0 !important;
+  }
+
+  /* Section padding for print */
+  .section-padding {
+    padding: 1rem 0 !important;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1.5cm 2cm;
+  }
+}
