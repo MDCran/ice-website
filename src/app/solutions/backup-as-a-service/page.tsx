@@ -9,7 +9,7 @@ import {
   FileCheck,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import DataProtectionHero from "@/components/solutions/heroes/DataProtectionHero";
+import BackupHero from "@/components/solutions/heroes/BackupHero";
 
 const features = [
   {
@@ -93,7 +93,7 @@ export default function BackupAsAServicePage() {
       title='Backup as a <span class="gradient-text-glow">Service</span>'
       subtitle="Automated, encrypted backups with rapid restore capabilities -- managed 24/7 by ICE's operations team. Protect IBM i, AIX, Linux, and Windows environments with on-site and off-site replication built for enterprise resilience."
       categoryBadge={{ label: "Managed Data Protection", icon: <HardDrive className="h-4 w-4 text-sky-400" /> }}
-      heroVisualization={<DataProtectionHero />}
+      heroVisualization={<BackupHero />}
       features={features}
       process={process}
       benefits={benefits}

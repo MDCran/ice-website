@@ -10,7 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import DataProtectionHero from "@/components/solutions/heroes/DataProtectionHero";
+import RansomwareRecoveryHero from "@/components/solutions/heroes/RansomwareRecoveryHero";
 
 const features = [
   {
@@ -99,7 +99,7 @@ export default function RansomwareRecoveryPage() {
         label: "Cyber Resilience",
         icon: <ShieldAlert className="h-3.5 w-3.5" />,
       }}
-      heroVisualization={<DataProtectionHero />}
+      heroVisualization={<RansomwareRecoveryHero />}
       features={features}
       process={process}
       benefits={benefits}

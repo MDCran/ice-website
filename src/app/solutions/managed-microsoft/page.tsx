@@ -9,7 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import ManagedServicesHero from "@/components/solutions/heroes/ManagedServicesHero";
+import ManagedMicrosoftHero from "@/components/solutions/heroes/ManagedMicrosoftHero";
 
 const features = [
   {
@@ -93,7 +93,7 @@ export default function ManagedMicrosoftPage() {
       title='Managed <span class="gradient-text">Microsoft Services</span>'
       subtitle="Complete Microsoft 365 and Azure management by ICE's certified engineers. From Exchange Online and SharePoint to Azure infrastructure and security configuration -- we handle everything so you can focus on your business."
       categoryBadge={{ label: "Managed Services", icon: <Monitor className="h-3.5 w-3.5 text-sky-400" /> }}
-      heroVisualization={<ManagedServicesHero />}
+      heroVisualization={<ManagedMicrosoftHero />}
       features={features}
       process={process}
       benefits={benefits}

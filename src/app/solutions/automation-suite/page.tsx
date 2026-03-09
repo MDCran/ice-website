@@ -9,7 +9,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import ManagedServicesHero from "@/components/solutions/heroes/ManagedServicesHero";
+import AutomationSuiteHero from "@/components/solutions/heroes/AutomationSuiteHero";
 
 const features = [
   {
@@ -93,7 +93,7 @@ export default function AutomationSuitePage() {
       title='Enterprise <span class="gradient-text">Automation Suite</span>'
       subtitle="AI-powered automation for patch management, vulnerability remediation, endpoint security, and cloud gateway protection. Reduce downtime by up to 50% and automate operations across 100+ operating systems and cloud platforms."
       categoryBadge={{ label: "Intelligent Automation", icon: <Workflow className="h-3.5 w-3.5 text-sky-400" /> }}
-      heroVisualization={<ManagedServicesHero />}
+      heroVisualization={<AutomationSuiteHero />}
       features={features}
       process={process}
       benefits={benefits}

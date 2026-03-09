@@ -120,7 +120,7 @@ function SolutionsAccordion() {
           <div key={cat.heading}>
             <button
               onClick={() => setOpenIdx(openIdx === i ? null : i)}
-              className="flex w-full items-center justify-between py-2 text-sm text-slate-400 hover:text-white transition-colors duration-200"
+              className="flex w-full items-center justify-between py-2 text-sm text-slate-400 hover:text-white transition-colors duration-200 cursor-pointer"
             >
               <span>{cat.heading}</span>
               <ChevronDown className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 ${openIdx === i ? "rotate-180" : ""}`} />

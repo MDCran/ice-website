@@ -10,7 +10,7 @@ import {
   Bug,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import SecurityHero from "@/components/solutions/heroes/SecurityHero";
+import EndpointSecurityHero from "@/components/solutions/heroes/EndpointSecurityHero";
 
 const features = [
   {
@@ -94,7 +94,7 @@ export default function EndpointSecurityPage() {
       title='Endpoint <span class="gradient-text-glow">Security</span>'
       subtitle="Next-generation endpoint protection with AI-driven threat prevention, automated patch management, application control, and zero-trust device verification across every platform your team uses."
       categoryBadge={{ label: "Next-Gen Protection", icon: <Bug className="h-3.5 w-3.5 text-sky-400" /> }}
-      heroVisualization={<SecurityHero />}
+      heroVisualization={<EndpointSecurityHero />}
       features={features}
       process={process}
       benefits={benefits}

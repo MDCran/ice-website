@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
 import ComparisonTable from "@/components/solutions/ComparisonTable";
-import DataProtectionHero from "@/components/solutions/heroes/DataProtectionHero";
+import HighAvailabilityHero from "@/components/solutions/heroes/HighAvailabilityHero";
 
 const comparisonData = [
   { label: "Recovery Time (RTO)", before: 72, after: 30 },
@@ -106,7 +106,7 @@ export default function HighAvailabilityPage() {
         label: "Managed Data Protection",
         icon: <Database className="h-3.5 w-3.5" />,
       }}
-      heroVisualization={<DataProtectionHero />}
+      heroVisualization={<HighAvailabilityHero />}
       features={features}
       process={process}
       benefits={benefits}

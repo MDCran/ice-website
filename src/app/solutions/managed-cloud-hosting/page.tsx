@@ -10,7 +10,7 @@ import {
   Lock,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import CloudHero from "@/components/solutions/heroes/CloudHero";
+import CloudHostingHero from "@/components/solutions/heroes/CloudHostingHero";
 
 const features = [
   {
@@ -94,7 +94,7 @@ export default function ManagedCloudHostingPage() {
       title='Managed Cloud <span class="gradient-text-glow">Hosting</span>'
       subtitle="Enterprise-grade cloud hosting powered by Tier-3 data centers with Flash Systems Storage. 24/7 monitoring, fully managed infrastructure, and PCI, HIPAA, SOX, and GDPR compliance."
       categoryBadge={{ label: "Cloud Services", icon: <Cloud className="h-4 w-4 text-sky-400" /> }}
-      heroVisualization={<CloudHero />}
+      heroVisualization={<CloudHostingHero />}
       features={features}
       process={process}
       benefits={benefits}

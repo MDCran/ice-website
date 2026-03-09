@@ -10,7 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import SecurityHero from "@/components/solutions/heroes/SecurityHero";
+import ProtectionSuiteHero from "@/components/solutions/heroes/ProtectionSuiteHero";
 
 const features = [
   {
@@ -97,7 +97,7 @@ export default function ProtectionSuitePage() {
         label: "Multi-Layered Defense",
         icon: <Shield className="h-3.5 w-3.5" />,
       }}
-      heroVisualization={<SecurityHero />}
+      heroVisualization={<ProtectionSuiteHero />}
       features={features}
       process={process}
       benefits={benefits}

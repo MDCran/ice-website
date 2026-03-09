@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
 import ComparisonTable from "@/components/solutions/ComparisonTable";
-import DataProtectionHero from "@/components/solutions/heroes/DataProtectionHero";
+import DisasterRecoveryHero from "@/components/solutions/heroes/DisasterRecoveryHero";
 
 const comparisonData = [
   { label: "Automated failover & failback", withoutICE: false, withICE: true },
@@ -105,7 +105,7 @@ export default function DisasterRecoveryPage() {
       title='Disaster Recovery <span class="gradient-text-glow">as a Service</span>'
       subtitle="Full disaster recovery with guaranteed RTOs and RPOs, geographic redundancy across data centers, automated failover testing, and comprehensive DR planning -- all managed by ICE's 24/7 DR operations team."
       categoryBadge={{ label: "Managed Data Protection", icon: <RefreshCcw className="h-4 w-4 text-sky-400" /> }}
-      heroVisualization={<DataProtectionHero />}
+      heroVisualization={<DisasterRecoveryHero />}
       features={features}
       process={process}
       benefits={benefits}

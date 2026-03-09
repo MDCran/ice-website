@@ -10,7 +10,7 @@ import {
   Cpu,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import ManagedServicesHero from "@/components/solutions/heroes/ManagedServicesHero";
+import IBMPowerVSHero from "@/components/solutions/heroes/IBMPowerVSHero";
 
 const features = [
   {
@@ -94,7 +94,7 @@ export default function IBMPowerVSPage() {
       title='IBM <span class="gradient-text">Power VS</span>'
       subtitle="Run IBM i and AIX workloads on IBM Power infrastructure in the cloud, fully managed by ICE's certified engineers. Flexible consumption, hybrid integration, and 35+ years of IBM expertise -- without the capital expenditure."
       categoryBadge={{ label: "IBM Power Systems", icon: <Cpu className="h-3.5 w-3.5 text-sky-400" /> }}
-      heroVisualization={<ManagedServicesHero />}
+      heroVisualization={<IBMPowerVSHero />}
       features={features}
       process={process}
       benefits={benefits}

@@ -10,7 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import CloudHero from "@/components/solutions/heroes/CloudHero";
+import PrivateCloudHero from "@/components/solutions/heroes/PrivateCloudHero";
 
 const features = [
   {
@@ -94,7 +94,7 @@ export default function ManagedPrivateCloudPage() {
       title='Managed Private <span class="gradient-text-glow">Cloud</span>'
       subtitle="Dedicated single-tenant cloud environments with complete isolation, custom configurations, and compliance-ready infrastructure. Ideal for regulated industries demanding the highest levels of security and control."
       categoryBadge={{ label: "Private Cloud", icon: <Lock className="h-4 w-4 text-sky-400" /> }}
-      heroVisualization={<CloudHero />}
+      heroVisualization={<PrivateCloudHero />}
       features={features}
       process={process}
       benefits={benefits}

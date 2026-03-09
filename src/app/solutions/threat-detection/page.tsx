@@ -10,7 +10,7 @@ import {
   Siren,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import SecurityHero from "@/components/solutions/heroes/SecurityHero";
+import ThreatDetectionHero from "@/components/solutions/heroes/ThreatDetectionHero";
 
 const features = [
   {
@@ -97,7 +97,7 @@ export default function ThreatDetectionPage() {
         label: "Advanced Threat Defense",
         icon: <Crosshair className="h-3.5 w-3.5" />,
       }}
-      heroVisualization={<SecurityHero />}
+      heroVisualization={<ThreatDetectionHero />}
       features={features}
       process={process}
       benefits={benefits}

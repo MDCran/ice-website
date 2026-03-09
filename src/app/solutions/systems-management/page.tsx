@@ -10,7 +10,7 @@ import {
   Settings,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import ManagedServicesHero from "@/components/solutions/heroes/ManagedServicesHero";
+import SystemsManagementHero from "@/components/solutions/heroes/SystemsManagementHero";
 
 const features = [
   {
@@ -94,7 +94,7 @@ export default function SystemsManagementPage() {
       title='Proactive <span class="gradient-text">Systems Management</span>'
       subtitle="Enterprise IT systems monitoring, patching, and performance management across IBM i, AIX, Linux, and Windows. Our 24/7 NOC operations team of expert engineers keeps your infrastructure running at peak performance."
       categoryBadge={{ label: "24/7 NOC Operations", icon: <Settings className="h-3.5 w-3.5 text-sky-400" /> }}
-      heroVisualization={<ManagedServicesHero />}
+      heroVisualization={<SystemsManagementHero />}
       features={features}
       process={process}
       benefits={benefits}

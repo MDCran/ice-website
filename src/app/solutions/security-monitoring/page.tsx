@@ -10,7 +10,7 @@ import {
   Siren,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import SecurityHero from "@/components/solutions/heroes/SecurityHero";
+import SecurityMonitoringHero from "@/components/solutions/heroes/SecurityMonitoringHero";
 
 const features = [
   {
@@ -97,7 +97,7 @@ export default function SecurityMonitoringPage() {
         label: "24/7 Threat Surveillance",
         icon: <Radar className="h-3.5 w-3.5" />,
       }}
-      heroVisualization={<SecurityHero />}
+      heroVisualization={<SecurityMonitoringHero />}
       features={features}
       process={process}
       benefits={benefits}

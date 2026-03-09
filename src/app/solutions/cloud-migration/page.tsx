@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
 import ComparisonTable from "@/components/solutions/ComparisonTable";
-import CloudHero from "@/components/solutions/heroes/CloudHero";
+import CloudMigrationHero from "@/components/solutions/heroes/CloudMigrationHero";
 
 const comparisonData = [
   { label: "Infrastructure Costs", before: 100, after: 45 },
@@ -103,7 +103,7 @@ export default function CloudMigrationPage() {
       title='Cloud Migration <span class="gradient-text-glow">Services</span>'
       subtitle="Expert-led migration with zero downtime. From assessment to optimization, we migrate any workload -- IBM i, AIX, Linux, Windows -- with 3x faster deployments and a zero data loss approach refined through 730+ ICE projects."
       categoryBadge={{ label: "Migration Services", icon: <RefreshCcw className="h-4 w-4 text-sky-400" /> }}
-      heroVisualization={<CloudHero />}
+      heroVisualization={<CloudMigrationHero />}
       features={features}
       process={process}
       benefits={benefits}

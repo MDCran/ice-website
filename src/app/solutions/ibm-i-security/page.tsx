@@ -9,7 +9,7 @@ import {
   Bug,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import SecurityHero from "@/components/solutions/heroes/SecurityHero";
+import IBMiSecurityHero from "@/components/solutions/heroes/IBMiSecurityHero";
 
 const features = [
   {
@@ -96,7 +96,7 @@ export default function IBMiSecurityPage() {
         label: "Managed Security",
         icon: <ShieldCheck className="h-3.5 w-3.5" />,
       }}
-      heroVisualization={<SecurityHero />}
+      heroVisualization={<IBMiSecurityHero />}
       features={features}
       process={process}
       benefits={benefits}

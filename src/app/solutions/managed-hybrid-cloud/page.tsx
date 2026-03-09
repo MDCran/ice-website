@@ -10,7 +10,7 @@ import {
   Eye,
 } from "lucide-react";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
-import CloudHero from "@/components/solutions/heroes/CloudHero";
+import HybridCloudHero from "@/components/solutions/heroes/HybridCloudHero";
 
 const features = [
   {
@@ -96,7 +96,7 @@ export default function ManagedHybridCloudPage() {
       title='Managed Hybrid <span class="gradient-text-glow">Cloud</span>'
       subtitle="Bridge on-premises infrastructure with the cloud seamlessly. Unified management, workload mobility, and consistent security policies across every environment — all fully managed by ICE."
       categoryBadge={{ label: "Hybrid Cloud", icon: <Globe className="h-4 w-4 text-sky-400" /> }}
-      heroVisualization={<CloudHero />}
+      heroVisualization={<HybridCloudHero />}
       features={features}
       process={process}
       benefits={benefits}
