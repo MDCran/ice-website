@@ -109,7 +109,7 @@ export default function SmsConsentPage() {
                   SMS / Text Messaging &ndash; Opt-In &amp; Opt-Out
                 </h2>
                 <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/5 px-3 py-1 text-xs text-sky-400 font-semibold">
-                  Last Updated: March 2027
+                  Last Updated: March 2026
                 </div>
                 <p className="text-slate-400 mt-4 leading-[1.8]">
                   International Computer Exchange, Inc. (&ldquo;ICE&rdquo;) uses SMS text messaging

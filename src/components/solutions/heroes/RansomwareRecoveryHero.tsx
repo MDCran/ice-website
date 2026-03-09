@@ -63,7 +63,7 @@ export default function RansomwareRecoveryHero() {
           <line x1="19" y1="4" x2="26" y2="16" stroke="rgba(239,68,68,0.6)" strokeWidth="1.5" />
           <line x1="26" y1="4" x2="19" y2="16" stroke="rgba(239,68,68,0.6)" strokeWidth="1.5" />
           {/* Label */}
-          <text x="22" y="28" textAnchor="middle" className="fill-red-400/60" fontSize="6" fontFamily="inherit">BLOCKED</text>
+          <text x="22" y="28" textAnchor="middle" fill="rgba(248,113,113,0.6)" fontSize="6" fontFamily="inherit">BLOCKED</text>
         </g>
 
         {/* Air-gapped Vault — thick bordered box */}

@@ -1220,6 +1220,21 @@ select:focus {
   border-color: #0474bc !important;
 }
 
+/* ── Solution page hero SVGs — adapt strokes/fills for light backgrounds ── */
+[data-theme="light"] main.pt-28 svg .fill-slate-400,
+[data-theme="light"] main.pt-28 svg .fill-slate-300 {
+  fill: #475569 !important;
+}
+[data-theme="light"] main.pt-28 svg .fill-slate-500 {
+  fill: #64748b !important;
+}
+[data-theme="light"] main.pt-28 svg .fill-slate-200 {
+  fill: #334155 !important;
+}
+[data-theme="light"] main.pt-28 svg .fill-emerald-400 {
+  fill: #059669 !important;
+}
+
 /* ── Solutions mega dropdown ─────────────────────────────────────── */
 [data-theme="light"] .bg-\[\#020617\]\/97 {
   background: rgba(248, 250, 252, 0.97) !important;
@@ -1545,8 +1560,14 @@ select:focus {
     padding-top: 0 !important;
   }
 
-  /* Hide hero section in print */
-  .terms-page section:first-child {
+  /* Hide hero sections in print */
+  .terms-page section:first-child,
+  .sms-consent-page section:first-child {
+    display: none !important;
+  }
+
+  /* Hide contact chat widget in print */
+  .fixed.bottom-6.right-6 {
     display: none !important;
   }
 
@@ -1595,8 +1616,8 @@ select:focus {
     padding: 1rem 0 !important;
   }
 
-  /* Page margins */
+  /* Page margins — no margin suppresses browser-added headers/footers (URL, date, page number) */
   @page {
-    margin: 1.5cm 2cm;
+    margin: 0.5cm 1cm;
   }
 }

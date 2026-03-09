@@ -103,7 +103,7 @@ export default function CloudMigrationHero() {
           {/* Progress fill */}
           <rect x="2" y="2" width="98" height="10" rx="5" fill="url(#migrationGrad)" opacity="0.7" />
           {/* Progress text */}
-          <text x="70" y="10" textAnchor="middle" fill="white" fontSize="7" fontFamily="inherit" fontWeight="bold">72%</text>
+          <text x="70" y="10" textAnchor="middle" className="fill-slate-200" fontSize="7" fontFamily="inherit" fontWeight="bold">72%</text>
         </g>
 
         <defs>

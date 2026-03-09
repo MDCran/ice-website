@@ -9,7 +9,7 @@ const sections = [
   {
     id: "acceptance",
     title: "1. Acceptance of Terms",
-    content: `By accessing, browsing, or using the International Computer Exchange, Inc. ("ICE," "we," "us," or "our") website located at www.yourICE.com (the "Site"), you acknowledge that you have read, understood, and agree to be bound by these Website Terms and Conditions ("Terms"). If you do not agree to these Terms, you should not use or access the Site.
+    content: `By accessing, browsing, or using the International Computer Exchange, Inc. ("ICE," "we," "us," or "our") website located at icesales.com (the "Site"), you acknowledge that you have read, understood, and agree to be bound by these Website Terms and Conditions ("Terms"). If you do not agree to these Terms, you should not use or access the Site.
 
 We reserve the right to change, modify, or update these Terms at any time without prior notice. Your continued use of the Site following the posting of any changes constitutes your acceptance of such changes. We encourage you to review these Terms periodically.`,
   },
@@ -169,7 +169,7 @@ export default function TermsOfServicePage() {
                   Website Terms and Conditions
                 </h2>
                 <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/5 px-3 py-1 text-xs text-sky-400 font-semibold print:!text-blue-600 print:!border-blue-200 print:!bg-blue-50">
-                  Last Updated: March 2027
+                  Last Updated: March 2026
                 </div>
                 <p className="text-slate-400 mt-4 leading-relaxed print:!text-gray-600">
                   Please read these terms and conditions carefully before using the
