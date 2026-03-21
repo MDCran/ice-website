@@ -19,7 +19,7 @@ interface FloatingLabelSelectProps extends React.SelectHTMLAttributes<HTMLSelect
 }
 
 const baseInputClass =
-  "peer w-full rounded-xl px-4 pt-6 pb-2 placeholder-transparent focus:outline-none focus:ring-2 transition-all duration-300 bg-white/[0.06] border border-white/20 text-white focus:border-sky-400/60 focus:ring-sky-400/20 focus:shadow-[0_0_20px_rgba(168,85,247,0.1)] dark-input";
+  "peer w-full rounded-xl px-4 pt-6 pb-2 placeholder-transparent focus:outline-none focus:ring-2 transition-all duration-300 bg-white/[0.06] border border-white/10 text-white focus:border-sky-400/60 focus:ring-sky-400/20 focus:shadow-[0_0_20px_rgba(56,189,248,0.1)]";
 
 const labelClass =
   "absolute left-4 top-4 text-sm text-slate-400 transition-all duration-200 pointer-events-none peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-slate-500 peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-sky-400 peer-focus:font-semibold peer-focus:uppercase peer-focus:tracking-wider peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:text-sky-400/60 peer-[:not(:placeholder-shown)]:font-semibold peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-wider floating-label";

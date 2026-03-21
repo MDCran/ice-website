@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/themeProvider";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { resolveIcon } from "@/lib/iconMap";
 
 /* ─── Data ─────────────────────────────────────────────────────────────── */
 
@@ -76,7 +77,30 @@ const SOLUTIONS_MEGA: MegaColumn[] = [
 
 /* ─── Component ────────────────────────────────────────────────────────── */
 
-export default function Navbar() {
+export default function Navbar({ navItems }: { navItems?: any[] }) {
+  // Resolve nav links from CMS or fallback
+  const navbarTopItems = navItems?.filter((i: any) => i.location === "navbar_top" && i.is_visible)
+    .sort((a: any, b: any) => a.sort_order - b.sort_order) ?? [];
+  const navLinks = navbarTopItems.length > 0
+    ? navbarTopItems.map((i: any) => ({ label: i.label, href: i.href, hasMega: i.has_mega_menu ?? false }))
+    : NAV_LINKS;
+
+  const megaItems = navItems?.filter((i: any) => i.location === "navbar_mega" && i.is_visible)
+    .sort((a: any, b: any) => a.sort_order - b.sort_order) ?? [];
+  const solutionsMega: MegaColumn[] = megaItems.length > 0
+    ? (() => {
+        const columnMap = new Map<string, MegaColumn>();
+        for (const item of megaItems) {
+          const col = item.mega_column_title || "Solutions";
+          if (!columnMap.has(col)) {
+            columnMap.set(col, { heading: col, icon: resolveIcon(item.mega_column_icon), links: [] });
+          }
+          columnMap.get(col)!.links.push({ label: item.label, href: item.href });
+        }
+        return Array.from(columnMap.values());
+      })()
+    : SOLUTIONS_MEGA;
+
   const pathname = usePathname();
   const { theme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -128,13 +152,13 @@ export default function Navbar() {
               </span>
             </div>
             <div className="flex items-center gap-6">
-              <a href="tel:5613949188" className="inline-flex items-center gap-1.5 transition-colors hover:text-sky-400">
+              <a href="tel:18007869188" className="inline-flex items-center gap-1.5 transition-colors hover:text-sky-400">
                 <Phone className="h-3 w-3 text-sky-400" />
-                561-394-9188
+                1-800-786-9188
               </a>
-              <a href="mailto:sales@icesales.com" className="inline-flex items-center gap-1.5 transition-colors hover:text-sky-400">
+              <a href="mailto:info@icesales.com" className="inline-flex items-center gap-1.5 transition-colors hover:text-sky-400">
                 <Mail className="h-3 w-3 text-sky-400" />
-                sales@icesales.com
+                info@icesales.com
               </a>
             </div>
           </div>
@@ -153,24 +177,21 @@ export default function Navbar() {
         <div className="mx-auto max-w-7xl px-6 flex items-center justify-between h-16 lg:h-[72px]">
           {/* Logo */}
           <Link href="/" className="relative shrink-0 group" aria-label="ICE Home">
-            <div className="logo-container rounded-lg bg-[#f8fafc] px-3 py-2 flex flex-col items-center transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(4,155,251,0.3)]">
+            <div className="logo-container rounded-lg bg-[#ffffff] px-3 py-2 flex items-center transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(4,155,251,0.3)]">
               <Image
-                src="/images/logo/logo-dark.svg"
+                src="/images/logo/ice-logo.jpg"
                 alt="International Computer Exchange"
-                width={160}
-                height={48}
-                className="h-9 lg:h-11 w-auto"
+                width={220}
+                height={66}
+                className="h-12 lg:h-14 w-auto"
                 priority
               />
-              <span className="text-[6.5px] lg:text-[7.5px] font-semibold tracking-[0.14em] uppercase text-slate-500 mt-0.5 whitespace-nowrap leading-tight">
-                International Computer Exchange
-              </span>
             </div>
           </Link>
 
           {/* Desktop Links */}
           <div className="hidden lg:flex items-center gap-1">
-            {NAV_LINKS.map((link) =>
+            {navLinks.map((link) =>
               link.hasMega ? (
                 <div
                   key={link.label}
@@ -223,7 +244,7 @@ export default function Navbar() {
 
                             <div className="relative z-10 p-6">
                               <div className="grid grid-cols-4 gap-0">
-                                {SOLUTIONS_MEGA.map((col, colIdx) => (
+                                {solutionsMega.map((col, colIdx) => (
                                   <div
                                     key={col.heading}
                                     className={cn(
@@ -350,17 +371,14 @@ export default function Navbar() {
             >
               <div className="flex items-center justify-between px-6 h-16 border-b border-white/5 mobile-menu-header">
                 <Link href="/" onClick={() => setMobileOpen(false)} aria-label="ICE Home">
-                  <div className="logo-container rounded-lg bg-[#f8fafc] px-2.5 py-1.5 flex flex-col items-center">
+                  <div className="logo-container rounded-lg bg-[#ffffff] px-2.5 py-1.5 flex items-center">
                     <Image
-                      src="/images/logo/logo-dark.svg"
+                      src="/images/logo/ice-logo.jpg"
                       alt="International Computer Exchange"
-                      width={130}
-                      height={38}
-                      className="h-7 w-auto"
+                      width={180}
+                      height={54}
+                      className="h-10 w-auto"
                     />
-                    <span className="text-[6px] font-semibold tracking-[0.14em] uppercase text-slate-500 mt-0.5 whitespace-nowrap leading-tight">
-                      International Computer Exchange
-                    </span>
                   </div>
                 </Link>
                 <div className="flex items-center gap-1">
@@ -376,7 +394,7 @@ export default function Navbar() {
               </div>
 
               <div className="flex-1 px-6 py-8 space-y-1">
-                {NAV_LINKS.map((link) =>
+                {navLinks.map((link) =>
                   link.hasMega ? (
                     <div key={link.label}>
                       <button
@@ -407,7 +425,7 @@ export default function Navbar() {
                               >
                                 View All Solutions
                               </Link>
-                              {SOLUTIONS_MEGA.map((col) => (
+                              {solutionsMega.map((col) => (
                                 <div key={col.heading}>
                                   <h4 className="px-4 text-xs font-semibold uppercase tracking-wider text-sky-400/70 mb-2">
                                     {col.heading}
@@ -449,11 +467,11 @@ export default function Navbar() {
               </div>
 
               <div className="px-6 py-6 border-t border-white/5 space-y-3 mobile-menu-footer">
-                <a href="tel:5613949188" className="flex items-center gap-3 text-sm text-slate-400 hover:text-sky-400 transition-colors">
-                  <Phone className="h-4 w-4 text-sky-400" />561-394-9188
+                <a href="tel:18007869188" className="flex items-center gap-3 text-sm text-slate-400 hover:text-sky-400 transition-colors">
+                  <Phone className="h-4 w-4 text-sky-400" />1-800-786-9188
                 </a>
-                <a href="mailto:sales@icesales.com" className="flex items-center gap-3 text-sm text-slate-400 hover:text-sky-400 transition-colors">
-                  <Mail className="h-4 w-4 text-sky-400" />sales@icesales.com
+                <a href="mailto:info@icesales.com" className="flex items-center gap-3 text-sm text-slate-400 hover:text-sky-400 transition-colors">
+                  <Mail className="h-4 w-4 text-sky-400" />info@icesales.com
                 </a>
               </div>
             </motion.nav>

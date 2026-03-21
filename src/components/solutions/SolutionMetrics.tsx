@@ -465,14 +465,14 @@ function getMetrics(preset: MetricPreset, inView: boolean): ReactNode[] {
       ]} />,
     ],
     "cloud-migration": [
-      <BigCounter key="a" inView={inView} value={730} suffix="+" label="ICE Migrations" />,
+      <BigCounter key="a" inView={inView} value={1200} suffix="+" label="ICE Migrations" />,
       <DonutGauge key="b" inView={inView} percent={50} label="Avg Cost Reduction" />,
       <BigCounter key="c" inView={inView} value={3} suffix="x" label="Faster Deployments" />,
       <DonutGauge key="d" inView={inView} percent={40} label="Fewer Post-Migration Issues" color="sky" />,
       <Checklist key="e" inView={inView} label="Compliance" items={["HIPAA", "PCI-DSS", "SOC II", "GDPR"]} />,
     ],
     "backup-as-a-service": [
-      <ShieldMetric key="a" inView={inView} value={500} unit="TB" label="Data Protected" />,
+      <ShieldMetric key="a" inView={inView} value={2.5} unit="PB" label="Data Protected" />,
       <TimerDisplay key="b" inView={inView} minutes={15} label="Recovery Time (RTO)" />,
       <UptimeBar key="c" inView={inView} sla={99.999} label="Backup Success Rate" />,
       <DonutGauge key="d" inView={inView} percent={60} label="Infrastructure Savings" />,

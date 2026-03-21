@@ -6,8 +6,9 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import { Phone, Mail, Clock, MapPin, ArrowUpRight, ArrowRight, ChevronDown } from "lucide-react";
 
+/* ── Default data (used when CMS data not available) ── */
 
-const quickLinks = [
+const DEFAULT_QUICK_LINKS = [
   { label: "Home", href: "/" },
   { label: "Solutions", href: "/solutions" },
   { label: "Partners", href: "/partners" },
@@ -15,7 +16,7 @@ const quickLinks = [
   { label: "Contact Us", href: "/contact" },
 ];
 
-const solutionCategories = [
+const DEFAULT_SOLUTION_CATEGORIES = [
   {
     heading: "Managed Cloud Services",
     links: [
@@ -55,11 +56,28 @@ const solutionCategories = [
   },
 ];
 
-const legalLinks = [
+const DEFAULT_LEGAL_LINKS = [
   { label: "Terms of Service", href: "/terms-of-service" },
   { label: "SMS Consent", href: "/sms-consent" },
-  { label: "Resources", href: "/resources" },
 ];
+
+export interface FooterCMSData {
+  quickLinks?: { label: string; href: string }[];
+  solutionCategories?: { heading: string; links: { label: string; href: string }[] }[];
+  legalLinks?: { label: string; href: string }[];
+  companyInfo?: {
+    address?: string;
+    city?: string;
+    phone?: string;
+    email?: string;
+    hours?: string;
+    tagline?: string;
+    logo?: string;
+  };
+  showSolutionsAccordion?: boolean;
+  showGetInTouch?: boolean;
+  showContactBar?: boolean;
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -109,14 +127,14 @@ function getBusinessStatus(): { isOpen: boolean; label: string; note?: string } 
   return { isOpen: false, label: "Closed" };
 }
 
-function SolutionsAccordion() {
+function SolutionsAccordion({ categories }: { categories: { heading: string; links: { label: string; href: string }[] }[] }) {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
   return (
     <div>
       <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Solutions</h3>
       <div className="space-y-1">
-        {solutionCategories.map((cat, i) => (
+        {categories.map((cat, i) => (
           <div key={cat.heading}>
             <button
               onClick={() => setOpenIdx(openIdx === i ? null : i)}
@@ -162,9 +180,25 @@ function useBusinessStatus() {
   return status;
 }
 
-export default function Footer() {
-  const logoSrc = "/images/logo/logo-dark.svg";
+export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
+  const quickLinks = cmsData?.quickLinks ?? DEFAULT_QUICK_LINKS;
+  const solutionCategories = cmsData?.solutionCategories ?? DEFAULT_SOLUTION_CATEGORIES;
+  const legalLinks = cmsData?.legalLinks ?? DEFAULT_LEGAL_LINKS;
+  const company = cmsData?.companyInfo;
+
+  const showSolutionsAccordion = cmsData?.showSolutionsAccordion ?? true;
+  const showGetInTouch = cmsData?.showGetInTouch ?? true;
+  const showContactBar = cmsData?.showContactBar ?? true;
+
+  const logoSrc = company?.logo ?? "/images/logo/ice-logo.jpg";
   const bizStatus = useBusinessStatus();
+
+  const visibleColumns = 1 + 1 + (showSolutionsAccordion ? 1 : 0) + (showGetInTouch ? 1 : 0);
+  const gridClass = visibleColumns === 4
+    ? "grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4"
+    : visibleColumns === 3
+      ? "grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3"
+      : "grid grid-cols-1 gap-10 sm:grid-cols-2";
 
   return (
     <footer className="relative w-full overflow-hidden">
@@ -172,81 +206,83 @@ export default function Footer() {
       <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
 
       {/* Contact Info Bar */}
-      <div className="relative bg-gradient-to-b from-[#0a1020] to-[#020617]">
-        <div className="absolute inset-0 mesh-gradient opacity-30" />
-        <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <motion.div
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-          >
+      {showContactBar && (
+        <div className="relative bg-gradient-to-b from-[#0a1020] to-[#020617]">
+          <div className="absolute inset-0 mesh-gradient opacity-30" />
+          <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <motion.div
-              custom={0}
-              variants={fadeUp}
-              className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04]"
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-50px" }}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
-                <MapPin className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Address</p>
-                <p className="text-sm font-semibold text-white">1279 W Palmetto Park Rd #272415</p>
-                <p className="text-xs text-slate-400">Boca Raton, FL 33427</p>
-              </div>
-            </motion.div>
-
-            <motion.a
-              href="tel:561-394-9188"
-              custom={1}
-              variants={fadeUp}
-              className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04] hover:shadow-[0_0_20px_rgba(168,85,247,0.06)] glint-card"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
-                <Phone className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Phone</p>
-                <p className="text-sm font-semibold text-white">561-394-9188</p>
-              </div>
-            </motion.a>
-
-            <motion.a
-              href="mailto:sales@icesales.com"
-              custom={2}
-              variants={fadeUp}
-              className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04] hover:shadow-[0_0_20px_rgba(168,85,247,0.06)] glint-card"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
-                <Mail className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Email</p>
-                <p className="text-sm font-semibold text-white">sales@icesales.com</p>
-              </div>
-            </motion.a>
-
-            <motion.div
-              custom={3}
-              variants={fadeUp}
-              className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04]"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Hours</p>
-                <p className="text-sm font-semibold text-white">Mon &ndash; Fri, 9&ndash;5 ET</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className={`inline-block h-1.5 w-1.5 rounded-full ${bizStatus.isOpen ? "bg-emerald-400" : "bg-red-400"}`} />
-                  <span className={`text-[10px] font-semibold ${bizStatus.isOpen ? "text-emerald-400" : "text-red-400"}`}>{bizStatus.label}</span>
+              <motion.div
+                custom={0}
+                variants={fadeUp}
+                className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04]"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
+                  <MapPin className="h-5 w-5" />
                 </div>
-                {bizStatus.note && <p className="text-[9px] text-slate-500 mt-0.5">{bizStatus.note}</p>}
-              </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Address</p>
+                  <p className="text-sm font-semibold text-white">{company?.address ?? "1279 W Palmetto Park Rd #272415"}</p>
+                  <p className="text-xs text-slate-400">{company?.city ?? "Boca Raton, FL 33427"}</p>
+                </div>
+              </motion.div>
+
+              <motion.a
+                href={`tel:${(company?.phone ?? "1-800-786-9188").replace(/[^\d+]/g, "")}`}
+                custom={1}
+                variants={fadeUp}
+                className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04] hover:shadow-[0_0_20px_rgba(168,85,247,0.06)] glint-card"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
+                  <Phone className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Phone</p>
+                  <p className="text-sm font-semibold text-white">{company?.phone ?? "1-800-786-9188"}</p>
+                </div>
+              </motion.a>
+
+              <motion.a
+                href={`mailto:${company?.email ?? "info@icesales.com"}`}
+                custom={2}
+                variants={fadeUp}
+                className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04] hover:shadow-[0_0_20px_rgba(168,85,247,0.06)] glint-card"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
+                  <Mail className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Email</p>
+                  <p className="text-sm font-semibold text-white">{company?.email ?? "info@icesales.com"}</p>
+                </div>
+              </motion.a>
+
+              <motion.div
+                custom={3}
+                variants={fadeUp}
+                className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04]"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Hours</p>
+                  <p className="text-sm font-semibold text-white">{company?.hours ?? "Mon \u2013 Fri, 9\u20135 ET"}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`inline-block h-1.5 w-1.5 rounded-full ${bizStatus.isOpen ? "bg-emerald-400" : "bg-red-400"}`} />
+                    <span className={`text-[10px] font-semibold ${bizStatus.isOpen ? "text-emerald-400" : "text-red-400"}`}>{bizStatus.label}</span>
+                  </div>
+                  {bizStatus.note && <p className="text-[9px] text-slate-500 mt-0.5">{bizStatus.note}</p>}
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Animated gradient separator */}
       <div className="h-px bg-gradient-to-r from-transparent via-sky-400/20 to-transparent" />
@@ -256,7 +292,7 @@ export default function Footer() {
         <div className="absolute inset-0 grid-pattern opacity-30" />
         <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <motion.div
-            className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4"
+            className={gridClass}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
@@ -264,21 +300,18 @@ export default function Footer() {
             {/* Company Info */}
             <motion.div custom={0} variants={fadeUp} className="lg:col-span-1">
               <Link href="/" className="inline-block mb-5">
-                <div className="logo-container rounded-lg bg-[#f8fafc] px-3 py-2 flex flex-col items-center">
+                <div className="logo-container rounded-lg bg-[#ffffff] px-3 py-2 flex items-center">
                   <Image
                     src={logoSrc}
-                    alt="ICE"
-                    width={140}
-                    height={42}
-                    className="h-9 w-auto"
+                    alt="International Computer Exchange"
+                    width={220}
+                    height={66}
+                    className="h-14 w-auto"
                   />
-                  <span className="text-[6.5px] font-semibold tracking-[0.14em] uppercase text-slate-500 mt-0.5 whitespace-nowrap leading-tight">
-                    International Computer Exchange
-                  </span>
                 </div>
               </Link>
               <p className="text-sm leading-relaxed text-slate-400 mb-6">
-                IBM Business Partner since 1990. Delivering enterprise-grade cloud, security, and managed IT solutions.
+                {company?.tagline ?? "IBM Business Partner since 1990. Delivering enterprise-grade cloud, security, and managed IT solutions."}
               </p>
               <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 backdrop-blur-sm">
                 <Image src="/images/ibm.svg" alt="IBM" width={48} height={20} className="opacity-70" />
@@ -302,39 +335,43 @@ export default function Footer() {
             </motion.div>
 
             {/* Solutions — accordion categories */}
-            <motion.div custom={2} variants={fadeUp}>
-              <SolutionsAccordion />
+            {showSolutionsAccordion && (
+              <motion.div custom={2} variants={fadeUp}>
+                <SolutionsAccordion categories={solutionCategories} />
 
-              {/* Gradient separator */}
-              <div className="my-6 h-px bg-gradient-to-r from-sky-400/15 to-transparent" />
+                {/* Gradient separator */}
+                <div className="my-6 h-px bg-gradient-to-r from-sky-400/15 to-transparent" />
 
-              <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Legal</h3>
-              <ul className="space-y-3">
-                {legalLinks.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="group inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors duration-200 hover:text-white">
-                      <span>{link.label}</span>
-                      <ArrowUpRight className="h-3 w-3 opacity-0 transition-all duration-200 group-hover:opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
+                <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Legal</h3>
+                <ul className="space-y-3">
+                  {legalLinks.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className="group inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors duration-200 hover:text-white">
+                        <span>{link.label}</span>
+                        <ArrowUpRight className="h-3 w-3 opacity-0 transition-all duration-200 group-hover:opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
 
             {/* CTA */}
-            <motion.div custom={3} variants={fadeUp}>
-              <h3 className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Get In Touch</h3>
-              <p className="text-sm leading-relaxed text-slate-400 mb-4">
-                Ready to modernize your IT infrastructure? Our experts are here to help.
-              </p>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500/20 to-blue-500/20 border border-sky-500/20 px-5 py-3 text-sm font-semibold text-sky-400 transition-all duration-300 hover:from-sky-500/30 hover:to-blue-500/30 hover:border-sky-500/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:text-white"
-              >
-                Contact Us
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </motion.div>
+            {showGetInTouch && (
+              <motion.div custom={3} variants={fadeUp}>
+                <h3 className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Get In Touch</h3>
+                <p className="text-sm leading-relaxed text-slate-400 mb-4">
+                  Ready to modernize your IT infrastructure? Our experts are here to help.
+                </p>
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500/20 to-blue-500/20 border border-sky-500/20 px-5 py-3 text-sm font-semibold text-sky-400 transition-all duration-300 hover:from-sky-500/30 hover:to-blue-500/30 hover:border-sky-500/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:text-white"
+                >
+                  Contact Us
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </div>

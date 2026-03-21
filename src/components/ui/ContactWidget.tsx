@@ -109,7 +109,7 @@ export default function ContactWidget() {
     "w-full bg-white/[0.06] dark:bg-white/[0.06] border border-slate-300 dark:border-white/20 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-sky-500 dark:focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/20 dark:focus:ring-sky-400/20 transition-all duration-300";
 
   const selectClass =
-    "w-full bg-white dark:bg-white/[0.06] border border-slate-300 dark:border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 dark:focus:border-sky-400/40 focus:ring-2 focus:ring-sky-500/20 dark:focus:ring-sky-400/20 transition-all duration-300 appearance-none cursor-pointer";
+    "w-full bg-white dark:bg-[#0f1729] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 dark:focus:border-sky-400/40 focus:ring-2 focus:ring-sky-500/20 dark:focus:ring-sky-400/20 transition-all duration-300 appearance-none cursor-pointer [color-scheme:dark]";
 
   /* ── Render ─────────────────────────────────────────────────────── */
 
@@ -237,9 +237,9 @@ export default function ContactWidget() {
                         onChange={handleChange}
                         className={selectClass}
                       >
-                        <option value="">Service Interested In...</option>
+                        <option value="" className="bg-white dark:bg-[#0f1729] dark:text-white">Service Interested In...</option>
                         {SERVICE_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
+                          <option key={opt} value={opt} className="bg-white dark:bg-[#0f1729] dark:text-white">{opt}</option>
                         ))}
                       </select>
                       <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
@@ -336,7 +336,7 @@ export default function ContactWidget() {
             </p>
             <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">Click to get started</p>
             {/* Small arrow pointing down */}
-            <div className="absolute -bottom-1.5 right-6 h-3 w-3 rotate-45 border-r border-b border-slate-200 dark:border-sky-500/15 bg-white dark:bg-[#020617]/95" />
+            <div className="absolute -bottom-1.5 right-6 h-3 w-3 rotate-45 border-r border-b" style={{ borderColor: 'var(--card-border)', background: 'var(--bg-primary)' }} />
           </motion.div>
         )}
       </AnimatePresence>

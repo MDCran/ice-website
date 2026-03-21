@@ -30,7 +30,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 
 /* ─── Search Modal ─────────────────────────────────────────────────────── */
 
-export default function SearchModal() {
+export default function SearchModal({ items }: { items?: SearchItem[] } = {}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -63,7 +63,7 @@ export default function SearchModal() {
   const results = useMemo(() => {
     if (!query.trim()) return [];
     const lower = query.toLowerCase();
-    return searchIndex.filter(
+    return (items ?? searchIndex).filter(
       (item) =>
         item.title.toLowerCase().includes(lower) ||
         item.description.toLowerCase().includes(lower) ||

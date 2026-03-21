@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/zeroDay/AppData/Local/Temp/claude/P--international-computer-exchange-repos-ICE-Website/6ac32b0c-b06d-4ef7-8b82-cb4fe5e0df57/**)",
+      "Bash(done)",
+      "Bash(find P:/international_computer_exchange/repos/ICE-Website/src/app/admin -name *.tsx -o -name *.ts)",
+      "Bash(ls \"P:/international_computer_exchange/repos/ICE-Website/src/app/\\(public\\)/\")"
+    ]
+  }
+}

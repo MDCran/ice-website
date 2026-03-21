@@ -210,7 +210,7 @@ export const searchIndex: SearchItem[] = [
   {
     title: "Why ICE",
     description:
-      "IBM Business Partner since 1990. 35+ years of experience, 730+ successful projects, 198+ satisfied clients.",
+      "IBM Business Partner since 1990. 35+ years of experience, 1,200+ successful projects, 500+ satisfied clients.",
     url: "/why-ice",
     category: "Pages",
     keywords: ["about", "why", "experience", "history", "team"],
@@ -220,7 +220,7 @@ export const searchIndex: SearchItem[] = [
   {
     title: "Contact Us",
     description:
-      "Get in touch with ICE for enterprise technology solutions. 561-394-9188 or sales@icesales.com.",
+      "Get in touch with ICE for enterprise technology solutions. 1-800-786-9188 or info@icesales.com.",
     url: "/contact",
     category: "Pages",
     keywords: ["contact", "phone", "email", "consultation", "quote"],
@@ -244,61 +244,4 @@ export const searchIndex: SearchItem[] = [
     keywords: ["sms", "text", "opt-in", "opt-out", "ringcentral"],
   },
 
-  // Resources
-  {
-    title: "Resources",
-    description:
-      "Browse white papers, case studies, architecture guides, and technical documentation from ICE.",
-    url: "/resources",
-    category: "Pages",
-    keywords: ["resources", "whitepaper", "case study", "documentation", "pdf"],
-  },
-  {
-    title: "High-Security Data Centers",
-    description:
-      "White paper on ICE's SOC 1 SSAE 18 Type II certified data center facilities and infrastructure.",
-    url: "/resources",
-    category: "Resources",
-    keywords: ["data center", "soc", "ssae", "whitepaper", "facility"],
-  },
-  {
-    title: "Cloud Migration Best Practices",
-    description:
-      "Case study documenting seamless migration of legacy AS/400 workloads to managed cloud hosting.",
-    url: "/resources",
-    category: "Resources",
-    keywords: ["migration", "as400", "case study", "legacy"],
-  },
-  {
-    title: "IBM i Security Hardening Guide",
-    description:
-      "Technical documentation for hardening IBM i environments including exit point monitoring and compliance.",
-    url: "/resources",
-    category: "Resources",
-    keywords: ["ibm i", "security", "hardening", "exit point", "compliance"],
-  },
-  {
-    title: "Disaster Recovery Planning Template",
-    description:
-      "Architecture guide for enterprise disaster recovery planning with RTO/RPO analysis.",
-    url: "/resources",
-    category: "Resources",
-    keywords: ["disaster recovery", "template", "rto", "rpo", "planning"],
-  },
-  {
-    title: "Enterprise Hybrid Cloud Architecture",
-    description:
-      "White paper on designing hybrid cloud infrastructure bridging IBM Power with public cloud.",
-    url: "/resources",
-    category: "Resources",
-    keywords: ["hybrid cloud", "architecture", "ibm power", "whitepaper"],
-  },
-  {
-    title: "Ransomware Recovery Playbook",
-    description:
-      "Technical playbook for ransomware recovery using immutable backups and air-gapped storage.",
-    url: "/resources",
-    category: "Resources",
-    keywords: ["ransomware", "playbook", "immutable", "air-gapped"],
-  },
 ];
