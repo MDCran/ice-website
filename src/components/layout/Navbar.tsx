@@ -402,14 +402,14 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
           <div className="flex items-center gap-1.5 lg:hidden">
             <ButtonUtility
               color="tertiary"
-              size="md"
+              size="sm"
               icon={SearchLg}
               onClick={openSearch}
               aria-label="Search"
             />
             <ButtonUtility
               color="tertiary"
-              size="md"
+              size="sm"
               icon={mobileOpen ? XClose : Menu02}
               onClick={() => setMobileOpen((prev) => !prev)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
