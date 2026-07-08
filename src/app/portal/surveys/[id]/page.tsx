@@ -6,17 +6,27 @@ import { createClient } from "@/lib/supabase/client";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import ContactSelector from "@/components/portal/ContactSelector";
 import {
-  Loader2,
   Check,
-  RotateCcw,
+  RefreshCcw01,
   ArrowLeft,
   ArrowRight,
   ChevronUp,
   ChevronDown,
-  Star,
+  Star01,
   AlertCircle,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { Input } from "@/components/base/input/input";
+import { Label } from "@/components/base/input/label";
+import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
+import { NativeSelect } from "@/components/base/select/select-native";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
+import { cx } from "@/utils/cx";
 import { motion, AnimatePresence } from "motion/react";
 import type { Survey, SurveyQuestion } from "@/lib/types/database";
 
@@ -32,13 +42,14 @@ function ShortTextQuestion({
   onChange: (v: string) => void;
 }) {
   return (
-    <input
-      type="text"
+    <Input
+      size="md"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={onChange}
       autoFocus
-      className="w-full max-w-lg px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all text-lg"
       placeholder="Type your answer..."
+      aria-label="Your answer"
+      className="max-w-lg"
     />
   );
 }
@@ -51,13 +62,15 @@ function LongTextQuestion({
   onChange: (v: string) => void;
 }) {
   return (
-    <textarea
+    <TextArea
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={onChange}
       autoFocus
       rows={5}
-      className="w-full max-w-lg px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all resize-none"
       placeholder="Type your answer..."
+      aria-label="Your answer"
+      className="max-w-lg"
+      textAreaClassName="resize-none"
     />
   );
 }
@@ -77,41 +90,21 @@ function MultipleChoiceQuestion({
 
   if (maxSelections === 1) {
     return (
-      <div className="space-y-3 max-w-lg">
+      <RadioGroup
+        aria-label="Answer options"
+        value={selected[0] ?? null}
+        onChange={(v) => onChange(JSON.stringify([v]))}
+        className="max-w-lg gap-3"
+      >
         {options.map((option) => (
-          <label
+          <RadioButton
             key={option}
-            className={cn(
-              "flex items-center gap-4 px-5 py-4 rounded-xl border cursor-pointer transition-all",
-              selected.includes(option)
-                ? "bg-sky-500/10 border-sky-400/40 text-white"
-                : "bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.06]"
-            )}
-          >
-            <input
-              type="radio"
-              name="mc-choice"
-              value={option}
-              checked={selected.includes(option)}
-              onChange={() => onChange(JSON.stringify([option]))}
-              className="sr-only"
-            />
-            <div
-              className={cn(
-                "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
-                selected.includes(option)
-                  ? "border-sky-400 bg-sky-500"
-                  : "border-white/20"
-              )}
-            >
-              {selected.includes(option) && (
-                <div className="w-2 h-2 rounded-full bg-white" />
-              )}
-            </div>
-            <span className="text-sm">{option}</span>
-          </label>
+            value={option}
+            label={option}
+            className="w-full cursor-pointer rounded-xl bg-primary p-4 ring-1 ring-secondary ring-inset transition duration-100 ease-linear selected:ring-2 selected:ring-brand hover:bg-primary_hover"
+          />
         ))}
-      </div>
+      </RadioGroup>
     );
   }
 
@@ -127,40 +120,20 @@ function MultipleChoiceQuestion({
   };
 
   return (
-    <div className="space-y-3 max-w-lg">
+    <div className="max-w-lg space-y-3">
       {maxSelections > 1 && (
-        <p className="text-xs text-slate-500 mb-2">
+        <p className="mb-2 text-sm text-tertiary">
           Select up to {maxSelections} options
         </p>
       )}
       {options.map((option) => (
-        <label
+        <Checkbox
           key={option}
-          className={cn(
-            "flex items-center gap-4 px-5 py-4 rounded-xl border cursor-pointer transition-all",
-            selected.includes(option)
-              ? "bg-sky-500/10 border-sky-400/40 text-white"
-              : "bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.06]"
-          )}
-        >
-          <input
-            type="checkbox"
-            checked={selected.includes(option)}
-            onChange={() => toggleOption(option)}
-            className="sr-only"
-          />
-          <div
-            className={cn(
-              "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-              selected.includes(option)
-                ? "border-sky-400 bg-sky-500"
-                : "border-white/20"
-            )}
-          >
-            {selected.includes(option) && <Check size={12} className="admin-text" />}
-          </div>
-          <span className="text-sm">{option}</span>
-        </label>
+          isSelected={selected.includes(option)}
+          onChange={() => toggleOption(option)}
+          label={option}
+          className="w-full cursor-pointer rounded-xl bg-primary p-4 ring-1 ring-secondary ring-inset transition duration-100 ease-linear selected:ring-2 selected:ring-brand hover:bg-primary_hover"
+        />
       ))}
     </div>
   );
@@ -174,16 +147,18 @@ function YesNoQuestion({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-4 max-w-lg">
+    <div className="flex max-w-lg items-center gap-4">
       {["Yes", "No"].map((option) => (
         <button
           key={option}
+          type="button"
           onClick={() => onChange(option)}
-          className={cn(
-            "flex-1 py-5 rounded-xl border text-lg font-medium transition-all",
+          aria-pressed={value === option}
+          className={cx(
+            "flex-1 cursor-pointer rounded-xl py-5 text-lg font-semibold ring-inset outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
             value === option
-              ? "bg-sky-500/10 border-sky-400/40 text-white"
-              : "bg-white/[0.03] border-white/10 text-slate-400 hover:bg-white/[0.06] hover:text-white"
+              ? "bg-brand-primary_alt text-brand-secondary ring-2 ring-brand"
+              : "bg-primary text-secondary ring-1 ring-secondary hover:bg-primary_hover"
           )}
         >
           {option}
@@ -213,31 +188,33 @@ function RankingQuestion({
   };
 
   return (
-    <div className="space-y-2 max-w-lg">
+    <div className="max-w-lg space-y-2">
       {items.map((item, index) => (
         <div
           key={item}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10"
+          className="flex items-center gap-3 rounded-lg bg-primary px-4 py-3 shadow-xs ring-1 ring-secondary ring-inset"
         >
-          <span className="w-7 h-7 rounded-lg bg-sky-500/10 flex items-center justify-center text-xs font-bold text-sky-400 shrink-0">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-brand-primary text-xs font-semibold text-brand-secondary">
             {index + 1}
           </span>
-          <span className="flex-1 text-sm admin-text">{item}</span>
+          <span className="flex-1 text-sm font-medium text-primary">{item}</span>
           <div className="flex flex-col gap-0.5">
-            <button
+            <ButtonUtility
+              size="xs"
+              color="tertiary"
+              icon={ChevronUp}
+              aria-label={`Move ${item} up`}
+              isDisabled={index === 0}
               onClick={() => moveItem(index, "up")}
-              disabled={index === 0}
-              className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
-            >
-              <ChevronUp size={14} />
-            </button>
-            <button
+            />
+            <ButtonUtility
+              size="xs"
+              color="tertiary"
+              icon={ChevronDown}
+              aria-label={`Move ${item} down`}
+              isDisabled={index === items.length - 1}
               onClick={() => moveItem(index, "down")}
-              disabled={index === items.length - 1}
-              className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
-            >
-              <ChevronDown size={14} />
-            </button>
+            />
           </div>
         </div>
       ))}
@@ -277,86 +254,54 @@ function PhoneTimeDayQuestion({
     return `${h}:${min} ${period}`;
   });
 
+  const timeOptions = [
+    { label: "Select", value: "" },
+    ...times.map((t) => ({ label: t, value: t })),
+  ];
+
   return (
-    <div className="space-y-4 max-w-lg">
-      <div>
-        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-          Contact Name
-        </label>
-        <input
-          type="text"
-          value={data.name}
-          onChange={(e) => update({ name: e.target.value })}
-          className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-          placeholder="Full name"
-        />
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-          Phone Number
-        </label>
-        <input
-          type="tel"
-          value={data.phone}
-          onChange={(e) => update({ phone: e.target.value })}
-          className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-          placeholder="(555) 123-4567"
-        />
-      </div>
+    <div className="max-w-lg space-y-4">
+      <Input
+        label="Contact Name"
+        value={data.name}
+        onChange={(v) => update({ name: v })}
+        placeholder="Full name"
+      />
+      <Input
+        label="Phone Number"
+        type="tel"
+        value={data.phone}
+        onChange={(v) => update({ phone: v })}
+        placeholder="(555) 123-4567"
+      />
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Available From
-          </label>
-          <select
-            value={data.startTime}
-            onChange={(e) => update({ startTime: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all appearance-none"
-          >
-            <option value="" className="bg-slate-900">
-              Select
-            </option>
-            {times.map((t) => (
-              <option key={t} value={t} className="bg-slate-900">
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Available Until
-          </label>
-          <select
-            value={data.endTime}
-            onChange={(e) => update({ endTime: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all appearance-none"
-          >
-            <option value="" className="bg-slate-900">
-              Select
-            </option>
-            {times.map((t) => (
-              <option key={t} value={t} className="bg-slate-900">
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
+        <NativeSelect
+          label="Available From"
+          value={data.startTime}
+          onChange={(e) => update({ startTime: e.target.value })}
+          options={timeOptions}
+        />
+        <NativeSelect
+          label="Available Until"
+          value={data.endTime}
+          onChange={(e) => update({ endTime: e.target.value })}
+          options={timeOptions}
+        />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-          Available Days
-        </label>
-        <div className="flex flex-wrap gap-2">
+        <p className="mb-2 text-sm font-medium text-secondary">Available Days</p>
+        <div role="group" aria-label="Available days" className="flex flex-wrap gap-2">
           {weekdays.map((day) => (
             <button
               key={day}
+              type="button"
               onClick={() => toggleDay(day)}
-              className={cn(
-                "px-3 py-2 rounded-lg text-sm font-medium transition-all",
+              aria-pressed={(data.days || []).includes(day)}
+              className={cx(
+                "cursor-pointer rounded-lg px-3 py-2 text-sm font-medium ring-inset outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
                 (data.days || []).includes(day)
-                  ? "bg-sky-500/10 border border-sky-400/40 text-sky-400"
-                  : "bg-white/[0.03] border border-white/10 text-slate-400 hover:text-white"
+                  ? "bg-brand-primary text-brand-secondary ring-1 ring-brand"
+                  : "bg-primary text-secondary ring-1 ring-primary hover:bg-primary_hover"
               )}
             >
               {day}
@@ -382,16 +327,18 @@ function StarRatingQuestion({
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
+          type="button"
           onClick={() => onChange(String(star))}
-          className="p-1 transition-transform hover:scale-110"
+          aria-label={`${star} star${star !== 1 ? "s" : ""}`}
+          className="cursor-pointer rounded-md p-1 outline-focus-ring transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2"
         >
-          <Star
-            size={36}
-            className={cn(
-              "transition-colors",
+          <Star01
+            aria-hidden="true"
+            className={cx(
+              "size-9 transition-colors",
               star <= rating
-                ? "text-amber-400 fill-amber-400"
-                : "text-slate-600 hover:text-amber-400/50"
+                ? "fill-utility-yellow-400 text-utility-yellow-400"
+                : "text-fg-quaternary hover:text-utility-yellow-400"
             )}
           />
         </button>
@@ -681,7 +628,7 @@ export default function SurveyPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 size={24} className="animate-spin text-slate-400" />
+        <LoadingIndicator type="line-spinner" size="md" />
       </div>
     );
   }
@@ -689,13 +636,11 @@ export default function SurveyPage() {
   if (submitted) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4">
-          <Check size={32} className="text-emerald-400" />
-        </div>
-        <h2 className="text-xl font-bold admin-text mb-2">
+        <FeaturedIcon color="success" theme="light" size="xl" icon={Check} className="mb-4" />
+        <h2 className="mb-2 text-xl font-semibold text-primary">
           Survey Submitted Successfully
         </h2>
-        <p className="text-sm text-slate-400">
+        <p className="text-md text-tertiary">
           Thank you for your responses. Redirecting...
         </p>
       </div>
@@ -705,14 +650,16 @@ export default function SurveyPage() {
   if (error && !survey) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <AlertCircle size={32} className="text-red-400 mb-4" />
-        <p className="text-sm text-slate-400">{error}</p>
-        <button
+        <FeaturedIcon color="error" theme="light" size="xl" icon={AlertCircle} className="mb-4" />
+        <p className="text-md text-tertiary">{error}</p>
+        <Button
+          color="link-color"
+          size="md"
+          className="mt-4"
           onClick={() => router.push("/portal/surveys")}
-          className="mt-4 text-sm text-sky-400 hover:text-sky-300 transition-colors"
         >
           Back to Surveys
-        </button>
+        </Button>
       </div>
     );
   }
@@ -724,39 +671,30 @@ export default function SurveyPage() {
     totalScreens > 1 ? (currentIndex / (totalScreens - 1)) * 100 : 0;
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col min-h-[calc(100vh-8rem)]">
+    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-3xl flex-col">
       {/* Progress bar */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-slate-500">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-medium text-tertiary">
             {currentIndex === 0
               ? "Getting started"
               : `Question ${currentIndex} of ${questions.length}`}
           </span>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            {saving && (
-              <span className="flex items-center gap-1.5 text-amber-400">
-                <Loader2 size={10} className="animate-spin" />
-                Saving
-              </span>
-            )}
+          <div className="flex items-center gap-2 text-sm text-tertiary">
+            {saving && <span className="animate-pulse">Saving...</span>}
             {!saving && lastSaved && (
-              <span className="text-emerald-400">Saved</span>
+              <span className="flex items-center gap-1 text-fg-success-primary">
+                <Check aria-hidden="true" className="size-3.5 stroke-[2.5px]" />
+                Saved
+              </span>
             )}
           </div>
         </div>
-        <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
-          <motion.div
-            className="h-full bg-sky-500 rounded-full"
-            initial={false}
-            animate={{ width: `${progressPercent}%` }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-          />
-        </div>
+        <ProgressBarBase value={progressPercent} className="h-2" />
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-1 flex-col items-center justify-center">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentIndex}
@@ -770,18 +708,16 @@ export default function SurveyPage() {
             {currentIndex === 0 ? (
               /* Contact Selector Screen */
               <div className="text-center">
-                <h2 className="text-2xl font-bold admin-text mb-2">
+                <h2 className="mb-2 text-display-xs font-semibold text-primary">
                   {survey?.title}
                 </h2>
                 {survey?.description && (
-                  <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                  <p className="mx-auto mb-8 max-w-md text-md text-tertiary">
                     {survey.description}
                   </p>
                 )}
-                <div className="max-w-md mx-auto text-left">
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                    Who is filling out this survey?
-                  </label>
+                <div className="mx-auto max-w-md text-left">
+                  <Label className="mb-3">Who is filling out this survey?</Label>
                   <ContactSelector
                     clientAccountId={accountId}
                     value={contactId}
@@ -793,14 +729,14 @@ export default function SurveyPage() {
             ) : currentQuestion ? (
               /* Question Screen */
               <div>
-                <h2 className="text-xl font-bold admin-text mb-2">
+                <h2 className="mb-2 text-xl font-semibold text-primary">
                   {currentQuestion.question_text}
                   {currentQuestion.is_required && (
-                    <span className="text-red-400 ml-1">*</span>
+                    <span className="ml-1 text-brand-tertiary">*</span>
                   )}
                 </h2>
                 {currentQuestion.description && (
-                  <p className="text-sm text-slate-400 mb-6">
+                  <p className="mb-6 text-md text-tertiary">
                     {currentQuestion.description}
                   </p>
                 )}
@@ -813,59 +749,40 @@ export default function SurveyPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4 mt-4">
-          <AlertCircle size={16} />
+        <div className="mt-4 mb-4 flex items-center gap-2 rounded-lg bg-error-primary p-3 text-sm font-medium text-error-primary ring-1 ring-error_subtle ring-inset">
+          <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
           {error}
         </div>
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-6 pb-4 border-t border-white/5 mt-8">
+      <div className="mt-8 flex items-center justify-between border-t border-secondary pt-6 pb-4">
         <div className="flex items-center gap-2">
           {currentIndex > 0 && (
-            <button
-              onClick={goBack}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-sm font-medium"
-            >
-              <ArrowLeft size={14} />
+            <Button size="md" color="secondary" iconLeading={ArrowLeft} onClick={goBack}>
               Back
-            </button>
+            </Button>
           )}
-          <button
-            onClick={handleReset}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-slate-500 hover:text-slate-300 transition-colors text-sm"
-          >
-            <RotateCcw size={14} />
+          <Button size="md" color="tertiary" iconLeading={RefreshCcw01} onClick={handleReset}>
             Reset
-          </button>
+          </Button>
         </div>
 
         {isLastQuestion ? (
-          <button
+          <Button
+            size="md"
+            color="primary"
+            iconLeading={Check}
+            isLoading={submitting}
+            showTextWhileLoading
             onClick={handleSubmit}
-            disabled={submitting}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
           >
-            {submitting ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Check size={16} />
-                Submit Survey
-              </>
-            )}
-          </button>
+            {submitting ? "Submitting..." : "Submit Survey"}
+          </Button>
         ) : (
-          <button
-            onClick={goNext}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold transition-colors"
-          >
+          <Button size="md" color="primary" iconTrailing={ArrowRight} onClick={goNext}>
             Next
-            <ArrowRight size={14} />
-          </button>
+          </Button>
         )}
       </div>
     </div>

@@ -2,7 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X, Loader2, AlertCircle } from "lucide-react";
+import { AlertCircle, Plus } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { CloseButton } from "@/components/base/buttons/close-button";
+import { Input } from "@/components/base/input/input";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -73,170 +77,116 @@ export default function CreateClientModal() {
     }
   };
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold transition-colors cursor-pointer"
-      >
-        <Plus size={16} />
-        Create Client
-      </button>
-    );
-  }
-
   return (
     <>
-      <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-        onClick={() => setOpen(false)}
-      />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-3xl admin-card rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold admin-text">Create Client</h2>
-            <button
-              onClick={() => setOpen(false)}
-              className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-          </div>
+      <Button color="primary" size="md" iconLeading={Plus} onClick={() => setOpen(true)}>
+        Create Client
+      </Button>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                <AlertCircle size={16} />
-                {error}
+      <ModalOverlay isDismissable isOpen={open} onOpenChange={setOpen}>
+        <Modal className="w-full max-w-3xl">
+          <Dialog>
+            <div className="flex items-start justify-between gap-4 px-6 pt-6">
+              <div>
+                <h2 className="text-lg font-semibold text-primary">Create Client</h2>
+                <p className="text-sm text-tertiary">Set up a new client account and portal login.</p>
               </div>
-            )}
+              <CloseButton size="sm" onClick={() => setOpen(false)} />
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left column — Company Info */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold admin-text">Company Info</h3>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-6 pt-5 pb-6">
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg bg-utility-red-50 px-3.5 py-2.5 text-sm text-utility-red-700 ring-1 ring-utility-red-200 ring-inset">
+                  <AlertCircle className="size-4 shrink-0 text-utility-red-500" />
+                  {error}
+                </div>
+              )}
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Company Name *
-                  </label>
-                  <input
-                    type="text"
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Left column — Company Info */}
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-sm font-semibold text-primary">Company Info</h3>
+
+                  <Input
+                    label="Company Name"
+                    isRequired
                     value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
+                    onChange={setCompanyName}
                     placeholder="Acme Corporation"
-                    required
-                    className="w-full px-4 py-3 rounded-xl admin-input placeholder:text-slate-500 focus:outline-none transition-all"
                   />
-                </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Address
-                  </label>
-                  <input
-                    type="text"
+                  <Input
+                    label="Address"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={setAddress}
                     placeholder="123 Main St, City, State"
-                    className="w-full px-4 py-3 rounded-xl admin-input placeholder:text-slate-500 focus:outline-none transition-all"
                   />
-                </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Phone
-                  </label>
-                  <input
-                    type="text"
+                  <Input
+                    label="Phone"
+                    type="tel"
                     value={phone}
-                    onChange={(e) => setPhone(formatPhone(e.target.value))}
+                    onChange={(value) => setPhone(formatPhone(value))}
                     placeholder="(555) 555-5555"
-                    className="w-full px-4 py-3 rounded-xl admin-input placeholder:text-slate-500 focus:outline-none transition-all"
                   />
-                </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Website
-                  </label>
-                  <input
-                    type="text"
+                  <Input
+                    label="Website"
                     value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
+                    onChange={setWebsite}
                     placeholder="https://example.com"
-                    className="w-full px-4 py-3 rounded-xl admin-input placeholder:text-slate-500 focus:outline-none transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Right column — Portal Login */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold admin-text">Portal Login</h3>
-                <p className="text-xs text-slate-500">
-                  This creates the company login. Individual users are managed via the client&apos;s contacts.
-                </p>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    value={portalEmail}
-                    onChange={(e) => setPortalEmail(e.target.value)}
-                    placeholder="user@company.com"
-                    required
-                    className="w-full px-4 py-3 rounded-xl admin-input placeholder:text-slate-500 focus:outline-none transition-all"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Password *
-                  </label>
-                  <input
-                    type="password"
-                    value={portalPassword}
-                    onChange={(e) => setPortalPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    minLength={8}
-                    className="w-full px-4 py-3 rounded-xl admin-input placeholder:text-slate-500 focus:outline-none transition-all"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Minimum 8 characters
+                {/* Right column — Portal Login */}
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-sm font-semibold text-primary">Portal Login</h3>
+                  <p className="text-xs text-tertiary">
+                    This creates the company login. Individual users are managed via the client&apos;s contacts.
                   </p>
+
+                  <Input
+                    label="Email"
+                    type="email"
+                    isRequired
+                    value={portalEmail}
+                    onChange={setPortalEmail}
+                    placeholder="user@company.com"
+                  />
+
+                  <Input
+                    label="Password"
+                    type="password"
+                    isRequired
+                    minLength={8}
+                    value={portalPassword}
+                    onChange={setPortalPassword}
+                    placeholder="••••••••"
+                    hint="Minimum 8 characters"
+                  />
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Client"
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  type="submit"
+                  color="primary"
+                  size="md"
+                  className="flex-1"
+                  isDisabled={isPending}
+                  isLoading={isPending}
+                  showTextWhileLoading
+                >
+                  {isPending ? "Creating..." : "Create Client"}
+                </Button>
+                <Button type="button" color="secondary" size="md" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
     </>
   );
 }

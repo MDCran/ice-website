@@ -1,116 +1,111 @@
 "use client";
 
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, type FC, type FormEvent } from "react";
 import Link from "next/link";
 import {
-  Mail,
-  Phone,
-  Clock,
-  MapPin,
-  Send,
-  CheckCircle,
   AlertCircle,
-  ChevronRight,
+  CheckCircle,
+  Clock,
+  Mail01,
+  MarkerPin02,
+  Phone01,
+  Send01,
   Zap,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { motion } from "motion/react";
-import { FloatingInput, FloatingTextarea, FloatingSelect } from "@/components/ui/FloatingLabelInput";
+} from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { PhoneField, ServiceSelect, groupServiceOptions } from "@/components/ui/ContactWidget";
+import { pushEvent } from "@/lib/analytics";
 import { resolveIcon } from "@/lib/iconMap";
+import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
 
-const DEFAULT_SERVICE_OPTIONS = [
-  "Managed Cloud Services",
-  "Managed Data Protection",
-  "Managed Security",
-  "Managed Services",
-  "Hardware & Resale",
-  "Other",
-];
+type IconComponent = FC<{ className?: string }>;
 
-function isUSHoliday(date: Date): boolean {
-  const m = date.getMonth();
-  const d = date.getDate();
-  const dow = date.getDay();
-  if (m === 0 && d === 1) return true;
-  if (m === 6 && d === 4) return true;
-  if (m === 11 && d === 25) return true;
-  if (m === 0 && dow === 1 && d >= 15 && d <= 21) return true;
-  if (m === 1 && dow === 1 && d >= 15 && d <= 21) return true;
-  if (m === 4 && dow === 1 && d >= 25) return true;
-  if (m === 8 && dow === 1 && d <= 7) return true;
-  if (m === 10 && dow === 4 && d >= 22 && d <= 28) return true;
-  return false;
+/** Map CMS icon-name strings to Untitled UI icons; fall back to the shared icon map. */
+const UUI_ICON_MAP: Record<string, IconComponent> = {
+  MapPin: MarkerPin02,
+  Mail: Mail01,
+  Phone: Phone01,
+  Clock: Clock,
+};
+
+function resolveContactIcon(icon: unknown): IconComponent {
+  if (typeof icon === "string") {
+    return UUI_ICON_MAP[icon] ?? resolveIcon(icon);
+  }
+  return icon as IconComponent;
 }
 
-function getBusinessStatus(): { isOpen: boolean; label: string; note?: string } {
-  const now = new Date();
-  const et = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-  const day = et.getDay();
-  const hour = et.getHours();
-  const holiday = isUSHoliday(et);
-  const isWeekday = day >= 1 && day <= 5;
-  const isDuringHours = hour >= 9 && hour < 17;
-  if (holiday) return { isOpen: false, label: "Closed", note: "Closed for holiday" };
-  if (isWeekday && isDuringHours) return { isOpen: true, label: "Open Now" };
-  return { isOpen: false, label: "Closed" };
+/** Display phone-style values with a leading "+" (e.g. "+1-800-786-9188"). */
+function withPlusPrefix(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return /^\d/.test(trimmed) ? `+${trimmed}` : trimmed;
 }
 
 const DEFAULT_CONTACT_INFO = [
   {
-    icon: MapPin,
+    icon: MarkerPin02,
     label: "Address",
     value: "1279 W Palmetto Park Rd #272415",
     subValue: "Boca Raton, FL 33427",
     href: null,
   },
   {
-    icon: Mail,
+    icon: Mail01,
     label: "Email",
     value: "info@icesales.com",
     href: "mailto:info@icesales.com",
   },
   {
-    icon: Phone,
+    icon: Phone01,
     label: "Phone",
-    value: "1-800-786-9188",
-    href: "tel:18007869188",
+    value: "+1-800-786-9188",
+    href: "tel:+18007869188",
   },
   {
     icon: Clock,
     label: "Hours",
-    value: "Mon \u2013 Fri, 9:00 AM \u2013 5:00 PM ET",
+    value: "Mon – Fri, 9:00 AM – 5:00 PM ET",
     href: null,
-    showStatus: true,
   },
 ];
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: "easeOut" as const },
-  }),
-};
+export default function ContactPage({
+  cmsData,
+  orderedSections,
+}: {
+  cmsData?: Record<string, any>;
+  orderedSections?: CMSRenderableSection[];
+}) {
+  const hero = cmsData?.hero ?? {};
+  const intro = cmsData?.intro ?? {};
+  // CMS may provide a flat list via `service_options.options`; group it into the
+  // ICE pillars (falls back to the full accurate catalog when absent).
+  const serviceGroups = groupServiceOptions(cmsData?.service_options?.options);
+  const contactItems = (cmsData?.contact_info?.items ?? DEFAULT_CONTACT_INFO).map((item: any) => {
+    const isPhone = item.label === "Phone" || (typeof item.href === "string" && item.href.startsWith("tel:"));
+    return {
+      ...item,
+      icon: resolveContactIcon(item.icon),
+      subValue: item.subValue ?? item.sub_value,
+      value: isPhone ? withPlusPrefix(item.value) : item.value,
+    };
+  });
+  // Exclude the sections already rendered above by this page. Also skip any
+  // contact-detail sections so a CMS-managed block can never duplicate the
+  // address / email / phone cards that are rendered here directly.
+  const EXCLUDED_KEYS = ["hero", "intro", "contact_info", "service_options"];
+  const extraSections = (orderedSections ?? []).filter((section) => {
+    const key = (section.section_key ?? "").toLowerCase();
+    if (EXCLUDED_KEYS.includes(key)) return false;
+    return !key.includes("contact") && !key.includes("get_in_touch");
+  });
 
-function useBusinessStatus() {
-  const [status, setStatus] = useState<{ isOpen: boolean; label: string; note?: string }>({ isOpen: false, label: "" });
-  useEffect(() => {
-    setStatus(getBusinessStatus());
-    const timer = setInterval(() => setStatus(getBusinessStatus()), 60_000);
-    return () => clearInterval(timer);
-  }, []);
-  return status;
-}
-
-export default function ContactPage({ cmsData }: { cmsData?: Record<string, any> }) {
-  const serviceOptions = cmsData?.service_options?.options ?? DEFAULT_SERVICE_OPTIONS;
-  const contactItems = (cmsData?.contact_info?.items ?? DEFAULT_CONTACT_INFO).map((item: any) => ({
-    ...item,
-    icon: typeof item.icon === "string" ? resolveIcon(item.icon) : item.icon,
-  }));
-
-  const bizStatus = useBusinessStatus();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -123,14 +118,8 @@ export default function ContactPage({ cmsData }: { cmsData?: Record<string, any>
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [statusMessage, setStatusMessage] = useState("");
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const target = e.target;
-    const value = target instanceof HTMLInputElement && target.type === "checkbox"
-      ? target.checked
-      : target.value;
-    setFormData((prev) => ({ ...prev, [target.name]: value }));
+  const handleFieldChange = (name: keyof typeof formData) => (value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -147,9 +136,10 @@ export default function ContactPage({ cmsData }: { cmsData?: Record<string, any>
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Something went wrong. Please try again.");
+        throw new Error(data?.error || "Something went wrong. Please try again.");
       }
 
+      pushEvent("contact_submitted", { form: "contact_page", service: formData.service });
       setStatus("success");
       setStatusMessage("Your message has been sent successfully. We will get back to you shortly.");
       setFormData({
@@ -170,243 +160,204 @@ export default function ContactPage({ cmsData }: { cmsData?: Record<string, any>
   };
 
   return (
-    <main className="min-h-screen">
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[400px] flex items-center justify-center overflow-hidden">
-        <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" poster="/images/hero-poster.webp">
-          <source src="/videos/hero.mp4" type="video/mp4" />
-        </video>
-        <div className="hero-overlay absolute inset-0" />
-        <div className="relative z-10 text-center pt-20 lg:pt-24">
-          <motion.nav
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="flex items-center justify-center gap-2 text-sm text-slate-400 mb-4"
-          >
-            <Link href="/" className="hover:text-sky-400 transition-colors">Home</Link>
-            <ChevronRight className="h-4 w-4" />
-            <span className="text-sky-400">Contact Us</span>
-          </motion.nav>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl md:text-5xl font-bold"
-          >
-            <span className="gradient-text">Contact Us</span>
-          </motion.h1>
-        </div>
-      </section>
+    <main className="min-h-screen bg-primary">
+      {/* ── Header + Contact content ─────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+        {/* Techy grid backdrop + brand glow so the hero pops */}
+        <BackgroundPattern
+          pattern="grid"
+          size="lg"
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[46rem] max-w-full -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(4_155_251/0.16),transparent)] blur-2xl"
+        />
 
-      {/* ── Contact Content ───────────────────────────────────────────────── */}
-      <section className="section-padding grid-pattern">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-            {/* Left: Contact Info */}
-            <motion.div
-              className="lg:col-span-2 space-y-6"
-              initial="hidden"
-              animate="visible"
-            >
-              <motion.div custom={0} variants={fadeUp}>
-                <h2 className="text-2xl font-bold text-white mb-2">Get in Touch</h2>
-                <p className="text-slate-400 leading-relaxed">
-                  We&apos;d love to hear from you. Reach out to our team for enterprise
-                  technology solutions, pricing, or any questions.
+        <div className="relative container mx-auto max-w-container px-4 md:px-8">
+          {/* Heading */}
+          <div className="flex w-full max-w-3xl flex-col">
+            <span className="text-sm font-semibold text-brand-secondary md:text-md">Contact us</span>
+            <h1 className="mt-3 text-display-md font-semibold text-primary md:text-display-lg">
+              {hero.headline ?? "Contact Us"}
+            </h1>
+            {hero.subheadline && (
+              <p className="mt-4 text-lg text-tertiary md:mt-6 md:text-xl">{hero.subheadline}</p>
+            )}
+          </div>
+
+          <div className="mx-auto mt-12 grid max-w-xl grid-cols-1 items-start gap-12 md:mt-16 md:gap-16 lg:mx-0 lg:max-w-none lg:grid-cols-2">
+            {/* Left: Contact info */}
+            <div className="flex w-full flex-col">
+              <div>
+                <h2 className="text-display-xs font-semibold text-primary">{intro.heading ?? "Contact Information"}</h2>
+                <p className="mt-2 text-md text-tertiary">
+                  {intro.description ??
+                    "We'd love to hear from you. Reach out to our team for enterprise technology solutions, pricing, or any questions."}
                 </p>
-              </motion.div>
-
-              <div className="space-y-4">
-                {contactItems.map((item: any, i: number) => {
-                  const itemStatus = item.showStatus ? bizStatus : null;
-                  const content = (
-                    <>
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-400/10 text-sky-400 transition-colors group-hover:bg-sky-400/20">
-                        <item.icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">{item.label}</p>
-                        <p className="text-sm text-white font-medium">{item.value}</p>
-                        {item.subValue && <p className="text-xs text-slate-400">{item.subValue}</p>}
-                        {itemStatus && itemStatus.label && (
-                          <>
-                            <div className="flex items-center gap-1.5 mt-1">
-                              <span className={`inline-block h-1.5 w-1.5 rounded-full ${itemStatus.isOpen ? "bg-emerald-400" : "bg-red-400"}`} />
-                              <span className={`text-[10px] font-semibold ${itemStatus.isOpen ? "text-emerald-400" : "text-red-400"}`}>{itemStatus.label}</span>
-                            </div>
-                            {itemStatus.note && <p className="text-[9px] text-slate-500 mt-0.5">{itemStatus.note}</p>}
-                          </>
-                        )}
-                      </div>
-                    </>
-                  );
-
-                  return (
-                    <motion.div key={item.label} custom={i + 1} variants={fadeUp}>
-                      {item.href ? (
-                        <a href={item.href} className="glass-card glint-card rounded-xl p-5 flex items-start gap-4 group block">
-                          {content}
-                        </a>
-                      ) : (
-                        <div className="glass-card rounded-xl p-5 flex items-start gap-4 group">
-                          {content}
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
               </div>
 
-              {/* Response Time Badge */}
-              <motion.div custom={4} variants={fadeUp}>
-                <div className="glass-card rounded-xl p-4 flex items-center gap-3 border-sky-500/15">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-400">
-                    <Zap className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-0.5">Typical Response Time</p>
-                    <p className="text-sm text-white font-bold">2-3 Business Days</p>
-                  </div>
+              <ul className="mt-8 grid w-full grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 md:mt-10 md:gap-y-10">
+                {contactItems.map((item: any) => (
+                  <li key={item.label} className="flex max-w-sm flex-col items-start">
+                    <FeaturedIcon icon={item.icon} size="md" color="brand" theme="light" />
+
+                    <h3 className="mt-3 text-md font-semibold text-primary md:mt-4">{item.label}</h3>
+                    {item.href ? (
+                      <Button href={item.href} color="link-color" size="md" className="mt-1">
+                        {item.value}
+                      </Button>
+                    ) : (
+                      <p className="mt-1 text-md text-tertiary">{item.value}</p>
+                    )}
+                    {item.subValue && <p className="text-md text-tertiary">{item.subValue}</p>}
+                  </li>
+                ))}
+              </ul>
+
+              {/* Response time */}
+              <div className="mt-10 flex items-start gap-4 rounded-xl bg-secondary p-5 md:mt-12">
+                <FeaturedIcon icon={Zap} size="md" color="success" theme="light" />
+                <div>
+                  <p className="text-sm font-semibold text-primary">Typical Response Time</p>
+                  <p className="mt-0.5 text-md text-tertiary">2-3 Business Days</p>
                 </div>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
 
-            {/* Right: Contact Form */}
-            <motion.div
-              className="lg:col-span-3"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <div className="glass-card rounded-2xl p-8 md:p-10">
-                <h3 className="text-xl font-bold text-white mb-6">Send Us a Message</h3>
+            {/* Right: Contact form */}
+            <div className="flex flex-col gap-6 rounded-2xl sm:bg-secondary sm:px-8 sm:py-10">
+              <h2 className="text-display-xs font-semibold text-primary">Send Us a Message</h2>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+                <div className="flex flex-col gap-6">
                   {/* Name & Email */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <FloatingInput
-                      id="name"
+                  <div className="flex flex-col gap-x-8 gap-y-6 sm:flex-row">
+                    <Input
+                      isRequired
+                      validationBehavior="native"
+                      size="md"
                       name="name"
-                      type="text"
-                      required
                       label="Name"
+                      placeholder="John Smith"
                       value={formData.name}
-                      onChange={handleChange}
+                      onChange={handleFieldChange("name")}
+                      wrapperClassName="flex-1"
                     />
-                    <FloatingInput
-                      id="email"
+                    <Input
+                      isRequired
+                      validationBehavior="native"
+                      size="md"
                       name="email"
                       type="email"
-                      required
                       label="Email"
+                      placeholder="john@company.com"
                       value={formData.email}
-                      onChange={handleChange}
+                      onChange={handleFieldChange("email")}
+                      wrapperClassName="flex-1"
                     />
                   </div>
 
                   {/* Company & Phone */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <FloatingInput
-                      id="company"
+                  <div className="flex flex-col gap-x-8 gap-y-6 sm:flex-row">
+                    <Input
+                      size="md"
                       name="company"
-                      type="text"
                       label="Company"
+                      placeholder="Acme Corp"
                       value={formData.company}
-                      onChange={handleChange}
+                      onChange={handleFieldChange("company")}
+                      wrapperClassName="flex-1"
                     />
-                    <FloatingInput
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      label="Phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                    />
+                    <div className="flex-1">
+                      <PhoneField
+                        size="md"
+                        label="Phone number"
+                        value={formData.phone}
+                        onChange={handleFieldChange("phone")}
+                      />
+                    </div>
                   </div>
 
                   {/* Service */}
-                  <FloatingSelect
-                    id="service"
+                  <ServiceSelect
+                    size="md"
                     name="service"
                     label="Service Interested In"
                     value={formData.service}
-                    onChange={handleChange}
-                  >
-                    <option value="" className="bg-[#0f1729] text-white">Select a service...</option>
-                    {serviceOptions.map((opt: string) => (
-                      <option key={opt} value={opt} className="bg-[#0f1729] text-white">{opt}</option>
-                    ))}
-                  </FloatingSelect>
-
-                  {/* Message */}
-                  <FloatingTextarea
-                    id="message"
-                    name="message"
-                    required
-                    rows={5}
-                    label="Message"
-                    value={formData.message}
-                    onChange={handleChange}
+                    onChange={handleFieldChange("service")}
+                    groups={serviceGroups}
                   />
 
-                  {/* SMS Consent */}
-                  <div className="flex items-start gap-3">
-                    <input
-                      id="smsConsent"
-                      name="smsConsent"
-                      type="checkbox"
-                      checked={formData.smsConsent}
-                      onChange={handleChange}
-                      className="mt-1 h-4 w-4 rounded border-white/20 bg-[#0a1020]/50 text-sky-500 focus:ring-sky-500/30 focus:ring-offset-0"
-                    />
-                    <label htmlFor="smsConsent" className="text-xs text-slate-400 leading-relaxed">
-                      I consent to receive SMS text messages from International Computer
-                      Exchange. Message and data rates may apply. Reply STOP to opt out.
-                      See our{" "}
-                      <Link href="/sms-consent" className="text-sky-400 hover:text-sky-300 underline underline-offset-2">
-                        SMS Consent Policy
-                      </Link>.
-                    </label>
+                  {/* Message */}
+                  <TextArea
+                    isRequired
+                    validationBehavior="native"
+                    name="message"
+                    label="Message"
+                    placeholder="Tell us about your project or question..."
+                    rows={5}
+                    value={formData.message}
+                    onChange={handleFieldChange("message")}
+                  />
+
+                  {/* SMS consent */}
+                  <Checkbox
+                    name="smsConsent"
+                    size="md"
+                    aria-label="SMS consent"
+                    isSelected={formData.smsConsent}
+                    onChange={handleFieldChange("smsConsent")}
+                    hint={
+                      <>
+                        I consent to receive SMS text messages from International Computer
+                        Exchange. Message and data rates may apply. Reply STOP to opt out.
+                        See our{" "}
+                        <Link
+                          href="/sms-consent"
+                          className="rounded-xs underline underline-offset-3 outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
+                        >
+                          SMS Consent Policy
+                        </Link>
+                        .
+                      </>
+                    }
+                  />
+                </div>
+
+                {/* Submit */}
+                <Button
+                  type="submit"
+                  size="xl"
+                  iconLeading={status === "loading" ? undefined : Send01}
+                  isLoading={status === "loading"}
+                  showTextWhileLoading
+                  isDisabled={status === "loading"}
+                >
+                  {status === "loading" ? "Sending..." : "Send Message"}
+                </Button>
+
+                {/* Status */}
+                {status === "success" && (
+                  <div role="alert" className="flex items-start gap-2 rounded-lg bg-success-secondary px-4 py-3">
+                    <CheckCircle className="mt-0.5 size-5 shrink-0 text-fg-success-primary" />
+                    <p className="text-sm text-success-primary">{statusMessage}</p>
                   </div>
-
-                  {/* Submit */}
-                  <motion.button
-                    type="submit"
-                    disabled={status === "loading"}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="btn-primary glint-btn w-full justify-center disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    <span className="flex items-center gap-2">
-                      {status === "loading" ? "Sending..." : (
-                        <>
-                          <Send className="h-4 w-4" />
-                          Send Message
-                        </>
-                      )}
-                    </span>
-                  </motion.button>
-
-                  {/* Status */}
-                  {status === "success" && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3">
-                      <CheckCircle className="h-5 w-5 text-emerald-400 shrink-0" />
-                      <p className="text-sm text-emerald-400">{statusMessage}</p>
-                    </motion.div>
-                  )}
-                  {status === "error" && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
-                      <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
-                      <p className="text-sm text-red-400">{statusMessage}</p>
-                    </motion.div>
-                  )}
-                </form>
-              </div>
-            </motion.div>
+                )}
+                {status === "error" && (
+                  <div role="alert" className="flex items-start gap-2 rounded-lg bg-error-secondary px-4 py-3">
+                    <AlertCircle className="mt-0.5 size-5 shrink-0 text-fg-error-primary" />
+                    <p className="text-sm text-error-primary">{statusMessage}</p>
+                  </div>
+                )}
+              </form>
+            </div>
           </div>
         </div>
       </section>
+
+      <GenericCMSSections sections={extraSections} />
     </main>
   );
 }

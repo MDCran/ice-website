@@ -1,6 +1,23 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { Layers, ExternalLink, Settings, FileText, LayoutGrid, CheckCircle, ArrowRight, ChevronDown, Star, MapPin, Phone, Mail, Clock } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle,
+  ChevronDown,
+  Clock,
+  File02,
+  LayersThree01,
+  LayoutGrid01,
+  LinkExternal01,
+  Mail01,
+  MarkerPin02,
+  Phone01,
+  Settings01,
+  Star01,
+} from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
+import type { BadgeColor } from "@/components/base/badges/badges";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 
 export const metadata = { title: "Section Templates | ICE Admin" };
 
@@ -62,26 +79,26 @@ function prettify(str: string) {
   return str.replace(/_/g, " ").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  hero: "bg-sky-500/10 text-sky-400",
-  content: "bg-emerald-500/10 text-emerald-400",
-  features: "bg-purple-500/10 text-purple-400",
-  process: "bg-blue-500/10 text-blue-400",
-  benefits: "bg-cyan-500/10 text-cyan-400",
-  stats: "bg-teal-500/10 text-teal-400",
-  metrics: "bg-teal-500/10 text-teal-400",
-  cta: "bg-amber-500/10 text-amber-400",
-  faq: "bg-indigo-500/10 text-indigo-400",
-  gallery: "bg-orange-500/10 text-orange-400",
-  timeline: "bg-violet-500/10 text-violet-400",
-  partners: "bg-pink-500/10 text-pink-400",
-  industries: "bg-rose-500/10 text-rose-400",
-  contact: "bg-sky-500/10 text-sky-400",
-  form: "bg-emerald-500/10 text-emerald-400",
+const TYPE_COLORS: Record<string, BadgeColor<"pill-color">> = {
+  hero: "brand",
+  content: "success",
+  features: "purple",
+  process: "blue",
+  benefits: "sky",
+  stats: "sky",
+  metrics: "sky",
+  cta: "warning",
+  faq: "indigo",
+  gallery: "orange",
+  timeline: "purple",
+  partners: "pink",
+  industries: "pink",
+  contact: "brand",
+  form: "success",
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   VISUAL PREVIEW MOCKUPS — miniature dark-themed renderings of each type
+   VISUAL PREVIEW MOCKUPS — miniature token-based renderings of each type
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function HeroPreview({ data }: { data?: Record<string, any> }) {
@@ -89,15 +106,12 @@ function HeroPreview({ data }: { data?: Record<string, any> }) {
   const sub = data?.subheading ?? data?.description ?? "Subheading text goes here";
   const cta = data?.cta_text ?? "Get Started";
   return (
-    <div className="rounded-xl overflow-hidden bg-gradient-to-b from-[#0a1628] to-[#020617] p-6 text-center relative">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(4,155,251,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(4,155,251,0.03)_1px,transparent_1px)] bg-[size:32px_32px] opacity-40" />
-      <div className="relative">
-        <div className="text-sm font-bold text-white mb-1">{heading}</div>
-        <div className="text-[9px] text-slate-500 mb-3 max-w-[250px] mx-auto line-clamp-2">{sub}</div>
-        <div className="flex justify-center gap-2">
-          <div className="px-2.5 py-1 rounded-md bg-gradient-to-r from-sky-500 to-blue-600 text-[8px] text-white font-medium">{cta}</div>
-          <div className="px-2.5 py-1 rounded-md border border-sky-500/30 text-[8px] text-sky-400 font-medium">Learn More</div>
-        </div>
+    <div className="rounded-lg bg-secondary p-6 text-center ring-1 ring-secondary">
+      <div className="mb-1 text-sm font-bold text-primary">{heading}</div>
+      <div className="mx-auto mb-3 line-clamp-2 max-w-62 text-[9px] text-tertiary">{sub}</div>
+      <div className="flex justify-center gap-2">
+        <div className="rounded-md bg-brand-solid px-2.5 py-1 text-[8px] font-medium text-white">{cta}</div>
+        <div className="rounded-md bg-primary px-2.5 py-1 text-[8px] font-medium text-secondary ring-1 ring-primary ring-inset">Learn More</div>
       </div>
     </div>
   );
@@ -107,17 +121,17 @@ function ContentPreview({ data }: { data?: Record<string, any> }) {
   const heading = data?.heading ?? data?.title ?? "Content Block";
   const body = data?.description ?? data?.content ?? "";
   return (
-    <div className="rounded-xl bg-[#020617] p-4">
-      <div className="flex gap-4 items-center">
-        <div className="w-20 h-14 rounded-lg bg-gradient-to-br from-sky-500/20 to-blue-500/20 shrink-0" />
+    <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
+      <div className="flex items-center gap-4">
+        <div className="h-14 w-20 shrink-0 rounded-lg bg-brand-secondary" />
         <div className="flex-1 space-y-1.5">
-          <div className="text-xs font-bold text-white">{heading}</div>
+          <div className="text-xs font-bold text-primary">{heading}</div>
           {body ? (
-            <div className="text-[9px] text-slate-500 line-clamp-3 leading-relaxed">{String(body).slice(0, 150)}</div>
+            <div className="line-clamp-3 text-[9px] leading-relaxed text-tertiary">{String(body).slice(0, 150)}</div>
           ) : (
             <>
-              <div className="h-1.5 bg-slate-700/50 rounded w-full" />
-              <div className="h-1.5 bg-slate-700/50 rounded w-4/5" />
+              <div className="h-1.5 w-full rounded bg-tertiary" />
+              <div className="h-1.5 w-4/5 rounded bg-tertiary" />
             </>
           )}
         </div>
@@ -130,23 +144,23 @@ function FeaturesPreview({ data }: { data?: Record<string, any> }) {
   const items = data?.items ?? data?.features ?? [];
   const heading = data?.heading ?? data?.title ?? "";
   return (
-    <div className="rounded-xl bg-[#020617] p-4">
-      {heading && <div className="text-xs font-bold text-white text-center mb-3">{heading}</div>}
+    <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
+      {heading && <div className="mb-3 text-center text-xs font-bold text-primary">{heading}</div>}
       <div className="grid grid-cols-3 gap-2">
         {(items.length > 0 ? items.slice(0, 3) : [1, 2, 3]).map((item: any, i: number) => (
-          <div key={i} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 text-center">
-            <div className="w-6 h-6 rounded-md bg-sky-400/10 mx-auto mb-1.5 flex items-center justify-center">
-              <Star size={10} className="text-sky-400" />
+          <div key={i} className="rounded-lg bg-primary p-2.5 text-center ring-1 ring-secondary">
+            <div className="mx-auto mb-1.5 flex size-6 items-center justify-center rounded-md bg-brand-secondary">
+              <Star01 className="size-2.5 text-fg-brand-primary" />
             </div>
             {typeof item === "object" && item?.title ? (
               <>
-                <div className="text-[9px] font-semibold text-white truncate">{item.title}</div>
-                {item.description && <div className="text-[7px] text-slate-500 line-clamp-2 mt-0.5">{item.description}</div>}
+                <div className="truncate text-[9px] font-semibold text-primary">{item.title}</div>
+                {item.description && <div className="mt-0.5 line-clamp-2 text-[7px] text-tertiary">{item.description}</div>}
               </>
             ) : (
               <>
-                <div className="h-1.5 bg-slate-700/50 rounded w-4/5 mx-auto mb-1" />
-                <div className="h-1 bg-slate-800/50 rounded w-full" />
+                <div className="mx-auto mb-1 h-1.5 w-4/5 rounded bg-tertiary" />
+                <div className="h-1 w-full rounded bg-secondary_alt" />
               </>
             )}
           </div>
@@ -161,12 +175,12 @@ function StatsPreview({ data }: { data?: Record<string, any> }) {
   const defaults = [{ value: "35+", label: "Years" }, { value: "1,200+", label: "Projects" }, { value: "500+", label: "Clients" }, { value: "100%", label: "Uptime" }];
   const display = items.length > 0 ? items.slice(0, 4) : defaults;
   return (
-    <div className="rounded-xl bg-[#020617] p-4">
-      <div className={`grid grid-cols-${Math.min(display.length, 4)} gap-2`}>
+    <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
+      <div className="grid grid-cols-4 gap-2">
         {display.map((item: any, i: number) => (
-          <div key={i} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2 text-center">
-            <div className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500">{item.value ?? item.suffix ? `${item.value}${item.suffix ?? ""}` : item.value}</div>
-            <div className="text-[8px] text-slate-500 mt-0.5 truncate">{item.label ?? ""}</div>
+          <div key={i} className="rounded-lg bg-primary p-2 text-center ring-1 ring-secondary">
+            <div className="text-sm font-bold text-brand-secondary">{item.value ?? item.suffix ? `${item.value}${item.suffix ?? ""}` : item.value}</div>
+            <div className="mt-0.5 truncate text-[8px] text-tertiary">{item.label ?? ""}</div>
           </div>
         ))}
       </div>
@@ -177,16 +191,18 @@ function StatsPreview({ data }: { data?: Record<string, any> }) {
 function FaqPreview({ data }: { data?: Record<string, any> }) {
   const items = data?.items ?? data?.faqs ?? [];
   return (
-    <div className="rounded-xl bg-[#020617] p-4 space-y-1.5">
-      <div className="text-xs font-bold text-white text-center mb-2">Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500">Questions</span></div>
+    <div className="space-y-1.5 rounded-lg bg-secondary p-4 ring-1 ring-secondary">
+      <div className="mb-2 text-center text-xs font-bold text-primary">
+        Frequently Asked <span className="text-brand-secondary">Questions</span>
+      </div>
       {(items.length > 0 ? items.slice(0, 3) : [1, 2, 3]).map((item: any, i: number) => (
-        <div key={i} className="rounded-lg bg-white/[0.03] border-l-2 border-l-sky-500/50 border border-white/[0.06] px-3 py-2 flex items-center justify-between">
+        <div key={i} className="flex items-center justify-between rounded-lg bg-primary px-3 py-2 ring-1 ring-secondary">
           {typeof item === "object" && item?.question ? (
-            <span className="text-[9px] text-slate-300 truncate pr-2">{item.question}</span>
+            <span className="truncate pr-2 text-[9px] text-secondary">{item.question}</span>
           ) : (
-            <div className="h-1.5 bg-slate-600/50 rounded w-3/5" />
+            <div className="h-1.5 w-3/5 rounded bg-tertiary" />
           )}
-          <ChevronDown size={10} className="text-sky-400 shrink-0" />
+          <ChevronDown className="size-2.5 shrink-0 text-fg-brand-primary" />
         </div>
       ))}
     </div>
@@ -198,13 +214,16 @@ function CtaPreview({ data }: { data?: Record<string, any> }) {
   const desc = data?.description ?? "";
   const cta = data?.cta_text ?? "Contact Us";
   return (
-    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-5 text-center relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-blue-500/5" />
-      <div className="relative">
-        <div className="text-xs font-bold text-white mb-1">{heading}</div>
-        {desc ? <div className="text-[8px] text-slate-500 mb-3 max-w-[200px] mx-auto line-clamp-2">{desc}</div> : <div className="h-1.5 bg-slate-700/50 rounded w-3/5 mx-auto mb-3" />}
-        <div className="flex justify-center gap-2">
-          <div className="px-3 py-1 rounded-md bg-gradient-to-r from-sky-500 to-blue-600 text-[8px] text-white font-medium flex items-center gap-1">{cta} <ArrowRight size={8} /></div>
+    <div className="rounded-lg bg-brand-section p-5 text-center">
+      <div className="mb-1 text-xs font-bold text-white">{heading}</div>
+      {desc ? (
+        <div className="mx-auto mb-3 line-clamp-2 max-w-50 text-[8px] text-white/70">{desc}</div>
+      ) : (
+        <div className="mx-auto mb-3 h-1.5 w-3/5 rounded bg-white/20" />
+      )}
+      <div className="flex justify-center gap-2">
+        <div className="flex items-center gap-1 rounded-md bg-white px-3 py-1 text-[8px] font-medium text-secondary">
+          {cta} <ArrowRight className="size-2" />
         </div>
       </div>
     </div>
@@ -213,13 +232,13 @@ function CtaPreview({ data }: { data?: Record<string, any> }) {
 
 function ProcessPreview({ data }: { data?: Record<string, any> }) {
   return (
-    <div className="rounded-xl bg-[#020617] p-4">
+    <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
       <div className="flex items-start gap-3">
         {[1, 2, 3, 4].map((step) => (
           <div key={step} className="flex-1 text-center">
-            <div className="w-6 h-6 rounded-full bg-sky-400/10 border border-sky-400/30 mx-auto mb-1.5 flex items-center justify-center text-[8px] text-sky-400 font-bold">{step}</div>
-            <div className="h-1.5 bg-slate-700/50 rounded w-4/5 mx-auto mb-0.5" />
-            <div className="h-1 bg-slate-800/50 rounded w-full" />
+            <div className="mx-auto mb-1.5 flex size-6 items-center justify-center rounded-full bg-brand-secondary text-[8px] font-bold text-fg-brand-primary ring-1 ring-utility-brand-200">{step}</div>
+            <div className="mx-auto mb-0.5 h-1.5 w-4/5 rounded bg-tertiary" />
+            <div className="h-1 w-full rounded bg-secondary_alt" />
           </div>
         ))}
       </div>
@@ -229,11 +248,11 @@ function ProcessPreview({ data }: { data?: Record<string, any> }) {
 
 function BenefitsPreview({ data }: { data?: Record<string, any> }) {
   return (
-    <div className="rounded-xl bg-[#020617] p-4 space-y-1.5">
+    <div className="space-y-1.5 rounded-lg bg-secondary p-4 ring-1 ring-secondary">
       {[1, 2, 3, 4].map((i) => (
         <div key={i} className="flex items-center gap-2">
-          <CheckCircle size={10} className="text-sky-400 shrink-0" />
-          <div className="h-1.5 bg-slate-700/50 rounded flex-1" />
+          <CheckCircle className="size-2.5 shrink-0 text-fg-brand-primary" />
+          <div className="h-1.5 flex-1 rounded bg-tertiary" />
         </div>
       ))}
     </div>
@@ -242,14 +261,14 @@ function BenefitsPreview({ data }: { data?: Record<string, any> }) {
 
 function MetricsPreview({ data }: { data?: Record<string, any> }) {
   return (
-    <div className="rounded-xl bg-[#020617] p-4">
+    <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
       <div className="grid grid-cols-3 gap-3">
         {["99.9%", "< 4hr", "24/7"].map((val) => (
           <div key={val} className="text-center">
-            <div className="w-12 h-12 rounded-full border-2 border-sky-400/40 mx-auto mb-1.5 flex items-center justify-center">
-              <span className="text-[9px] font-bold text-sky-400">{val}</span>
+            <div className="mx-auto mb-1.5 flex size-12 items-center justify-center rounded-full border-2 border-utility-brand-200">
+              <span className="text-[9px] font-bold text-brand-secondary">{val}</span>
             </div>
-            <div className="h-1 bg-slate-700/50 rounded w-4/5 mx-auto" />
+            <div className="mx-auto h-1 w-4/5 rounded bg-tertiary" />
           </div>
         ))}
       </div>
@@ -259,11 +278,11 @@ function MetricsPreview({ data }: { data?: Record<string, any> }) {
 
 function GalleryPreview({ data }: { data?: Record<string, any> }) {
   return (
-    <div className="rounded-xl bg-[#020617] p-4">
+    <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
       <div className="flex gap-3 overflow-hidden">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="w-16 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] shrink-0 flex items-center justify-center">
-            <div className="w-10 h-4 rounded bg-slate-700/40" />
+          <div key={i} className="flex h-8 w-16 shrink-0 items-center justify-center rounded-lg bg-primary ring-1 ring-secondary">
+            <div className="h-4 w-10 rounded bg-tertiary" />
           </div>
         ))}
       </div>
@@ -273,15 +292,15 @@ function GalleryPreview({ data }: { data?: Record<string, any> }) {
 
 function TimelinePreview({ data }: { data?: Record<string, any> }) {
   return (
-    <div className="rounded-xl bg-[#020617] p-4">
-      <div className="space-y-2 relative pl-5">
-        <div className="absolute left-[7px] top-1 bottom-1 w-px bg-sky-400/20" />
+    <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
+      <div className="relative space-y-2 pl-5">
+        <div className="absolute top-1 bottom-1 left-[7px] w-px bg-border-secondary" />
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-start gap-2 relative">
-            <div className="absolute left-[-14px] top-1 w-2 h-2 rounded-full bg-sky-400 border-2 border-[#020617]" />
+          <div key={i} className="relative flex items-start gap-2">
+            <div className="absolute top-1 -left-3.5 size-2 rounded-full bg-brand-solid ring-2 ring-bg-secondary" />
             <div className="flex-1">
-              <div className="h-1.5 bg-slate-600/50 rounded w-1/3 mb-1" />
-              <div className="h-1 bg-slate-800/50 rounded w-full" />
+              <div className="mb-1 h-1.5 w-1/3 rounded bg-tertiary" />
+              <div className="h-1 w-full rounded bg-secondary_alt" />
             </div>
           </div>
         ))}
@@ -292,17 +311,17 @@ function TimelinePreview({ data }: { data?: Record<string, any> }) {
 
 function PartnersPreview({ data }: { data?: Record<string, any> }) {
   return (
-    <div className="rounded-xl bg-[#020617] p-4">
+    <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
       <div className="grid grid-cols-2 gap-2">
         {[1, 2].map((i) => (
-          <div key={i} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 flex items-start gap-2">
-            <div className="w-8 h-8 rounded-md bg-white/[0.06] border border-white/[0.08] shrink-0" />
+          <div key={i} className="flex items-start gap-2 rounded-lg bg-primary p-2.5 ring-1 ring-secondary">
+            <div className="size-8 shrink-0 rounded-md bg-tertiary" />
             <div className="flex-1 space-y-1">
-              <div className="h-1.5 bg-slate-600/50 rounded w-2/3" />
-              <div className="h-1 bg-slate-800/50 rounded w-full" />
-              <div className="flex gap-1 mt-1">
-                <div className="h-2.5 rounded-full bg-white/[0.04] border border-white/[0.06] px-1.5" />
-                <div className="h-2.5 rounded-full bg-white/[0.04] border border-white/[0.06] px-1.5" />
+              <div className="h-1.5 w-2/3 rounded bg-tertiary" />
+              <div className="h-1 w-full rounded bg-secondary_alt" />
+              <div className="mt-1 flex gap-1">
+                <div className="h-2.5 rounded-full bg-secondary px-1.5 ring-1 ring-secondary" />
+                <div className="h-2.5 rounded-full bg-secondary px-1.5 ring-1 ring-secondary" />
               </div>
             </div>
           </div>
@@ -314,13 +333,13 @@ function PartnersPreview({ data }: { data?: Record<string, any> }) {
 
 function IndustriesPreview({ data }: { data?: Record<string, any> }) {
   return (
-    <div className="rounded-xl bg-[#020617] p-4">
+    <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
       <div className="grid grid-cols-3 gap-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 text-center">
-            <div className="w-6 h-6 rounded-md bg-sky-400/10 mx-auto mb-1.5" />
-            <div className="h-1.5 bg-slate-600/50 rounded w-4/5 mx-auto mb-1" />
-            <div className="h-1 bg-slate-800/50 rounded w-full" />
+          <div key={i} className="rounded-lg bg-primary p-2.5 text-center ring-1 ring-secondary">
+            <div className="mx-auto mb-1.5 size-6 rounded-md bg-brand-secondary" />
+            <div className="mx-auto mb-1 h-1.5 w-4/5 rounded bg-tertiary" />
+            <div className="h-1 w-full rounded bg-secondary_alt" />
           </div>
         ))}
       </div>
@@ -330,21 +349,21 @@ function IndustriesPreview({ data }: { data?: Record<string, any> }) {
 
 function ContactPreview({ data }: { data?: Record<string, any> }) {
   return (
-    <div className="rounded-xl bg-[#020617] p-4">
+    <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
       <div className="grid grid-cols-2 gap-2">
         {[
-          { icon: MapPin, label: "Address" },
-          { icon: Phone, label: "Phone" },
-          { icon: Mail, label: "Email" },
+          { icon: MarkerPin02, label: "Address" },
+          { icon: Phone01, label: "Phone" },
+          { icon: Mail01, label: "Email" },
           { icon: Clock, label: "Hours" },
         ].map(({ icon: Icon, label }) => (
-          <div key={label} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2 flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-sky-400/10 flex items-center justify-center shrink-0">
-              <Icon size={8} className="text-sky-400" />
+          <div key={label} className="flex items-center gap-2 rounded-lg bg-primary p-2 ring-1 ring-secondary">
+            <div className="flex size-5 shrink-0 items-center justify-center rounded bg-brand-secondary">
+              <Icon className="size-2 text-fg-brand-primary" />
             </div>
             <div className="flex-1">
-              <div className="text-[7px] text-slate-500 uppercase">{label}</div>
-              <div className="h-1.5 bg-slate-700/50 rounded w-4/5 mt-0.5" />
+              <div className="text-[7px] text-quaternary uppercase">{label}</div>
+              <div className="mt-0.5 h-1.5 w-4/5 rounded bg-tertiary" />
             </div>
           </div>
         ))}
@@ -355,15 +374,15 @@ function ContactPreview({ data }: { data?: Record<string, any> }) {
 
 function FormPreview({ data }: { data?: Record<string, any> }) {
   return (
-    <div className="rounded-xl bg-[#020617] p-4 space-y-2">
+    <div className="space-y-2 rounded-lg bg-secondary p-4 ring-1 ring-secondary">
       <div className="grid grid-cols-2 gap-2">
-        <div className="h-6 rounded-md bg-white/[0.04] border border-white/[0.08]" />
-        <div className="h-6 rounded-md bg-white/[0.04] border border-white/[0.08]" />
+        <div className="h-6 rounded-md bg-primary ring-1 ring-secondary" />
+        <div className="h-6 rounded-md bg-primary ring-1 ring-secondary" />
       </div>
-      <div className="h-6 rounded-md bg-white/[0.04] border border-white/[0.08]" />
-      <div className="h-12 rounded-md bg-white/[0.04] border border-white/[0.08]" />
-      <div className="h-6 rounded-md bg-gradient-to-r from-sky-500 to-blue-600 flex items-center justify-center">
-        <div className="text-[8px] text-white font-medium">Send Message</div>
+      <div className="h-6 rounded-md bg-primary ring-1 ring-secondary" />
+      <div className="h-12 rounded-md bg-primary ring-1 ring-secondary" />
+      <div className="flex h-6 items-center justify-center rounded-md bg-brand-solid">
+        <div className="text-[8px] font-medium text-white">Send Message</div>
       </div>
     </div>
   );
@@ -396,47 +415,47 @@ export default async function TemplatesPage() {
     <div className="space-y-10">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold admin-text">Section Templates</h1>
-          <p className="text-sm admin-text-muted mt-1">
+          <h1 className="text-display-xs font-semibold text-primary">Section Templates</h1>
+          <p className="mt-1 text-sm text-tertiary">
             Visual previews of every section type. See how each renders on the site.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs admin-text-dimmed">
-          <LayoutGrid size={14} />
+        <div className="flex items-center gap-2 text-xs text-quaternary">
+          <LayoutGrid01 className="size-3.5" />
           {Array.from(grouped.values()).reduce((sum, entries) => sum + entries.length, 0)} sections across {grouped.size} types
         </div>
       </div>
 
       {grouped.size === 0 ? (
-        <div className="admin-card rounded-2xl p-12 text-center">
-          <Layers size={48} className="mx-auto text-slate-600 mb-4" />
-          <p className="text-slate-400 text-lg mb-2">No sections found</p>
-          <p className="text-slate-500 text-sm">Create pages with sections in the CMS editor to see templates here.</p>
+        <div className="flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-16 text-center shadow-xs ring-1 ring-secondary">
+          <FeaturedIcon color="gray" theme="modern" size="lg" icon={LayersThree01} />
+          <p className="mt-4 text-md font-semibold text-primary">No sections found</p>
+          <p className="mt-1 text-sm text-tertiary">Create pages with sections in the CMS editor to see templates here.</p>
         </div>
       ) : (
         Array.from(grouped.entries()).map(([sectionType, entries]) => {
           const PreviewComponent = PREVIEW_COMPONENTS[sectionType];
-          const color = TYPE_COLORS[sectionType] ?? "bg-slate-500/10 text-slate-400";
+          const color = TYPE_COLORS[sectionType] ?? "gray";
 
           return (
             <div key={sectionType} id={`type-${sectionType}`} className="scroll-mt-24">
               {/* Type header */}
-              <div className="flex items-center gap-3 mb-5">
-                <Layers size={18} className="text-sky-400" />
-                <h2 className="text-lg font-semibold admin-text">{prettify(sectionType)}</h2>
-                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${color}`}>{entries.length} in use</span>
+              <div className="mb-5 flex items-center gap-3">
+                <LayersThree01 className="size-4.5 text-fg-brand-primary" />
+                <h2 className="text-lg font-semibold text-primary">{prettify(sectionType)}</h2>
+                <Badge size="sm" color={color}>{entries.length} in use</Badge>
               </div>
 
               {/* Visual preview mockup */}
               {PreviewComponent && (
-                <div className="mb-5 admin-card rounded-xl overflow-hidden">
-                  <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-2">
+                <div className="mb-5 overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
+                  <div className="flex items-center gap-2 border-b border-secondary px-4 py-2.5">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 rounded-full bg-red-500/60" />
-                      <div className="w-2 h-2 rounded-full bg-amber-500/60" />
-                      <div className="w-2 h-2 rounded-full bg-emerald-500/60" />
+                      <div className="size-2 rounded-full bg-utility-red-400" />
+                      <div className="size-2 rounded-full bg-utility-yellow-400" />
+                      <div className="size-2 rounded-full bg-utility-green-400" />
                     </div>
-                    <span className="text-[9px] admin-text-dimmed font-mono ml-2">icesales.com — {prettify(sectionType)} Section</span>
+                    <span className="ml-2 font-mono text-[9px] text-quaternary">icesales.com — {prettify(sectionType)} Section</span>
                   </div>
                   <div className="p-4">
                     <PreviewComponent data={entries[0]?.contentSample} />
@@ -445,34 +464,34 @@ export default async function TemplatesPage() {
               )}
 
               {/* Section instances */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {entries.map((entry) => (
-                  <div key={entry.section_key} className="admin-card rounded-xl overflow-hidden">
+                  <div key={entry.section_key} className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
                     {/* Mini preview */}
                     {PreviewComponent && (
-                      <div className="px-4 py-3 border-b border-white/5 bg-[#020617]/50">
-                        <div className="transform scale-[0.65] origin-top-left" style={{ width: "153.8%", marginBottom: "-35%" }}>
+                      <div className="border-b border-secondary bg-secondary px-4 py-3">
+                        <div className="origin-top-left scale-[0.65] transform" style={{ width: "153.8%", marginBottom: "-35%" }}>
                           <PreviewComponent data={entry.contentSample} />
                         </div>
                       </div>
                     )}
 
                     {/* Header */}
-                    <div className="px-5 py-3.5 border-b border-white/5 flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-2 border-b border-secondary px-5 py-3.5">
                       <div>
-                        <h3 className="text-sm font-semibold admin-text">{prettify(entry.section_key)}</h3>
-                        <p className="text-[10px] admin-text-dimmed font-mono mt-0.5">section_key: {entry.section_key}</p>
+                        <h3 className="text-sm font-semibold text-primary">{prettify(entry.section_key)}</h3>
+                        <p className="mt-0.5 font-mono text-[10px] text-quaternary">section_key: {entry.section_key}</p>
                       </div>
-                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${color}`}>
+                      <Badge size="sm" color={color} className="whitespace-nowrap">
                         {prettify(entry.section_type)}
-                      </span>
+                      </Badge>
                     </div>
 
                     {/* Fields */}
                     {entry.contentKeys.length > 0 && (
-                      <div className="px-5 py-3 border-b border-white/5">
-                        <p className="text-[10px] font-medium admin-text-dimmed uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                          <Settings size={10} />
+                      <div className="border-b border-secondary px-5 py-3">
+                        <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-quaternary uppercase">
+                          <Settings01 className="size-2.5" />
                           Fields ({entry.contentKeys.length})
                         </p>
                         <div className="flex flex-wrap gap-1">
@@ -480,7 +499,14 @@ export default async function TemplatesPage() {
                             const value = entry.contentSample[k];
                             const isArray = Array.isArray(value);
                             return (
-                              <span key={k} className={`text-[10px] font-mono rounded px-1.5 py-0.5 ${isArray ? "bg-sky-500/10 text-sky-400 border border-sky-500/20" : "bg-white/[0.04] border border-white/[0.06] admin-text-muted"}`}>
+                              <span
+                                key={k}
+                                className={`rounded px-1.5 py-0.5 font-mono text-[10px] ring-1 ring-inset ${
+                                  isArray
+                                    ? "bg-utility-brand-50 text-utility-brand-700 ring-utility-brand-200"
+                                    : "bg-secondary text-tertiary ring-secondary"
+                                }`}
+                              >
                                 {k}{isArray ? `[${value.length}]` : ""}
                               </span>
                             );
@@ -491,9 +517,9 @@ export default async function TemplatesPage() {
 
                     {/* Array item structure */}
                     {entry.contentKeys.some((k) => Array.isArray(entry.contentSample[k]) && entry.contentSample[k].length > 0) && (
-                      <div className="px-5 py-3 border-b border-white/5">
-                        <p className="text-[10px] font-medium admin-text-dimmed uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                          <FileText size={10} />
+                      <div className="border-b border-secondary px-5 py-3">
+                        <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-quaternary uppercase">
+                          <File02 className="size-2.5" />
                           Item Structure
                         </p>
                         {entry.contentKeys
@@ -505,7 +531,7 @@ export default async function TemplatesPage() {
                             return (
                               <div key={k} className="flex flex-wrap gap-1">
                                 {itemKeys.map((ik) => (
-                                  <span key={ik} className="text-[10px] font-mono bg-white/[0.04] border border-white/[0.06] rounded px-1.5 py-0.5 admin-text-muted">
+                                  <span key={ik} className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] text-tertiary ring-1 ring-secondary ring-inset">
                                     {ik}
                                   </span>
                                 ))}
@@ -522,10 +548,10 @@ export default async function TemplatesPage() {
                           <Link
                             key={page.slug}
                             href={`/admin/cms/${page.slug}`}
-                            className="text-[10px] bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 rounded-full px-2.5 py-0.5 transition-colors inline-flex items-center gap-1"
+                            className="inline-flex items-center gap-1 rounded-full bg-utility-brand-50 px-2.5 py-0.5 text-[10px] font-medium text-utility-brand-700 ring-1 ring-utility-brand-200 transition-colors ring-inset hover:bg-utility-brand-100"
                           >
                             {page.title}
-                            <ExternalLink size={8} />
+                            <LinkExternal01 className="size-2" />
                           </Link>
                         ))}
                       </div>

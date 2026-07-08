@@ -25,6 +25,13 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
+/** Apply the theme via both the legacy data-theme attribute and the
+ *  Untitled UI dark-mode class so both token systems stay in sync. */
+function applyTheme(theme: Theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  document.documentElement.classList.toggle("dark-mode", theme === "dark");
+}
+
 function getSystemTheme(): Theme {
   if (typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
     return "dark";
@@ -39,11 +46,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("ice-theme") as Theme | null;
     if (stored === "light" || stored === "dark") {
       setTheme(stored);
-      document.documentElement.setAttribute("data-theme", stored);
+      applyTheme(stored);
     } else {
       const sys = getSystemTheme();
       setTheme(sys);
-      document.documentElement.setAttribute("data-theme", sys);
+      applyTheme(sys);
     }
   }, []);
 
@@ -51,7 +58,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme((prev) => {
       const next = prev === "dark" ? "light" : "dark";
       localStorage.setItem("ice-theme", next);
-      document.documentElement.setAttribute("data-theme", next);
+      applyTheme(next);
       return next;
     });
   }, []);

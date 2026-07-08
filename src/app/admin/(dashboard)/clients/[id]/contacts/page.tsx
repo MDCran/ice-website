@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, Users01 } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import ContactsManager from "@/components/admin/clients/ContactsManager";
 
 export const metadata = { title: "Client Contacts | ICE Admin" };
@@ -35,22 +36,16 @@ export default async function ClientContactsPage({
   return (
     <div>
       <div className="mb-6">
-        <Link
-          href={`/admin/clients/${id}`}
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={14} />
+        <Button color="link-gray" size="sm" href={`/admin/clients/${id}`} iconLeading={<ArrowLeft data-icon />}>
           Back to {client.company_name}
-        </Link>
+        </Button>
       </div>
 
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center">
-          <Users size={20} className="text-sky-400" />
-        </div>
+      <div className="mb-8 flex items-center gap-3">
+        <FeaturedIcon icon={Users01} color="brand" theme="modern" size="lg" />
         <div>
-          <h1 className="text-2xl font-bold admin-text">Contacts</h1>
-          <p className="text-sm text-slate-400">{client.company_name}</p>
+          <h1 className="text-xl font-semibold text-primary">Contacts</h1>
+          <p className="text-sm text-tertiary">{client.company_name}</p>
         </div>
       </div>
 

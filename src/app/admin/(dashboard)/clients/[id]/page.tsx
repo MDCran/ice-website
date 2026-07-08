@@ -1,10 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Building2, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@untitledui/icons";
+import { Avatar } from "@/components/base/avatar/avatar";
+import { Button } from "@/components/base/buttons/button";
 import ClientTabs from "./ClientTabs";
 
 export const metadata = { title: "Client Detail | ICE Admin" };
+
+function getInitials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word.charAt(0).toUpperCase())
+      .join("") || undefined
+  );
+}
 
 export default async function ClientDetailPage({
   params,
@@ -27,24 +39,23 @@ export default async function ClientDetailPage({
   return (
     <div>
       <div className="mb-6">
-        <Link
-          href="/admin/clients"
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
-        >
-          <ArrowLeft size={14} />
+        <Button color="link-gray" size="sm" href="/admin/clients" iconLeading={<ArrowLeft data-icon />}>
           Back to Clients
-        </Link>
+        </Button>
       </div>
 
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-          <Building2 size={20} className="text-violet-400" />
-        </div>
+      <div className="mb-6 flex items-center gap-4">
+        <Avatar
+          size="lg"
+          src={client.logo_url}
+          alt={client.company_name}
+          initials={getInitials(client.company_name ?? "")}
+        />
         <div>
-          <h1 className="text-2xl font-bold admin-text">
+          <h1 className="text-xl font-semibold text-primary">
             {client.company_name}
           </h1>
-          <p className="text-xs text-slate-500 font-mono">{client.id}</p>
+          <p className="font-mono text-xs text-quaternary">{client.id}</p>
         </div>
       </div>
 

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "motion/react";
-import { Phone, Mail, Clock, MapPin, ArrowUpRight, ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, Clock, Mail01, MarkerPin02, Phone01 } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { Grid } from "@/components/shared-assets/background-patterns/grid";
+import { cx } from "@/utils/cx";
 
 /* ── Default data (used when CMS data not available) ── */
 
@@ -79,106 +80,8 @@ export interface FooterCMSData {
   showContactBar?: boolean;
 }
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: "easeOut" as const },
-  }),
-};
-
-function isUSHoliday(date: Date): boolean {
-  const m = date.getMonth(); // 0-indexed
-  const d = date.getDate();
-  const dow = date.getDay();
-  // Fixed holidays
-  if (m === 0 && d === 1) return true;   // New Year's Day
-  if (m === 6 && d === 4) return true;   // Independence Day
-  if (m === 11 && d === 25) return true;  // Christmas
-  // MLK Day: 3rd Monday of January
-  if (m === 0 && dow === 1 && d >= 15 && d <= 21) return true;
-  // Presidents' Day: 3rd Monday of February
-  if (m === 1 && dow === 1 && d >= 15 && d <= 21) return true;
-  // Memorial Day: last Monday of May
-  if (m === 4 && dow === 1 && d >= 25) return true;
-  // Labor Day: 1st Monday of September
-  if (m === 8 && dow === 1 && d <= 7) return true;
-  // Thanksgiving: 4th Thursday of November
-  if (m === 10 && dow === 4 && d >= 22 && d <= 28) return true;
-  return false;
-}
-
-function getBusinessStatus(): { isOpen: boolean; label: string; note?: string } {
-  const now = new Date();
-  const et = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-  const day = et.getDay();
-  const hour = et.getHours();
-  const holiday = isUSHoliday(et);
-  const isWeekday = day >= 1 && day <= 5;
-  const isDuringHours = hour >= 9 && hour < 17;
-
-  if (holiday) {
-    return { isOpen: false, label: "Closed", note: "Closed for holiday" };
-  }
-  if (isWeekday && isDuringHours) {
-    return { isOpen: true, label: "Open Now" };
-  }
-  return { isOpen: false, label: "Closed" };
-}
-
-function SolutionsAccordion({ categories }: { categories: { heading: string; links: { label: string; href: string }[] }[] }) {
-  const [openIdx, setOpenIdx] = useState<number | null>(null);
-
-  return (
-    <div>
-      <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Solutions</h3>
-      <div className="space-y-1">
-        {categories.map((cat, i) => (
-          <div key={cat.heading}>
-            <button
-              onClick={() => setOpenIdx(openIdx === i ? null : i)}
-              className="flex w-full items-center justify-between py-2 text-sm text-slate-400 hover:text-white transition-colors duration-200 cursor-pointer"
-            >
-              <span>{cat.heading}</span>
-              <ChevronDown className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 ${openIdx === i ? "rotate-180" : ""}`} />
-            </button>
-            <AnimatePresence>
-              {openIdx === i && (
-                <motion.ul
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: "easeOut" as const }}
-                  className="overflow-hidden pl-3 border-l border-white/[0.06]"
-                >
-                  {cat.links.map((link) => (
-                    <li key={link.href} className="py-1.5">
-                      <Link href={link.href} className="group inline-flex items-center gap-1.5 text-[13px] text-slate-500 transition-colors duration-200 hover:text-white">
-                        <span>{link.label}</span>
-                        <ArrowUpRight className="h-3 w-3 opacity-0 transition-all duration-200 group-hover:opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                      </Link>
-                    </li>
-                  ))}
-                </motion.ul>
-              )}
-            </AnimatePresence>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function useBusinessStatus() {
-  const [status, setStatus] = useState<{ isOpen: boolean; label: string; note?: string }>({ isOpen: false, label: "" });
-  useEffect(() => {
-    setStatus(getBusinessStatus());
-    const timer = setInterval(() => setStatus(getBusinessStatus()), 60_000);
-    return () => clearInterval(timer);
-  }, []);
-  return status;
-}
+const footerLinkClass =
+  "rounded-xs text-sm font-semibold text-tertiary outline-brand transition duration-100 ease-linear hover:text-tertiary_hover focus-visible:outline-2 focus-visible:outline-offset-2";
 
 export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   const quickLinks = cmsData?.quickLinks ?? DEFAULT_QUICK_LINKS;
@@ -191,205 +94,148 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   const showContactBar = cmsData?.showContactBar ?? true;
 
   const logoSrc = company?.logo ?? "/images/logo/ice-logo.jpg";
-  const bizStatus = useBusinessStatus();
 
-  const visibleColumns = 1 + 1 + (showSolutionsAccordion ? 1 : 0) + (showGetInTouch ? 1 : 0);
-  const gridClass = visibleColumns === 4
-    ? "grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4"
-    : visibleColumns === 3
-      ? "grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3"
-      : "grid grid-cols-1 gap-10 sm:grid-cols-2";
+  const navColumns = [
+    ...(showSolutionsAccordion ? solutionCategories : []),
+    { heading: "Quick Links", links: quickLinks },
+  ];
 
   return (
-    <footer className="relative w-full overflow-hidden">
-      {/* Top gradient line */}
-      <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
-
-      {/* Contact Info Bar */}
-      {showContactBar && (
-        <div className="relative bg-gradient-to-b from-[#0a1020] to-[#020617]">
-          <div className="absolute inset-0 mesh-gradient opacity-30" />
-          <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <motion.div
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-50px" }}
-            >
-              <motion.div
-                custom={0}
-                variants={fadeUp}
-                className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04]"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
-                  <MapPin className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Address</p>
-                  <p className="text-sm font-semibold text-white">{company?.address ?? "1279 W Palmetto Park Rd #272415"}</p>
-                  <p className="text-xs text-slate-400">{company?.city ?? "Boca Raton, FL 33427"}</p>
-                </div>
-              </motion.div>
-
-              <motion.a
-                href={`tel:${(company?.phone ?? "1-800-786-9188").replace(/[^\d+]/g, "")}`}
-                custom={1}
-                variants={fadeUp}
-                className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04] hover:shadow-[0_0_20px_rgba(168,85,247,0.06)] glint-card"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
-                  <Phone className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Phone</p>
-                  <p className="text-sm font-semibold text-white">{company?.phone ?? "1-800-786-9188"}</p>
-                </div>
-              </motion.a>
-
-              <motion.a
-                href={`mailto:${company?.email ?? "info@icesales.com"}`}
-                custom={2}
-                variants={fadeUp}
-                className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04] hover:shadow-[0_0_20px_rgba(168,85,247,0.06)] glint-card"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
-                  <Mail className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Email</p>
-                  <p className="text-sm font-semibold text-white">{company?.email ?? "info@icesales.com"}</p>
-                </div>
-              </motion.a>
-
-              <motion.div
-                custom={3}
-                variants={fadeUp}
-                className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-md transition-all duration-300 hover:border-sky-400/20 hover:bg-white/[0.04]"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/15 to-blue-500/15 text-sky-400 transition-colors group-hover:from-sky-500/25 group-hover:to-blue-500/25">
-                  <Clock className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Hours</p>
-                  <p className="text-sm font-semibold text-white">{company?.hours ?? "Mon \u2013 Fri, 9\u20135 ET"}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`inline-block h-1.5 w-1.5 rounded-full ${bizStatus.isOpen ? "bg-emerald-400" : "bg-red-400"}`} />
-                    <span className={`text-[10px] font-semibold ${bizStatus.isOpen ? "text-emerald-400" : "text-red-400"}`}>{bizStatus.label}</span>
-                  </div>
-                  {bizStatus.note && <p className="text-[9px] text-slate-500 mt-0.5">{bizStatus.note}</p>}
-                </div>
-              </motion.div>
-            </motion.div>
+    <footer className="relative overflow-hidden bg-primary py-12 md:pt-16">
+      {/* Faint techy grid backdrop */}
+      <Grid
+        size="lg"
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-32 right-0 hidden opacity-40 md:block"
+      />
+      <div className="relative mx-auto max-w-container px-4 md:px-8">
+        {/* Get in touch CTA */}
+        {showGetInTouch && (
+          <div className="flex flex-col items-start justify-between gap-6 border-b border-secondary pb-12 md:flex-row md:items-center md:pb-16">
+            <div className="flex flex-col gap-2">
+              <p className="text-lg font-semibold text-primary md:text-xl">Get in touch</p>
+              <p className="text-md text-tertiary">Ready to modernize your IT infrastructure? Our experts are here to help.</p>
+            </div>
+            <Button size="xl" href="/contact" iconTrailing={ArrowRight}>
+              Contact Us
+            </Button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Animated gradient separator */}
-      <div className="h-px bg-gradient-to-r from-transparent via-sky-400/20 to-transparent" />
+        {/* Company info + link columns */}
+        <div className={cx("flex flex-col gap-12 xl:flex-row xl:gap-16", showGetInTouch && "pt-12 md:pt-16")}>
+          <div className="flex flex-col gap-6 xl:w-80 xl:shrink-0">
+            <Link
+              href="/"
+              className="inline-flex w-max items-center rounded-lg bg-white px-3 py-2 outline-brand focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              <Image
+                src={logoSrc}
+                alt="International Computer Exchange"
+                width={220}
+                height={66}
+                className="h-12 w-auto"
+              />
+            </Link>
+            <p className="text-md text-tertiary">
+              {company?.tagline ?? "IBM Business Partner since 1990. Delivering enterprise-grade cloud, security, and managed IT solutions."}
+            </p>
 
-      {/* Main Footer */}
-      <div className="relative bg-gradient-to-b from-[#020617] to-[#020617]">
-        <div className="absolute inset-0 grid-pattern opacity-30" />
-        <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <motion.div
-            className={gridClass}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-          >
-            {/* Company Info */}
-            <motion.div custom={0} variants={fadeUp} className="lg:col-span-1">
-              <Link href="/" className="inline-block mb-5">
-                <div className="logo-container rounded-lg bg-[#ffffff] px-3 py-2 flex items-center">
-                  <Image
-                    src={logoSrc}
-                    alt="International Computer Exchange"
-                    width={220}
-                    height={66}
-                    className="h-14 w-auto"
-                  />
-                </div>
-              </Link>
-              <p className="text-sm leading-relaxed text-slate-400 mb-6">
-                {company?.tagline ?? "IBM Business Partner since 1990. Delivering enterprise-grade cloud, security, and managed IT solutions."}
-              </p>
-              <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 backdrop-blur-sm">
-                <Image src="/images/ibm.svg" alt="IBM" width={48} height={20} className="opacity-70" />
-                <p className="text-[11px] text-slate-400 font-medium leading-snug">IBM Business Partner<br /><span className="text-slate-500">Since 1990</span></p>
-              </div>
-            </motion.div>
-
-            {/* Quick Links */}
-            <motion.div custom={1} variants={fadeUp}>
-              <h3 className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Quick Links</h3>
-              <ul className="space-y-3">
-                {quickLinks.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="group inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors duration-200 hover:text-white">
-                      <span>{link.label}</span>
-                      <ArrowUpRight className="h-3 w-3 opacity-0 transition-all duration-200 group-hover:opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                    </Link>
-                  </li>
-                ))}
+            {showContactBar && (
+              <ul className="flex flex-col gap-4">
+                <li className="flex gap-3">
+                  <MarkerPin02 className="mt-0.5 size-5 shrink-0 text-fg-quaternary" aria-hidden="true" />
+                  <p className="text-sm text-tertiary">
+                    {company?.address ?? "1279 W Palmetto Park Rd #272415"}
+                    <br />
+                    {company?.city ?? "Boca Raton, FL 33427"}
+                  </p>
+                </li>
+                <li>
+                  <a
+                    href={`tel:${(company?.phone ?? "1-800-786-9188").replace(/[^\d+]/g, "")}`}
+                    className="flex w-max gap-3 rounded-xs text-sm text-tertiary outline-brand transition duration-100 ease-linear hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2"
+                  >
+                    <Phone01 className="mt-0.5 size-5 shrink-0 text-fg-quaternary" aria-hidden="true" />
+                    {company?.phone ?? "1-800-786-9188"}
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={`mailto:${company?.email ?? "info@icesales.com"}`}
+                    className="flex w-max gap-3 rounded-xs text-sm text-tertiary outline-brand transition duration-100 ease-linear hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2"
+                  >
+                    <Mail01 className="mt-0.5 size-5 shrink-0 text-fg-quaternary" aria-hidden="true" />
+                    {company?.email ?? "info@icesales.com"}
+                  </a>
+                </li>
+                <li className="flex gap-3">
+                  <Clock className="mt-0.5 size-5 shrink-0 text-fg-quaternary" aria-hidden="true" />
+                  <p className="text-sm text-tertiary">{company?.hours ?? "Mon – Fri, 9–5 ET"}</p>
+                </li>
               </ul>
-            </motion.div>
-
-            {/* Solutions — accordion categories */}
-            {showSolutionsAccordion && (
-              <motion.div custom={2} variants={fadeUp}>
-                <SolutionsAccordion categories={solutionCategories} />
-
-                {/* Gradient separator */}
-                <div className="my-6 h-px bg-gradient-to-r from-sky-400/15 to-transparent" />
-
-                <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Legal</h3>
-                <ul className="space-y-3">
-                  {legalLinks.map((link) => (
-                    <li key={link.href}>
-                      <Link href={link.href} className="group inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors duration-200 hover:text-white">
-                        <span>{link.label}</span>
-                        <ArrowUpRight className="h-3 w-3 opacity-0 transition-all duration-200 group-hover:opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
             )}
 
-            {/* CTA */}
-            {showGetInTouch && (
-              <motion.div custom={3} variants={fadeUp}>
-                <h3 className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Get In Touch</h3>
-                <p className="text-sm leading-relaxed text-slate-400 mb-4">
-                  Ready to modernize your IT infrastructure? Our experts are here to help.
-                </p>
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500/20 to-blue-500/20 border border-sky-500/20 px-5 py-3 text-sm font-semibold text-sky-400 transition-all duration-300 hover:from-sky-500/30 hover:to-blue-500/30 hover:border-sky-500/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:text-white"
-                >
-                  Contact Us
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </motion.div>
-            )}
-          </motion.div>
+            <div className="flex w-max items-center gap-3 rounded-xl border border-secondary px-4 py-3">
+              <Image src="/images/ibm.svg" alt="IBM" width={48} height={20} />
+              <p className="text-sm font-medium text-secondary">
+                IBM Business Partner
+                <br />
+                <span className="font-normal text-quaternary">Since 1990</span>
+              </p>
+            </div>
+          </div>
+
+          <nav className="flex-1">
+            <ul className="grid grid-cols-2 gap-8 md:grid-cols-3 xl:grid-cols-5">
+              {navColumns.map((category) => (
+                <li key={category.heading}>
+                  <h4 className="text-sm font-semibold text-quaternary">{category.heading}</h4>
+                  <ul className="mt-4 flex flex-col gap-3">
+                    {category.links.map((link) => (
+                      <li key={link.href} className="flex">
+                        <Link href={link.href} className={footerLinkClass}>
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
-      </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-white/[0.04] bg-[#020617]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
-          <p className="text-xs text-slate-500">
+        {/* Brand hairline */}
+        <div
+          aria-hidden="true"
+          className="mt-12 h-px w-full bg-gradient-to-r from-transparent via-brand-500/40 to-transparent md:mt-16"
+        />
+
+        {/* Bottom bar */}
+        <div className="flex flex-col-reverse justify-between gap-6 pt-8 md:flex-row md:items-center">
+          <p className="text-sm text-quaternary">
             &copy; {new Date().getFullYear()} International Computer Exchange, Inc. All Rights Reserved.
           </p>
-          <a
-            href="https://mdcran.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-slate-600 hover:text-sky-400 transition-colors duration-300"
-          >
-            by MDCran
-          </a>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            {legalLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-xs text-sm text-quaternary outline-brand transition duration-100 ease-linear hover:text-tertiary focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <a
+              href="https://mdcran.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xs text-sm text-quaternary outline-brand transition duration-100 ease-linear hover:text-tertiary focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              by MDCran
+            </a>
+          </div>
         </div>
       </div>
     </footer>

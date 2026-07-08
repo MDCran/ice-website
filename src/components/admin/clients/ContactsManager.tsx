@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AlertCircle, Edit03, Mail01, Phone01, Plus, Trash01, Users01, XClose } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  X,
-  Loader2,
-  AlertCircle,
-  Phone,
-  Mail,
-  User,
-} from "lucide-react";
+import { Avatar } from "@/components/base/avatar/avatar";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { CloseButton } from "@/components/base/buttons/close-button";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { Input } from "@/components/base/input/input";
+import { Label } from "@/components/base/input/label";
+import { NativeSelect } from "@/components/base/select/select-native";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { Table, TableCard } from "@/components/application/table/table";
 
 interface ContactPhone {
   id: string;
@@ -51,6 +52,22 @@ interface EmailEntry {
   label: string;
   is_primary: boolean;
 }
+
+const phoneLabelOptions = [
+  { label: "Work", value: "Work" },
+  { label: "Mobile", value: "Mobile" },
+  { label: "Home", value: "Home" },
+  { label: "Other", value: "Other" },
+];
+
+const emailLabelOptions = [
+  { label: "Work", value: "Work" },
+  { label: "Personal", value: "Personal" },
+  { label: "Other", value: "Other" },
+];
+
+const getInitials = (first: string, last: string) =>
+  `${first?.charAt(0) ?? ""}${last?.charAt(0) ?? ""}`.toUpperCase() || undefined;
 
 export default function ContactsManager({
   clientId,
@@ -102,6 +119,11 @@ export default function ContactsManager({
     setEmails([{ email: "", label: "Work", is_primary: true }]);
     setEditingContact(null);
     setError("");
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    resetForm();
   };
 
   const openCreate = () => {
@@ -290,350 +312,251 @@ export default function ContactsManager({
     return primary?.phone_number ?? contact.contact_phones[0]?.phone_number ?? "N/A";
   };
 
+  const contacts = loadedContacts ?? [];
+
   return (
     <div>
-      <div className="flex items-center justify-end mb-6">
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold transition-colors"
-        >
-          <Plus size={16} />
-          Add Contact
-        </button>
-      </div>
+      <TableCard.Root size="sm">
+        <TableCard.Header
+          title="Contacts"
+          badge={`${contacts.length}`}
+          contentTrailing={
+            <Button color="primary" size="sm" iconLeading={Plus} onClick={openCreate}>
+              Add Contact
+            </Button>
+          }
+        />
 
-      {/* Contacts Table */}
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Primary Email
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Primary Phone
-              </th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {(loadedContacts ?? []).length > 0 ? (
-              (loadedContacts ?? []).map((contact) => (
-                <tr
-                  key={contact.id}
-                  className="hover:bg-white/[0.02] transition-colors"
-                >
-                  <td className="px-6 py-4">
+        {contacts.length > 0 ? (
+          <Table aria-label="Contacts" size="sm">
+            <Table.Header>
+              <Table.Head id="name" label="Name" isRowHeader className="w-full" />
+              <Table.Head id="email" label="Primary Email" />
+              <Table.Head id="phone" label="Primary Phone" />
+              <Table.Head id="actions" />
+            </Table.Header>
+            <Table.Body>
+              {contacts.map((contact) => (
+                <Table.Row id={contact.id} key={contact.id}>
+                  <Table.Cell>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-sky-500/10 flex items-center justify-center">
-                        <User size={14} className="text-sky-400" />
-                      </div>
+                      <Avatar
+                        size="sm"
+                        alt={`${contact.first_name} ${contact.last_name}`}
+                        initials={getInitials(contact.first_name, contact.last_name)}
+                      />
                       <div>
-                        <div className="text-sm font-medium admin-text">
+                        <p className="text-sm font-medium whitespace-nowrap text-primary">
                           {contact.first_name} {contact.last_name}
-                        </div>
+                        </p>
                         {(contact.title || contact.department) && (
-                          <div className="text-xs text-slate-500">
+                          <p className="text-xs whitespace-nowrap text-tertiary">
                             {[contact.title, contact.department]
                               .filter(Boolean)
                               .join(" - ")}
-                          </div>
+                          </p>
                         )}
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                      <Mail size={13} className="text-slate-500" />
+                  </Table.Cell>
+                  <Table.Cell>
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <Mail01 className="size-4 shrink-0 text-fg-quaternary" />
                       {getPrimaryEmail(contact)}
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                      <Phone size={13} className="text-slate-500" />
+                  </Table.Cell>
+                  <Table.Cell>
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <Phone01 className="size-4 shrink-0 text-fg-quaternary" />
                       {getPrimaryPhone(contact)}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
+                  </Table.Cell>
+                  <Table.Cell className="px-4">
+                    <div className="flex justify-end gap-0.5">
+                      <ButtonUtility
+                        size="xs"
+                        color="tertiary"
+                        tooltip="Edit"
+                        icon={Edit03}
                         onClick={() => openEdit(contact)}
-                        className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                        title="Edit"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
+                      />
+                      <ButtonUtility
+                        size="xs"
+                        color="tertiary"
+                        tooltip="Delete"
+                        icon={Trash01}
                         onClick={() => handleDelete(contact.id)}
-                        className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      />
                     </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-6 py-12 text-center text-slate-500 text-sm"
-                >
-                  No contacts found. Add one to get started.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
+        ) : (
+          <div className="flex justify-center px-6 py-12">
+            <EmptyState size="sm">
+              <EmptyState.Header>
+                <EmptyState.FeaturedIcon icon={Users01} color="gray" />
+              </EmptyState.Header>
+              <EmptyState.Content>
+                <EmptyState.Title>No contacts found</EmptyState.Title>
+                <EmptyState.Description>Add one to get started.</EmptyState.Description>
+              </EmptyState.Content>
+            </EmptyState>
+          </div>
+        )}
+      </TableCard.Root>
 
       {/* Contact Form Modal */}
-      {showForm && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            onClick={() => {
-              setShowForm(false);
-              resetForm();
-            }}
-          />
-          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[10vh] overflow-y-auto">
-            <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold admin-text">
-                  {editingContact ? "Edit Contact" : "Add Contact"}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowForm(false);
-                    resetForm();
-                  }}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                >
-                  <X size={18} />
-                </button>
+      <ModalOverlay
+        isDismissable
+        isOpen={showForm}
+        onOpenChange={(open) => {
+          if (!open) closeForm();
+        }}
+      >
+        <Modal className="w-full max-w-lg">
+          <Dialog>
+            <div className="flex items-start justify-between gap-4 px-6 pt-6">
+              <h2 className="text-lg font-semibold text-primary">
+                {editingContact ? "Edit Contact" : "Add Contact"}
+              </h2>
+              <CloseButton size="sm" onClick={closeForm} />
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-6 pt-5 pb-6">
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg bg-utility-red-50 px-3.5 py-2.5 text-sm text-utility-red-700 ring-1 ring-utility-red-200 ring-inset">
+                  <AlertCircle className="size-4 shrink-0 text-utility-red-500" />
+                  {error}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="First Name" isRequired value={firstName} onChange={setFirstName} />
+                <Input label="Last Name" isRequired value={lastName} onChange={setLastName} />
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {error && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                    <AlertCircle size={16} />
-                    {error}
-                  </div>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="Title" value={title} onChange={setTitle} placeholder="e.g. IT Director" />
+                <Input label="Department" value={department} onChange={setDepartment} placeholder="e.g. IT" />
+              </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      required
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+              {/* Phones */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label>Phone Numbers</Label>
+                  <Button color="link-color" size="sm" onClick={addPhone}>
+                    + Add Phone
+                  </Button>
+                </div>
+                {phones.map((p, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      size="sm"
+                      type="tel"
+                      aria-label="Phone number"
+                      value={p.phone_number}
+                      onChange={(value) => updatePhone(i, "phone_number", value)}
+                      placeholder="(555) 123-4567"
+                      className="flex-1"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+                    <NativeSelect
+                      aria-label="Phone label"
+                      size="sm"
+                      value={p.label}
+                      onChange={(e) => updatePhone(i, "label", e.target.value)}
+                      options={phoneLabelOptions}
+                      className="w-max shrink-0"
                     />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g. IT Director"
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+                    <Checkbox
+                      size="sm"
+                      label="Primary"
+                      isSelected={p.is_primary}
+                      onChange={(isSelected) => updatePhone(i, "is_primary", isSelected)}
+                      className="shrink-0"
                     />
+                    {phones.length > 1 && (
+                      <ButtonUtility
+                        size="xs"
+                        color="tertiary"
+                        tooltip="Remove phone"
+                        icon={XClose}
+                        onClick={() => removePhone(i)}
+                      />
+                    )}
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Department
-                    </label>
-                    <input
-                      type="text"
-                      value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      placeholder="e.g. IT"
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+                ))}
+              </div>
+
+              {/* Emails */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label>Email Addresses</Label>
+                  <Button color="link-color" size="sm" onClick={addEmail}>
+                    + Add Email
+                  </Button>
+                </div>
+                {emails.map((em, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      size="sm"
+                      type="email"
+                      aria-label="Email address"
+                      value={em.email}
+                      onChange={(value) => updateEmail(i, "email", value)}
+                      placeholder="name@company.com"
+                      className="flex-1"
                     />
+                    <NativeSelect
+                      aria-label="Email label"
+                      size="sm"
+                      value={em.label}
+                      onChange={(e) => updateEmail(i, "label", e.target.value)}
+                      options={emailLabelOptions}
+                      className="w-max shrink-0"
+                    />
+                    <Checkbox
+                      size="sm"
+                      label="Primary"
+                      isSelected={em.is_primary}
+                      onChange={(isSelected) => updateEmail(i, "is_primary", isSelected)}
+                      className="shrink-0"
+                    />
+                    {emails.length > 1 && (
+                      <ButtonUtility
+                        size="xs"
+                        color="tertiary"
+                        tooltip="Remove email"
+                        icon={XClose}
+                        onClick={() => removeEmail(i)}
+                      />
+                    )}
                   </div>
-                </div>
+                ))}
+              </div>
 
-                {/* Phones */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Phone Numbers
-                    </label>
-                    <button
-                      type="button"
-                      onClick={addPhone}
-                      className="text-xs text-sky-400 hover:text-sky-300 transition-colors"
-                    >
-                      + Add Phone
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {phones.map((p, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <input
-                          type="tel"
-                          value={p.phone_number}
-                          onChange={(e) =>
-                            updatePhone(i, "phone_number", e.target.value)
-                          }
-                          placeholder="(555) 123-4567"
-                          className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all text-sm"
-                        />
-                        <select
-                          value={p.label}
-                          onChange={(e) =>
-                            updatePhone(i, "label", e.target.value)
-                          }
-                          className="px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 admin-text text-sm focus:outline-none"
-                        >
-                          <option value="Work">Work</option>
-                          <option value="Mobile">Mobile</option>
-                          <option value="Home">Home</option>
-                          <option value="Other">Other</option>
-                        </select>
-                        <label className="flex items-center gap-1 text-xs text-slate-400 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={p.is_primary}
-                            onChange={(e) =>
-                              updatePhone(i, "is_primary", e.target.checked)
-                            }
-                            className="rounded"
-                          />
-                          Primary
-                        </label>
-                        {phones.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removePhone(i)}
-                            className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
-                          >
-                            <X size={14} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Emails */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Email Addresses
-                    </label>
-                    <button
-                      type="button"
-                      onClick={addEmail}
-                      className="text-xs text-sky-400 hover:text-sky-300 transition-colors"
-                    >
-                      + Add Email
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {emails.map((em, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <input
-                          type="email"
-                          value={em.email}
-                          onChange={(e) =>
-                            updateEmail(i, "email", e.target.value)
-                          }
-                          placeholder="name@company.com"
-                          className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all text-sm"
-                        />
-                        <select
-                          value={em.label}
-                          onChange={(e) =>
-                            updateEmail(i, "label", e.target.value)
-                          }
-                          className="px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 admin-text text-sm focus:outline-none"
-                        >
-                          <option value="Work">Work</option>
-                          <option value="Personal">Personal</option>
-                          <option value="Other">Other</option>
-                        </select>
-                        <label className="flex items-center gap-1 text-xs text-slate-400 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={em.is_primary}
-                            onChange={(e) =>
-                              updateEmail(i, "is_primary", e.target.checked)
-                            }
-                            className="rounded"
-                          />
-                          Primary
-                        </label>
-                        {emails.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeEmail(i)}
-                            className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
-                          >
-                            <X size={14} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="flex-1 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isPending ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : null}
-                    {editingContact ? "Save Changes" : "Add Contact"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForm(false);
-                      resetForm();
-                    }}
-                    className="px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </>
-      )}
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  type="submit"
+                  color="primary"
+                  size="md"
+                  className="flex-1"
+                  isDisabled={isPending}
+                  isLoading={isPending}
+                  showTextWhileLoading
+                >
+                  {editingContact ? "Save Changes" : "Add Contact"}
+                </Button>
+                <Button type="button" color="secondary" size="md" onClick={closeForm}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
     </div>
   );
 }

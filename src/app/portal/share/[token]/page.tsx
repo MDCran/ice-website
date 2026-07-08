@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
-import { FileX } from "lucide-react";
-import Link from "next/link";
+import { FileX02 } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 
 interface SharePageProps {
   params: Promise<{ token: string }>;
@@ -50,22 +51,17 @@ export default async function SharePage({ params }: SharePageProps) {
   // Not found or unauthorized
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-        <FileX size={32} className="text-red-400" />
-      </div>
-      <h2 className="text-xl font-bold admin-text mb-2">
+      <FeaturedIcon color="error" theme="light" size="xl" icon={FileX02} className="mb-4" />
+      <h2 className="mb-2 text-xl font-semibold text-primary">
         Document Not Found
       </h2>
-      <p className="text-sm text-slate-400 mb-6 max-w-md">
+      <p className="mb-6 max-w-md text-md text-tertiary">
         The shared document could not be found or you do not have permission to
         access it.
       </p>
-      <Link
-        href="/portal"
-        className="px-6 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium transition-colors"
-      >
+      <Button href="/portal" size="md" color="primary">
         Back to Dashboard
-      </Link>
+      </Button>
     </div>
   );
 }

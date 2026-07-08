@@ -1,17 +1,27 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, type ComponentType } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  Search, Menu, X, ChevronDown, Phone, Mail, MapPin,
-  Cloud, Shield, Lock, Server, ArrowRight,
-  type LucideIcon,
-} from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { cn } from "@/lib/utils";
-import { useTheme } from "@/lib/themeProvider";
+  SearchLg,
+  Menu02,
+  XClose,
+  ChevronDown,
+  ArrowRight,
+  Phone01,
+  Mail01,
+  MarkerPin02,
+  Cloud01,
+  Shield01,
+  Lock01,
+  Server01,
+} from "@untitledui/icons";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { cx } from "@/utils/cx";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { resolveIcon } from "@/lib/iconMap";
 
@@ -27,14 +37,14 @@ const NAV_LINKS: readonly { label: string; href: string; hasMega?: boolean }[] =
 
 interface MegaColumn {
   heading: string;
-  icon: LucideIcon;
+  icon: ComponentType<{ className?: string }>;
   links: { label: string; href: string }[];
 }
 
 const SOLUTIONS_MEGA: MegaColumn[] = [
   {
     heading: "Managed Cloud Services",
-    icon: Cloud,
+    icon: Cloud01,
     links: [
       { label: "Managed Cloud Hosting", href: "/solutions/managed-cloud-hosting" },
       { label: "Managed Private Cloud", href: "/solutions/managed-private-cloud" },
@@ -44,7 +54,7 @@ const SOLUTIONS_MEGA: MegaColumn[] = [
   },
   {
     heading: "Managed Data Protection",
-    icon: Shield,
+    icon: Shield01,
     links: [
       { label: "Backup as a Service", href: "/solutions/backup-as-a-service" },
       { label: "Disaster Recovery as a Service", href: "/solutions/disaster-recovery" },
@@ -54,7 +64,7 @@ const SOLUTIONS_MEGA: MegaColumn[] = [
   },
   {
     heading: "Managed Security",
-    icon: Lock,
+    icon: Lock01,
     links: [
       { label: "IBM i Security", href: "/solutions/ibm-i-security" },
       { label: "Protection Suite", href: "/solutions/protection-suite" },
@@ -65,7 +75,7 @@ const SOLUTIONS_MEGA: MegaColumn[] = [
   },
   {
     heading: "Managed Services",
-    icon: Server,
+    icon: Server01,
     links: [
       { label: "Managed Microsoft Services", href: "/solutions/managed-microsoft" },
       { label: "Automation Suite", href: "/solutions/automation-suite" },
@@ -75,11 +85,17 @@ const SOLUTIONS_MEGA: MegaColumn[] = [
   },
 ];
 
+/* ─── Helpers ──────────────────────────────────────────────────────────── */
+
+const openSearch = () =>
+  document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true }));
+
 /* ─── Component ────────────────────────────────────────────────────────── */
 
 export default function Navbar({ navItems }: { navItems?: any[] }) {
   // Resolve nav links from CMS or fallback
-  const navbarTopItems = navItems?.filter((i: any) => i.location === "navbar_top" && i.is_visible)
+  // Seed data uses location "navbar"; older rows may use "navbar_top" — accept both.
+  const navbarTopItems = navItems?.filter((i: any) => (i.location === "navbar_top" || i.location === "navbar") && i.is_visible)
     .sort((a: any, b: any) => a.sort_order - b.sort_order) ?? [];
   const navLinks = navbarTopItems.length > 0
     ? navbarTopItems.map((i: any) => ({ label: i.label, href: i.href, hasMega: i.has_mega_menu ?? false }))
@@ -102,11 +118,34 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
     : SOLUTIONS_MEGA;
 
   const pathname = usePathname();
-  const { theme } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  // Close-intent delay so the mega menu doesn't flicker when the cursor
+  // briefly leaves the trigger/panel while moving between them.
+  const megaCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openMega = useCallback(() => {
+    if (megaCloseTimer.current) {
+      clearTimeout(megaCloseTimer.current);
+      megaCloseTimer.current = null;
+    }
+    setMegaOpen(true);
+  }, []);
+
+  const scheduleMegaClose = useCallback(() => {
+    if (megaCloseTimer.current) clearTimeout(megaCloseTimer.current);
+    megaCloseTimer.current = setTimeout(() => setMegaOpen(false), 100);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (megaCloseTimer.current) clearTimeout(megaCloseTimer.current);
+    };
+  }, []);
 
   const handleScroll = useCallback(() => {
     setScrolled(window.scrollY > 40);
@@ -120,7 +159,13 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    // Flag the open state on <body> so floating widgets (contact button /
+    // accessibility) can drop below the full-screen mobile menu.
+    document.body.classList.toggle("menu-open", mobileOpen);
+    return () => {
+      document.body.style.overflow = "";
+      document.body.classList.remove("menu-open");
+    };
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -135,29 +180,33 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50">
+    <header className="sticky top-0 z-50 w-full">
       {/* ══════════ Top Info Bar ══════════ */}
       <div
-        className={cn(
-          "hidden lg:block transition-all duration-300 overflow-hidden",
+        className={cx(
+          "hidden overflow-hidden transition-all duration-300 lg:block",
           scrolled ? "max-h-0 opacity-0" : "max-h-12 opacity-100"
         )}
       >
-        <div className="nav-blur border-b border-white/[0.04]">
-          <div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between text-xs text-slate-400">
+        <div className="border-b border-secondary bg-secondary">
+          <div className="mx-auto flex max-w-container items-center justify-between px-4 py-2 text-xs text-tertiary md:px-8">
+            <span className="inline-flex items-center gap-1.5">
+              <MarkerPin02 className="size-3.5 shrink-0 text-fg-quaternary" />
+              1279 W Palmetto Park Rd #272415, Boca Raton, FL 33427
+            </span>
             <div className="flex items-center gap-6">
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-3 w-3 text-sky-400" />
-                1279 W Palmetto Park Rd #272415, Boca Raton, FL 33427
-              </span>
-            </div>
-            <div className="flex items-center gap-6">
-              <a href="tel:18007869188" className="inline-flex items-center gap-1.5 transition-colors hover:text-sky-400">
-                <Phone className="h-3 w-3 text-sky-400" />
+              <a
+                href="tel:18007869188"
+                className="inline-flex items-center gap-1.5 rounded-sm outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                <Phone01 className="size-3.5 shrink-0 text-fg-quaternary" />
                 1-800-786-9188
               </a>
-              <a href="mailto:info@icesales.com" className="inline-flex items-center gap-1.5 transition-colors hover:text-sky-400">
-                <Mail className="h-3 w-3 text-sky-400" />
+              <a
+                href="mailto:info@icesales.com"
+                className="inline-flex items-center gap-1.5 rounded-sm outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                <Mail01 className="size-3.5 shrink-0 text-fg-quaternary" />
                 info@icesales.com
               </a>
             </div>
@@ -166,53 +215,91 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
       </div>
 
       {/* ══════════ Main Nav ══════════ */}
+      {/* Light mode: solid pure white so the white logo plate blends seamlessly.
+          Dark mode: navy glass (translucent primary + blur) with white plate behind the JPG logo. */}
       <nav
-        className={cn(
-          "nav-blur transition-all duration-300",
-          scrolled
-            ? "border-b border-sky-500/10 shadow-lg shadow-sky-500/5"
-            : "border-b border-white/[0.04]"
+        className={cx(
+          "border-b border-secondary bg-white transition-shadow duration-300 dark:bg-primary/80 dark:backdrop-blur-xl",
+          scrolled && "shadow-sm"
         )}
       >
-        <div className="mx-auto max-w-7xl px-6 flex items-center justify-between h-16 lg:h-[72px]">
+        <div className="mx-auto flex h-16 max-w-container items-center justify-between px-4 md:px-8 lg:h-18">
           {/* Logo */}
-          <Link href="/" className="relative shrink-0 group" aria-label="ICE Home">
-            <div className="logo-container rounded-lg bg-[#ffffff] px-3 py-2 flex items-center transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(4,155,251,0.3)]">
+          <Link
+            href="/"
+            aria-label="ICE Home"
+            className="shrink-0 rounded-lg outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            {/* Desktop: full logo (with tagline) on a white plate. */}
+            <span className="hidden items-center rounded-lg bg-white px-3 py-2 lg:flex">
               <Image
                 src="/images/logo/ice-logo.jpg"
                 alt="International Computer Exchange"
                 width={220}
                 height={66}
-                className="h-12 lg:h-14 w-auto"
+                className="h-10 w-auto lg:h-12"
                 priority
               />
-            </div>
+            </span>
+            {/* Mobile: clean transparent, theme-aware ICE mark — no white plate. */}
+            <span className="flex items-center lg:hidden">
+              <Image
+                src="/images/logo/logo-dark.svg"
+                alt="International Computer Exchange"
+                width={200}
+                height={83}
+                className="h-8 w-auto dark:hidden"
+                priority
+              />
+              <Image
+                src="/images/logo/logo-white.svg"
+                alt=""
+                aria-hidden="true"
+                width={200}
+                height={83}
+                className="hidden h-8 w-auto dark:block"
+                priority
+              />
+            </span>
           </Link>
 
           {/* Desktop Links */}
-          <div className="hidden lg:flex items-center gap-1">
+          <div className="hidden items-center gap-0.5 lg:flex">
             {navLinks.map((link) =>
               link.hasMega ? (
                 <div
                   key={link.label}
                   className="relative"
-                  onMouseEnter={() => setMegaOpen(true)}
-                  onMouseLeave={() => setMegaOpen(false)}
+                  onMouseEnter={openMega}
+                  onMouseLeave={scheduleMegaClose}
+                  onBlur={(e) => {
+                    // Close when keyboard focus leaves the trigger + panel entirely
+                    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                      setMegaOpen(false);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setMegaOpen(false);
+                  }}
                 >
                   <Link
                     href={link.href}
-                    className={cn(
-                      "inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300",
+                    aria-expanded={megaOpen}
+                    aria-haspopup="true"
+                    onFocus={openMega}
+                    onClick={openMega}
+                    className={cx(
+                      "inline-flex cursor-pointer items-center gap-0.5 rounded-lg px-3 py-2 text-sm font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
                       isActive(link.href)
-                        ? "text-sky-400 text-glow-purple"
-                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                        ? "text-brand-secondary"
+                        : "text-secondary hover:bg-primary_hover hover:text-primary"
                     )}
                   >
                     {link.label}
                     <ChevronDown
-                      className={cn(
-                        "h-4 w-4 transition-transform duration-300",
-                        megaOpen && "rotate-180"
+                      className={cx(
+                        "size-4 stroke-[2.625px] text-fg-quaternary transition duration-100 ease-linear",
+                        megaOpen && "-rotate-180"
                       )}
                     />
                   </Link>
@@ -221,77 +308,59 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                   <AnimatePresence>
                     {megaOpen && (
                       <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 8 }}
-                        transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-                        className="absolute top-full left-1/2 -translate-x-1/2 pt-4"
+                        initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
+                        animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+                        exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
+                        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute top-full left-1/2 -translate-x-1/2 pt-3"
+                        style={{ transformOrigin: "top center" }}
                       >
-                        <div
-                          className={cn(
-                            "w-[820px] rounded-xl overflow-hidden",
-                            "border border-white/[0.08]",
-                            "bg-[#020617]/97 backdrop-blur-2xl",
-                            "shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_1px_rgba(255,255,255,0.05)]"
-                          )}
-                        >
-                          {/* Subtle top accent line */}
-                          <div className="h-px w-full bg-gradient-to-r from-transparent via-sky-400/40 to-transparent" />
-
-                          <div className="relative">
-                            {/* Subtle background glow */}
-                            <div className="absolute top-0 left-1/4 w-1/2 h-32 bg-sky-500/[0.03] blur-3xl pointer-events-none" />
-
-                            <div className="relative z-10 p-6">
-                              <div className="grid grid-cols-4 gap-0">
-                                {solutionsMega.map((col, colIdx) => (
-                                  <div
-                                    key={col.heading}
-                                    className={cn(
-                                      "px-4 flex flex-col",
-                                      colIdx < 3 && "border-r border-white/[0.04]"
-                                    )}
-                                  >
-                                    {/* Category header — fixed height for uniform alignment */}
-                                    <div className="flex items-center gap-2.5 h-10 mb-3 pb-3 border-b border-white/[0.06]">
-                                      <col.icon className="h-4 w-4 text-sky-400/80 shrink-0" />
-                                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 leading-tight">
-                                        {col.heading}
-                                      </span>
-                                    </div>
-
-                                    {/* Links — flex-1 fills remaining space for uniform column height */}
-                                    <ul className="space-y-0.5 flex-1">
-                                      {col.links.map((item) => (
-                                        <li key={item.href}>
-                                          <Link
-                                            href={item.href}
-                                            className="group flex items-center gap-2 px-2.5 py-[7px] rounded-lg text-[13px] text-slate-300 transition-all duration-200 hover:text-white hover:bg-white/[0.04]"
-                                          >
-                                            <span className="flex-1">{item.label}</span>
-                                            <ArrowRight className="h-3 w-3 text-sky-400/50 opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0" />
-                                          </Link>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Bottom bar */}
-                            <div className="relative z-10 px-6 py-3.5 border-t border-white/[0.06] bg-white/[0.015] flex items-center justify-between">
-                              <span className="text-[11px] text-slate-500 tracking-wide">
-                                Enterprise solutions since 1990
-                              </span>
-                              <Link
-                                href="/solutions"
-                                className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-sky-400 hover:text-sky-300 transition-colors"
+                        <div className="w-[820px] overflow-hidden rounded-2xl bg-primary/75 shadow-2xl ring-1 ring-black/5 backdrop-blur-2xl backdrop-saturate-150 dark:ring-white/10">
+                          {/* Brand gradient hairline */}
+                          <div aria-hidden="true" className="h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent" />
+                          <div className="grid grid-cols-4 p-6">
+                            {solutionsMega.map((col, colIdx) => (
+                              <div
+                                key={col.heading}
+                                className={cx(
+                                  "flex flex-col px-4",
+                                  colIdx < solutionsMega.length - 1 && "border-r border-secondary"
+                                )}
                               >
-                                View All Solutions
-                                <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
-                              </Link>
-                            </div>
+                                {/* Category header — fixed height for uniform alignment */}
+                                <div className="mb-3 flex h-10 items-center gap-2 border-b border-secondary pb-3">
+                                  <col.icon className="size-4 shrink-0 text-fg-brand-primary" />
+                                  <span className="font-mono text-[11px] leading-tight font-semibold tracking-wider text-brand-tertiary uppercase">
+                                    {col.heading}
+                                  </span>
+                                </div>
+
+                                {/* Links — flex-1 fills remaining space for uniform column height */}
+                                <ul className="flex flex-1 flex-col gap-0.5">
+                                  {col.links.map((item) => (
+                                    <li key={item.href}>
+                                      <Link
+                                        href={item.href}
+                                        className="group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-secondary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover/60 hover:text-primary focus-visible:outline-2"
+                                      >
+                                        <span className="flex-1">{item.label}</span>
+                                        <ArrowRight className="size-3.5 shrink-0 -translate-x-1 text-fg-brand-primary opacity-0 transition duration-100 ease-linear group-hover:translate-x-0 group-hover:opacity-100" />
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Bottom bar */}
+                          <div className="flex items-center justify-between border-t border-secondary bg-secondary/50 px-6 py-3">
+                            <span className="text-xs text-quaternary">
+                              Enterprise solutions since 1990
+                            </span>
+                            <Button href="/solutions" color="link-color" size="sm" iconTrailing={ArrowRight}>
+                              View All Solutions
+                            </Button>
                           </div>
                         </div>
                       </motion.div>
@@ -302,11 +371,11 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300",
+                  className={cx(
+                    "rounded-lg px-3 py-2 text-sm font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
                     isActive(link.href)
-                      ? "text-sky-400 text-glow-purple nav-link-active"
-                      : "text-slate-300 hover:text-white hover:bg-white/5"
+                      ? "text-brand-secondary"
+                      : "text-secondary hover:bg-primary_hover hover:text-primary"
                   )}
                 >
                   {link.label}
@@ -315,34 +384,37 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
             )}
 
             {/* Search (opens Cmd+K modal) */}
-            <button
-              onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true }))}
-              className="ml-3 inline-flex items-center gap-2 p-2.5 rounded-xl text-slate-400 transition-all duration-300 hover:text-sky-400 hover:bg-sky-400/5 hover:shadow-[0_0_15px_rgba(168,85,247,0.1)] cursor-pointer"
-              aria-label="Search (Ctrl+K)"
-            >
-              <Search className="h-5 w-5" />
-            </button>
+            <div className="ml-2 flex items-center gap-1">
+              <ButtonUtility
+                color="tertiary"
+                size="sm"
+                icon={SearchLg}
+                onClick={openSearch}
+                aria-label="Search (Ctrl+K)"
+              />
 
-            {/* Theme Toggle */}
-            <ThemeToggle />
+              {/* Theme Toggle */}
+              <ThemeToggle />
+            </div>
           </div>
 
-          {/* Mobile Controls */}
-          <div className="flex lg:hidden items-center gap-2">
-            <button
-              onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true }))}
-              className="p-2 rounded-lg text-slate-400 transition-colors hover:text-sky-400 cursor-pointer"
+          {/* Mobile Controls — comfortable 44px tap targets */}
+          <div className="flex items-center gap-1.5 lg:hidden">
+            <ButtonUtility
+              color="tertiary"
+              size="md"
+              icon={SearchLg}
+              onClick={openSearch}
               aria-label="Search"
-            >
-              <Search className="h-5 w-5" />
-            </button>
-            <button
+            />
+            <ButtonUtility
+              color="tertiary"
+              size="md"
+              icon={mobileOpen ? XClose : Menu02}
               onClick={() => setMobileOpen((prev) => !prev)}
-              className="p-2 rounded-lg text-slate-300 transition-colors hover:text-white hover:bg-white/5"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            >
-              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+              aria-expanded={mobileOpen}
+            />
           </div>
         </div>
       </nav>
@@ -355,11 +427,10 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 lg:hidden"
-            style={{ top: 0 }}
+            className="fixed inset-0 z-[80] lg:hidden"
           >
             <div
-              className="mobile-menu-backdrop absolute inset-0 bg-[#020617]/98 backdrop-blur-xl"
+              className="absolute inset-0 bg-overlay/70 backdrop-blur-[6px]"
               onClick={() => setMobileOpen(false)}
             />
             <motion.nav
@@ -367,45 +438,66 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="mobile-menu absolute inset-y-0 right-0 w-full max-w-sm bg-[#020617] border-l border-sky-500/10 flex flex-col overflow-y-auto"
+              className="absolute inset-y-0 right-0 flex w-full max-w-sm flex-col overflow-y-auto border-l border-secondary bg-primary shadow-xl"
             >
-              <div className="flex items-center justify-between px-6 h-16 border-b border-white/5 mobile-menu-header">
-                <Link href="/" onClick={() => setMobileOpen(false)} aria-label="ICE Home">
-                  <div className="logo-container rounded-lg bg-[#ffffff] px-2.5 py-1.5 flex items-center">
+              <div className="flex h-16 shrink-0 items-center justify-between border-b border-secondary px-4">
+                <Link
+                  href="/"
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="ICE Home"
+                  className="rounded-lg outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <span className="flex items-center">
                     <Image
-                      src="/images/logo/ice-logo.jpg"
+                      src="/images/logo/logo-dark.svg"
                       alt="International Computer Exchange"
-                      width={180}
-                      height={54}
-                      className="h-10 w-auto"
+                      width={200}
+                      height={83}
+                      className="h-8 w-auto dark:hidden"
                     />
-                  </div>
+                    <Image
+                      src="/images/logo/logo-white.svg"
+                      alt=""
+                      aria-hidden="true"
+                      width={200}
+                      height={83}
+                      className="hidden h-8 w-auto dark:block"
+                    />
+                  </span>
                 </Link>
                 <div className="flex items-center gap-1">
                   <ThemeToggle />
-                  <button
+                  <ButtonUtility
+                    color="tertiary"
+                    size="sm"
+                    icon={XClose}
                     onClick={() => setMobileOpen(false)}
-                    className="mobile-menu-close p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
                     aria-label="Close menu"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
+                  />
                 </div>
               </div>
 
-              <div className="flex-1 px-6 py-8 space-y-1">
+              <div className="flex flex-1 flex-col gap-0.5 px-4 py-6">
                 {navLinks.map((link) =>
                   link.hasMega ? (
                     <div key={link.label}>
                       <button
                         onClick={() => setMobileSolutionsOpen((prev) => !prev)}
-                        className={cn(
-                          "mobile-menu-link w-full flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium transition-colors",
-                          isActive(link.href) ? "text-sky-400" : "text-slate-300 hover:text-white hover:bg-white/5"
+                        aria-expanded={mobileSolutionsOpen}
+                        className={cx(
+                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-4 py-3 text-md font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
+                          isActive(link.href)
+                            ? "text-brand-secondary"
+                            : "text-secondary hover:bg-primary_hover hover:text-primary"
                         )}
                       >
                         {link.label}
-                        <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", mobileSolutionsOpen && "rotate-180")} />
+                        <ChevronDown
+                          className={cx(
+                            "size-5 text-fg-quaternary transition duration-100 ease-linear",
+                            mobileSolutionsOpen && "-rotate-180"
+                          )}
+                        />
                       </button>
 
                       <AnimatePresence>
@@ -417,26 +509,27 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                             transition={{ duration: 0.25 }}
                             className="overflow-hidden"
                           >
-                            <div className="pl-4 pb-2 space-y-4 mt-2">
+                            <div className="mt-2 flex flex-col gap-4 pb-2 pl-4">
                               <Link
                                 href="/solutions"
                                 onClick={() => setMobileOpen(false)}
-                                className="block px-4 py-2 text-sm font-medium text-sky-400 hover:text-sky-300 transition-colors"
+                                className="rounded-lg px-4 py-2 text-sm font-semibold text-brand-secondary outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary_hover focus-visible:outline-2"
                               >
                                 View All Solutions
                               </Link>
                               {solutionsMega.map((col) => (
                                 <div key={col.heading}>
-                                  <h4 className="px-4 text-xs font-semibold uppercase tracking-wider text-sky-400/70 mb-2">
+                                  <h4 className="mb-2 flex items-center gap-2 px-4 text-xs font-semibold text-brand-tertiary uppercase">
+                                    <col.icon className="size-3.5 shrink-0 text-fg-brand-primary" />
                                     {col.heading}
                                   </h4>
-                                  <ul className="space-y-0.5">
+                                  <ul className="flex flex-col gap-0.5">
                                     {col.links.map((item) => (
                                       <li key={item.href}>
                                         <Link
                                           href={item.href}
                                           onClick={() => setMobileOpen(false)}
-                                          className="mobile-menu-sublink block px-4 py-2 text-sm text-slate-400 rounded-lg transition-colors hover:text-white hover:bg-white/5"
+                                          className="block rounded-lg px-4 py-2 text-sm text-tertiary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover hover:text-primary focus-visible:outline-2"
                                         >
                                           {item.label}
                                         </Link>
@@ -455,9 +548,11 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                       key={link.label}
                       href={link.href}
                       onClick={() => setMobileOpen(false)}
-                      className={cn(
-                        "mobile-menu-link block px-4 py-3 rounded-lg text-base font-medium transition-colors",
-                        isActive(link.href) ? "text-sky-400 bg-sky-400/5" : "text-slate-300 hover:text-white hover:bg-white/5"
+                      className={cx(
+                        "block rounded-lg px-4 py-3 text-md font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
+                        isActive(link.href)
+                          ? "bg-active text-brand-secondary"
+                          : "text-secondary hover:bg-primary_hover hover:text-primary"
                       )}
                     >
                       {link.label}
@@ -466,12 +561,20 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                 )}
               </div>
 
-              <div className="px-6 py-6 border-t border-white/5 space-y-3 mobile-menu-footer">
-                <a href="tel:18007869188" className="flex items-center gap-3 text-sm text-slate-400 hover:text-sky-400 transition-colors">
-                  <Phone className="h-4 w-4 text-sky-400" />1-800-786-9188
+              <div className="flex shrink-0 flex-col gap-3 border-t border-secondary px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+                <a
+                  href="tel:18007869188"
+                  className="flex items-center gap-3 rounded-sm text-sm text-tertiary outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <Phone01 className="size-4 shrink-0 text-fg-quaternary" />
+                  1-800-786-9188
                 </a>
-                <a href="mailto:info@icesales.com" className="flex items-center gap-3 text-sm text-slate-400 hover:text-sky-400 transition-colors">
-                  <Mail className="h-4 w-4 text-sky-400" />info@icesales.com
+                <a
+                  href="mailto:info@icesales.com"
+                  className="flex items-center gap-3 rounded-sm text-sm text-tertiary outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <Mail01 className="size-4 shrink-0 text-fg-quaternary" />
+                  info@icesales.com
                 </a>
               </div>
             </motion.nav>

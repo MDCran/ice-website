@@ -1,23 +1,24 @@
 "use client";
 
-import { useState, useTransition, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AlertCircle, CheckCircle, Edit03, Eye, EyeOff, Plus, Receipt, SlashCircle01, XCircle, XClose } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
-import {
-  Plus,
-  Pencil,
-  X,
-  Loader2,
-  AlertCircle,
-  Upload,
-  Eye,
-  EyeOff,
-  Ban,
-  CheckCircle,
-  XCircle,
-  Calendar,
-  Clock,
-} from "lucide-react";
+import type { BadgeColor } from "@/components/base/badges/badges";
+import { Badge } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { CloseButton } from "@/components/base/buttons/close-button";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { Input } from "@/components/base/input/input";
+import { Label } from "@/components/base/input/label";
+import { NativeSelect } from "@/components/base/select/select-native";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Toggle } from "@/components/base/toggle/toggle";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
+import { FileUploadDropZone } from "@/components/application/file-upload/file-upload-base";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { Table, TableCard } from "@/components/application/table/table";
 
 interface Invoice {
   id: string;
@@ -33,14 +34,23 @@ interface Invoice {
   created_at?: string;
 }
 
-const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-  draft: { bg: "bg-slate-500/10", text: "text-slate-400", label: "Draft" },
-  active: { bg: "bg-sky-500/10", text: "text-sky-400", label: "Active" },
-  accepted: { bg: "bg-emerald-500/10", text: "text-emerald-400", label: "Accepted" },
-  denied: { bg: "bg-red-500/10", text: "text-red-400", label: "Denied" },
-  void: { bg: "bg-gray-500/10", text: "text-gray-400", label: "Void" },
-  pending: { bg: "bg-amber-500/10", text: "text-amber-400", label: "Pending" },
+const statusConfig: Record<string, { color: BadgeColor<"pill-color">; label: string }> = {
+  draft: { color: "gray", label: "Draft" },
+  active: { color: "blue", label: "Active" },
+  accepted: { color: "success", label: "Accepted" },
+  denied: { color: "error", label: "Denied" },
+  void: { color: "gray", label: "Void" },
+  pending: { color: "warning", label: "Pending" },
 };
+
+const statusOptions = [
+  { label: "Draft", value: "draft" },
+  { label: "Active", value: "active" },
+  { label: "Accepted", value: "accepted" },
+  { label: "Denied", value: "denied" },
+  { label: "Pending", value: "pending" },
+  { label: "Void", value: "void" },
+];
 
 export default function InvoicesManager({
   clientId,
@@ -99,6 +109,11 @@ export default function InvoicesManager({
     setFile(null);
     setEditingInvoice(null);
     setError("");
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    resetForm();
   };
 
   const openCreate = () => {
@@ -218,336 +233,265 @@ export default function InvoicesManager({
   const getStatusBadge = (s: string) => {
     const cfg = statusConfig[s] ?? statusConfig.draft;
     return (
-      <span
-        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}
-      >
+      <Badge size="sm" type="pill-color" color={cfg.color}>
         {cfg.label}
-      </span>
+      </Badge>
     );
   };
 
   return (
     <div>
-      <div className="flex items-center justify-end mb-6">
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold transition-colors"
-        >
-          <Plus size={16} />
-          Create Invoice
-        </button>
-      </div>
+      <TableCard.Root size="sm">
+        <TableCard.Header
+          title="Invoices"
+          badge={`${loadedInvoices.length}`}
+          contentTrailing={
+            <Button color="primary" size="sm" iconLeading={Plus} onClick={openCreate}>
+              Create Invoice
+            </Button>
+          }
+        />
 
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Title
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Deadline
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Extended
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Hidden
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-4" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {loadedInvoices.length > 0 ? (
-              loadedInvoices.map((invoice) => (
-                <tr
-                  key={invoice.id}
-                  className="hover:bg-white/[0.02] transition-colors"
-                >
-                  <td className="px-6 py-4 text-sm font-medium admin-text">
+        {loadedInvoices.length > 0 ? (
+          <Table aria-label="Invoices" size="sm">
+            <Table.Header>
+              <Table.Head id="title" label="Title" isRowHeader className="w-full" />
+              <Table.Head id="status" label="Status" />
+              <Table.Head id="deadline" label="Deadline" />
+              <Table.Head id="extended" label="Extended" />
+              <Table.Head id="hidden" label="Hidden" />
+              <Table.Head id="date" label="Date" />
+              <Table.Head id="actions" />
+            </Table.Header>
+            <Table.Body>
+              {loadedInvoices.map((invoice) => (
+                <Table.Row id={invoice.id} key={invoice.id}>
+                  <Table.Cell className="text-sm font-medium whitespace-nowrap text-primary">
                     {invoice.title}
-                  </td>
-                  <td className="px-6 py-4">
-                    {getStatusBadge(invoice.status ?? "draft")}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
+                  </Table.Cell>
+                  <Table.Cell>{getStatusBadge(invoice.status ?? "draft")}</Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {invoice.deadline
                       ? new Date(invoice.deadline).toLocaleDateString()
                       : "N/A"}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {invoice.extended_days
                       ? `+${invoice.extended_days} days`
                       : "-"}
-                  </td>
-                  <td className="px-6 py-4">
+                  </Table.Cell>
+                  <Table.Cell>
                     {invoice.is_hidden ? (
-                      <EyeOff size={14} className="text-slate-500" />
+                      <EyeOff aria-label="Hidden" className="size-4 text-fg-quaternary" />
                     ) : (
-                      <Eye size={14} className="text-emerald-400" />
+                      <Eye aria-label="Visible" className="size-4 text-fg-success-secondary" />
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {invoice.created_at
                       ? new Date(invoice.created_at).toLocaleDateString()
                       : "N/A"}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => openEdit(invoice)}
-                      className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                      title="Edit"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={7}
-                  className="px-6 py-12 text-center text-slate-500 text-sm"
-                >
-                  No invoices found. Create one to get started.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </Table.Cell>
+                  <Table.Cell className="px-4">
+                    <div className="flex justify-end">
+                      <ButtonUtility
+                        size="xs"
+                        color="tertiary"
+                        tooltip="Edit"
+                        icon={Edit03}
+                        onClick={() => openEdit(invoice)}
+                      />
+                    </div>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
+        ) : (
+          <div className="flex justify-center px-6 py-12">
+            <EmptyState size="sm">
+              <EmptyState.Header>
+                <EmptyState.FeaturedIcon icon={Receipt} color="gray" />
+              </EmptyState.Header>
+              <EmptyState.Content>
+                <EmptyState.Title>No invoices found</EmptyState.Title>
+                <EmptyState.Description>Create one to get started.</EmptyState.Description>
+              </EmptyState.Content>
+            </EmptyState>
+          </div>
+        )}
+      </TableCard.Root>
 
       {/* Invoice Form Modal */}
-      {showForm && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            onClick={() => {
-              setShowForm(false);
-              resetForm();
-            }}
-          />
-          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[5vh] overflow-y-auto">
-            <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl mb-10">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold admin-text">
-                  {editingInvoice ? "Edit Invoice" : "Create Invoice"}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowForm(false);
-                    resetForm();
-                  }}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
+      <ModalOverlay
+        isDismissable
+        isOpen={showForm}
+        onOpenChange={(open) => {
+          if (!open) closeForm();
+        }}
+      >
+        <Modal className="w-full max-w-lg">
+          <Dialog>
+            <div className="flex items-start justify-between gap-4 px-6 pt-6">
+              <h2 className="text-lg font-semibold text-primary">
+                {editingInvoice ? "Edit Invoice" : "Create Invoice"}
+              </h2>
+              <CloseButton size="sm" onClick={closeForm} />
+            </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {error && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                    <AlertCircle size={16} />
-                    {error}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-6 pt-5 pb-6">
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg bg-utility-red-50 px-3.5 py-2.5 text-sm text-utility-red-700 ring-1 ring-utility-red-200 ring-inset">
+                  <AlertCircle className="size-4 shrink-0 text-utility-red-500" />
+                  {error}
+                </div>
+              )}
+
+              <Input label="Title" isRequired value={title} onChange={setTitle} />
+
+              <TextArea
+                label="Description"
+                rows={3}
+                value={description}
+                onChange={setDescription}
+                textAreaClassName="resize-none"
+              />
+
+              <div className="flex flex-col gap-1.5">
+                <Label>PDF File</Label>
+                <FileUploadDropZone
+                  accept=".pdf"
+                  allowsMultiple={false}
+                  hint="PDF only"
+                  onDropFiles={(files) => setFile(files[0] ?? null)}
+                />
+                {file && (
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-sm text-tertiary">Selected: {file.name}</p>
+                    <ButtonUtility
+                      size="xs"
+                      color="tertiary"
+                      tooltip="Remove file"
+                      icon={XClose}
+                      onClick={() => setFile(null)}
+                    />
                   </div>
                 )}
+                {editingInvoice?.file_url && !file && (
+                  <p className="text-xs text-tertiary">
+                    Current file will be kept if no new file is selected.
+                  </p>
+                )}
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-                  />
-                </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Deadline"
+                  type="date"
+                  value={deadline}
+                  onChange={setDeadline}
+                />
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all resize-none"
-                  />
-                </div>
+                <NativeSelect
+                  label="Status"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  options={statusOptions}
+                />
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    PDF File
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-sky-500/10 file:text-sky-400 hover:file:bg-sky-500/20 transition-all text-sm"
-                  />
-                </div>
+              {/* Edit-only fields */}
+              {editingInvoice && (
+                <div className="border-t border-secondary pt-5">
+                  <h3 className="mb-4 text-sm font-semibold text-primary">
+                    Advanced Options
+                  </h3>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      <Calendar size={12} className="inline mr-1" />
-                      Deadline
-                    </label>
-                    <input
-                      type="date"
-                      value={deadline}
-                      onChange={(e) => setDeadline(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all [color-scheme:dark]"
+                  <div className="mb-4">
+                    <Input
+                      label="Extend Deadline (days)"
+                      type="number"
+                      value={String(extendDays)}
+                      onChange={(value) => setExtendDays(Math.max(0, parseInt(value) || 0))}
+                      hint={
+                        extendedDeadline
+                          ? `New deadline: ${new Date(extendedDeadline).toLocaleDateString()}`
+                          : undefined
+                      }
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Status
-                    </label>
-                    <select
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none text-sm"
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      color="secondary"
+                      size="sm"
+                      iconLeading={CheckCircle}
+                      onClick={() => quickAction(editingInvoice.id, "accepted")}
                     >
-                      <option value="draft">Draft</option>
-                      <option value="active">Active</option>
-                      <option value="accepted">Accepted</option>
-                      <option value="denied">Denied</option>
-                      <option value="pending">Pending</option>
-                      <option value="void">Void</option>
-                    </select>
+                      Accept
+                    </Button>
+                    <Button
+                      color="secondary-destructive"
+                      size="sm"
+                      iconLeading={XCircle}
+                      onClick={() => quickAction(editingInvoice.id, "denied")}
+                    >
+                      Deny
+                    </Button>
+                    <Button
+                      color="secondary"
+                      size="sm"
+                      iconLeading={SlashCircle01}
+                      onClick={() => quickAction(editingInvoice.id, "void")}
+                    >
+                      Void
+                    </Button>
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-6">
+                    <Toggle
+                      size="sm"
+                      isSelected={isHidden}
+                      onChange={setIsHidden}
+                      label={isHidden ? "Hidden" : "Visible"}
+                    />
+
+                    <Checkbox
+                      size="sm"
+                      label="Secret Edit"
+                      isSelected={secretEdit}
+                      onChange={setSecretEdit}
+                    />
                   </div>
                 </div>
+              )}
 
-                {/* Edit-only fields */}
-                {editingInvoice && (
-                  <>
-                    <div className="border-t border-white/10 pt-5">
-                      <h3 className="text-sm font-semibold admin-text mb-4">
-                        Advanced Options
-                      </h3>
-
-                      <div className="mb-4">
-                        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                          <Clock size={12} className="inline mr-1" />
-                          Extend Deadline (days)
-                        </label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={extendDays}
-                          onChange={(e) =>
-                            setExtendDays(parseInt(e.target.value) || 0)
-                          }
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-                        />
-                        {extendedDeadline && (
-                          <p className="text-xs text-sky-400 mt-1">
-                            New deadline: {new Date(extendedDeadline).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap gap-3">
-                        <button
-                          type="button"
-                          onClick={() => quickAction(editingInvoice.id, "accepted")}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-medium hover:bg-emerald-500/20 transition-colors"
-                        >
-                          <CheckCircle size={14} />
-                          Accept
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => quickAction(editingInvoice.id, "denied")}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
-                        >
-                          <XCircle size={14} />
-                          Deny
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => quickAction(editingInvoice.id, "void")}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-500/10 text-gray-400 text-xs font-medium hover:bg-gray-500/20 transition-colors"
-                        >
-                          <Ban size={14} />
-                          Void
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-6 mt-4">
-                        <label className="flex items-center gap-3 cursor-pointer">
-                          <div className="relative">
-                            <input
-                              type="checkbox"
-                              checked={isHidden}
-                              onChange={(e) => setIsHidden(e.target.checked)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-10 h-6 rounded-full bg-white/10 peer-checked:bg-sky-500 transition-colors" />
-                            <div className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform peer-checked:translate-x-4" />
-                          </div>
-                          <span className="text-sm text-slate-300">
-                            {isHidden ? "Hidden" : "Visible"}
-                          </span>
-                        </label>
-
-                        <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={secretEdit}
-                            onChange={(e) => setSecretEdit(e.target.checked)}
-                            className="rounded border-white/20"
-                          />
-                          Secret Edit
-                        </label>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={isPending || uploading}
-                    className="flex-1 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isPending || uploading ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        {uploading ? "Uploading..." : "Saving..."}
-                      </>
-                    ) : editingInvoice ? (
-                      "Save Changes"
-                    ) : (
-                      "Create Invoice"
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForm(false);
-                      resetForm();
-                    }}
-                    className="px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </>
-      )}
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  type="submit"
+                  color="primary"
+                  size="md"
+                  className="flex-1"
+                  isDisabled={isPending || uploading}
+                  isLoading={isPending || uploading}
+                  showTextWhileLoading
+                >
+                  {isPending || uploading
+                    ? uploading
+                      ? "Uploading..."
+                      : "Saving..."
+                    : editingInvoice
+                      ? "Save Changes"
+                      : "Create Invoice"}
+                </Button>
+                <Button type="button" color="secondary" size="md" onClick={closeForm}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
     </div>
   );
 }

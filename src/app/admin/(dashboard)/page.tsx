@@ -1,14 +1,21 @@
+import type { FC } from "react";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { Mail, Users, AlertTriangle, ArrowRight, Globe, Layers } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Globe01,
+  LayersTwo01,
+  Mail01,
+  Users01,
+} from "@untitledui/icons";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 
 interface StatCard {
   label: string;
   value: number;
-  icon: LucideIcon;
-  iconBg: string;
-  iconColor: string;
+  icon: FC<{ className?: string }>;
+  color: "brand" | "gray" | "success" | "warning" | "error";
   href: string;
 }
 
@@ -54,120 +61,148 @@ async function getDashboardData() {
   };
 }
 
+const quickActions: { label: string; href: string; external?: boolean }[] = [
+  { label: "Edit Homepage", href: "/admin/cms" },
+  { label: "Manage Navigation", href: "/admin/navigation" },
+  { label: "View Site", href: "/", external: true },
+  { label: "Upload Files", href: "/admin/files" },
+];
+
 export default async function AdminDashboard() {
   const data = await getDashboardData();
   const maxCount = Math.max(...data.dailyCounts.map((d) => d.count), 1);
 
   const cards: StatCard[] = [
-    { label: "Form Submissions", value: data.contacts, icon: Mail, iconBg: "bg-sky-500/10", iconColor: "text-sky-400", href: "/admin/contacts" },
-    { label: "Client Accounts", value: data.clients, icon: Users, iconBg: "bg-violet-500/10", iconColor: "text-violet-400", href: "/admin/clients" },
-    { label: "Pending Changes", value: data.pendingChanges, icon: AlertTriangle, iconBg: "bg-amber-500/10", iconColor: "text-amber-400", href: "/admin/contact-changes" },
-    { label: "CMS Pages", value: data.pages, icon: Globe, iconBg: "bg-blue-500/10", iconColor: "text-blue-400", href: "/admin/cms" },
-    { label: "Page Sections", value: data.sections, icon: Layers, iconBg: "bg-indigo-500/10", iconColor: "text-indigo-400", href: "/admin/cms" },
+    { label: "Form Submissions", value: data.contacts, icon: Mail01, color: "brand", href: "/admin/contacts" },
+    { label: "Client Accounts", value: data.clients, icon: Users01, color: "success", href: "/admin/clients" },
+    { label: "Pending Changes", value: data.pendingChanges, icon: AlertTriangle, color: "warning", href: "/admin/contact-changes" },
+    { label: "CMS Pages", value: data.pages, icon: Globe01, color: "gray", href: "/admin/cms" },
+    { label: "Page Sections", value: data.sections, icon: LayersTwo01, color: "gray", href: "/admin/cms" },
   ];
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold admin-text">Dashboard</h1>
+    <div className="flex flex-col gap-6">
+      <h1 className="text-display-xs font-semibold text-primary">Dashboard</h1>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {cards.map((card) => {
           const Icon = card.icon;
           return (
-            <Link key={card.label} href={card.href} className="admin-card rounded-2xl p-5 transition-colors group cursor-pointer">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${card.iconBg}`}>
-                  <Icon size={18} className={card.iconColor} />
-                </div>
+            <Link
+              key={card.label}
+              href={card.href}
+              className="group flex flex-col gap-4 rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary transition duration-100 ease-linear outline-focus-ring hover:bg-primary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              <FeaturedIcon icon={Icon} color={card.color} theme="light" size="md" />
+              <div>
+                <div className="text-display-xs font-semibold text-primary">{card.value}</div>
+                <div className="mt-0.5 text-sm font-medium text-tertiary">{card.label}</div>
               </div>
-              <div className="text-2xl font-bold admin-text mb-0.5">{card.value}</div>
-              <div className="text-xs admin-text-muted">{card.label}</div>
             </Link>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Submissions Chart */}
-        <div className="lg:col-span-2 admin-card rounded-2xl p-6">
-          <h2 className="text-sm font-semibold admin-text mb-4">Submissions (Last 7 Days)</h2>
-          <div className="flex items-end gap-3 h-32">
+        <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary lg:col-span-2">
+          <h2 className="text-md font-semibold text-primary">Submissions (Last 7 Days)</h2>
+          <div className="mt-4 flex h-32 items-end gap-3">
             {data.dailyCounts.map((d) => (
-              <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] admin-text-muted font-medium">{d.count}</span>
+              <div key={d.day} className="flex flex-1 flex-col items-center gap-1">
+                <span className="text-xs font-medium text-tertiary">{d.count}</span>
                 <div
-                  className="w-full rounded-t-lg bg-gradient-to-t from-sky-500/30 to-sky-400/60 transition-all duration-500"
+                  className="w-full rounded-t-md bg-brand-solid transition-all duration-500"
                   style={{ height: `${Math.max((d.count / maxCount) * 100, 4)}%` }}
                 />
-                <span className="text-[10px] admin-text-dimmed">{d.day}</span>
+                <span className="text-xs text-quaternary">{d.day}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="admin-card rounded-2xl p-6">
-          <h2 className="text-sm font-semibold admin-text mb-4">Quick Actions</h2>
-          <div className="space-y-2">
-            <Link href="/admin/cms" className="flex items-center justify-between px-4 py-3 rounded-xl admin-hover transition-colors group">
-              <span className="text-sm admin-text-muted">Edit Homepage</span>
-              <ArrowRight size={14} className="admin-text-dimmed" />
-            </Link>
-            <Link href="/admin/navigation" className="flex items-center justify-between px-4 py-3 rounded-xl admin-hover transition-colors group">
-              <span className="text-sm admin-text-muted">Manage Navigation</span>
-              <ArrowRight size={14} className="admin-text-dimmed" />
-            </Link>
-            <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between px-4 py-3 rounded-xl admin-hover transition-colors group">
-              <span className="text-sm admin-text-muted">View Site</span>
-              <ArrowRight size={14} className="admin-text-dimmed" />
-            </a>
-            <Link href="/admin/files" className="flex items-center justify-between px-4 py-3 rounded-xl admin-hover transition-colors group">
-              <span className="text-sm admin-text-muted">Upload Files</span>
-              <ArrowRight size={14} className="admin-text-dimmed" />
-            </Link>
+        <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary">
+          <h2 className="text-md font-semibold text-primary">Quick Actions</h2>
+          <div className="mt-4 flex flex-col gap-1">
+            {quickActions.map((action) =>
+              action.external ? (
+                <a
+                  key={action.label}
+                  href={action.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center justify-between rounded-lg px-3 py-2.5 transition duration-100 ease-linear outline-focus-ring hover:bg-primary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <span className="text-sm font-semibold text-secondary group-hover:text-secondary_hover">
+                    {action.label}
+                  </span>
+                  <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-fg-quaternary" />
+                </a>
+              ) : (
+                <Link
+                  key={action.label}
+                  href={action.href}
+                  className="group flex items-center justify-between rounded-lg px-3 py-2.5 transition duration-100 ease-linear outline-focus-ring hover:bg-primary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <span className="text-sm font-semibold text-secondary group-hover:text-secondary_hover">
+                    {action.label}
+                  </span>
+                  <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-fg-quaternary" />
+                </Link>
+              ),
+            )}
           </div>
         </div>
       </div>
 
       {/* Recent Form Submissions */}
-      <div className="admin-card rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-          <h2 className="text-sm font-semibold admin-text">Recent Form Submissions</h2>
-          <Link href="/admin/contacts" className="text-xs text-sky-400 hover:text-sky-300 transition-colors">
-            View All →
+      <div className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
+        <div className="flex items-center justify-between border-b border-secondary px-6 py-4">
+          <h2 className="text-md font-semibold text-primary">Recent Form Submissions</h2>
+          <Link
+            href="/admin/contacts"
+            className="text-sm font-semibold text-brand-secondary transition duration-100 ease-linear hover:text-brand-secondary_hover"
+          >
+            View all
           </Link>
         </div>
         {data.recentContacts.length === 0 ? (
-          <div className="px-6 py-8 text-center text-sm admin-text-muted">No submissions yet</div>
+          <div className="px-6 py-8 text-center text-sm text-tertiary">No submissions yet</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/5 text-left">
-                <th className="px-6 py-3 text-xs font-medium admin-text-muted uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-xs font-medium admin-text-muted uppercase tracking-wider hidden sm:table-cell">Email</th>
-                <th className="px-6 py-3 text-xs font-medium admin-text-muted uppercase tracking-wider hidden md:table-cell">Service</th>
-                <th className="px-6 py-3 text-xs font-medium admin-text-muted uppercase tracking-wider">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {data.recentContacts.map((c: any) => (
-                <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="px-6 py-3">
-                    <div className="flex items-center gap-2">
-                      {!c.is_read && <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />}
-                      <span className="admin-text font-medium">{c.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-3 admin-text-muted hidden sm:table-cell">{c.email}</td>
-                  <td className="px-6 py-3 admin-text-muted hidden md:table-cell">{c.service || "\u2014"}</td>
-                  <td className="px-6 py-3 admin-text-dimmed text-xs">
-                    {c.created_at ? new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "\u2014"}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-secondary bg-secondary text-left">
+                  <th className="px-6 py-3 text-xs font-semibold text-quaternary">Name</th>
+                  <th className="hidden px-6 py-3 text-xs font-semibold text-quaternary sm:table-cell">Email</th>
+                  <th className="hidden px-6 py-3 text-xs font-semibold text-quaternary md:table-cell">Service</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-quaternary">Date</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.recentContacts.map((c: any) => (
+                  <tr
+                    key={c.id}
+                    className="border-b border-secondary transition duration-100 ease-linear last:border-0 hover:bg-primary_hover"
+                  >
+                    <td className="px-6 py-3.5">
+                      <div className="flex items-center gap-2">
+                        {!c.is_read && <span className="size-2 shrink-0 rounded-full bg-brand-solid" aria-label="Unread" />}
+                        <span className="font-medium text-primary">{c.name}</span>
+                      </div>
+                    </td>
+                    <td className="hidden px-6 py-3.5 text-tertiary sm:table-cell">{c.email}</td>
+                    <td className="hidden px-6 py-3.5 text-tertiary md:table-cell">{c.service || "—"}</td>
+                    <td className="px-6 py-3.5 text-xs text-quaternary">
+                      {c.created_at ? new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

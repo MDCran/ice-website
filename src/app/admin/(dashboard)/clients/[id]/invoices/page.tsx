@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Receipt } from "lucide-react";
+import { ArrowLeft, Receipt } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import InvoicesManager from "@/components/admin/clients/InvoicesManager";
 
 export const metadata = { title: "Client Invoices | ICE Admin" };
@@ -31,22 +32,16 @@ export default async function ClientInvoicesPage({
   return (
     <div>
       <div className="mb-6">
-        <Link
-          href={`/admin/clients/${id}`}
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={14} />
+        <Button color="link-gray" size="sm" href={`/admin/clients/${id}`} iconLeading={<ArrowLeft data-icon />}>
           Back to {client.company_name}
-        </Link>
+        </Button>
       </div>
 
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-          <Receipt size={20} className="text-amber-400" />
-        </div>
+      <div className="mb-8 flex items-center gap-3">
+        <FeaturedIcon icon={Receipt} color="warning" theme="modern" size="lg" />
         <div>
-          <h1 className="text-2xl font-bold admin-text">Invoices</h1>
-          <p className="text-sm text-slate-400">{client.company_name}</p>
+          <h1 className="text-xl font-semibold text-primary">Invoices</h1>
+          <p className="text-sm text-tertiary">{client.company_name}</p>
         </div>
       </div>
 

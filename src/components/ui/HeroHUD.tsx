@@ -13,7 +13,7 @@ interface HUDMetric {
 const metrics: HUDMetric[] = [
   { label: "Active Nodes", value: 847, suffix: "" },
   { label: "Data Protected", value: 2.4, suffix: " PB", decimals: 1 },
-  { label: "Uptime", value: 99.999, suffix: "%", decimals: 3 },
+  { label: "Uptime", value: 99.99, suffix: "%", decimals: 2 },
 ];
 
 function CountUp({ target, decimals = 0, duration = 2000 }: { target: number; decimals?: number; duration?: number }) {

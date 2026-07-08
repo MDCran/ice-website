@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 
 function RedirectHandler() {
   const router = useRouter();
@@ -21,8 +22,11 @@ function RedirectHandler() {
 
 export default function PortalLoginRedirect() {
   return (
-    <Suspense fallback={null}>
-      <RedirectHandler />
-    </Suspense>
+    <div className="flex flex-col items-center justify-center py-24">
+      <LoadingIndicator type="line-spinner" size="md" label="Redirecting to sign in..." />
+      <Suspense fallback={null}>
+        <RedirectHandler />
+      </Suspense>
+    </div>
   );
 }

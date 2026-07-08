@@ -2,8 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AlertCircle, CheckCircle, Image01, Save01 } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
-import { Save, Loader2, AlertCircle, CheckCircle, Image as ImageIcon } from "lucide-react";
+import { Avatar } from "@/components/base/avatar/avatar";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { Label } from "@/components/base/input/label";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Toggle } from "@/components/base/toggle/toggle";
 import MediaBrowserModal from "@/components/admin/MediaBrowserModal";
 
 interface ClientAccount {
@@ -26,9 +32,6 @@ function formatPhone(value: string): string {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-const inputCls =
-  "w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all";
-
 export default function ClientEditForm({
   client,
 }: {
@@ -46,10 +49,6 @@ export default function ClientEditForm({
   const [logoUrl, setLogoUrl] = useState(client.logo_url ?? "");
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const [isActive, setIsActive] = useState(client.is_active !== false);
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPhone(formatPhone(e.target.value));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,107 +82,72 @@ export default function ClientEditForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
+    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-5">
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-          <AlertCircle size={16} />
+        <div className="flex items-center gap-2 rounded-lg bg-utility-red-50 px-3.5 py-2.5 text-sm text-utility-red-700 ring-1 ring-utility-red-200 ring-inset">
+          <AlertCircle className="size-4 shrink-0 text-utility-red-500" />
           {error}
         </div>
       )}
       {success && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
-          <CheckCircle size={16} />
+        <div className="flex items-center gap-2 rounded-lg bg-utility-green-50 px-3.5 py-2.5 text-sm text-utility-green-700 ring-1 ring-utility-green-200 ring-inset">
+          <CheckCircle className="size-4 shrink-0 text-utility-green-500" />
           Changes saved successfully.
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Company Name
-          </label>
-          <input
-            type="text"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            required
-            className={inputCls}
-          />
-        </div>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <Input
+          label="Company Name"
+          isRequired
+          value={companyName}
+          onChange={setCompanyName}
+        />
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Phone
-          </label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={handlePhoneChange}
-            placeholder="(555) 123-4567"
-            className={inputCls}
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-          Address
-        </label>
-        <textarea
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          rows={2}
-          className={`${inputCls} resize-none`}
-          placeholder="123 Main St, City, ST 12345"
+        <Input
+          label="Phone"
+          type="tel"
+          value={phone}
+          onChange={(value) => setPhone(formatPhone(value))}
+          placeholder="(555) 123-4567"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Website
-          </label>
-          <input
-            type="url"
-            value={website}
-            onChange={(e) => setWebsite(e.target.value)}
-            placeholder="https://example.com"
-            className={inputCls}
-          />
-        </div>
+      <TextArea
+        label="Address"
+        rows={2}
+        value={address}
+        onChange={setAddress}
+        placeholder="123 Main St, City, ST 12345"
+        textAreaClassName="resize-none"
+      />
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Avatar
-          </label>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <Input
+          label="Website"
+          type="url"
+          value={website}
+          onChange={setWebsite}
+          placeholder="https://example.com"
+        />
+
+        <div className="flex flex-col gap-1.5">
+          <Label>Avatar</Label>
           <div className="flex items-center gap-4">
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt="Avatar preview"
-                className="w-16 h-16 rounded-xl object-cover border border-white/10"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center">
-                <ImageIcon size={24} className="text-slate-500" />
-              </div>
-            )}
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => setAvatarModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.06] border border-white/10 text-sm text-slate-300 hover:bg-white/[0.1] hover:border-white/20 transition-all cursor-pointer"
-              >
+            <Avatar
+              size="2xl"
+              src={logoUrl || null}
+              alt="Avatar preview"
+              placeholderIcon={Image01}
+            />
+            <div className="flex flex-col items-start gap-2">
+              <Button color="secondary" size="sm" onClick={() => setAvatarModalOpen(true)}>
                 Browse Files
-              </button>
+              </Button>
               {logoUrl && (
-                <button
-                  type="button"
-                  onClick={() => setLogoUrl("")}
-                  className="text-xs text-slate-500 hover:text-red-400 transition-colors cursor-pointer text-left"
-                >
+                <Button color="link-destructive" size="sm" onClick={() => setLogoUrl("")}>
                   Remove avatar
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -201,38 +165,25 @@ export default function ClientEditForm({
       </div>
 
       {/* Active toggle */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setIsActive(!isActive)}
-          className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${
-            isActive ? "bg-emerald-500" : "bg-red-500/50"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-              isActive ? "translate-x-5" : ""
-            }`}
-          />
-        </button>
-        <span className="text-sm text-slate-300">
-          {isActive ? "Active" : "Deactivated (locked out)"}
-        </span>
-      </div>
+      <Toggle
+        size="sm"
+        isSelected={isActive}
+        onChange={setIsActive}
+        label={isActive ? "Active" : "Deactivated (locked out)"}
+      />
 
       <div className="pt-2">
-        <button
+        <Button
           type="submit"
-          disabled={isPending}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+          color="primary"
+          size="lg"
+          iconLeading={Save01}
+          isDisabled={isPending}
+          isLoading={isPending}
+          showTextWhileLoading
         >
-          {isPending ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Save size={16} />
-          )}
           Save Changes
-        </button>
+        </Button>
       </div>
     </form>
   );

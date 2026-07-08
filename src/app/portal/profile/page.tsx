@@ -1,15 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
-import {
-  Building2,
-  Globe,
-  Phone,
-  MapPin,
-  Mail,
-  Users,
-  Pencil,
-} from "lucide-react";
+import { Globe01, Phone01, MarkerPin02, Mail01, Edit01 } from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
 
 async function getProfileData() {
   const supabase = await createClient();
@@ -54,7 +47,7 @@ export default async function ProfilePage() {
 
   if (!account) {
     return (
-      <div className="text-center py-12 text-slate-400">
+      <div className="py-12 text-center text-md text-tertiary">
         Account not found.
       </div>
     );
@@ -62,32 +55,28 @@ export default async function ProfilePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-            <Building2 size={20} className="text-violet-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold admin-text">
-              Company & Contacts
-            </h1>
-            <p className="text-sm text-slate-400">
-              View your company information and contacts
-            </p>
-          </div>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-display-xs font-semibold text-primary">
+            Company &amp; Contacts
+          </h1>
+          <p className="mt-1 text-md text-tertiary">
+            View your company information and contacts
+          </p>
         </div>
-        <Link
+        <Button
           href="/portal/contacts"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium transition-colors"
+          size="md"
+          color="primary"
+          iconLeading={<Edit01 data-icon />}
         >
-          <Pencil size={14} />
           Manage Contacts
-        </Link>
+        </Button>
       </div>
 
       {/* Company Info */}
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 mb-8">
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
+      <div className="mb-8 rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary">
+        <h2 className="mb-4 text-md font-semibold text-primary">
           Company Information
         </h2>
         <div className="flex items-start gap-6">
@@ -95,35 +84,35 @@ export default async function ProfilePage() {
             <img
               src={account.logo_url}
               alt={account.company_name}
-              className="w-16 h-16 rounded-xl object-contain bg-white/5 p-2"
+              className="size-16 rounded-lg bg-secondary object-contain p-2 ring-1 ring-secondary ring-inset"
             />
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 flex-1">
+          <div className="grid flex-1 grid-cols-1 gap-x-12 gap-y-4 md:grid-cols-2">
             <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">
+              <div className="mb-1 text-sm font-medium text-tertiary">
                 Company Name
               </div>
-              <div className="text-sm admin-text font-medium">
+              <div className="text-sm font-medium text-primary">
                 {account.company_name}
               </div>
             </div>
             {account.account_number && (
               <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">
+                <div className="mb-1 text-sm font-medium text-tertiary">
                   Account Number
                 </div>
-                <div className="text-sm text-slate-300 font-mono">
+                <div className="font-mono text-sm text-secondary">
                   {account.account_number}
                 </div>
               </div>
             )}
             {(account.address || account.city || account.state) && (
               <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-                  <MapPin size={12} />
+                <div className="mb-1 flex items-center gap-1 text-sm font-medium text-tertiary">
+                  <MarkerPin02 aria-hidden="true" className="size-3.5 text-fg-quaternary" />
                   Address
                 </div>
-                <div className="text-sm text-slate-300">
+                <div className="text-sm text-secondary">
                   {[
                     account.address,
                     [account.city, account.state, account.zip]
@@ -142,24 +131,24 @@ export default async function ProfilePage() {
             )}
             {account.phone && (
               <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-                  <Phone size={12} />
+                <div className="mb-1 flex items-center gap-1 text-sm font-medium text-tertiary">
+                  <Phone01 aria-hidden="true" className="size-3.5 text-fg-quaternary" />
                   Phone
                 </div>
-                <div className="text-sm text-slate-300">{account.phone}</div>
+                <div className="text-sm text-secondary">{account.phone}</div>
               </div>
             )}
             {account.website && (
               <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-                  <Globe size={12} />
+                <div className="mb-1 flex items-center gap-1 text-sm font-medium text-tertiary">
+                  <Globe01 aria-hidden="true" className="size-3.5 text-fg-quaternary" />
                   Website
                 </div>
                 <a
                   href={account.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-sky-400 hover:text-sky-300 transition-colors"
+                  className="rounded-sm text-sm font-semibold text-brand-secondary outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   {account.website}
                 </a>
@@ -167,10 +156,10 @@ export default async function ProfilePage() {
             )}
             {account.industry && (
               <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">
+                <div className="mb-1 text-sm font-medium text-tertiary">
                   Industry
                 </div>
-                <div className="text-sm text-slate-300">{account.industry}</div>
+                <div className="text-sm text-secondary">{account.industry}</div>
               </div>
             )}
           </div>
@@ -178,84 +167,86 @@ export default async function ProfilePage() {
       </div>
 
       {/* Contacts */}
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-white/10 flex items-center gap-2">
-          <Users size={16} className="text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
-            Contacts ({contacts.length})
-          </h2>
+      <div className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
+        <div className="flex items-center gap-2 border-b border-secondary px-4 py-5 md:px-6">
+          <h2 className="text-md font-semibold text-primary">Contacts</h2>
+          <Badge type="pill-color" size="sm" color="gray">
+            {contacts.length}
+          </Badge>
         </div>
         {contacts.length > 0 ? (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Phone
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Title
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {contacts.map((contact) => {
-                const primaryEmail = contact.contact_emails?.find(
-                  (e: { is_primary: boolean }) => e.is_primary
-                );
-                const primaryPhone = contact.contact_phones?.find(
-                  (p: { is_primary: boolean }) => p.is_primary
-                );
-                return (
-                  <tr
-                    key={contact.id}
-                    className="hover:bg-white/[0.02] transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-medium admin-text">
-                        {contact.first_name} {contact.last_name}
-                      </span>
-                      {contact.is_primary && (
-                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-sky-500/10 text-sky-400">
-                          Primary
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-secondary">
+                <tr className="border-b border-secondary">
+                  <th className="px-6 py-3 text-left text-xs font-semibold whitespace-nowrap text-quaternary">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold whitespace-nowrap text-quaternary">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold whitespace-nowrap text-quaternary">
+                    Phone
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold whitespace-nowrap text-quaternary">
+                    Title
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {contacts.map((contact) => {
+                  const primaryEmail = contact.contact_emails?.find(
+                    (e: { is_primary: boolean }) => e.is_primary
+                  );
+                  const primaryPhone = contact.contact_phones?.find(
+                    (p: { is_primary: boolean }) => p.is_primary
+                  );
+                  return (
+                    <tr
+                      key={contact.id}
+                      className="border-b border-secondary transition-colors last:border-b-0 hover:bg-secondary"
+                    >
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-medium text-primary">
+                          {contact.first_name} {contact.last_name}
                         </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {primaryEmail ? (
-                        <div className="flex items-center gap-1.5 text-sm text-slate-300">
-                          <Mail size={12} className="text-slate-500" />
-                          {primaryEmail.email_address}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-slate-500">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {primaryPhone ? (
-                        <div className="flex items-center gap-1.5 text-sm text-slate-300">
-                          <Phone size={12} className="text-slate-500" />
-                          {primaryPhone.phone_number}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-slate-500">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-400">
-                      {contact.title || "-"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        {contact.is_primary && (
+                          <Badge type="pill-color" size="sm" color="brand" className="ml-2">
+                            Primary
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {primaryEmail ? (
+                          <div className="flex items-center gap-1.5 text-sm text-tertiary">
+                            <Mail01 aria-hidden="true" className="size-3.5 text-fg-quaternary" />
+                            {primaryEmail.email_address}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-quaternary">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {primaryPhone ? (
+                          <div className="flex items-center gap-1.5 text-sm text-tertiary">
+                            <Phone01 aria-hidden="true" className="size-3.5 text-fg-quaternary" />
+                            {primaryPhone.phone_number}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-quaternary">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-tertiary">
+                        {contact.title || "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <div className="px-6 py-12 text-center text-slate-500 text-sm">
+          <div className="px-6 py-12 text-center text-sm text-tertiary">
             No contacts found.
           </div>
         )}

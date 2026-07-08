@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { AlertTriangle } from "lucide-react";
+import { CheckCircle } from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import ChangeActions from "./ChangeActions";
 
 interface ContactChange {
@@ -17,23 +19,11 @@ interface ContactChange {
 
 const changeTypeConfig: Record<
   string,
-  { label: string; color: string; bgColor: string }
+  { label: string; color: "success" | "warning" | "error" }
 > = {
-  add: {
-    label: "Add",
-    color: "text-emerald-300",
-    bgColor: "bg-emerald-500/20",
-  },
-  edit: {
-    label: "Edit",
-    color: "text-amber-300",
-    bgColor: "bg-amber-500/20",
-  },
-  remove: {
-    label: "Remove",
-    color: "text-red-300",
-    bgColor: "bg-red-500/20",
-  },
+  add: { label: "Add", color: "success" },
+  edit: { label: "Edit", color: "warning" },
+  remove: { label: "Remove", color: "error" },
 };
 
 export default async function ContactChangesPage() {
@@ -46,7 +36,7 @@ export default async function ContactChangesPage() {
 
   if (error) {
     return (
-      <div className="text-red-400">
+      <div className="text-sm text-error-primary">
         Failed to load contact changes: {error.message}
       </div>
     );
@@ -56,25 +46,25 @@ export default async function ContactChangesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold admin-text">
+          <h1 className="text-display-xs font-semibold text-primary">
             Pending Contact Changes
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="mt-1 text-sm text-tertiary">
             Review and approve client-submitted contact changes
           </p>
         </div>
-        <span className="text-sm text-slate-400">
+        <Badge size="md" color="gray">
           {typedChanges.length} pending
-        </span>
+        </Badge>
       </div>
 
       {typedChanges.length === 0 ? (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-12 text-center">
-          <AlertTriangle size={48} className="mx-auto text-slate-600 mb-4" />
-          <p className="text-slate-400 text-lg mb-2">No pending changes</p>
-          <p className="text-slate-500 text-sm">
+        <div className="flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-16 text-center shadow-xs ring-1 ring-secondary">
+          <FeaturedIcon color="success" theme="modern" size="lg" icon={CheckCircle} />
+          <p className="mt-4 text-md font-semibold text-primary">No pending changes</p>
+          <p className="mt-1 text-sm text-tertiary">
             All client contact changes have been reviewed.
           </p>
         </div>
@@ -86,20 +76,18 @@ export default async function ContactChangesPage() {
             return (
               <div
                 key={change.id}
-                className="bg-white/[0.03] border border-white/10 rounded-2xl p-6"
+                className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary"
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="mb-4 flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.color}`}
-                    >
+                    <Badge size="sm" color={config.color}>
                       {config.label}
-                    </span>
+                    </Badge>
                     <div>
-                      <p className="admin-text font-medium">
+                      <p className="text-sm font-medium text-primary">
                         {change.client_accounts?.company_name ?? "Unknown Client"}
                       </p>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <p className="mt-0.5 text-xs text-tertiary">
                         {new Date(change.created_at).toLocaleDateString(
                           "en-US",
                           {
@@ -119,7 +107,7 @@ export default async function ContactChangesPage() {
                 {/* Change Details */}
                 {change.change_type === "add" && change.proposed_data && (
                   <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-2 font-medium">
+                    <p className="mb-2 text-xs font-semibold tracking-wider text-quaternary uppercase">
                       Proposed Contact
                     </p>
                     <DataDisplay data={change.proposed_data} />
@@ -127,10 +115,10 @@ export default async function ContactChangesPage() {
                 )}
 
                 {change.change_type === "edit" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {change.before_data && (
                       <div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-2 font-medium">
+                        <p className="mb-2 text-xs font-semibold tracking-wider text-quaternary uppercase">
                           Before
                         </p>
                         <DataDisplay data={change.before_data} />
@@ -138,7 +126,7 @@ export default async function ContactChangesPage() {
                     )}
                     {change.after_data && (
                       <div>
-                        <p className="text-xs text-emerald-400/70 uppercase tracking-wider mb-2 font-medium">
+                        <p className="mb-2 text-xs font-semibold tracking-wider text-success-primary uppercase">
                           After
                         </p>
                         <DataDisplay
@@ -153,10 +141,10 @@ export default async function ContactChangesPage() {
 
                 {change.change_type === "remove" && (
                   <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-2 font-medium">
+                    <p className="mb-2 text-xs font-semibold tracking-wider text-quaternary uppercase">
                       Contact to Remove
                     </p>
-                    <p className="admin-text">
+                    <p className="text-sm text-primary">
                       {change.contact_name ?? "Unknown contact"}
                     </p>
                   </div>
@@ -180,21 +168,21 @@ function DataDisplay({
   compareWith?: Record<string, unknown>;
 }) {
   return (
-    <div className="bg-white/[0.04] rounded-xl p-4 space-y-2">
+    <div className="space-y-2 rounded-lg bg-secondary p-4">
       {Object.entries(data).map(([key, value]) => {
         const isChanged =
           highlight && compareWith && JSON.stringify(compareWith[key]) !== JSON.stringify(value);
         return (
           <div key={key} className="flex items-start gap-3 text-sm">
-            <span className="text-slate-500 font-mono text-xs min-w-[120px] pt-0.5">
+            <span className="min-w-30 pt-0.5 font-mono text-xs text-quaternary">
               {key}
             </span>
             <span
-              className={`${
+              className={
                 isChanged
-                  ? "text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded"
-                  : "text-slate-300"
-              }`}
+                  ? "rounded bg-utility-green-50 px-1.5 py-0.5 text-utility-green-700 ring-1 ring-utility-green-200 ring-inset"
+                  : "text-secondary"
+              }
             >
               {typeof value === "object"
                 ? JSON.stringify(value)

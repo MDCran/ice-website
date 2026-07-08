@@ -3,7 +3,10 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Lock, Mail, AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Lock01, Mail01 } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 
 function LoginForm() {
@@ -65,101 +68,77 @@ function LoginForm() {
   };
 
   return (
-    <div className="login-page min-h-screen flex items-center justify-center px-4 transition-colors duration-300" style={{ background: 'var(--bg-primary)' }}>
+    <div className="relative flex min-h-screen items-center justify-center bg-secondary px-4 py-12 md:px-8">
       {/* Theme toggle in corner */}
       <div className="fixed top-4 right-4 z-10">
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-sky-500/10 mb-4">
-            <Lock className="w-8 h-8 text-sky-400" />
+      <div className="flex w-full max-w-md flex-col gap-8">
+        <div className="flex flex-col items-center gap-5 text-center">
+          <div className="flex items-center justify-center rounded-xl bg-white px-3 py-2 shadow-xs ring-1 ring-primary ring-inset">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/logo/ice-logo.jpg"
+              alt="International Computer Exchange"
+              className="h-8 w-auto"
+            />
           </div>
-          <h1 className="text-2xl font-bold transition-colors" style={{ color: 'var(--text-primary)' }}>Client Portal</h1>
-          <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-            International Computer Exchange
-          </p>
+          <div>
+            <h1 className="text-display-xs font-semibold text-primary">Client Portal</h1>
+            <p className="mt-2 text-md text-tertiary">
+              Sign in to your International Computer Exchange account.
+            </p>
+          </div>
         </div>
 
         <form
           onSubmit={handleLogin}
-          className="rounded-2xl p-8 space-y-5 transition-colors duration-300"
-          style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+          className="flex flex-col gap-5 rounded-2xl bg-primary px-6 py-8 shadow-sm ring-1 ring-secondary sm:px-8"
         >
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-              <AlertCircle size={16} />
-              {error}
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-lg bg-error-primary p-3 ring-1 ring-error_subtle ring-inset"
+            >
+              <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-fg-error-primary" />
+              <p className="text-sm text-error-primary">{error}</p>
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-              Email
-            </label>
-            <div className="relative">
-              <Mail
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2"
-                style={{ color: 'var(--text-muted)' }}
-              />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                required
-                className="login-input w-full pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-              />
-            </div>
-          </div>
+          <Input
+            label="Email"
+            type="email"
+            size="md"
+            icon={Mail01}
+            placeholder="you@company.com"
+            value={email}
+            onChange={setEmail}
+            isRequired
+            hideRequiredIndicator
+          />
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-              Password
-            </label>
-            <div className="relative">
-              <Lock
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2"
-                style={{ color: 'var(--text-muted)' }}
-              />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="login-input w-full pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-              />
-            </div>
-          </div>
+          <Input
+            label="Password"
+            type="password"
+            size="md"
+            icon={Lock01}
+            placeholder="••••••••"
+            value={password}
+            onChange={setPassword}
+            isRequired
+            hideRequiredIndicator
+          />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </button>
+          <Button type="submit" size="lg" isLoading={loading} showTextWhileLoading>
+            {loading ? "Signing in..." : "Sign in"}
+          </Button>
         </form>
 
-        <div className="text-center mt-6">
-          <a
-            href="/"
-            className="text-sm transition-colors hover:text-sky-400"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            &larr; Back to Site
-          </a>
+        <div className="flex justify-center">
+          <Button color="link-gray" size="md" href="/" iconLeading={ArrowLeft}>
+            Back to site
+          </Button>
         </div>
       </div>
     </div>
@@ -170,8 +149,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center transition-colors" style={{ background: 'var(--bg-primary)' }}>
-          <Loader2 size={24} className="animate-spin text-slate-400" />
+        <div className="flex min-h-screen items-center justify-center bg-secondary">
+          <LoadingIndicator type="line-spinner" size="md" />
         </div>
       }
     >

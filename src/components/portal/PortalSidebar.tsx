@@ -1,43 +1,44 @@
 "use client";
 
+import type { FC } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Building2,
-  FolderOpen,
-  FileText,
-  ClipboardList,
-  type LucideIcon,
-} from "lucide-react";
+  Home01,
+  Building07,
+  Folder,
+  File02,
+  ClipboardCheck,
+  ArrowLeft,
+} from "@untitledui/icons";
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { Badge } from "@/components/base/badges/badges";
+import { cx } from "@/utils/cx";
 
 interface NavItem {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: FC<{ className?: string }>;
   badgeKey?: "surveys";
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/portal", icon: LayoutDashboard },
-  { label: "Company & Contacts", href: "/portal/profile", icon: Building2 },
-  { label: "Resources", href: "/portal/resources", icon: FolderOpen },
-  { label: "Invoices", href: "/portal/invoices", icon: FileText },
+  { label: "Dashboard", href: "/portal", icon: Home01 },
+  { label: "Company & Contacts", href: "/portal/profile", icon: Building07 },
+  { label: "Resources", href: "/portal/resources", icon: Folder },
+  { label: "Invoices", href: "/portal/invoices", icon: File02 },
   {
     label: "Surveys",
     href: "/portal/surveys",
-    icon: ClipboardList,
+    icon: ClipboardCheck,
     badgeKey: "surveys",
   },
 ];
 
 export default function PortalSidebar() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [badges, setBadges] = useState<{ surveys: number }>({
     surveys: 0,
   });
@@ -76,72 +77,80 @@ export default function PortalSidebar() {
   };
 
   return (
-    <aside
-      className={cn(
-        "h-screen admin-sidebar flex flex-col transition-all duration-300 shrink-0",
-        collapsed ? "w-16" : "w-64"
-      )}
-    >
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-secondary bg-primary">
       {/* Logo */}
-      {!collapsed && (
-        <div className="flex items-center justify-center admin-border-b shrink-0 py-4 px-3">
-          <Link href="/portal" className="block w-full">
-            <div className="rounded-lg bg-[#ffffff] flex items-center justify-center px-3 py-2.5 w-full">
-              <Image
-                src="/images/logo/ice-logo.jpg"
-                alt="ICE"
-                width={180}
-                height={52}
-                className="object-contain"
-              />
-            </div>
-          </Link>
-        </div>
-      )}
+      <div className="shrink-0 border-b border-secondary px-4 py-4">
+        <Link
+          href="/portal"
+          className="block rounded-lg outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          <div className="flex w-full items-center justify-center rounded-lg bg-white px-3 py-2.5 ring-1 ring-secondary ring-inset">
+            <Image
+              src="/images/logo/ice-logo.jpg"
+              alt="ICE"
+              width={180}
+              height={52}
+              className="object-contain"
+            />
+          </div>
+        </Link>
+      </div>
 
       {/* Nav */}
-      <nav className={cn("flex-1 overflow-y-auto px-2 space-y-1", collapsed ? "py-2" : "py-4")}>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          const badgeCount = item.badgeKey ? badges[item.badgeKey] : 0;
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <ul className="flex flex-col gap-0.5">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            const badgeCount = item.badgeKey ? badges[item.badgeKey] : 0;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors cursor-pointer relative",
-                collapsed && "justify-center px-0",
-                active
-                  ? "admin-nav-active"
-                  : "admin-text-muted admin-nav-hover"
-              )}
-              title={collapsed ? item.label : undefined}
-            >
-              <Icon size={18} />
-              {!collapsed && (
-                <>
-                  <span className="flex-1">{item.label}</span>
-                  {badgeCount > 0 && (
-                    <span className="min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full text-xs font-semibold bg-sky-500 text-white">
-                      {badgeCount}
-                    </span>
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cx(
+                    "group relative flex w-full cursor-pointer items-center rounded-md p-2 outline-focus-ring transition duration-100 ease-linear select-none focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2",
+                    active
+                      ? "bg-active hover:bg-secondary_hover"
+                      : "bg-primary hover:bg-primary_hover",
                   )}
-                </>
-              )}
-            </Link>
-          );
-        })}
+                >
+                  <Icon
+                    aria-hidden="true"
+                    className={cx(
+                      "mr-2 size-5 shrink-0 text-fg-quaternary transition-inherit-all group-hover:text-fg-quaternary_hover",
+                      active && "text-fg-quaternary_hover",
+                    )}
+                  />
+                  <span
+                    className={cx(
+                      "flex-1 truncate text-sm font-semibold text-secondary transition-inherit-all group-hover:text-secondary_hover",
+                      active && "text-secondary_hover",
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                  {badgeCount > 0 && (
+                    <Badge className="ml-3" color="brand" type="pill-color" size="sm">
+                      {badgeCount}
+                    </Badge>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
       {/* Footer */}
-      <div className="p-4 admin-border-t">
+      <div className="border-t border-secondary p-4">
         <Link
           href="/"
-          className="flex items-center gap-2 text-xs admin-text-dimmed admin-nav-hover transition-colors cursor-pointer"
+          className="flex items-center gap-2 rounded-md text-sm font-semibold text-tertiary outline-focus-ring transition duration-100 ease-linear hover:text-tertiary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
         >
-          {!collapsed && "← Back to Site"}
+          <ArrowLeft className="size-4 text-fg-quaternary" aria-hidden="true" />
+          Back to Site
         </Link>
       </div>
     </aside>

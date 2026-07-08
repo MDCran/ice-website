@@ -3,19 +3,26 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
-  FolderOpen,
-  Grid3X3,
+  Folder,
+  Grid01,
   List,
-  Download,
+  Download01,
   Eye,
-  X,
-  Loader2,
-  FileText,
+  File02,
   Calendar,
-  User,
-  Lock,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  User01,
+  Lock01,
+} from "@untitledui/icons";
+import { Badge, BadgeWithIcon } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { CloseButton } from "@/components/base/buttons/close-button";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { Table, TableCard } from "@/components/application/table/table";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
+import { cx } from "@/utils/cx";
 import type { ClientResource } from "@/lib/types/database";
 
 type ViewMode = "grid" | "list";
@@ -74,244 +81,241 @@ export default function ResourcesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 size={24} className="animate-spin text-slate-400" />
+        <LoadingIndicator type="line-spinner" size="md" />
       </div>
     );
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center">
-            <FolderOpen size={20} className="text-sky-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold admin-text">Resources</h1>
-            <p className="text-sm text-slate-400">
-              {resources.length} resource{resources.length !== 1 ? "s" : ""}{" "}
-              available
-            </p>
-          </div>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-display-xs font-semibold text-primary">Resources</h1>
+          <p className="mt-1 text-md text-tertiary">
+            {resources.length} resource{resources.length !== 1 ? "s" : ""}{" "}
+            available
+          </p>
         </div>
-        <div className="flex items-center gap-1 bg-white/[0.03] border border-white/10 rounded-xl p-1">
-          <button
+        <div
+          role="group"
+          aria-label="View mode"
+          className="flex items-center gap-0.5 rounded-lg bg-primary p-0.5 shadow-xs ring-1 ring-primary ring-inset"
+        >
+          <ButtonUtility
+            size="sm"
+            color="tertiary"
+            icon={Grid01}
+            tooltip="Grid view"
+            aria-pressed={viewMode === "grid"}
+            className={cx(viewMode === "grid" && "bg-active text-fg-quaternary_hover")}
             onClick={() => toggleView("grid")}
-            className={cn(
-              "p-2 rounded-lg transition-colors",
-              viewMode === "grid"
-                ? "bg-white/10 text-white"
-                : "text-slate-400 hover:text-white"
-            )}
-          >
-            <Grid3X3 size={16} />
-          </button>
-          <button
+          />
+          <ButtonUtility
+            size="sm"
+            color="tertiary"
+            icon={List}
+            tooltip="List view"
+            aria-pressed={viewMode === "list"}
+            className={cx(viewMode === "list" && "bg-active text-fg-quaternary_hover")}
             onClick={() => toggleView("list")}
-            className={cn(
-              "p-2 rounded-lg transition-colors",
-              viewMode === "list"
-                ? "bg-white/10 text-white"
-                : "text-slate-400 hover:text-white"
-            )}
-          >
-            <List size={16} />
-          </button>
+          />
         </div>
       </div>
 
       {resources.length === 0 ? (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-12 text-center">
-          <FolderOpen size={32} className="text-slate-500 mx-auto mb-3" />
-          <p className="text-sm text-slate-400">No resources available.</p>
+        <div className="rounded-xl bg-primary py-12 shadow-xs ring-1 ring-secondary">
+          <EmptyState size="sm">
+            <EmptyState.Header>
+              <EmptyState.FeaturedIcon color="gray" icon={Folder} />
+            </EmptyState.Header>
+            <EmptyState.Content>
+              <EmptyState.Title>No resources available</EmptyState.Title>
+              <EmptyState.Description>
+                Documents shared with your account will appear here.
+              </EmptyState.Description>
+            </EmptyState.Content>
+          </EmptyState>
         </div>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {resources.map((resource) => (
-            <div
+            <button
               key={resource.id}
-              className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] transition-colors group cursor-pointer"
+              type="button"
               onClick={() => setPreviewResource(resource)}
+              className="cursor-pointer rounded-xl bg-primary p-5 text-left shadow-xs ring-1 ring-secondary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center shrink-0">
-                  <FileText size={18} className="text-sky-400" />
-                </div>
+              <div className="mb-3 flex items-start justify-between">
+                <FeaturedIcon color="brand" theme="light" size="md" icon={File02} />
                 {!resource.allow_download && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400">
-                    <Lock size={10} />
+                  <BadgeWithIcon type="pill-color" size="sm" color="warning" iconLeading={Lock01}>
                     Preview Only
-                  </span>
+                  </BadgeWithIcon>
                 )}
               </div>
-              <h3 className="text-sm font-semibold admin-text mb-1 line-clamp-2">
+              <h3 className="mb-1 line-clamp-2 text-sm font-semibold text-primary">
                 {resource.title}
               </h3>
               {resource.description && (
-                <p className="text-xs text-slate-400 line-clamp-2 mb-3">
+                <p className="mb-3 line-clamp-2 text-sm text-tertiary">
                   {resource.description}
                 </p>
               )}
-              <div className="flex items-center gap-3 text-[11px] text-slate-500">
+              <div className="flex items-center gap-3 text-xs text-quaternary">
                 {resource.author && (
                   <span className="flex items-center gap-1">
-                    <User size={10} />
+                    <User01 aria-hidden="true" className="size-3" />
                     {resource.author}
                   </span>
                 )}
                 <span className="flex items-center gap-1">
-                  <Calendar size={10} />
+                  <Calendar aria-hidden="true" className="size-3" />
                   {new Date(resource.created_at).toLocaleDateString()}
                 </span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       ) : (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Title
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Author
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Access
-                </th>
-                <th className="px-6 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {resources.map((resource) => (
-                <tr
-                  key={resource.id}
-                  className="hover:bg-white/[0.02] transition-colors cursor-pointer"
-                  onClick={() => setPreviewResource(resource)}
+        <TableCard.Root>
+          <Table aria-label="Resources">
+            <Table.Header>
+              <Table.Head id="title" isRowHeader label="Title" className="w-full" />
+              <Table.Head id="author" label="Author" />
+              <Table.Head id="date" label="Date" />
+              <Table.Head id="access" label="Access" />
+              <Table.Head id="actions" aria-label="Actions" />
+            </Table.Header>
+            <Table.Body items={resources}>
+              {(resource) => (
+                <Table.Row
+                  id={resource.id}
+                  onAction={() => setPreviewResource(resource)}
+                  className="cursor-pointer"
                 >
-                  <td className="px-6 py-4">
+                  <Table.Cell>
                     <div className="flex items-center gap-3">
-                      <FileText size={16} className="text-slate-500" />
+                      <File02 aria-hidden="true" className="size-4 shrink-0 text-fg-quaternary" />
                       <div>
-                        <span className="text-sm font-medium admin-text">
+                        <span className="text-sm font-medium text-primary">
                           {resource.title}
                         </span>
                         {resource.description && (
-                          <p className="text-xs text-slate-500 line-clamp-1">
+                          <p className="line-clamp-1 text-xs text-quaternary">
                             {resource.description}
                           </p>
                         )}
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
-                    {resource.author || "-"}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
-                    {new Date(resource.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4">
+                  </Table.Cell>
+                  <Table.Cell>{resource.author || "-"}</Table.Cell>
+                  <Table.Cell>
+                    <span className="whitespace-nowrap">
+                      {new Date(resource.created_at).toLocaleDateString()}
+                    </span>
+                  </Table.Cell>
+                  <Table.Cell>
                     {resource.allow_download ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400">
+                      <Badge type="pill-color" size="sm" color="success">
                         Download
-                      </span>
+                      </Badge>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400">
-                        <Lock size={10} />
+                      <BadgeWithIcon type="pill-color" size="sm" color="warning" iconLeading={Lock01}>
                         Preview Only
-                      </span>
+                      </BadgeWithIcon>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-sm text-sky-400 hover:text-sky-300 transition-colors">
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Button
+                      size="sm"
+                      color="link-color"
+                      onClick={() => setPreviewResource(resource)}
+                    >
                       View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              )}
+            </Table.Body>
+          </Table>
+        </TableCard.Root>
       )}
 
       {/* Preview Modal */}
-      {previewResource && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-4xl h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
-              <div>
-                <h2 className="text-lg font-bold admin-text">
-                  {previewResource.title}
-                </h2>
-                {previewResource.description && (
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {previewResource.description}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {previewResource.allow_download ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDownload(previewResource);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium transition-colors"
-                  >
-                    <Download size={14} />
-                    Download
-                  </button>
-                ) : (
-                  <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 text-amber-400 text-xs font-medium">
-                    <Eye size={14} />
-                    Preview Only
-                  </span>
-                )}
-                <button
-                  onClick={() => setPreviewResource(null)}
-                  className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+      <ModalOverlay
+        isDismissable
+        isOpen={!!previewResource}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setPreviewResource(null);
+        }}
+      >
+        <Modal className="h-[80vh] w-full max-w-4xl">
+          <Dialog className="flex h-full flex-col">
+            {previewResource && (
+              <>
+                <div className="flex shrink-0 items-center justify-between gap-4 border-b border-secondary px-6 py-4">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-lg font-semibold text-primary">
+                      {previewResource.title}
+                    </h2>
+                    {previewResource.description && (
+                      <p className="mt-0.5 truncate text-sm text-tertiary">
+                        {previewResource.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {previewResource.allow_download ? (
+                      <Button
+                        size="sm"
+                        color="primary"
+                        iconLeading={Download01}
+                        onClick={() => handleDownload(previewResource)}
+                      >
+                        Download
+                      </Button>
+                    ) : (
+                      <BadgeWithIcon type="pill-color" size="md" color="warning" iconLeading={Eye}>
+                        Preview Only
+                      </BadgeWithIcon>
+                    )}
+                    <CloseButton size="sm" onClick={() => setPreviewResource(null)} />
+                  </div>
+                </div>
+                <div
+                  className="flex-1 overflow-hidden p-4"
+                  onContextMenu={
+                    !previewResource.allow_download
+                      ? (e) => e.preventDefault()
+                      : undefined
+                  }
                 >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-            <div
-              className="flex-1 p-4 overflow-hidden"
-              onContextMenu={
-                !previewResource.allow_download
-                  ? (e) => e.preventDefault()
-                  : undefined
-              }
-            >
-              {previewResource.file_type === "application/pdf" ||
-              previewResource.file_url.endsWith(".pdf") ? (
-                <object
-                  data={previewResource.file_url}
-                  type="application/pdf"
-                  className="w-full h-full rounded-xl"
-                >
-                  <iframe
-                    src={previewResource.file_url}
-                    className="w-full h-full rounded-xl"
-                    title={previewResource.title}
-                  />
-                </object>
-              ) : (
-                <iframe
-                  src={previewResource.file_url}
-                  className="w-full h-full rounded-xl bg-white"
-                  title={previewResource.title}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+                  {previewResource.file_type === "application/pdf" ||
+                  previewResource.file_url.endsWith(".pdf") ? (
+                    <object
+                      data={previewResource.file_url}
+                      type="application/pdf"
+                      className="h-full w-full rounded-lg"
+                    >
+                      <iframe
+                        src={previewResource.file_url}
+                        className="h-full w-full rounded-lg"
+                        title={previewResource.title}
+                      />
+                    </object>
+                  ) : (
+                    <iframe
+                      src={previewResource.file_url}
+                      className="h-full w-full rounded-lg bg-white"
+                      title={previewResource.title}
+                    />
+                  )}
+                </div>
+              </>
+            )}
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
     </div>
   );
 }

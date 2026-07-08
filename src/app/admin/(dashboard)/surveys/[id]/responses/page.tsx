@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageSquare, Star, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, MessageChatSquare, Star01, XCircle } from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 
 export const metadata = { title: "Survey Responses | ICE Admin" };
 
@@ -9,17 +11,16 @@ function StarDisplay({ count, max }: { count: number; max: number }) {
   return (
     <span className="inline-flex items-center gap-0.5">
       {Array.from({ length: max }, (_, i) => (
-        <Star
+        <Star01
           key={i}
-          size={16}
           className={
             i < count
-              ? "text-yellow-400 fill-yellow-400"
-              : "text-slate-600"
+              ? "size-4 fill-yellow-400 text-yellow-400"
+              : "size-4 text-fg-quaternary"
           }
         />
       ))}
-      <span className="ml-1.5 text-xs text-slate-400">
+      <span className="ml-1.5 text-xs text-tertiary">
         {count}/{max}
       </span>
     </span>
@@ -33,15 +34,19 @@ function YesNoBadge({ value }: { value: unknown }) {
     value === "Yes" ||
     value === "true";
   return isYes ? (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">
-      <CheckCircle size={12} />
-      Yes
-    </span>
+    <Badge size="sm" color="success">
+      <span className="inline-flex items-center gap-1.5">
+        <CheckCircle className="size-3" />
+        Yes
+      </span>
+    </Badge>
   ) : (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400">
-      <XCircle size={12} />
-      No
-    </span>
+    <Badge size="sm" color="gray">
+      <span className="inline-flex items-center gap-1.5">
+        <XCircle className="size-3" />
+        No
+      </span>
+    </Badge>
   );
 }
 
@@ -51,7 +56,7 @@ function formatAnswer(
   config: Record<string, unknown>
 ): React.ReactNode {
   if (value === null || value === undefined || value === "") {
-    return <span className="text-slate-500 italic">No answer</span>;
+    return <span className="text-tertiary italic">No answer</span>;
   }
 
   switch (questionType) {
@@ -70,36 +75,33 @@ function formatAnswer(
         return (
           <div className="flex flex-wrap gap-1.5">
             {value.map((v, i) => (
-              <span
-                key={i}
-                className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-violet-500/10 text-violet-400"
-              >
+              <Badge key={i} size="sm" color="purple">
                 {String(v)}
-              </span>
+              </Badge>
             ))}
           </div>
         );
       }
-      return <span className="text-sm admin-text">{String(value)}</span>;
+      return <span className="text-sm text-primary">{String(value)}</span>;
     }
 
     case "ranking": {
       if (Array.isArray(value)) {
         return (
-          <ol className="list-decimal list-inside space-y-0.5 text-sm admin-text">
+          <ol className="list-inside list-decimal space-y-0.5 text-sm text-primary">
             {value.map((v, i) => (
               <li key={i}>
-                <span className="text-slate-300">{String(v)}</span>
+                <span className="text-secondary">{String(v)}</span>
               </li>
             ))}
           </ol>
         );
       }
-      return <span className="text-sm admin-text">{String(value)}</span>;
+      return <span className="text-sm text-primary">{String(value)}</span>;
     }
 
     default:
-      return <span className="text-sm admin-text">{String(value)}</span>;
+      return <span className="text-sm text-primary">{String(value)}</span>;
   }
 }
 
@@ -146,41 +148,39 @@ export default async function SurveyResponsesPage({
       <div className="mb-6">
         <Link
           href={`/admin/surveys/${id}`}
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-tertiary transition-colors hover:text-tertiary_hover"
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft className="size-4" />
           Back to Survey
         </Link>
       </div>
 
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-          <MessageSquare size={20} className="text-emerald-400" />
-        </div>
+      <div className="mb-8 flex items-center gap-3">
+        <FeaturedIcon color="success" theme="modern" size="md" icon={MessageChatSquare} />
         <div>
-          <h1 className="text-2xl font-bold admin-text">{survey.title}</h1>
-          <p className="text-sm text-slate-400">{company ?? "Unknown Client"}</p>
+          <h1 className="text-display-xs font-semibold text-primary">{survey.title}</h1>
+          <p className="text-sm text-tertiary">{company ?? "Unknown Client"}</p>
         </div>
       </div>
 
       {/* Respondent info */}
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 mb-8">
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
+      <div className="mb-8 rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary">
+        <h2 className="mb-4 text-sm font-semibold tracking-wider text-quaternary uppercase">
           Respondent Information
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
           <div>
-            <span className="text-slate-500">Name</span>
-            <p className="admin-text font-medium mt-0.5">
+            <span className="text-tertiary">Name</span>
+            <p className="mt-0.5 font-medium text-primary">
               {contact
                 ? `${contact.first_name} ${contact.last_name}`
                 : "---"}
             </p>
           </div>
           <div>
-            <span className="text-slate-500">Responded At</span>
-            <p className="admin-text font-medium mt-0.5">
+            <span className="text-tertiary">Responded At</span>
+            <p className="mt-0.5 font-medium text-primary">
               {survey.responded_at
                 ? new Date(survey.responded_at).toLocaleDateString("en-US", {
                     month: "short",
@@ -193,36 +193,35 @@ export default async function SurveyResponsesPage({
             </p>
           </div>
           <div>
-            <span className="text-slate-500">Status</span>
+            <span className="text-tertiary">Status</span>
             <p className="mt-0.5">
-              <span
-                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+              <Badge
+                size="sm"
+                color={
                   survey.status === "completed"
-                    ? "bg-emerald-500/10 text-emerald-400"
+                    ? "success"
                     : survey.status === "active"
-                    ? "bg-sky-500/10 text-sky-400"
-                    : "bg-slate-500/10 text-slate-400"
-                }`}
+                    ? "brand"
+                    : "gray"
+                }
+                className="capitalize"
               >
                 {survey.status}
-              </span>
+              </Badge>
             </p>
           </div>
         </div>
       </div>
 
       {/* Questions & answers */}
-      <h2 className="text-lg font-semibold admin-text mb-4">
+      <h2 className="mb-4 text-lg font-semibold text-primary">
         Responses ({questions?.length ?? 0} questions)
       </h2>
 
       {!questions || questions.length === 0 ? (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-12 text-center">
-          <MessageSquare
-            size={48}
-            className="mx-auto text-slate-600 mb-4"
-          />
-          <p className="text-slate-400">No questions in this survey.</p>
+        <div className="flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-16 text-center shadow-xs ring-1 ring-secondary">
+          <FeaturedIcon color="gray" theme="modern" size="lg" icon={MessageChatSquare} />
+          <p className="mt-4 text-sm text-tertiary">No questions in this survey.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -231,20 +230,20 @@ export default async function SurveyResponsesPage({
             return (
               <div
                 key={q.id}
-                className="bg-white/[0.03] border border-white/10 rounded-2xl p-5"
+                className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs text-slate-500 font-mono">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="font-mono text-xs text-quaternary">
                     Q{idx + 1}
                   </span>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider bg-slate-500/10 text-slate-400">
+                  <Badge size="sm" color="gray" className="uppercase">
                     {q.question_type.replace(/_/g, " ")}
-                  </span>
+                  </Badge>
                 </div>
-                <p className="text-sm text-slate-300 font-medium mb-3">
+                <p className="mb-3 text-sm font-medium text-secondary">
                   {q.question_text}
                 </p>
-                <div className="pl-2 border-l-2 border-white/10 py-1">
+                <div className="border-l-2 border-secondary py-1 pl-3">
                   {formatAnswer(answer, q.question_type, q.config ?? {})}
                 </div>
               </div>

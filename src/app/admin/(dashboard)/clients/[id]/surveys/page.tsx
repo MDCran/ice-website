@@ -1,20 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  ClipboardList,
-  Eye,
-  ExternalLink,
-} from "lucide-react";
+import { AlertCircle, ArrowLeft, ClipboardCheck, Eye, LinkExternal01 } from "@untitledui/icons";
+import type { BadgeColor } from "@/components/base/badges/badges";
+import { Badge } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
+import { Table, TableCard } from "@/components/application/table/table";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 
 export const metadata = { title: "Client Surveys | ICE Admin" };
 
-const statusBadge: Record<string, { bg: string; text: string }> = {
-  draft: { bg: "bg-slate-500/10", text: "text-slate-400" },
-  active: { bg: "bg-sky-500/10", text: "text-sky-400" },
-  completed: { bg: "bg-emerald-500/10", text: "text-emerald-400" },
-  expired: { bg: "bg-gray-500/10", text: "text-gray-400" },
+const statusColors: Record<string, BadgeColor<"pill-color">> = {
+  draft: "gray",
+  active: "blue",
+  completed: "success",
+  expired: "warning",
 };
 
 export default async function ClientSurveysPage({
@@ -48,107 +49,90 @@ export default async function ClientSurveysPage({
     <div>
       {/* Back link */}
       <div className="mb-6">
-        <Link
-          href={`/admin/clients/${id}`}
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={14} />
+        <Button color="link-gray" size="sm" href={`/admin/clients/${id}`} iconLeading={<ArrowLeft data-icon />}>
           Back to {client.company_name}
-        </Link>
+        </Button>
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center">
-            <ClipboardList size={20} className="text-sky-400" />
-          </div>
+          <FeaturedIcon icon={ClipboardCheck} color="brand" theme="modern" size="lg" />
           <div>
-            <h1 className="text-2xl font-bold admin-text">Surveys</h1>
-            <p className="text-sm text-slate-400">{client.company_name}</p>
+            <h1 className="text-xl font-semibold text-primary">Surveys</h1>
+            <p className="text-sm text-tertiary">{client.company_name}</p>
           </div>
         </div>
-        <Link
+        <Button
+          color="primary"
+          size="md"
           href={`/admin/surveys?clientId=${id}`}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold transition-colors"
+          iconLeading={<LinkExternal01 data-icon />}
         >
-          <ExternalLink size={16} />
           Assign Survey
-        </Link>
+        </Button>
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6">
+        <div className="mb-6 flex items-center gap-2 rounded-lg bg-utility-red-50 px-3.5 py-2.5 text-sm text-utility-red-700 ring-1 ring-utility-red-200 ring-inset">
+          <AlertCircle className="size-4 shrink-0 text-utility-red-500" />
           Failed to load surveys: {error.message}
         </div>
       )}
 
       {!surveys || surveys.length === 0 ? (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-12 text-center">
-          <ClipboardList
-            size={48}
-            className="mx-auto text-slate-600 mb-4"
-          />
-          <p className="text-slate-400 text-lg mb-2">No surveys yet</p>
-          <p className="text-slate-500 text-sm">
-            Surveys assigned to this client will appear here.
-          </p>
+        <div className="flex justify-center rounded-xl bg-primary px-6 py-12 shadow-xs ring-1 ring-secondary">
+          <EmptyState size="sm">
+            <EmptyState.Header>
+              <EmptyState.FeaturedIcon color="gray" />
+            </EmptyState.Header>
+            <EmptyState.Content>
+              <EmptyState.Title>No surveys yet</EmptyState.Title>
+              <EmptyState.Description>
+                Surveys assigned to this client will appear here.
+              </EmptyState.Description>
+            </EmptyState.Content>
+          </EmptyState>
         </div>
       ) : (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Title
-                </th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Responded By
-                </th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-4" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
+        <TableCard.Root size="sm">
+          <Table aria-label="Surveys" size="sm">
+            <Table.Header>
+              <Table.Head id="title" label="Title" isRowHeader className="w-full" />
+              <Table.Head id="status" label="Status" />
+              <Table.Head id="responded-by" label="Responded By" />
+              <Table.Head id="date" label="Date" />
+              <Table.Head id="actions" />
+            </Table.Header>
+            <Table.Body>
               {surveys.map((survey) => {
-                const badge =
-                  statusBadge[survey.status] ?? statusBadge.draft;
+                const color = statusColors[survey.status] ?? statusColors.draft;
                 const contact = survey.responded_contact as {
                   first_name: string;
                   last_name: string;
                 } | null;
 
                 return (
-                  <tr
-                    key={survey.id}
-                    className="hover:bg-white/[0.02] transition-colors"
-                  >
-                    <td className="px-6 py-4">
+                  <Table.Row id={survey.id} key={survey.id}>
+                    <Table.Cell>
                       <Link
                         href={`/admin/surveys/${survey.id}`}
-                        className="text-sm font-medium admin-text hover:text-sky-400 transition-colors"
+                        className="text-sm font-medium whitespace-nowrap text-primary hover:underline"
                       >
                         {survey.title}
                       </Link>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${badge.bg} ${badge.text}`}
-                      >
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge size="sm" type="pill-color" color={color} className="capitalize">
                         {survey.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-400">
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell className="whitespace-nowrap">
                       {contact
                         ? `${contact.first_name} ${contact.last_name}`
                         : "---"}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-400">
+                    </Table.Cell>
+                    <Table.Cell className="whitespace-nowrap">
                       {survey.responded_at
                         ? new Date(
                             survey.responded_at
@@ -166,31 +150,35 @@ export default async function ClientSurveysPage({
                             year: "numeric",
                           })
                         : "---"}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {survey.status === "completed" ? (
-                        <Link
-                          href={`/admin/surveys/${survey.id}/responses`}
-                          className="inline-flex items-center gap-1.5 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
-                        >
-                          <Eye size={14} />
-                          View Responses
-                        </Link>
-                      ) : (
-                        <Link
-                          href={`/admin/surveys/${survey.id}`}
-                          className="text-sm text-sky-400 hover:text-sky-300 transition-colors"
-                        >
-                          Edit
-                        </Link>
-                      )}
-                    </td>
-                  </tr>
+                    </Table.Cell>
+                    <Table.Cell className="px-4">
+                      <div className="flex justify-end whitespace-nowrap">
+                        {survey.status === "completed" ? (
+                          <Button
+                            color="link-color"
+                            size="sm"
+                            href={`/admin/surveys/${survey.id}/responses`}
+                            iconLeading={<Eye data-icon />}
+                          >
+                            View Responses
+                          </Button>
+                        ) : (
+                          <Button
+                            color="link-color"
+                            size="sm"
+                            href={`/admin/surveys/${survey.id}`}
+                          >
+                            Edit
+                          </Button>
+                        )}
+                      </div>
+                    </Table.Cell>
+                  </Table.Row>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </Table.Body>
+          </Table>
+        </TableCard.Root>
       )}
     </div>
   );

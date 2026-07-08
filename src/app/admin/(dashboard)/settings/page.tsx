@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { AlertCircle, Check, Image01, Save01, User01 } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
-import { Save, Loader2, Check, AlertCircle, User, Image as ImageIcon } from "lucide-react";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import MediaBrowserModal from "@/components/admin/MediaBrowserModal";
 
 export default function AdminSettingsPage() {
@@ -76,96 +80,81 @@ export default function AdminSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-slate-400" />
+      <div className="flex h-64 items-center justify-center">
+        <LoadingIndicator type="line-spinner" size="md" />
       </div>
     );
   }
 
   return (
     <div className="max-w-2xl">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center">
-          <User size={20} className="text-sky-400" />
-        </div>
+      <div className="mb-8 flex items-center gap-3">
+        <FeaturedIcon color="brand" theme="modern" size="md" icon={User01} />
         <div>
-          <h1 className="text-2xl font-bold admin-text">Settings</h1>
-          <p className="text-sm text-slate-400">Manage your admin profile</p>
+          <h1 className="text-display-xs font-semibold text-primary">Settings</h1>
+          <p className="text-sm text-tertiary">Manage your admin profile</p>
         </div>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6">
-          <AlertCircle size={16} />
+        <div className="mb-6 flex items-center gap-2 rounded-lg bg-utility-red-50 p-3 text-sm text-utility-red-700 ring-1 ring-utility-red-200 ring-inset">
+          <AlertCircle className="size-4 shrink-0 text-utility-red-500" />
           {error}
         </div>
       )}
       {success && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm mb-6">
-          <Check size={16} />
+        <div className="mb-6 flex items-center gap-2 rounded-lg bg-utility-green-50 p-3 text-sm text-utility-green-700 ring-1 ring-utility-green-200 ring-inset">
+          <Check className="size-4 shrink-0 text-utility-green-500" />
           {success}
         </div>
       )}
 
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-6">
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Display Name
-          </label>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your name"
-            className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-          />
-        </div>
+      <div className="space-y-6 rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary">
+        <Input
+          label="Display Name"
+          placeholder="Your name"
+          value={displayName}
+          onChange={(value) => setDisplayName(value)}
+        />
+
+        <Input
+          label="Email"
+          type="email"
+          placeholder="admin@icesales.com"
+          value={email}
+          onChange={(value) => setEmail(value)}
+        />
 
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Email
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@icesales.com"
-            className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Avatar
-          </label>
+          <p className="mb-1.5 text-sm font-medium text-secondary">Avatar</p>
           <div className="flex items-center gap-4">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt="Avatar preview"
-                className="w-16 h-16 rounded-xl object-cover border border-white/10"
+                className="size-16 rounded-xl object-cover ring-1 ring-secondary"
               />
             ) : (
-              <div className="w-16 h-16 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center">
-                <ImageIcon size={24} className="text-slate-500" />
+              <div className="flex size-16 items-center justify-center rounded-xl bg-secondary ring-1 ring-secondary">
+                <Image01 className="size-6 text-fg-quaternary" />
               </div>
             )}
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
+            <div className="flex flex-col items-start gap-2">
+              <Button
+                size="sm"
+                color="secondary"
                 onClick={() => setAvatarModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.06] border border-white/10 text-sm text-slate-300 hover:bg-white/[0.1] hover:border-white/20 transition-all cursor-pointer"
               >
                 Browse Files
-              </button>
+              </Button>
               {avatarUrl && (
-                <button
-                  type="button"
+                <Button
+                  size="sm"
+                  color="link-destructive"
                   onClick={() => setAvatarUrl("")}
-                  className="text-xs text-slate-500 hover:text-red-400 transition-colors cursor-pointer text-left"
                 >
                   Remove avatar
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -182,18 +171,16 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="pt-2">
-          <button
+          <Button
+            size="md"
+            color="primary"
+            iconLeading={Save01}
+            isLoading={saving}
+            showTextWhileLoading
             onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer"
           >
-            {saving ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Save size={16} />
-            )}
             {saving ? "Saving..." : "Save Settings"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -3,11 +3,12 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search as SearchIcon, X, ArrowUpRight, FileText, Command } from "lucide-react";
-import * as Dialog from "@radix-ui/react-dialog";
-import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
-import { motion, AnimatePresence } from "motion/react";
+import { ArrowUpRight, SearchLg } from "@untitledui/icons";
+import { CommandDialog } from "@/components/application/command-menus/command-menu";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { cx } from "@/utils/cx";
 import { searchIndex, type SearchItem } from "@/lib/searchData";
+import { pushEvent } from "@/lib/analytics";
 
 /* ─── Highlight matching text ──────────────────────────────────────────── */
 
@@ -19,7 +20,9 @@ function HighlightText({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="search-highlight rounded px-0.5">{part}</mark>
+          <mark key={i} className="rounded-sm bg-transparent font-semibold text-brand-secondary">
+            {part}
+          </mark>
         ) : (
           <span key={i}>{part}</span>
         )
@@ -28,13 +31,17 @@ function HighlightText({ text, query }: { text: string; query: string }) {
   );
 }
 
+/* ─── Shared kbd styling ───────────────────────────────────────────────── */
+
+const kbdClass =
+  "rounded-[4px] bg-secondary_alt px-1 py-0.5 text-center text-xs font-medium text-tertiary ring-1 ring-secondary ring-inset";
+
 /* ─── Search Modal ─────────────────────────────────────────────────────── */
 
 export default function SearchModal({ items }: { items?: SearchItem[] } = {}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -55,7 +62,6 @@ export default function SearchModal({ items }: { items?: SearchItem[] } = {}) {
     if (open) {
       setQuery("");
       setSelectedIndex(-1);
-      setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
 
@@ -70,7 +76,7 @@ export default function SearchModal({ items }: { items?: SearchItem[] } = {}) {
         item.category.toLowerCase().includes(lower) ||
         (item.keywords && item.keywords.some((k) => k.toLowerCase().includes(lower)))
     );
-  }, [query]);
+  }, [query, items]);
 
   // Group results by category
   const grouped = useMemo(() => {
@@ -86,10 +92,11 @@ export default function SearchModal({ items }: { items?: SearchItem[] } = {}) {
   // Navigate to result
   const navigateToResult = useCallback(
     (url: string) => {
+      pushEvent("search_performed", { query, result_url: url });
       setOpen(false);
       router.push(url);
     },
-    [router]
+    [router, query]
   );
 
   // Keyboard navigation
@@ -118,140 +125,123 @@ export default function SearchModal({ items }: { items?: SearchItem[] } = {}) {
   }, [selectedIndex]);
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Portal>
-        <AnimatePresence>
-          {open && (
-            <>
-              <Dialog.Overlay asChild>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
-                />
-              </Dialog.Overlay>
-              <Dialog.Content asChild>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.96, y: -20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.96, y: -20 }}
-                  transition={{ duration: 0.2, ease: "easeOut" as const }}
-                  className="fixed left-1/2 top-[15%] z-[101] w-full max-w-2xl -translate-x-1/2"
-                >
-                  <div className="search-modal mx-4 rounded-2xl border border-sky-500/15 bg-[#020617]/95 backdrop-blur-2xl shadow-2xl shadow-sky-500/10 overflow-hidden">
-                    <VisuallyHidden.Root>
-                      <Dialog.Title>Search</Dialog.Title>
-                    </VisuallyHidden.Root>
-                    {/* Top gradient line */}
-                    <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
+    <CommandDialog
+      isOpen={open}
+      onOpenChange={setOpen}
+      className="z-[70] bg-black/40 backdrop-blur-sm"
+      dialogClassName={(state) =>
+        cx(
+          "max-w-full rounded-2xl bg-primary/85 shadow-2xl ring-1 ring-black/5 backdrop-blur-2xl backdrop-saturate-150 dark:ring-white/10",
+          state.isEntering && "duration-200 ease-out animate-in fade-in slide-in-from-top-2",
+          state.isExiting && "duration-150 ease-in animate-out fade-out"
+        )
+      }
+    >
+      {/* Brand gradient hairline */}
+      <div aria-hidden="true" className="h-px shrink-0 bg-gradient-to-r from-transparent via-brand-500/40 to-transparent" />
 
-                    {/* Search input */}
-                    <div className="search-modal-input flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
-                      <SearchIcon className="h-5 w-5 text-slate-400 shrink-0" />
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={query}
-                        onChange={(e) => { setQuery(e.target.value); setSelectedIndex(-1); }}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Search solutions, services, resources..."
-                        className="search-modal-field flex-1 bg-transparent text-white text-base placeholder:text-slate-500 focus:outline-none"
-                      />
-                      <kbd className="search-modal-kbd hidden sm:inline-flex items-center gap-0.5 rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-slate-400 font-mono">
-                        ESC
-                      </kbd>
-                      <Dialog.Close asChild>
-                        <button className="search-modal-close p-1 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer" aria-label="Close">
-                          <X className="h-4 w-4" />
-                        </button>
-                      </Dialog.Close>
-                    </div>
+      {/* Search input */}
+      <div className="relative flex items-center gap-2 border-b border-secondary p-4">
+        <div className="pointer-events-none absolute">
+          <SearchLg className="size-5 text-fg-quaternary" />
+        </div>
+        <input
+          autoFocus
+          type="text"
+          aria-label="Search"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelectedIndex(-1);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder="Search solutions, services, resources..."
+          className="m-0 w-full bg-transparent pl-7 text-md text-primary outline-hidden placeholder:text-placeholder"
+        />
+        <kbd className={cx(kbdClass, "max-sm:hidden")}>Esc</kbd>
+      </div>
 
-                    {/* Results */}
-                    <div ref={resultsRef} className="max-h-[60vh] overflow-y-auto overscroll-contain p-3">
-                      {query.trim() && results.length === 0 && (
-                        <div className="py-12 text-center">
-                          <SearchIcon className="h-10 w-10 text-slate-600 mx-auto mb-3 search-modal-empty-icon" />
-                          <p className="text-sm text-slate-400 search-modal-empty-text">No results for &ldquo;{query}&rdquo;</p>
+      {/* Results */}
+      <div ref={resultsRef} className="max-h-[min(60vh,26rem)] overflow-y-auto overscroll-contain">
+        {query.trim() && results.length === 0 && (
+          <div className="flex flex-col items-center gap-3 px-4 py-12 text-center">
+            <FeaturedIcon icon={SearchLg} color="gray" theme="modern" size="lg" />
+            <p className="text-sm text-tertiary">No results for &ldquo;{query}&rdquo;</p>
+          </div>
+        )}
+
+        {results.length > 0 && (
+          <div className="pb-2">
+            {Array.from(grouped.entries()).map(([category, categoryItems]) => (
+              <div key={category} className="border-b border-secondary pb-2 last:border-transparent">
+                <div className="flex px-4.5 pt-3 pb-1 font-mono text-[11px] font-semibold tracking-wider text-tertiary uppercase">{category}</div>
+                {categoryItems.map((item) => {
+                  const globalIdx = results.indexOf(item);
+                  const isActive = globalIdx === selectedIndex;
+                  return (
+                    <Link
+                      key={item.url}
+                      href={item.url}
+                      onClick={() => {
+                        pushEvent("search_performed", { query, result_url: item.url });
+                        setOpen(false);
+                      }}
+                      data-result-item
+                      className="group block cursor-pointer px-2 py-0.5 outline-hidden"
+                    >
+                      <div
+                        className={cx(
+                          "relative flex min-h-10 items-center justify-between gap-3 rounded-lg px-2.5 py-2 transition duration-100 ease-linear group-hover:bg-primary_hover/60",
+                          isActive && "bg-primary_hover/60"
+                        )}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-primary">
+                            <HighlightText text={item.title} query={query} />
+                          </p>
+                          <p className="truncate text-sm text-tertiary">
+                            <HighlightText text={item.description} query={query} />
+                          </p>
                         </div>
-                      )}
-
-                      {results.length > 0 && (
-                        <div className="space-y-4">
-                          {Array.from(grouped.entries()).map(([category, items]) => (
-                            <div key={category}>
-                              <div className="flex items-center gap-2 px-2 mb-2">
-                                <FileText className="h-3.5 w-3.5 text-sky-400" />
-                                <span className="text-[10px] font-semibold uppercase tracking-widest text-sky-400">
-                                  {category}
-                                </span>
-                              </div>
-                              <div className="space-y-1">
-                                {items.map((item) => {
-                                  const globalIdx = results.indexOf(item);
-                                  return (
-                                    <Link
-                                      key={item.url}
-                                      href={item.url}
-                                      onClick={() => setOpen(false)}
-                                      data-result-item
-                                      className={`search-modal-result flex items-start justify-between gap-3 rounded-xl px-4 py-3 transition-all duration-150 group ${
-                                        globalIdx === selectedIndex
-                                          ? "bg-sky-500/10 border border-sky-500/20"
-                                          : "border border-transparent hover:bg-white/[0.04]"
-                                      }`}
-                                    >
-                                      <div className="min-w-0">
-                                        <p className="search-modal-title text-sm font-semibold text-white group-hover:text-sky-400 transition-colors">
-                                          <HighlightText text={item.title} query={query} />
-                                        </p>
-                                        <p className="search-modal-desc text-xs text-slate-400 mt-0.5 line-clamp-1">
-                                          <HighlightText text={item.description} query={query} />
-                                        </p>
-                                      </div>
-                                      <ArrowUpRight className="h-4 w-4 text-slate-500 shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </Link>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {!query.trim() && (
-                        <div className="py-12 text-center">
-                          <SearchIcon className="h-10 w-10 text-slate-700 mx-auto mb-3 search-modal-empty-icon" />
-                          <p className="text-sm text-slate-500 search-modal-empty-text">Type to search across the site</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="search-modal-footer flex items-center justify-between border-t border-white/[0.06] px-5 py-2.5">
-                      <div className="flex items-center gap-4 text-[10px] text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <kbd className="search-modal-kbd rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono">↑↓</kbd> navigate
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <kbd className="search-modal-kbd rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono">↵</kbd> select
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <kbd className="search-modal-kbd rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono">esc</kbd> close
-                        </span>
+                        <ArrowUpRight
+                          className={cx(
+                            "size-4 shrink-0 text-fg-quaternary opacity-0 transition duration-100 ease-linear group-hover:opacity-100",
+                            isActive && "opacity-100"
+                          )}
+                        />
                       </div>
-                      <p className="text-[10px] text-slate-600">{results.length} results</p>
-                    </div>
-                  </div>
-                </motion.div>
-              </Dialog.Content>
-            </>
-          )}
-        </AnimatePresence>
-      </Dialog.Portal>
-    </Dialog.Root>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!query.trim() && (
+          <div className="flex flex-col items-center gap-3 px-4 py-12 text-center">
+            <FeaturedIcon icon={SearchLg} color="gray" theme="modern" size="lg" />
+            <p className="text-sm text-tertiary">Type to search across the site</p>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-3 border-t border-secondary px-4 py-3">
+        <div className="flex items-center gap-3 text-xs text-quaternary">
+          <span className="flex items-center gap-1">
+            <kbd className={kbdClass}>↑↓</kbd> navigate
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className={kbdClass}>↵</kbd> select
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className={kbdClass}>Esc</kbd> close
+          </span>
+        </div>
+        <p className="text-xs text-quaternary">{results.length} results</p>
+      </div>
+    </CommandDialog>
   );
 }
 
@@ -260,14 +250,13 @@ export default function SearchModal({ items }: { items?: SearchItem[] } = {}) {
 export function SearchTrigger({ onClick }: { onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="ml-3 inline-flex items-center gap-2 p-2.5 rounded-xl text-slate-400 transition-all duration-300 hover:text-sky-400 hover:bg-sky-400/5 hover:shadow-[0_0_15px_rgba(168,85,247,0.1)] cursor-pointer"
       aria-label="Search (Ctrl+K)"
+      className="ml-3 inline-flex cursor-pointer items-center gap-2 rounded-lg p-2 text-fg-quaternary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      <SearchIcon className="h-5 w-5" />
-      <kbd className="hidden xl:inline-flex items-center gap-0.5 rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-500 font-mono">
-        <Command className="h-2.5 w-2.5" />K
-      </kbd>
+      <SearchLg className="size-5" />
+      <kbd className={cx(kbdClass, "hidden xl:inline-flex")}>⌘K</kbd>
     </button>
   );
 }

@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Trash01 } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/base/buttons/button";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 
 export default function DeleteClientButton({ clientId, clientName }: { clientId: string; clientName: string }) {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -30,59 +33,61 @@ export default function DeleteClientButton({ clientId, clientName }: { clientId:
     router.push("/admin/clients");
   };
 
-  if (!showConfirm) {
-    return (
-      <button
-        onClick={() => setShowConfirm(true)}
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-      >
-        <Trash2 size={14} />
-        Delete
-      </button>
-    );
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="admin-card rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-            <AlertTriangle size={20} className="text-red-400" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold admin-text">Delete Client</h3>
-            <p className="text-xs text-slate-400">This action cannot be undone</p>
-          </div>
-        </div>
+    <>
+      <Button color="primary-destructive" size="sm" iconLeading={Trash01} onClick={() => setShowConfirm(true)}>
+        Delete
+      </Button>
 
-        <p className="text-sm text-slate-300 mb-6">
-          Are you sure you want to delete <strong className="admin-text">{clientName}</strong>? All associated contacts, invoices, documents, resources, and surveys will be permanently removed.
-        </p>
+      <ModalOverlay
+        isDismissable={!loading}
+        isOpen={showConfirm}
+        onOpenChange={(open) => {
+          if (!open && !loading) setShowConfirm(false);
+        }}
+      >
+        <Modal className="w-full max-w-md">
+          <Dialog>
+            <div className="flex flex-col gap-4 p-6">
+              <div className="flex items-center gap-3">
+                <FeaturedIcon icon={AlertTriangle} color="error" theme="modern" size="lg" />
+                <div>
+                  <h3 className="text-lg font-semibold text-primary">Delete Client</h3>
+                  <p className="text-sm text-tertiary">This action cannot be undone</p>
+                </div>
+              </div>
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2 text-sm text-red-400">
-            {error}
-          </div>
-        )}
+              <p className="text-sm text-tertiary">
+                Are you sure you want to delete <strong className="font-semibold text-primary">{clientName}</strong>? All
+                associated contacts, invoices, documents, resources, and surveys will be permanently removed.
+              </p>
 
-        <div className="flex items-center gap-3 justify-end">
-          <button
-            onClick={() => setShowConfirm(false)}
-            disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors disabled:opacity-50 cursor-pointer"
-          >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-            Delete Permanently
-          </button>
-        </div>
-      </div>
-    </div>
+              {error && (
+                <div className="rounded-lg bg-utility-red-50 px-3.5 py-2.5 text-sm text-utility-red-700 ring-1 ring-utility-red-200 ring-inset">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button color="secondary" size="md" isDisabled={loading} onClick={() => setShowConfirm(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  color="primary-destructive"
+                  size="md"
+                  iconLeading={Trash01}
+                  isDisabled={loading}
+                  isLoading={loading}
+                  showTextWhileLoading
+                  onClick={handleDelete}
+                >
+                  Delete Permanently
+                </Button>
+              </div>
+            </div>
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
+    </>
   );
 }

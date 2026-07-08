@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { ChevronRight, Download } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
+import { ArrowRight, ChevronRight, Download01, FileCheck02 } from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
+import { cx } from "@/utils/cx";
+
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const DEFAULT_SECTIONS = [
   {
@@ -18,12 +24,12 @@ We reserve the right to change, modify, or update these Terms at any time withou
     title: "2. Use of the Site",
     content: `You agree to use the Site only for lawful purposes and in accordance with these Terms. You agree not to:
 
-\u2022 Use the Site in any way that violates any applicable federal, state, local, or international law or regulation.
-\u2022 Use the Site to transmit or procure the sending of any advertising or promotional material, including any "junk mail," "chain letter," "spam," or any other similar solicitation.
-\u2022 Impersonate or attempt to impersonate ICE, an ICE employee, another user, or any other person or entity.
-\u2022 Engage in any conduct that restricts or inhibits anyone's use or enjoyment of the Site, or which, as determined by us, may harm ICE or users of the Site.
-\u2022 Use any robot, spider, or other automatic device, process, or means to access the Site for any purpose, including monitoring or copying any of the material on the Site.
-\u2022 Introduce any viruses, Trojan horses, worms, logic bombs, or other material which is malicious or technologically harmful.`,
+• Use the Site in any way that violates any applicable federal, state, local, or international law or regulation.
+• Use the Site to transmit or procure the sending of any advertising or promotional material, including any "junk mail," "chain letter," "spam," or any other similar solicitation.
+• Impersonate or attempt to impersonate ICE, an ICE employee, another user, or any other person or entity.
+• Engage in any conduct that restricts or inhibits anyone's use or enjoyment of the Site, or which, as determined by us, may harm ICE or users of the Site.
+• Use any robot, spider, or other automatic device, process, or means to access the Site for any purpose, including monitoring or copying any of the material on the Site.
+• Introduce any viruses, Trojan horses, worms, logic bombs, or other material which is malicious or technologically harmful.`,
   },
   {
     id: "intellectual-property",
@@ -77,6 +83,7 @@ Phone: 1-800-786-9188`,
 export default function TermsOfServicePage({ cmsData }: { cmsData?: Record<string, any> }) {
   const sections: { id: string; title: string; content: string }[] = useMemo(() => cmsData?.sections?.items ?? DEFAULT_SECTIONS, [cmsData]);
   const [activeId, setActiveId] = useState(DEFAULT_SECTIONS[0].id);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     const ids = sections.map((s) => s.id);
@@ -96,120 +103,158 @@ export default function TermsOfServicePage({ cmsData }: { cmsData?: Record<strin
     return () => observers.forEach((o) => o.disconnect());
   }, [sections]);
 
+  const handleTocClick = (event: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    event.preventDefault();
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: shouldReduceMotion ? "auto" : "smooth", block: "start" });
+    window.history.replaceState(null, "", `#${id}`);
+    setActiveId(id);
+  };
+
+  const headerReveal = shouldReduceMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: 16 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.6, ease: EASE },
+      };
+
   return (
-    <main className="min-h-screen terms-page">
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[400px] flex items-center justify-center overflow-hidden">
-        <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" poster="/images/hero-poster.webp">
-          <source src="/videos/hero.mp4" type="video/mp4" />
-        </video>
-        <div className="hero-overlay absolute inset-0" />
-        <div className="relative z-10 text-center pt-20 lg:pt-24">
-          <motion.nav
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="flex items-center justify-center gap-2 text-sm text-slate-400 mb-4"
-          >
-            <Link href="/" className="hover:text-sky-400 transition-colors">Home</Link>
-            <ChevronRight className="h-4 w-4" />
-            <span className="text-sky-400">Terms of Service</span>
-          </motion.nav>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl md:text-5xl font-bold"
-          >
-            <span className="gradient-text">Terms of Service</span>
-          </motion.h1>
+    <main className="bg-primary">
+      {/* Hard-edged document header */}
+      <section className="relative overflow-hidden border-b border-secondary">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+          <BackgroundPattern
+            pattern="grid"
+            className="absolute -top-28 right-0 translate-x-1/3 text-border-secondary opacity-70 dark:opacity-40"
+          />
+        </div>
+        <div className="relative mx-auto max-w-container px-4 py-10 md:px-8 md:py-14">
+          <motion.div {...headerReveal}>
+            <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm font-medium">
+              <Link href="/" className="text-tertiary transition duration-100 ease-linear hover:text-brand-secondary">
+                Home
+              </Link>
+              <ChevronRight aria-hidden="true" className="size-4 text-fg-quaternary" />
+              <span aria-current="page" className="font-semibold text-brand-secondary">Terms of Service</span>
+            </nav>
+
+            <p className="mt-8 font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase">
+              Legal &middot; Website Terms
+            </p>
+            <h1 className="mt-3 max-w-3xl text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+              Terms of Service
+            </h1>
+            <p className="mt-4 max-w-2xl text-md text-tertiary md:text-lg">
+              Please read these terms and conditions carefully before using the
+              International Computer Exchange, Inc. website.
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <Badge size="md" color="brand">Last Updated: March 2026</Badge>
+              <span className="hidden h-4 w-px bg-border-secondary sm:block" aria-hidden="true" />
+              <span className="flex items-center gap-1.5 text-sm text-quaternary">
+                <FileCheck02 aria-hidden="true" className="size-4" />
+                Applies to icesales.com
+              </span>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* ── Content ───────────────────────────────────────────────────────── */}
-      <section className="section-padding">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-[220px_1fr] gap-10">
+      {/* Content */}
+      <section className="py-12 md:py-16">
+        <div className="mx-auto max-w-container px-4 md:px-8">
+          <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[240px_1fr] lg:gap-14">
             {/* Sticky Table of Contents (desktop) */}
-            <motion.aside
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="hidden lg:block print:hidden"
-            >
-              <div className="sticky top-28">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-sky-400 mb-4">On This Page</p>
-                <nav className="space-y-1.5">
+            <aside className="hidden lg:block print:hidden">
+              <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto overscroll-contain pb-6">
+                <p className="font-mono text-xs font-semibold tracking-widest text-quaternary uppercase">On this page</p>
+                <nav aria-label="Table of contents" className="mt-4 flex flex-col gap-0.5 border-l border-secondary">
                   {sections.map((section) => (
                     <a
                       key={section.id}
                       href={`#${section.id}`}
-                      className={`block text-xs transition-all duration-200 py-1 border-l-2 pl-3 ${
+                      onClick={(e) => handleTocClick(e, section.id)}
+                      className={cx(
+                        "-ml-px cursor-pointer border-l-2 py-1.5 pl-4 text-sm transition duration-100 ease-linear",
                         activeId === section.id
-                          ? "text-sky-400 border-sky-400 font-semibold"
-                          : "text-slate-400 border-white/[0.06] hover:text-sky-400 hover:border-sky-400/40"
-                      }`}
+                          ? "border-brand bg-brand-primary_alt font-semibold text-brand-secondary"
+                          : "border-transparent text-tertiary hover:border-brand hover:text-brand-secondary"
+                      )}
                     >
                       {section.title}
                     </a>
                   ))}
                 </nav>
               </div>
-            </motion.aside>
+            </aside>
 
             {/* Main content */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="glass-card rounded-2xl p-8 md:p-12 print:!bg-white print:!border-none print:!shadow-none print:!backdrop-filter-none"
-            >
-              {/* Header */}
-              <div className="mb-10 border-b border-white/10 pb-8 print:border-gray-200">
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 print:!text-black">
+            <div className="min-w-0">
+              {/* Mobile table of contents */}
+              <div className="mb-10 rounded-xl bg-secondary p-5 ring-1 ring-secondary ring-inset lg:hidden print:hidden">
+                <p className="font-mono text-xs font-semibold tracking-widest text-quaternary uppercase">On this page</p>
+                <nav aria-label="Table of contents" className="mt-3 flex flex-col gap-2">
+                  {sections.map((section) => (
+                    <a
+                      key={section.id}
+                      href={`#${section.id}`}
+                      onClick={(e) => handleTocClick(e, section.id)}
+                      className="cursor-pointer text-sm font-medium text-tertiary transition duration-100 ease-linear hover:text-brand-secondary"
+                    >
+                      {section.title}
+                    </a>
+                  ))}
+                </nav>
+              </div>
+
+              {/* Document header */}
+              <div className="border-b border-secondary pb-8">
+                <h2 className="text-display-xs font-semibold tracking-tight text-primary md:text-display-sm">
                   Website Terms and Conditions
                 </h2>
-                <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/5 px-3 py-1 text-xs text-sky-400 font-semibold print:!text-blue-600 print:!border-blue-200 print:!bg-blue-50">
-                  Last Updated: March 2026
-                </div>
-                <p className="text-slate-400 mt-4 leading-relaxed print:!text-gray-600">
-                  Please read these terms and conditions carefully before using the
-                  International Computer Exchange, Inc. website.
+                <p className="prose mt-4">
+                  These Terms govern your access to and use of the International Computer
+                  Exchange, Inc. website. By using the site, you agree to be bound by the
+                  sections below.
                 </p>
               </div>
 
               {/* Sections */}
-              <div className="space-y-10">
+              <div>
                 {sections.map((section, i) => (
                   <div
                     key={section.id}
                     id={section.id}
-                    className="scroll-mt-28"
+                    className={cx("scroll-mt-24 py-8", i < sections.length - 1 && "border-b border-secondary")}
                   >
-                    <h3 className="text-lg font-semibold text-sky-400 mb-4 print:!text-blue-700">{section.title}</h3>
-                    <div className="text-sm text-slate-300 leading-[1.8] whitespace-pre-line print:!text-gray-800">
+                    <h3 className="text-lg font-semibold text-primary">{section.title}</h3>
+                    <div className="prose mt-4 whitespace-pre-line">
                       {section.content}
                     </div>
-                    {i < sections.length - 1 && (
-                      <div className="mt-8 h-px bg-gradient-to-r from-white/[0.04] via-white/[0.08] to-transparent print:!bg-gray-200" />
-                    )}
                   </div>
                 ))}
               </div>
 
-              {/* Download as PDF */}
-              <div className="mt-12 pt-8 border-t border-white/10 flex justify-center print:hidden">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => window.print()}
-                  className="btn-outline cursor-pointer"
-                >
-                  <Download className="h-4 w-4" />
+              {/* Footer actions */}
+              <div className="flex flex-col items-center gap-6 border-t border-secondary pt-8 print:hidden">
+                <Button color="secondary" size="lg" iconLeading={Download01} onClick={() => window.print()}>
                   Download as PDF
-                </motion.button>
+                </Button>
+                <p className="text-sm text-tertiary">
+                  Related:{" "}
+                  <Link
+                    href="/sms-consent"
+                    className="inline-flex items-center gap-1 font-medium text-brand-secondary hover:underline"
+                  >
+                    SMS Consent Policy
+                    <ArrowRight aria-hidden="true" className="size-3.5" />
+                  </Link>
+                </p>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

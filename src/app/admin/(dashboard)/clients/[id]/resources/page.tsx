@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, File02 } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import ResourcesManager from "@/components/admin/clients/ResourcesManager";
 
 export const metadata = { title: "Client Resources | ICE Admin" };
@@ -31,22 +32,16 @@ export default async function ClientResourcesPage({
   return (
     <div>
       <div className="mb-6">
-        <Link
-          href={`/admin/clients/${id}`}
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={14} />
+        <Button color="link-gray" size="sm" href={`/admin/clients/${id}`} iconLeading={<ArrowLeft data-icon />}>
           Back to {client.company_name}
-        </Link>
+        </Button>
       </div>
 
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-          <FileText size={20} className="text-emerald-400" />
-        </div>
+      <div className="mb-8 flex items-center gap-3">
+        <FeaturedIcon icon={File02} color="success" theme="modern" size="lg" />
         <div>
-          <h1 className="text-2xl font-bold admin-text">Resources</h1>
-          <p className="text-sm text-slate-400">{client.company_name}</p>
+          <h1 className="text-xl font-semibold text-primary">Resources</h1>
+          <p className="text-sm text-tertiary">{client.company_name}</p>
         </div>
       </div>
 

@@ -1,11 +1,12 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import CursorGlow from "@/components/effects/CursorGlow";
-import NoiseOverlay from "@/components/effects/NoiseOverlay";
 import PageTransition from "@/components/effects/PageTransition";
 import SearchModal from "@/components/ui/SearchModal";
 import ContactWidget from "@/components/ui/ContactWidget";
+import Analytics from "@/components/analytics/Analytics";
 import { getSiteSettings, getNavigation, getSearchIndex } from "@/lib/cms";
+import { getSeoConfig } from "@/lib/seo/config";
+import { JsonLd, organization, webSite } from "@/lib/seo/jsonld";
 import type { FooterCMSData } from "@/components/layout/Footer";
 
 export default async function PublicLayout({
@@ -14,10 +15,11 @@ export default async function PublicLayout({
   children: React.ReactNode;
 }) {
   // Fetch site settings + navigation for footer
-  const [settings, navItems, searchItems] = await Promise.all([
+  const [settings, navItems, searchItems, seo] = await Promise.all([
     getSiteSettings(),
     getNavigation(),
     getSearchIndex(),
+    getSeoConfig(),
   ]);
 
   // Build footer CMS data from site settings + navigation
@@ -71,8 +73,9 @@ export default async function PublicLayout({
 
   return (
     <>
-      <CursorGlow />
-      <NoiseOverlay />
+      <JsonLd data={organization(seo)} />
+      <JsonLd data={webSite(seo)} />
+      <Analytics gtmId={seo.analytics.gtmId} ga4Id={seo.analytics.ga4Id} />
       <SearchModal items={searchItems} />
       <Navbar navItems={navItems} />
       <PageTransition>{children}</PageTransition>

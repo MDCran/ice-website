@@ -2,28 +2,32 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  Upload,
-  Download,
-  Trash2,
-  Copy,
-  Check,
-  X,
-  Image as ImageIcon,
-  File,
-  Folder,
-  FolderOpen,
-  FolderPlus,
-  Loader2,
   AlertCircle,
-  Info,
-  Search,
-  Grid3x3,
-  List,
+  Check,
   ChevronRight,
-  Home,
-  MoreVertical,
-} from "lucide-react";
+  Copy01,
+  Download01,
+  File02,
+  Folder,
+  FolderPlus,
+  Grid01,
+  Home01,
+  List,
+  SearchLg,
+  Trash01,
+  UploadCloud02,
+} from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
+import { Badge } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { CloseButton } from "@/components/base/buttons/close-button";
+import { Input } from "@/components/base/input/input";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
+import { Table } from "@/components/application/table/table";
+import { cx } from "@/utils/cx";
 
 interface MediaFile {
   id: string;
@@ -242,7 +246,7 @@ export default function MediaPage() {
   }, [selectedFile]);
 
   const formatFileSize = (bytes: number | null) => {
-    if (!bytes) return "\u2014";
+    if (!bytes) return "—";
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -256,27 +260,30 @@ export default function MediaPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold admin-text">Files</h1>
-          <p className="text-sm text-slate-400 mt-1">Upload, organize, and manage media files</p>
+          <h1 className="text-display-xs font-semibold text-primary">Files</h1>
+          <p className="mt-1 text-sm text-tertiary">Upload, organize, and manage media files</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
+        <div className="flex items-center gap-3">
+          <Button
+            size="md"
+            color="secondary"
+            iconLeading={FolderPlus}
             onClick={() => setShowNewFolder(true)}
-            className="inline-flex items-center gap-2 admin-card admin-nav-hover rounded-xl px-4 py-2 text-sm font-medium admin-text transition-colors cursor-pointer"
           >
-            <FolderPlus size={16} />
             New Folder
-          </button>
-          <button
+          </Button>
+          <Button
+            size="md"
+            color="primary"
+            iconLeading={UploadCloud02}
+            isLoading={uploading}
+            showTextWhileLoading
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-sm font-medium transition-colors cursor-pointer"
           >
-            {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
             Upload Files
-          </button>
+          </Button>
           <input
             ref={fileInputRef}
             type="file"
@@ -289,71 +296,77 @@ export default function MediaPage() {
 
       {/* New Folder Dialog */}
       {showNewFolder && (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 mb-6 flex items-center gap-3">
-          <FolderPlus size={20} className="text-sky-400 shrink-0" />
-          <input
-            type="text"
-            value={newFolderName}
-            onChange={(e) => setNewFolderName(e.target.value)}
+        <div className="mb-6 flex items-center gap-3 rounded-xl bg-primary p-4 shadow-xs ring-1 ring-secondary">
+          <FolderPlus className="size-5 shrink-0 text-fg-brand-primary" />
+          <Input
+            size="sm"
+            aria-label="Folder name"
             placeholder="Folder name..."
+            value={newFolderName}
+            onChange={(value) => setNewFolderName(value)}
             autoFocus
-            className="flex-1 bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 admin-text text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
             onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
+            className="flex-1"
           />
-          <button
+          <Button
+            size="sm"
+            color="primary"
+            isLoading={creatingFolder}
+            showTextWhileLoading
+            isDisabled={creatingFolder || !newFolderName.trim()}
             onClick={handleCreateFolder}
-            disabled={creatingFolder || !newFolderName.trim()}
-            className="bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-sm font-medium transition-colors cursor-pointer"
           >
-            {creatingFolder ? <Loader2 size={14} className="animate-spin" /> : "Create"}
-          </button>
-          <button
-            onClick={() => { setShowNewFolder(false); setNewFolderName(""); }}
-            className="text-slate-400 hover:text-white transition-colors cursor-pointer"
-          >
-            <X size={16} />
-          </button>
+            Create
+          </Button>
+          <CloseButton
+            size="sm"
+            label="Cancel new folder"
+            onPress={() => {
+              setShowNewFolder(false);
+              setNewFolderName("");
+            }}
+          />
         </div>
       )}
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 mb-6 flex items-center gap-3">
-          <AlertCircle size={16} className="text-red-400 shrink-0" />
-          <p className="text-red-300 text-sm">{error}</p>
-          <button onClick={() => setError("")} className="ml-auto text-red-400 hover:text-red-300 cursor-pointer">
-            <X size={16} />
-          </button>
+        <div className="mb-6 flex items-center gap-3 rounded-xl bg-utility-red-50 p-4 ring-1 ring-utility-red-200 ring-inset">
+          <AlertCircle className="size-4 shrink-0 text-utility-red-500" />
+          <p className="text-sm text-utility-red-700">{error}</p>
+          <CloseButton size="xs" label="Dismiss error" onPress={() => setError("")} className="ml-auto" />
         </div>
       )}
 
       <div className="flex gap-6">
         {/* Folder Sidebar */}
         <div className="w-56 shrink-0">
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 sticky top-6">
-            <h3 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Folders</h3>
+          <div className="sticky top-6 rounded-xl bg-primary p-4 shadow-xs ring-1 ring-secondary">
+            <h3 className="mb-3 text-xs font-semibold tracking-wider text-quaternary uppercase">Folders</h3>
             <div className="space-y-1">
               <button
                 onClick={() => { setSelectedFolder(null); setSelectedFile(null); }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors cursor-pointer ${
+                className={cx(
+                  "flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   selectedFolder === null
-                    ? "bg-sky-500/10 text-sky-400"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
+                    ? "bg-active text-secondary_hover"
+                    : "text-tertiary hover:bg-primary_hover hover:text-secondary"
+                )}
               >
-                <FolderOpen size={16} />
+                <Home01 className="size-4 shrink-0 text-fg-quaternary" />
                 All Files
               </button>
               {allFolders.map((folder) => (
                 <button
                   key={folder}
                   onClick={() => { setSelectedFolder(folder); setSelectedFile(null); }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors cursor-pointer ${
+                  className={cx(
+                    "flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     selectedFolder === folder
-                      ? "bg-sky-500/10 text-sky-400"
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
-                  }`}
+                      ? "bg-active text-secondary_hover"
+                      : "text-tertiary hover:bg-primary_hover hover:text-secondary"
+                  )}
                 >
-                  <Folder size={16} />
+                  <Folder className="size-4 shrink-0 text-fg-quaternary" />
                   {folder}
                 </button>
               ))}
@@ -362,50 +375,65 @@ export default function MediaPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           {/* Toolbar */}
-          <div className="flex items-center gap-3 mb-4">
+          <div className="mb-4 flex items-center gap-3">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-1.5 text-sm flex-1">
+            <div className="flex flex-1 items-center gap-1.5 text-sm">
               <button
                 onClick={() => { setSelectedFolder(null); setSelectedFile(null); }}
-                className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                aria-label="All files"
+                className="cursor-pointer rounded-md p-1 text-fg-quaternary transition-colors hover:bg-primary_hover hover:text-fg-quaternary_hover"
               >
-                <Home size={14} />
+                <Home01 className="size-4" />
               </button>
               {selectedFolder && (
                 <>
-                  <ChevronRight size={12} className="text-slate-600" />
-                  <span className="admin-text font-medium">{selectedFolder}</span>
+                  <ChevronRight className="size-3.5 text-fg-quaternary" />
+                  <span className="font-medium text-primary">{selectedFolder}</span>
                 </>
               )}
             </div>
 
             {/* Search */}
-            <div className="relative w-64">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+            <div className="w-64">
+              <Input
+                size="sm"
+                icon={SearchLg}
+                aria-label="Search files"
                 placeholder="Search files..."
-                className="w-full bg-white/[0.06] border border-white/10 rounded-xl pl-9 pr-3 py-2 admin-text text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                value={searchQuery}
+                onChange={(value) => setSearchQuery(value)}
               />
             </div>
 
             {/* View toggle */}
-            <div className="flex items-center admin-card rounded-lg p-0.5">
+            <div className="flex items-center gap-0.5 rounded-lg bg-primary p-0.5 ring-1 ring-secondary">
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-md transition-colors cursor-pointer ${viewMode === "grid" ? "bg-sky-500/10 text-sky-400" : "text-slate-500 hover:text-sky-400"}`}
+                aria-label="Grid view"
+                aria-pressed={viewMode === "grid"}
+                className={cx(
+                  "cursor-pointer rounded-md p-1.5 transition-colors",
+                  viewMode === "grid"
+                    ? "bg-active text-fg-brand-primary"
+                    : "text-fg-quaternary hover:text-fg-quaternary_hover"
+                )}
               >
-                <Grid3x3 size={14} />
+                <Grid01 className="size-4" />
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-md transition-colors cursor-pointer ${viewMode === "list" ? "bg-sky-500/10 text-sky-400" : "text-slate-500 hover:text-sky-400"}`}
+                aria-label="List view"
+                aria-pressed={viewMode === "list"}
+                className={cx(
+                  "cursor-pointer rounded-md p-1.5 transition-colors",
+                  viewMode === "list"
+                    ? "bg-active text-fg-brand-primary"
+                    : "text-fg-quaternary hover:text-fg-quaternary_hover"
+                )}
               >
-                <List size={14} />
+                <List className="size-4" />
               </button>
             </div>
           </div>
@@ -415,18 +443,27 @@ export default function MediaPage() {
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-2xl mb-6 text-center transition-colors ${
-              displayFiles.length === 0 && !loading ? "p-16" : "p-6"
-            } ${
-              dragOver ? "border-sky-400 bg-sky-500/10" : "border-white/10 hover:border-white/20"
-            }`}
+            className={cx(
+              "mb-6 flex flex-col items-center rounded-xl bg-primary px-6 text-center ring-1 transition-colors",
+              displayFiles.length === 0 && !loading ? "py-16" : "py-6",
+              dragOver ? "ring-2 ring-brand" : "ring-secondary"
+            )}
           >
-            <Upload size={displayFiles.length === 0 && !loading ? 48 : 28} className={`mx-auto mb-2 ${dragOver ? "text-sky-400" : "text-slate-600"}`} />
-            <p className={`text-sm ${dragOver ? "text-sky-300" : "text-slate-500"}`}>
-              {uploading ? "Uploading..." : "Drag and drop files here, or click Upload"}
+            <FeaturedIcon
+              color="gray"
+              theme="modern"
+              size={displayFiles.length === 0 && !loading ? "lg" : "md"}
+              icon={UploadCloud02}
+            />
+            <p className={cx("mt-3 text-sm", dragOver ? "text-brand-secondary" : "text-tertiary")}>
+              {uploading ? "Uploading..." : (
+                <>
+                  <span className="font-semibold text-brand-secondary">Click Upload</span> or drag and drop files here
+                </>
+              )}
             </p>
             {displayFiles.length === 0 && !loading && (
-              <p className="text-slate-400 mt-4 text-sm">
+              <p className="mt-4 text-sm font-medium text-secondary">
                 {searchQuery ? "No files match your search" : "No files in this location"}
               </p>
             )}
@@ -435,98 +472,98 @@ export default function MediaPage() {
           {/* File Grid/List */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 size={24} className="animate-spin text-slate-500" />
+              <LoadingIndicator type="line-spinner" size="md" label="Loading files..." />
             </div>
           ) : viewMode === "grid" && displayFiles.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {displayFiles.map((file) => (
                 <button
                   key={file.id}
                   onClick={() => setSelectedFile(file)}
-                  className={`bg-white/[0.03] border rounded-2xl p-3 text-left transition-all hover:bg-white/[0.06] group cursor-pointer ${
-                    selectedFile?.id === file.id
-                      ? "border-sky-500/50 ring-2 ring-sky-500/20"
-                      : "border-white/10"
-                  }`}
+                  className={cx(
+                    "group cursor-pointer rounded-xl bg-primary p-3 text-left shadow-xs ring-1 transition-all hover:bg-secondary",
+                    selectedFile?.id === file.id ? "ring-2 ring-brand" : "ring-secondary"
+                  )}
                 >
-                  <div className="aspect-square rounded-xl bg-white/[0.04] mb-3 flex items-center justify-center overflow-hidden">
+                  <div className="mb-3 flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-secondary">
                     {isImage(file.file_type) && file.public_url ? (
-                      <img src={file.public_url} alt={file.alt_text ?? file.file_name} className="w-full h-full object-cover rounded-xl" />
+                      <img src={file.public_url} alt={file.alt_text ?? file.file_name} className="size-full rounded-lg object-cover" />
                     ) : (
-                      <File size={32} className="text-slate-600" />
+                      <File02 className="size-8 text-fg-quaternary" />
                     )}
                   </div>
-                  <p className="admin-text text-sm font-medium truncate">{file.file_name}</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-slate-500 text-xs">{formatFileSize(file.file_size)}</p>
+                  <p className="truncate text-sm font-medium text-primary">{file.file_name}</p>
+                  <div className="mt-1 flex items-center justify-between">
+                    <p className="text-xs text-tertiary">{formatFileSize(file.file_size)}</p>
                     {file.is_static_local && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-300">
-                        <Info size={10} />Static
-                      </span>
+                      <Badge size="sm" color="warning">
+                        Static
+                      </Badge>
                     )}
                   </div>
                 </button>
               ))}
             </div>
           ) : viewMode === "list" && displayFiles.length > 0 ? (
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/10 text-left">
-                    <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider w-10"></th>
-                    <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Name</th>
-                    <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Size</th>
-                    <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Type</th>
-                    <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Date</th>
-                    <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider w-24">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
+            <div className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
+              <Table aria-label="Files" size="sm">
+                <Table.Header>
+                  <Table.Head id="preview" aria-label="Preview" className="w-12" />
+                  <Table.Head id="name" label="Name" isRowHeader />
+                  <Table.Head id="size" label="Size" />
+                  <Table.Head id="type" label="Type" />
+                  <Table.Head id="date" label="Date" />
+                  <Table.Head id="actions" aria-label="Actions" className="w-24" />
+                </Table.Header>
+                <Table.Body>
                   {displayFiles.map((file) => (
-                    <tr
+                    <Table.Row
                       key={file.id}
-                      onClick={() => setSelectedFile(file)}
-                      className={`hover:bg-white/[0.03] transition-colors cursor-pointer ${selectedFile?.id === file.id ? "bg-sky-500/5" : ""}`}
+                      id={file.id}
+                      onAction={() => setSelectedFile(file)}
+                      className={cx("cursor-pointer", selectedFile?.id === file.id && "bg-secondary")}
                     >
-                      <td className="px-4 py-3">
+                      <Table.Cell className="px-3">
                         {isImage(file.file_type) && file.public_url ? (
-                          <img src={file.public_url} alt="" className="w-8 h-8 rounded object-cover" />
+                          <img src={file.public_url} alt="" className="size-8 rounded object-cover" />
                         ) : (
-                          <div className="w-8 h-8 rounded bg-white/[0.04] flex items-center justify-center">
-                            <File size={14} className="text-slate-500" />
+                          <div className="flex size-8 items-center justify-center rounded bg-secondary">
+                            <File02 className="size-3.5 text-fg-quaternary" />
                           </div>
                         )}
-                      </td>
-                      <td className="px-4 py-3 admin-text font-medium truncate max-w-[200px]">{file.file_name}</td>
-                      <td className="px-4 py-3 text-slate-400">{formatFileSize(file.file_size)}</td>
-                      <td className="px-4 py-3 text-slate-400 text-xs">{file.file_type ?? "Unknown"}</td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">
+                      </Table.Cell>
+                      <Table.Cell className="max-w-50">
+                        <span className="block truncate text-sm font-medium text-primary">{file.file_name}</span>
+                      </Table.Cell>
+                      <Table.Cell>{formatFileSize(file.file_size)}</Table.Cell>
+                      <Table.Cell className="text-xs">{file.file_type ?? "Unknown"}</Table.Cell>
+                      <Table.Cell className="text-xs">
                         {new Date(file.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </td>
-                      <td className="px-4 py-3">
+                      </Table.Cell>
+                      <Table.Cell>
                         <div className="flex items-center gap-1">
                           {file.public_url && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-sky-400 hover:bg-sky-500/10 transition-colors cursor-pointer"
-                              title="Download"
-                            >
-                              <Download size={14} />
-                            </button>
+                            <ButtonUtility
+                              size="xs"
+                              color="tertiary"
+                              icon={Download01}
+                              tooltip="Download"
+                              onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); handleDownloadFile(file); }}
+                            />
                           )}
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteFile(file.id); }}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <ButtonUtility
+                            size="xs"
+                            color="tertiary"
+                            icon={Trash01}
+                            tooltip="Delete"
+                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); handleDeleteFile(file.id); }}
+                          />
                         </div>
-                      </td>
-                    </tr>
+                      </Table.Cell>
+                    </Table.Row>
                   ))}
-                </tbody>
-              </table>
+                </Table.Body>
+              </Table>
             </div>
           ) : null}
         </div>
@@ -534,128 +571,131 @@ export default function MediaPage() {
         {/* Details Panel */}
         {selectedFile && selectedFile.file_name !== ".folder" && (
           <div className="w-72 shrink-0">
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 sticky top-6 space-y-5">
+            <div className="sticky top-6 space-y-5 rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold admin-text">Details</h3>
-                <button
-                  onClick={() => setSelectedFile(null)}
-                  className="text-slate-500 hover:text-white transition-colors cursor-pointer"
-                >
-                  <X size={16} />
-                </button>
+                <h3 className="text-sm font-semibold text-primary">Details</h3>
+                <CloseButton size="xs" label="Close details" onPress={() => setSelectedFile(null)} />
               </div>
 
               {/* Preview */}
-              <div className="aspect-square rounded-xl bg-white/[0.04] flex items-center justify-center overflow-hidden">
+              <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-secondary">
                 {isImage(selectedFile.file_type) && selectedFile.public_url ? (
-                  <img src={selectedFile.public_url} alt={selectedFile.alt_text ?? selectedFile.file_name} className="w-full h-full object-contain" />
+                  <img src={selectedFile.public_url} alt={selectedFile.alt_text ?? selectedFile.file_name} className="size-full object-contain" />
                 ) : (
-                  <File size={48} className="text-slate-600" />
+                  <File02 className="size-12 text-fg-quaternary" />
                 )}
               </div>
 
               {/* Meta */}
               <div className="space-y-3 text-sm">
                 <div>
-                  <p className="text-slate-500 text-xs mb-0.5">Filename</p>
-                  <p className="admin-text truncate">{selectedFile.file_name}</p>
+                  <p className="mb-0.5 text-xs text-quaternary">Filename</p>
+                  <p className="truncate text-primary">{selectedFile.file_name}</p>
                 </div>
                 <div>
-                  <p className="text-slate-500 text-xs mb-0.5">Size</p>
-                  <p className="text-slate-300">{formatFileSize(selectedFile.file_size)}</p>
+                  <p className="mb-0.5 text-xs text-quaternary">Size</p>
+                  <p className="text-secondary">{formatFileSize(selectedFile.file_size)}</p>
                 </div>
                 <div>
-                  <p className="text-slate-500 text-xs mb-0.5">Type</p>
-                  <p className="text-slate-300">{selectedFile.file_type ?? "Unknown"}</p>
+                  <p className="mb-0.5 text-xs text-quaternary">Type</p>
+                  <p className="text-secondary">{selectedFile.file_type ?? "Unknown"}</p>
                 </div>
                 {selectedFile.folder && (
                   <div>
-                    <p className="text-slate-500 text-xs mb-0.5">Folder</p>
-                    <p className="text-slate-300">{selectedFile.folder}</p>
+                    <p className="mb-0.5 text-xs text-quaternary">Folder</p>
+                    <p className="text-secondary">{selectedFile.folder}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-slate-500 text-xs mb-0.5">Uploaded</p>
-                  <p className="text-slate-300 text-xs">
+                  <p className="mb-0.5 text-xs text-quaternary">Uploaded</p>
+                  <p className="text-xs text-secondary">
                     {new Date(selectedFile.created_at).toLocaleDateString("en-US", {
                       month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit",
                     })}
                   </p>
                 </div>
                 {selectedFile.is_static_local && (
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
-                    <p className="text-amber-300 text-xs font-medium">Static &mdash; needs upload</p>
-                    <p className="text-amber-400/60 text-xs mt-0.5">This file is served locally and should be uploaded to storage.</p>
+                  <div className="rounded-lg bg-utility-yellow-50 px-3 py-2 ring-1 ring-utility-yellow-200 ring-inset">
+                    <p className="text-xs font-medium text-utility-yellow-700">Static &mdash; needs upload</p>
+                    <p className="mt-0.5 text-xs text-utility-yellow-600">This file is served locally and should be uploaded to storage.</p>
                   </div>
                 )}
               </div>
 
               {/* Alt Text */}
               <div>
-                <label className="block text-xs text-slate-500 mb-1.5">Alt Text</label>
-                <textarea
-                  value={altText}
-                  onChange={(e) => setAltText(e.target.value)}
-                  rows={2}
+                <TextArea
+                  size="sm"
+                  label="Alt Text"
                   placeholder="Describe this image..."
-                  className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 admin-text text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-none"
+                  rows={2}
+                  value={altText}
+                  onChange={(value) => setAltText(value)}
+                  textAreaClassName="resize-none"
                 />
-                <button
+                <Button
+                  size="sm"
+                  color="secondary"
+                  isLoading={savingAlt}
+                  showTextWhileLoading
                   onClick={handleSaveAltText}
-                  disabled={savingAlt}
-                  className="mt-2 w-full admin-card admin-nav-hover disabled:opacity-50 admin-text rounded-xl px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+                  className="mt-2 w-full"
                 >
                   {savingAlt ? "Saving..." : "Save Alt Text"}
-                </button>
+                </Button>
               </div>
 
               {/* Actions */}
               <div className="space-y-2">
                 {selectedFile.public_url && (
                   <>
-                    <button
+                    <Button
+                      size="sm"
+                      color="secondary"
+                      iconLeading={Download01}
                       onClick={() => handleDownloadFile(selectedFile)}
-                      className="w-full inline-flex items-center justify-center gap-2 admin-card admin-nav-hover admin-text rounded-xl px-4 py-2 text-sm font-medium transition-colors cursor-pointer"
+                      className="w-full"
                     >
-                      <Download size={14} />
                       Download
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="sm"
+                      color="secondary"
+                      iconLeading={copied ? Check : Copy01}
                       onClick={() => handleCopyUrl(selectedFile.public_url!)}
-                      className="w-full inline-flex items-center justify-center gap-2 admin-card admin-nav-hover admin-text rounded-xl px-4 py-2 text-sm font-medium transition-colors cursor-pointer"
+                      className="w-full"
                     >
-                      {copied ? (
-                        <><Check size={14} className="text-emerald-400" /> Copied!</>
-                      ) : (
-                        <><Copy size={14} /> Copy URL</>
-                      )}
-                    </button>
+                      {copied ? "Copied!" : "Copy URL"}
+                    </Button>
                   </>
                 )}
 
                 {deleteConfirm === selectedFile.id ? (
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                      size="sm"
+                      color="primary-destructive"
+                      isLoading={deleting}
+                      showTextWhileLoading
                       onClick={() => handleDeleteFile(selectedFile.id)}
-                      disabled={deleting}
-                      className="flex-1 inline-flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 disabled:opacity-50 text-red-300 rounded-xl px-4 py-2 text-sm font-medium transition-colors cursor-pointer"
+                      className="flex-1"
                     >
-                      {deleting ? <Loader2 size={14} className="animate-spin" /> : "Confirm"}
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(null)}
-                      className="admin-card admin-nav-hover admin-text rounded-xl px-4 py-2 text-sm transition-colors cursor-pointer"
-                    >
+                      Confirm
+                    </Button>
+                    <Button size="sm" color="secondary" onClick={() => setDeleteConfirm(null)}>
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 ) : (
-                  <button
+                  <Button
+                    size="sm"
+                    color="secondary-destructive"
+                    iconLeading={Trash01}
                     onClick={() => setDeleteConfirm(selectedFile.id)}
-                    className="w-full inline-flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl px-4 py-2 text-sm font-medium transition-colors cursor-pointer"
+                    className="w-full"
                   >
-                    <Trash2 size={14} /> Delete File
-                  </button>
+                    Delete File
+                  </Button>
                 )}
               </div>
             </div>

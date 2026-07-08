@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Save, Check, AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Check, Save01 } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/base/buttons/button";
+import { Badge } from "@/components/base/badges/badges";
+import { TextAreaBase } from "@/components/base/textarea/textarea";
+import { cx } from "@/utils/cx";
 
 interface SectionEditorProps {
   sectionId: string;
@@ -94,25 +98,22 @@ export default function SectionEditor({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-slate-400">
-            Editing <span className="admin-text font-medium">{sectionKey}</span>
+          <span className="text-sm text-tertiary">
+            Editing <span className="font-medium text-primary">{sectionKey}</span>
           </span>
-          <span className="px-2 py-0.5 rounded-full text-xs bg-white/10 text-slate-300">
+          <Badge size="sm" color="gray">
             {sectionType}
-          </span>
+          </Badge>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleFormat}
-            className="bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-1.5 text-xs font-medium transition-colors"
-          >
+          <Button size="sm" color="secondary" onClick={handleFormat}>
             Format JSON
-          </button>
+          </Button>
         </div>
       </div>
 
       <div className="relative">
-        <textarea
+        <TextAreaBase
           value={content}
           onChange={(e) => {
             setContent(e.target.value);
@@ -121,15 +122,15 @@ export default function SectionEditor({
             }
           }}
           spellCheck={false}
-          className={`w-full min-h-[320px] bg-white/[0.06] border rounded-xl px-4 py-3 admin-text text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 transition-colors ${
-            !isValidJson && content.trim().length > 0
-              ? "border-red-500/50 focus:ring-red-500/30"
-              : "border-white/10 focus:ring-sky-500/50 focus:border-sky-500/50"
-          }`}
+          size="sm"
+          className={cx(
+            "min-h-[320px] resize-y font-mono text-sm leading-relaxed",
+            !isValidJson && content.trim().length > 0 && "ring-error_subtle focus:ring-2 focus:ring-error"
+          )}
         />
         {!isValidJson && content.trim().length > 0 && (
-          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 text-red-400 text-xs bg-red-500/10 px-2 py-1 rounded-lg">
-            <AlertCircle size={12} />
+          <div className="absolute right-3 bottom-3 flex items-center gap-1.5 rounded-md bg-error-primary px-2 py-1 text-xs text-error-primary ring-1 ring-error_subtle ring-inset">
+            <AlertCircle className="size-3" />
             Invalid JSON
           </div>
         )}
@@ -138,40 +139,32 @@ export default function SectionEditor({
       <div className="flex items-center justify-between">
         <div className="min-h-[24px]">
           {saveStatus === "error" && errorMessage && (
-            <p className="text-red-400 text-sm flex items-center gap-1.5">
-              <AlertCircle size={14} />
+            <p className="flex items-center gap-1.5 text-sm text-error-primary">
+              <AlertCircle className="size-3.5" />
               {errorMessage}
             </p>
           )}
           {saveStatus === "saved" && (
-            <p className="text-emerald-400 text-sm flex items-center gap-1.5">
-              <Check size={14} />
+            <p className="flex items-center gap-1.5 text-sm text-success-primary">
+              <Check className="size-3.5" />
               Saved successfully
             </p>
           )}
         </div>
-        <button
+        <Button
+          size="md"
+          iconLeading={saveStatus === "saved" ? Check : Save01}
+          isLoading={saveStatus === "saving"}
+          showTextWhileLoading
+          isDisabled={saveStatus === "saving" || (!isValidJson && content.trim().length > 0)}
           onClick={handleSave}
-          disabled={saveStatus === "saving" || (!isValidJson && content.trim().length > 0)}
-          className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl px-5 py-2.5 text-sm font-medium transition-colors"
         >
-          {saveStatus === "saving" ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              Saving...
-            </>
-          ) : saveStatus === "saved" ? (
-            <>
-              <Check size={16} />
-              Saved
-            </>
-          ) : (
-            <>
-              <Save size={16} />
-              Save Section
-            </>
-          )}
-        </button>
+          {saveStatus === "saving"
+            ? "Saving..."
+            : saveStatus === "saved"
+              ? "Saved"
+              : "Save Section"}
+        </Button>
       </div>
     </div>
   );

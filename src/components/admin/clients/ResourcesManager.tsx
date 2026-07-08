@@ -1,20 +1,22 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AlertCircle, Download01, Edit03, Eye, EyeOff, File02, Trash01, UploadCloud02, XClose } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  X,
-  Loader2,
-  AlertCircle,
-  Upload,
-  Download,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { BadgeWithIcon } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { CloseButton } from "@/components/base/buttons/close-button";
+import { Input } from "@/components/base/input/input";
+import { Label } from "@/components/base/input/label";
+import { NativeSelect } from "@/components/base/select/select-native";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Toggle } from "@/components/base/toggle/toggle";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
+import { FileUploadDropZone } from "@/components/application/file-upload/file-upload-base";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { Table, TableCard } from "@/components/application/table/table";
 
 interface Resource {
   id: string;
@@ -27,6 +29,11 @@ interface Resource {
   visibility?: string;
   created_at?: string;
 }
+
+const visibilityOptions = [
+  { label: "Draft", value: "draft" },
+  { label: "Published", value: "published" },
+];
 
 export default function ResourcesManager({
   clientId,
@@ -74,6 +81,11 @@ export default function ResourcesManager({
     setFile(null);
     setEditingResource(null);
     setError("");
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    resetForm();
   };
 
   const openCreate = () => {
@@ -183,271 +195,207 @@ export default function ResourcesManager({
   const visibilityBadge = (vis: string) => {
     if (vis === "published") {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">
-          <Eye size={12} />
+        <BadgeWithIcon size="sm" type="pill-color" color="success" iconLeading={Eye}>
           Published
-        </span>
+        </BadgeWithIcon>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400">
-        <EyeOff size={12} />
+      <BadgeWithIcon size="sm" type="pill-color" color="gray" iconLeading={EyeOff}>
         Draft
-      </span>
+      </BadgeWithIcon>
     );
   };
 
   return (
     <div>
-      <div className="flex items-center justify-end mb-6">
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold transition-colors"
-        >
-          <Upload size={16} />
-          Upload Resource
-        </button>
-      </div>
+      <TableCard.Root size="sm">
+        <TableCard.Header
+          title="Resources"
+          badge={`${loadedResources.length}`}
+          contentTrailing={
+            <Button color="primary" size="sm" iconLeading={UploadCloud02} onClick={openCreate}>
+              Upload Resource
+            </Button>
+          }
+        />
 
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Title
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Author
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Visibility
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Download
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-4" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {loadedResources.length > 0 ? (
-              loadedResources.map((resource) => (
-                <tr
-                  key={resource.id}
-                  className="hover:bg-white/[0.02] transition-colors"
-                >
-                  <td className="px-6 py-4 text-sm font-medium admin-text">
+        {loadedResources.length > 0 ? (
+          <Table aria-label="Resources" size="sm">
+            <Table.Header>
+              <Table.Head id="title" label="Title" isRowHeader className="w-full" />
+              <Table.Head id="author" label="Author" />
+              <Table.Head id="visibility" label="Visibility" />
+              <Table.Head id="download" label="Download" />
+              <Table.Head id="date" label="Date" />
+              <Table.Head id="actions" />
+            </Table.Header>
+            <Table.Body>
+              {loadedResources.map((resource) => (
+                <Table.Row id={resource.id} key={resource.id}>
+                  <Table.Cell className="text-sm font-medium whitespace-nowrap text-primary">
                     {resource.title}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {resource.author ?? "N/A"}
-                  </td>
-                  <td className="px-6 py-4">
-                    {visibilityBadge(resource.visibility ?? "draft")}
-                  </td>
-                  <td className="px-6 py-4">
+                  </Table.Cell>
+                  <Table.Cell>{visibilityBadge(resource.visibility ?? "draft")}</Table.Cell>
+                  <Table.Cell>
                     {resource.allow_download ? (
-                      <Download size={14} className="text-emerald-400" />
+                      <Download01 aria-label="Download allowed" className="size-4 text-fg-success-secondary" />
                     ) : (
-                      <span className="text-xs text-slate-500">No</span>
+                      <span className="text-xs text-quaternary">No</span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {resource.created_at
                       ? new Date(resource.created_at).toLocaleDateString()
                       : "N/A"}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
+                  </Table.Cell>
+                  <Table.Cell className="px-4">
+                    <div className="flex justify-end gap-0.5">
+                      <ButtonUtility
+                        size="xs"
+                        color="tertiary"
+                        tooltip="Edit"
+                        icon={Edit03}
                         onClick={() => openEdit(resource)}
-                        className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                        title="Edit"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
+                      />
+                      <ButtonUtility
+                        size="xs"
+                        color="tertiary"
+                        tooltip="Delete"
+                        icon={Trash01}
                         onClick={() => handleDelete(resource)}
-                        className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      />
                     </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-6 py-12 text-center text-slate-500 text-sm"
-                >
-                  No resources found. Upload one to get started.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
+        ) : (
+          <div className="flex justify-center px-6 py-12">
+            <EmptyState size="sm">
+              <EmptyState.Header>
+                <EmptyState.FeaturedIcon icon={File02} color="gray" />
+              </EmptyState.Header>
+              <EmptyState.Content>
+                <EmptyState.Title>No resources found</EmptyState.Title>
+                <EmptyState.Description>Upload one to get started.</EmptyState.Description>
+              </EmptyState.Content>
+            </EmptyState>
+          </div>
+        )}
+      </TableCard.Root>
 
       {/* Resource Form Modal */}
-      {showForm && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            onClick={() => {
-              setShowForm(false);
-              resetForm();
-            }}
-          />
-          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[10vh] overflow-y-auto">
-            <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold admin-text">
-                  {editingResource ? "Edit Resource" : "Upload Resource"}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowForm(false);
-                    resetForm();
-                  }}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
+      <ModalOverlay
+        isDismissable
+        isOpen={showForm}
+        onOpenChange={(open) => {
+          if (!open) closeForm();
+        }}
+      >
+        <Modal className="w-full max-w-lg">
+          <Dialog>
+            <div className="flex items-start justify-between gap-4 px-6 pt-6">
+              <h2 className="text-lg font-semibold text-primary">
+                {editingResource ? "Edit Resource" : "Upload Resource"}
+              </h2>
+              <CloseButton size="sm" onClick={closeForm} />
+            </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {error && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                    <AlertCircle size={16} />
-                    {error}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-6 pt-5 pb-6">
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg bg-utility-red-50 px-3.5 py-2.5 text-sm text-utility-red-700 ring-1 ring-utility-red-200 ring-inset">
+                  <AlertCircle className="size-4 shrink-0 text-utility-red-500" />
+                  {error}
+                </div>
+              )}
+
+              <Input label="Title" isRequired value={title} onChange={setTitle} />
+
+              <TextArea
+                label="Description"
+                rows={3}
+                value={description}
+                onChange={setDescription}
+                textAreaClassName="resize-none"
+              />
+
+              <Input label="Author" value={author} onChange={setAuthor} placeholder="Author name" />
+
+              <div className="flex flex-col gap-1.5">
+                <Label>PDF File</Label>
+                <FileUploadDropZone
+                  accept=".pdf"
+                  allowsMultiple={false}
+                  hint="PDF only"
+                  onDropFiles={(files) => setFile(files[0] ?? null)}
+                />
+                {file && (
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-sm text-tertiary">Selected: {file.name}</p>
+                    <ButtonUtility
+                      size="xs"
+                      color="tertiary"
+                      tooltip="Remove file"
+                      icon={XClose}
+                      onClick={() => setFile(null)}
+                    />
                   </div>
                 )}
+                {editingResource?.file_url && !file && (
+                  <p className="text-xs text-tertiary">
+                    Current file will be kept if no new file is selected.
+                  </p>
+                )}
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-                  />
-                </div>
+              <div className="flex flex-wrap items-center gap-6">
+                <Toggle
+                  size="sm"
+                  isSelected={allowDownload}
+                  onChange={setAllowDownload}
+                  label="Allow Download"
+                />
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all resize-none"
-                  />
-                </div>
+                <NativeSelect
+                  label="Visibility"
+                  value={visibility}
+                  onChange={(e) => setVisibility(e.target.value)}
+                  options={visibilityOptions}
+                  className="w-max"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Author
-                  </label>
-                  <input
-                    type="text"
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                    placeholder="Author name"
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    PDF File
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-sky-500/10 file:text-sky-400 hover:file:bg-sky-500/20 transition-all text-sm"
-                  />
-                  {editingResource?.file_url && !file && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      Current file will be kept if no new file is selected.
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-6">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={allowDownload}
-                        onChange={(e) => setAllowDownload(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-10 h-6 rounded-full bg-white/10 peer-checked:bg-sky-500 transition-colors" />
-                      <div className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform peer-checked:translate-x-4" />
-                    </div>
-                    <span className="text-sm text-slate-300">
-                      Allow Download
-                    </span>
-                  </label>
-
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Visibility
-                    </label>
-                    <select
-                      value={visibility}
-                      onChange={(e) => setVisibility(e.target.value)}
-                      className="px-3 py-2 rounded-xl bg-white/[0.06] border border-white/10 admin-text text-sm focus:outline-none"
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="published">Published</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={isPending || uploading}
-                    className="flex-1 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isPending || uploading ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        {uploading ? "Uploading..." : "Saving..."}
-                      </>
-                    ) : editingResource ? (
-                      "Save Changes"
-                    ) : (
-                      "Upload Resource"
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForm(false);
-                      resetForm();
-                    }}
-                    className="px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </>
-      )}
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  type="submit"
+                  color="primary"
+                  size="md"
+                  className="flex-1"
+                  isDisabled={isPending || uploading}
+                  isLoading={isPending || uploading}
+                  showTextWhileLoading
+                >
+                  {isPending || uploading
+                    ? uploading
+                      ? "Uploading..."
+                      : "Saving..."
+                    : editingResource
+                      ? "Save Changes"
+                      : "Upload Resource"}
+                </Button>
+                <Button type="button" color="secondary" size="md" onClick={closeForm}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
     </div>
   );
 }

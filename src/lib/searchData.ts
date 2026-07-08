@@ -21,7 +21,7 @@ export const searchIndex: SearchItem[] = [
   {
     title: "Managed Cloud Hosting",
     description:
-      "Fully managed cloud hosting backed by 100% uptime SLA and enterprise-grade infrastructure for AS400, iSeries, and IBM Power.",
+      "Fully managed cloud hosting backed by 99.99% uptime SLA and enterprise-grade infrastructure for AS400, iSeries, and IBM Power.",
     url: "/solutions/managed-cloud-hosting",
     category: "Managed Cloud Services",
     keywords: ["hosting", "cloud", "as400", "iseries", "power", "data center", "uptime"],

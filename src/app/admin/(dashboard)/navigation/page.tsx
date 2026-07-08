@@ -10,7 +10,7 @@ export default async function NavigationPage() {
 
   if (error) {
     return (
-      <div className="text-red-400">
+      <div className="text-sm text-error-primary">
         Failed to load navigation items: {error.message}
       </div>
     );
@@ -19,8 +19,8 @@ export default async function NavigationPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold admin-text">Navigation</h1>
-        <p className="text-sm text-slate-400 mt-1">
+        <h1 className="text-display-xs font-semibold text-primary">Navigation</h1>
+        <p className="mt-1 text-sm text-tertiary">
           Manage navbar links, mega menus, and footer links
         </p>
       </div>

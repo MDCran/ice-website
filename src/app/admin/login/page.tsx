@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { AlertCircle, Lock01, Mail01, Moon01, Sun } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
-import { Lock, Mail, AlertCircle, Loader2 } from "lucide-react";
-import ThemeToggle from "@/components/ui/ThemeToggle";
+import { useTheme } from "@/lib/themeProvider";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { Input } from "@/components/base/input/input";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -62,91 +65,65 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="login-page min-h-screen flex items-center justify-center px-4 transition-colors duration-300" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex min-h-screen items-center justify-center bg-secondary px-4">
       {/* Theme toggle in corner */}
       <div className="fixed top-4 right-4 z-10">
-        <ThemeToggle />
+        <ButtonUtility
+          color="tertiary"
+          size="sm"
+          icon={theme === "dark" ? Sun : Moon01}
+          tooltip={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          onClick={toggleTheme}
+        />
       </div>
 
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-sky-500/10 mb-4">
-            <Lock className="w-8 h-8 text-sky-400" />
+      <div className="w-full max-w-md py-12">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <FeaturedIcon icon={Lock01} color="brand" theme="modern" size="xl" />
+          <div>
+            <h1 className="text-display-xs font-semibold text-primary">Admin Center</h1>
+            <p className="mt-1 text-md text-tertiary">International Computer Exchange</p>
           </div>
-          <h1 className="text-2xl font-bold transition-colors" style={{ color: 'var(--text-primary)' }}>Admin Center</h1>
-          <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-            International Computer Exchange
-          </p>
         </div>
 
         <form
           onSubmit={handleLogin}
-          className="rounded-2xl p-8 space-y-5 transition-colors duration-300"
-          style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+          className="mt-8 flex flex-col gap-5 rounded-xl bg-primary p-6 shadow-sm ring-1 ring-secondary sm:p-8"
         >
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-              <AlertCircle size={16} />
+            <div
+              role="alert"
+              className="flex items-center gap-2 rounded-lg bg-error-secondary p-3 text-sm font-medium text-error-primary"
+            >
+              <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
               {error}
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-              Email
-            </label>
-            <div className="relative">
-              <Mail
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2"
-                style={{ color: 'var(--text-muted)' }}
-              />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@icesales.com"
-                required
-                className="login-input w-full pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-              />
-            </div>
-          </div>
+          <Input
+            label="Email"
+            type="email"
+            icon={Mail01}
+            placeholder="admin@icesales.com"
+            value={email}
+            onChange={setEmail}
+            isRequired
+            size="md"
+          />
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-              Password
-            </label>
-            <div className="relative">
-              <Lock
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2"
-                style={{ color: 'var(--text-muted)' }}
-              />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="login-input w-full pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-              />
-            </div>
-          </div>
+          <Input
+            label="Password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={setPassword}
+            isRequired
+            size="md"
+          />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </button>
+          <Button type="submit" size="lg" color="primary" isLoading={loading} showTextWhileLoading className="w-full">
+            {loading ? "Signing in..." : "Sign in"}
+          </Button>
         </form>
       </div>
     </div>

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, XClose } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/base/buttons/button";
 
 export default function ChangeActions({ changeId }: { changeId: string }) {
   const [loading, setLoading] = useState<"accept" | "reject" | null>(null);
@@ -38,32 +39,30 @@ export default function ChangeActions({ changeId }: { changeId: string }) {
   return (
     <div className="flex items-center gap-2">
       {error && (
-        <span className="text-red-400 text-xs mr-2">{error}</span>
+        <span className="mr-2 text-xs text-error-primary">{error}</span>
       )}
-      <button
+      <Button
+        size="sm"
+        color="secondary-destructive"
+        iconLeading={XClose}
+        isLoading={loading === "reject"}
+        showTextWhileLoading
+        isDisabled={loading !== null}
         onClick={() => handleAction("reject")}
-        disabled={loading !== null}
-        className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-red-500/20 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed text-slate-400 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors"
       >
-        {loading === "reject" ? (
-          <Loader2 size={14} className="animate-spin" />
-        ) : (
-          <X size={14} />
-        )}
         Reject
-      </button>
-      <button
+      </Button>
+      <Button
+        size="sm"
+        color="primary"
+        iconLeading={Check}
+        isLoading={loading === "accept"}
+        showTextWhileLoading
+        isDisabled={loading !== null}
         onClick={() => handleAction("accept")}
-        disabled={loading !== null}
-        className="inline-flex items-center gap-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-emerald-300 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors"
       >
-        {loading === "accept" ? (
-          <Loader2 size={14} className="animate-spin" />
-        ) : (
-          <Check size={14} />
-        )}
         Accept
-      </button>
+      </Button>
     </div>
   );
 }

@@ -1,24 +1,28 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import {
-  Plus,
-  Trash2,
-  Save,
-  Loader2,
-  Check,
   AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  Check,
   ChevronDown,
   ChevronRight,
   Eye,
   EyeOff,
-  Link as LinkIcon,
-  LayoutGrid,
-  GripVertical,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
+  LayoutGrid01,
+  Link01,
+  Plus,
+  Save01,
+  Trash01,
+} from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
+import { Badge } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { Input } from "@/components/base/input/input";
+import { Toggle } from "@/components/base/toggle/toggle";
+import { cx } from "@/utils/cx";
 
 interface NavItem {
   id: string;
@@ -36,6 +40,14 @@ interface NavItem {
 }
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+/**
+ * The public navbar accepts locations "navbar" (current) and "navbar_top"
+ * (legacy rows). The manager groups both together as top-nav items, but any
+ * NEW top-nav item is always saved with location "navbar".
+ */
+const isTopNavLocation = (location: string) =>
+  location === "navbar" || location === "navbar_top";
 
 /* ────────────────────────────────────────────────────────────── */
 
@@ -55,9 +67,9 @@ export default function NavigationManager({
 
   /* ── Derived data ── */
 
-  // Top-level navbar items (location=navbar, no parent)
+  // Top-level navbar items (location "navbar", plus legacy "navbar_top" rows)
   const navbarItems = items
-    .filter((i) => i.location === "navbar" && !i._deleted)
+    .filter((i) => isTopNavLocation(i.location) && !i._deleted)
     .sort((a, b) => a.sort_order - b.sort_order);
 
   // Mega menu items grouped by parent
@@ -348,8 +360,8 @@ export default function NavigationManager({
       // Insert new
       const newItems = active.filter((i) => i._isNew);
       // We need to insert parents first so mega items can reference them
-      const newParents = newItems.filter((i) => i.location === "navbar");
-      const newOther = newItems.filter((i) => i.location !== "navbar" && i.location !== "navbar_mega");
+      const newParents = newItems.filter((i) => isTopNavLocation(i.location));
+      const newOther = newItems.filter((i) => !isTopNavLocation(i.location) && i.location !== "navbar_mega");
       const newMega = newItems.filter((i) => i.location === "navbar_mega");
 
       // Insert navbar parents
@@ -358,7 +370,8 @@ export default function NavigationManager({
         const { data, error } = await supabase
           .from("navigation_items")
           .insert({
-            location: item.location,
+            // New top-nav items always persist with the canonical "navbar" location.
+            location: "navbar",
             parent_id: null,
             label: item.label,
             href: item.href,
@@ -439,27 +452,27 @@ export default function NavigationManager({
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
 
-  const inputCls =
-    "w-full bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 admin-text text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40 transition-all";
-
   return (
     <div className="space-y-8 pb-20">
       {/* ═══ NAVBAR ═══ */}
       <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold admin-text">Navbar Links</h2>
-          <button
-            onClick={addNavbarLink}
-            className="inline-flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer"
-          >
-            <Plus size={14} />
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-primary">Navbar Links</h2>
+            <p className="mt-1 text-xs text-tertiary">
+              Top navigation of the public site. Legacy{" "}
+              <span className="font-mono">navbar_top</span> rows are managed here too; new links save
+              as <span className="font-mono">navbar</span>.
+            </p>
+          </div>
+          <Button size="sm" color="primary" iconLeading={Plus} onClick={addNavbarLink} className="shrink-0">
             Add Link
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-2">
           {navbarItems.length === 0 && (
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8 text-center text-slate-500 text-sm">
+            <div className="rounded-xl bg-primary p-8 text-center text-sm text-tertiary ring-1 ring-secondary">
               No navbar links yet. Add one above.
             </div>
           )}
@@ -471,132 +484,138 @@ export default function NavigationManager({
             return (
               <div
                 key={item.id}
-                className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden"
+                className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary"
               >
                 {/* ─ Navbar link row ─ */}
                 <div className="flex items-center gap-2 px-4 py-3">
                   {/* Reorder */}
-                  <div className="flex flex-col gap-0.5 shrink-0 w-5">
-                    <button
+                  <div className="flex w-7 shrink-0 flex-col gap-0.5">
+                    <ButtonUtility
+                      size="xs"
+                      color="tertiary"
+                      icon={ArrowUp}
+                      tooltip="Move up"
+                      isDisabled={idx === 0}
                       onClick={() => swapOrder(navbarItems, idx, "up")}
-                      disabled={idx === 0}
-                      className="text-slate-500 hover:text-white disabled:opacity-20 cursor-pointer"
-                    >
-                      <ArrowUp size={12} />
-                    </button>
-                    <button
+                      className="p-0.5"
+                    />
+                    <ButtonUtility
+                      size="xs"
+                      color="tertiary"
+                      icon={ArrowDown}
+                      tooltip="Move down"
+                      isDisabled={idx === navbarItems.length - 1}
                       onClick={() => swapOrder(navbarItems, idx, "down")}
-                      disabled={idx === navbarItems.length - 1}
-                      className="text-slate-500 hover:text-white disabled:opacity-20 cursor-pointer"
-                    >
-                      <ArrowDown size={12} />
-                    </button>
+                      className="p-0.5"
+                    />
                   </div>
 
                   {/* Label + href + type — uniform grid */}
-                  <div className="flex-1 grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
-                    <input
-                      type="text"
-                      value={item.label}
-                      onChange={(e) => updateItem(item.id, "label", e.target.value)}
+                  <div className="grid flex-1 grid-cols-[1fr_1fr_auto] items-center gap-2">
+                    <Input
+                      size="sm"
+                      aria-label="Label"
                       placeholder="Label"
-                      className={inputCls}
+                      value={item.label}
+                      onChange={(value) => updateItem(item.id, "label", value)}
                     />
-                    <input
-                      type="text"
-                      value={item.href}
-                      onChange={(e) => updateItem(item.id, "href", e.target.value)}
+                    <Input
+                      size="sm"
+                      aria-label="Path"
                       placeholder="/path"
-                      className={inputCls}
+                      value={item.href}
+                      onChange={(value) => updateItem(item.id, "href", value)}
                     />
-                    <button
+                    <Button
+                      size="sm"
+                      color="secondary"
+                      iconLeading={hasMega ? LayoutGrid01 : Link01}
                       onClick={() => {
                         if (hasMega) convertToDirectLink(item.id);
                         else convertToMega(item.id);
                       }}
-                      className={`w-[110px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
-                        hasMega
-                          ? "bg-purple-500/15 text-purple-400 hover:bg-purple-500/25"
-                          : "bg-white/[0.06] text-slate-400 hover:text-white hover:bg-white/10"
-                      }`}
+                      className="w-28"
                     >
-                      {hasMega ? <LayoutGrid size={14} /> : <LinkIcon size={14} />}
                       {hasMega ? "Menu" : "Link"}
-                    </button>
+                    </Button>
                   </div>
 
                   {/* Visibility */}
-                  <button
+                  <ButtonUtility
+                    size="sm"
+                    color="tertiary"
+                    icon={item.is_visible ? Eye : EyeOff}
+                    tooltip={item.is_visible ? "Visible — click to hide" : "Hidden — click to show"}
                     onClick={() => updateItem(item.id, "is_visible", !item.is_visible)}
-                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                      item.is_visible ? "text-emerald-400 hover:bg-emerald-500/10" : "text-slate-500 hover:bg-white/10"
-                    }`}
-                  >
-                    {item.is_visible ? <Eye size={15} /> : <EyeOff size={15} />}
-                  </button>
+                    className={cx(item.is_visible && "text-fg-success-primary hover:text-fg-success-primary")}
+                  />
 
                   {/* Delete */}
-                  <button
+                  <ButtonUtility
+                    size="sm"
+                    color="tertiary"
+                    icon={Trash01}
+                    tooltip="Delete link"
                     onClick={() => deleteItem(item.id)}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                  />
 
                   {/* Expand mega (always reserve space) */}
-                  <div className="w-8 flex justify-center">
+                  <div className="flex w-8 justify-center">
                     {hasMega && (
-                      <button
+                      <ButtonUtility
+                        size="sm"
+                        color="tertiary"
+                        icon={isExpanded ? ChevronDown : ChevronRight}
+                        tooltip={isExpanded ? "Collapse menu" : "Expand menu"}
                         onClick={() => toggleExpand(item.id)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                      >
-                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                      </button>
+                      />
                     )}
                   </div>
                 </div>
 
                 {/* ─ Mega menu columns ─ */}
                 {hasMega && isExpanded && (
-                  <div className="border-t border-white/10 bg-white/[0.01] px-4 py-4 space-y-4">
+                  <div className="space-y-4 border-t border-secondary bg-secondary px-4 py-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      <span className="text-xs font-semibold tracking-wider text-quaternary uppercase">
                         Menu Columns
                       </span>
-                      <button
+                      <Button
+                        size="sm"
+                        color="link-color"
+                        iconLeading={Plus}
                         onClick={() => addMegaColumn(item.id)}
-                        className="inline-flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 cursor-pointer"
                       >
-                        <Plus size={12} />
                         Add Column
-                      </button>
+                      </Button>
                     </div>
 
                     {columns.length === 0 && (
-                      <p className="text-sm text-slate-500">No columns yet.</p>
+                      <p className="text-sm text-tertiary">No columns yet.</p>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                       {columns.map((col) => (
                         <div
                           key={col.title}
-                          className="bg-white/[0.03] border border-white/10 rounded-xl p-3 space-y-3"
+                          className="space-y-3 rounded-lg bg-primary p-3 shadow-xs ring-1 ring-secondary"
                         >
                           {/* Column header */}
                           <div className="space-y-2">
-                            <input
-                              type="text"
-                              value={col.title}
-                              onChange={(e) => renameColumn(item.id, col.title, e.target.value)}
+                            <Input
+                              size="sm"
+                              aria-label="Column title"
                               placeholder="Column Title"
-                              className="w-full bg-white/[0.06] border border-white/10 rounded-lg px-2.5 py-1.5 text-white text-xs font-semibold placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                              value={col.title}
+                              onChange={(value) => renameColumn(item.id, col.title, value)}
+                              inputClassName="font-semibold"
                             />
-                            <input
-                              type="text"
-                              value={col.icon ?? ""}
-                              onChange={(e) => setColumnIcon(item.id, col.title, e.target.value)}
+                            <Input
+                              size="sm"
+                              aria-label="Column icon"
                               placeholder="Icon (e.g. Cloud)"
-                              className="w-full bg-white/[0.06] border border-white/10 rounded-lg px-2.5 py-1.5 text-slate-300 text-xs placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                              value={col.icon ?? ""}
+                              onChange={(value) => setColumnIcon(item.id, col.title, value)}
                             />
                           </div>
 
@@ -605,49 +624,51 @@ export default function NavigationManager({
                             {col.links.map((link) => (
                               <div key={link.id} className="flex items-center gap-1.5">
                                 <div className="flex-1 space-y-1">
-                                  <input
-                                    type="text"
-                                    value={link.label}
-                                    onChange={(e) =>
-                                      updateItem(link.id, "label", e.target.value)
-                                    }
+                                  <Input
+                                    size="sm"
+                                    aria-label="Link label"
                                     placeholder="Link label"
-                                    className="w-full bg-white/[0.04] border border-white/[0.06] rounded-lg px-2 py-1 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500/40"
+                                    value={link.label}
+                                    onChange={(value) => updateItem(link.id, "label", value)}
                                   />
-                                  <input
-                                    type="text"
-                                    value={link.href}
-                                    onChange={(e) =>
-                                      updateItem(link.id, "href", e.target.value)
-                                    }
+                                  <Input
+                                    size="sm"
+                                    aria-label="Link path"
                                     placeholder="/path"
-                                    className="w-full bg-white/[0.04] border border-white/[0.06] rounded-lg px-2 py-1 text-slate-400 text-xs font-mono placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500/40"
+                                    value={link.href}
+                                    onChange={(value) => updateItem(link.id, "href", value)}
+                                    inputClassName="font-mono text-xs"
                                   />
                                 </div>
-                                <button
+                                <ButtonUtility
+                                  size="xs"
+                                  color="tertiary"
+                                  icon={Trash01}
+                                  tooltip="Delete link"
                                   onClick={() => deleteItem(link.id)}
-                                  className="p-1 rounded text-slate-600 hover:text-red-400 transition-colors cursor-pointer shrink-0"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
+                                  className="shrink-0"
+                                />
                               </div>
                             ))}
                           </div>
 
                           {/* Column actions */}
                           <div className="flex items-center justify-between pt-1">
-                            <button
+                            <Button
+                              size="sm"
+                              color="link-color"
+                              iconLeading={Plus}
                               onClick={() => addMegaLink(item.id, col.title, col.icon)}
-                              className="text-xs text-sky-400 hover:text-sky-300 cursor-pointer"
                             >
-                              + Add Link
-                            </button>
-                            <button
+                              Add Link
+                            </Button>
+                            <Button
+                              size="sm"
+                              color="link-destructive"
                               onClick={() => deleteColumn(item.id, col.title)}
-                              className="text-xs text-red-400/60 hover:text-red-400 cursor-pointer"
                             >
                               Remove Column
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -663,16 +684,22 @@ export default function NavigationManager({
       {/* ═══ FOOTER ═══ */}
       <section>
         <div className="mb-4">
-          <h2 className="text-lg font-semibold admin-text">Footer Quick Links</h2>
-          <p className="text-xs text-slate-500 mt-1">Toggle which navbar items appear in the footer Quick Links column.</p>
+          <h2 className="text-lg font-semibold text-primary">Footer Quick Links</h2>
+          <p className="mt-1 text-xs text-tertiary">
+            Toggle which navbar items appear in the footer Quick Links column.
+          </p>
         </div>
 
-        <div className="bg-sky-500/5 border border-sky-500/15 rounded-xl px-4 py-3 mb-4 text-xs text-slate-400 leading-relaxed">
-          <p>Toggle which items appear in the footer. For items with <strong className="text-purple-400">menus</strong>, you can separately control the Quick Link and the dropdown accordion.</p>
+        <div className="mb-4 rounded-lg bg-secondary px-4 py-3 text-xs leading-relaxed text-tertiary">
+          <p>
+            Toggle which items appear in the footer. For items with{" "}
+            <strong className="font-semibold text-secondary">menus</strong>, you can separately
+            control the Quick Link and the dropdown accordion.
+          </p>
         </div>
 
         {/* Navbar items with footer toggle */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl divide-y divide-white/5 overflow-hidden mb-4">
+        <div className="mb-4 overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
           {navbarItems.map((navItem) => {
             const hasMega = isMegaMenu(navItem.id);
             const hasFooterEntry = footerQuick.some(
@@ -709,42 +736,35 @@ export default function NavigationManager({
             const megaExcluded = hasMega ? isMegaExcludedFromFooter(navItem.id) : false;
 
             return (
-              <div key={`ft-${navItem.id}`} className="flex items-center justify-between px-4 py-3">
+              <div
+                key={`ft-${navItem.id}`}
+                className="flex items-center justify-between border-b border-secondary px-4 py-3 last:border-b-0"
+              >
                 <div className="flex items-center gap-3">
-                  <span className="text-sm admin-text">{navItem.label}</span>
+                  <span className="text-sm font-medium text-primary">{navItem.label}</span>
                   {hasMega && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400">
+                    <Badge size="sm" color="purple">
                       Menu
-                    </span>
+                    </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-6">
                   {hasMega && (
-                    <button
-                      onClick={() => toggleMegaFooterDropdown(navItem)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                        !megaExcluded
-                          ? "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15"
-                          : "text-slate-500 bg-white/[0.04] hover:bg-white/10"
-                      }`}
-                      title={!megaExcluded ? "Dropdown showing in footer" : "Dropdown hidden from footer"}
-                    >
-                      {!megaExcluded ? <Eye size={13} /> : <EyeOff size={13} />}
-                      Dropdown
-                    </button>
+                    <Toggle
+                      size="sm"
+                      slim
+                      label="Dropdown"
+                      isSelected={!megaExcluded}
+                      onChange={() => toggleMegaFooterDropdown(navItem)}
+                    />
                   )}
-                  <button
-                    onClick={toggleFooter}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                      hasFooterEntry
-                        ? "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15"
-                        : "text-slate-500 bg-white/[0.04] hover:bg-white/10"
-                    }`}
-                    title={hasFooterEntry ? "Quick Link showing in footer" : "Quick Link hidden from footer"}
-                  >
-                    {hasFooterEntry ? <Eye size={13} /> : <EyeOff size={13} />}
-                    Quick Link
-                  </button>
+                  <Toggle
+                    size="sm"
+                    slim
+                    label="Quick Link"
+                    isSelected={hasFooterEntry}
+                    onChange={toggleFooter}
+                  />
                 </div>
               </div>
             );
@@ -759,69 +779,60 @@ export default function NavigationManager({
           if (extraLinks.length === 0) return null;
           return (
             <div className="mb-3">
-              <p className="text-xs text-slate-500 mb-2">Additional footer-only links:</p>
+              <p className="mb-2 text-xs text-tertiary">Additional footer-only links:</p>
               {renderSimpleList(extraLinks, "footer_quick")}
             </div>
           );
         })()}
 
-        <button
+        <Button
+          size="sm"
+          color="link-color"
+          iconLeading={Plus}
           onClick={() => addFooterLink("footer_quick")}
-          className="text-xs text-sky-400 hover:text-sky-300 cursor-pointer flex items-center gap-1 mb-6"
+          className="mb-6"
         >
-          <Plus size={12} />
           Add Footer-Only Link
-        </button>
+        </Button>
       </section>
 
       {/* ═══ FOOTER LEGAL LINKS ═══ */}
       <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold admin-text">Footer Legal Links</h2>
-          <button
-            onClick={() => addFooterLink("footer_legal")}
-            className="inline-flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer"
-          >
-            <Plus size={14} />
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-primary">Footer Legal Links</h2>
+          <Button size="sm" color="primary" iconLeading={Plus} onClick={() => addFooterLink("footer_legal")}>
             Add Link
-          </button>
+          </Button>
         </div>
         {renderSimpleList(footerLegal, "footer_legal")}
       </section>
 
       {/* ═══ SAVE BAR ═══ */}
-      <div className="sticky bottom-0 z-30 -mx-6 px-6 py-4 flex items-center justify-end gap-4 border-t border-white/10" style={{ background: 'var(--bg-primary)' }}>
-        <div className="min-h-[24px]">
+      <div className="sticky bottom-0 z-30 flex items-center justify-end gap-4 border-t border-secondary bg-primary py-4">
+        <div className="min-h-6">
           {saveStatus === "error" && errorMessage && (
-            <p className="text-red-400 text-sm flex items-center gap-1.5">
-              <AlertCircle size={14} />
+            <p className="flex items-center gap-1.5 text-sm text-error-primary">
+              <AlertCircle className="size-4" />
               {errorMessage}
             </p>
           )}
           {saveStatus === "saved" && (
-            <p className="text-emerald-400 text-sm flex items-center gap-1.5">
-              <Check size={14} />
+            <p className="flex items-center gap-1.5 text-sm text-success-primary">
+              <Check className="size-4" />
               All changes saved
             </p>
           )}
         </div>
-        <button
+        <Button
+          size="md"
+          color="primary"
+          iconLeading={Save01}
+          isLoading={saveStatus === "saving"}
+          showTextWhileLoading
           onClick={handleSave}
-          disabled={saveStatus === "saving"}
-          className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white rounded-xl px-5 py-2.5 text-sm font-medium transition-colors cursor-pointer"
         >
-          {saveStatus === "saving" ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save size={16} />
-              Save All Changes
-            </>
-          )}
-        </button>
+          {saveStatus === "saving" ? "Saving..." : "Save All Changes"}
+        </Button>
       </div>
     </div>
   );
@@ -830,62 +841,70 @@ export default function NavigationManager({
   function renderSimpleList(list: NavItem[], location: string) {
     if (list.length === 0) {
       return (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 text-center text-slate-500 text-sm">
+        <div className="rounded-xl bg-primary p-6 text-center text-sm text-tertiary ring-1 ring-secondary">
           No links yet.
         </div>
       );
     }
 
     return (
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl divide-y divide-white/5 overflow-hidden">
+      <div className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
         {list.map((item, idx) => (
-          <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors">
-            <div className="flex flex-col gap-0.5 shrink-0">
-              <button
+          <div
+            key={item.id}
+            className="flex items-center gap-3 border-b border-secondary px-4 py-3 transition-colors last:border-b-0 hover:bg-secondary"
+          >
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <ButtonUtility
+                size="xs"
+                color="tertiary"
+                icon={ArrowUp}
+                tooltip="Move up"
+                isDisabled={idx === 0}
                 onClick={() => swapOrder(list, idx, "up")}
-                disabled={idx === 0}
-                className="text-slate-500 hover:text-white disabled:opacity-20 cursor-pointer"
-              >
-                <ArrowUp size={12} />
-              </button>
-              <button
+                className="p-0.5"
+              />
+              <ButtonUtility
+                size="xs"
+                color="tertiary"
+                icon={ArrowDown}
+                tooltip="Move down"
+                isDisabled={idx === list.length - 1}
                 onClick={() => swapOrder(list, idx, "down")}
-                disabled={idx === list.length - 1}
-                className="text-slate-500 hover:text-white disabled:opacity-20 cursor-pointer"
-              >
-                <ArrowDown size={12} />
-              </button>
+                className="p-0.5"
+              />
             </div>
-            <div className="flex-1 grid grid-cols-2 gap-3">
-              <input
-                type="text"
-                value={item.label}
-                onChange={(e) => updateItem(item.id, "label", e.target.value)}
+            <div className="grid flex-1 grid-cols-2 gap-3">
+              <Input
+                size="sm"
+                aria-label="Label"
                 placeholder="Label"
-                className={inputCls}
+                value={item.label}
+                onChange={(value) => updateItem(item.id, "label", value)}
               />
-              <input
-                type="text"
-                value={item.href}
-                onChange={(e) => updateItem(item.id, "href", e.target.value)}
+              <Input
+                size="sm"
+                aria-label="Path"
                 placeholder="/path"
-                className={inputCls}
+                value={item.href}
+                onChange={(value) => updateItem(item.id, "href", value)}
               />
             </div>
-            <button
+            <ButtonUtility
+              size="sm"
+              color="tertiary"
+              icon={item.is_visible ? Eye : EyeOff}
+              tooltip={item.is_visible ? "Visible — click to hide" : "Hidden — click to show"}
               onClick={() => updateItem(item.id, "is_visible", !item.is_visible)}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                item.is_visible ? "text-emerald-400 hover:bg-emerald-500/10" : "text-slate-500 hover:bg-white/10"
-              }`}
-            >
-              {item.is_visible ? <Eye size={15} /> : <EyeOff size={15} />}
-            </button>
-            <button
+              className={cx(item.is_visible && "text-fg-success-primary hover:text-fg-success-primary")}
+            />
+            <ButtonUtility
+              size="sm"
+              color="tertiary"
+              icon={Trash01}
+              tooltip="Delete link"
               onClick={() => deleteItem(item.id)}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-            >
-              <Trash2 size={15} />
-            </button>
+            />
           </div>
         ))}
       </div>

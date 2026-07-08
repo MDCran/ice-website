@@ -2,18 +2,16 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import {
-  Users,
-  Plus,
-  Pencil,
-  Trash2,
-  X,
-  Loader2,
-  AlertCircle,
-  Phone,
-  Mail,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Plus, Edit01, Trash01, AlertCircle, Phone01, Mail01 } from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { CloseButton } from "@/components/base/buttons/close-button";
+import { Input } from "@/components/base/input/input";
+import { Table, TableCard } from "@/components/application/table/table";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
+import { cx } from "@/utils/cx";
 
 interface Contact {
   id: string;
@@ -268,308 +266,236 @@ export default function ContactsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 size={24} className="animate-spin text-slate-400" />
+        <LoadingIndicator type="line-spinner" size="md" />
       </div>
     );
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-            <Users size={20} className="text-violet-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold admin-text">Manage Contacts</h1>
-            <p className="text-sm text-slate-400">
-              Changes will be reviewed by our team before taking effect.
-            </p>
-          </div>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-display-xs font-semibold text-primary">Manage Contacts</h1>
+          <p className="mt-1 text-md text-tertiary">
+            Changes will be reviewed by our team before taking effect.
+          </p>
         </div>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium transition-colors"
-        >
-          <Plus size={16} />
+        <Button size="md" color="primary" iconLeading={Plus} onClick={openAddModal}>
           Add Contact
-        </button>
+        </Button>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6">
-          <AlertCircle size={16} />
+        <div className="mb-6 flex items-center gap-2 rounded-lg bg-error-primary p-3 text-sm font-medium text-error-primary ring-1 ring-error_subtle ring-inset">
+          <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
           {error}
         </div>
       )}
 
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Phone
-              </th>
-              <th className="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {mergedContacts.length > 0 ? (
-              mergedContacts.map((contact) => {
-                const primaryEmail = contact.contact_emails?.find(
-                  (e) => e.is_primary
-                );
-                const primaryPhone = contact.contact_phones?.find(
-                  (p) => p.is_primary
-                );
-                const isRemoval =
-                  contact.pendingStatus === "pending_removal";
-                const isPending = !!contact.pendingStatus;
+      <TableCard.Root>
+        <Table aria-label="Contacts">
+          <Table.Header>
+            <Table.Head id="name" isRowHeader label="Name" className="w-full" />
+            <Table.Head id="email" label="Email" />
+            <Table.Head id="phone" label="Phone" />
+            <Table.Head id="actions" aria-label="Actions" className="text-right" />
+          </Table.Header>
+          <Table.Body
+            items={mergedContacts}
+            renderEmptyState={() => (
+              <div className="px-6 py-12 text-center text-sm text-tertiary">
+                No contacts found.
+              </div>
+            )}
+          >
+            {(contact) => {
+              const primaryEmail = contact.contact_emails?.find(
+                (e) => e.is_primary
+              );
+              const primaryPhone = contact.contact_phones?.find(
+                (p) => p.is_primary
+              );
+              const isRemoval = contact.pendingStatus === "pending_removal";
 
-                // Display values — show pending data if edit
-                const displayName =
-                  contact.pendingStatus === "pending_edit" && contact.pendingData
-                    ? `${contact.pendingData.first_name || contact.first_name} ${contact.pendingData.last_name || contact.last_name}`
-                    : `${contact.first_name} ${contact.last_name}`;
-                const displayEmail =
-                  contact.pendingStatus === "pending_edit" && contact.pendingData
-                    ? (contact.pendingData.email as string) ||
-                      primaryEmail?.email_address
-                    : primaryEmail?.email_address;
-                const displayPhone =
-                  contact.pendingStatus === "pending_edit" && contact.pendingData
-                    ? (contact.pendingData.phone as string) ||
-                      primaryPhone?.phone_number
-                    : primaryPhone?.phone_number;
+              // Display values — show pending data if edit
+              const displayName =
+                contact.pendingStatus === "pending_edit" && contact.pendingData
+                  ? `${contact.pendingData.first_name || contact.first_name} ${contact.pendingData.last_name || contact.last_name}`
+                  : `${contact.first_name} ${contact.last_name}`;
+              const displayEmail =
+                contact.pendingStatus === "pending_edit" && contact.pendingData
+                  ? (contact.pendingData.email as string) ||
+                    primaryEmail?.email_address
+                  : primaryEmail?.email_address;
+              const displayPhone =
+                contact.pendingStatus === "pending_edit" && contact.pendingData
+                  ? (contact.pendingData.phone as string) ||
+                    primaryPhone?.phone_number
+                  : primaryPhone?.phone_number;
 
-                return (
-                  <tr
-                    key={contact.id}
-                    className={cn(
-                      "transition-colors",
-                      isRemoval
-                        ? "opacity-50"
-                        : "hover:bg-white/[0.02]"
-                    )}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "text-sm font-medium",
-                            isRemoval
-                              ? "line-through text-slate-500"
-                              : "admin-text"
-                          )}
-                        >
-                          {displayName}
+              return (
+                <Table.Row id={contact.id} className={cx(isRemoval && "opacity-50")}>
+                  <Table.Cell>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cx(
+                          "text-sm font-medium",
+                          isRemoval ? "text-tertiary line-through" : "text-primary"
+                        )}
+                      >
+                        {displayName}
+                      </span>
+                      {(contact.pendingStatus === "pending_add" ||
+                        contact.pendingStatus === "pending_edit") && (
+                        <Badge type="pill-color" size="sm" color="warning">
+                          Pending
+                        </Badge>
+                      )}
+                      {isRemoval && (
+                        <Badge type="pill-color" size="sm" color="error">
+                          Pending Removal
+                        </Badge>
+                      )}
+                    </div>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {displayEmail ? (
+                      <div className="flex items-center gap-1.5 text-sm text-tertiary">
+                        <Mail01 aria-hidden="true" className="size-3.5 text-fg-quaternary" />
+                        <span className={isRemoval ? "line-through" : ""}>
+                          {displayEmail}
                         </span>
-                        {contact.pendingStatus === "pending_add" && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400">
-                            Pending
-                          </span>
-                        )}
-                        {contact.pendingStatus === "pending_edit" && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400">
-                            Pending
-                          </span>
-                        )}
-                        {isRemoval && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500/10 text-red-400">
-                            Pending Removal
-                          </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-quaternary">-</span>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {displayPhone ? (
+                      <div className="flex items-center gap-1.5 text-sm text-tertiary">
+                        <Phone01 aria-hidden="true" className="size-3.5 text-fg-quaternary" />
+                        <span className={isRemoval ? "line-through" : ""}>
+                          {displayPhone}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-quaternary">-</span>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {!isRemoval && (
+                      <div className="flex items-center justify-end gap-1">
+                        <ButtonUtility
+                          size="xs"
+                          color="tertiary"
+                          icon={Edit01}
+                          tooltip="Edit"
+                          onClick={() => openEditModal(contact)}
+                        />
+                        {contact.pendingStatus !== "pending_add" && (
+                          <>
+                            {confirmDelete === contact.id ? (
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="sm"
+                                  color="primary-destructive"
+                                  onClick={() => handleRemove(contact.id)}
+                                >
+                                  Confirm
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  color="tertiary"
+                                  onClick={() => setConfirmDelete(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : (
+                              <ButtonUtility
+                                size="xs"
+                                color="tertiary"
+                                icon={Trash01}
+                                tooltip="Remove"
+                                onClick={() => setConfirmDelete(contact.id)}
+                              />
+                            )}
+                          </>
                         )}
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {displayEmail ? (
-                        <div className="flex items-center gap-1.5 text-sm text-slate-300">
-                          <Mail size={12} className="text-slate-500" />
-                          <span className={isRemoval ? "line-through" : ""}>
-                            {displayEmail}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-slate-500">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {displayPhone ? (
-                        <div className="flex items-center gap-1.5 text-sm text-slate-300">
-                          <Phone size={12} className="text-slate-500" />
-                          <span className={isRemoval ? "line-through" : ""}>
-                            {displayPhone}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-slate-500">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {!isRemoval && (
-                        <div className="flex items-center gap-2 justify-end">
-                          <button
-                            onClick={() => openEditModal(contact)}
-                            className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          {contact.pendingStatus !== "pending_add" && (
-                            <>
-                              {confirmDelete === contact.id ? (
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    onClick={() => handleRemove(contact.id)}
-                                    className="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                                  >
-                                    Confirm
-                                  </button>
-                                  <button
-                                    onClick={() => setConfirmDelete(null)}
-                                    className="px-2 py-1 rounded text-xs text-slate-400 hover:text-white transition-colors"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() => setConfirmDelete(contact.id)}
-                                  className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
-                                  title="Remove"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-6 py-12 text-center text-slate-500 text-sm"
-                >
-                  No contacts found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                    )}
+                  </Table.Cell>
+                </Table.Row>
+              );
+            }}
+          </Table.Body>
+        </Table>
+      </TableCard.Root>
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold admin-text">
-                {editingContact ? "Edit Contact" : "Add Contact"}
-              </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  First Name
-                </label>
-                <input
-                  type="text"
+      <ModalOverlay isDismissable isOpen={showModal} onOpenChange={setShowModal}>
+        <Modal className="w-full max-w-md">
+          <Dialog>
+            <div className="p-6">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-primary">
+                  {editingContact ? "Edit Contact" : "Add Contact"}
+                </h2>
+                <CloseButton size="sm" onClick={() => setShowModal(false)} />
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  label="First Name"
                   value={formData.first_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, first_name: e.target.value })
-                  }
-                  required
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+                  onChange={(v) => setFormData({ ...formData, first_name: v })}
+                  isRequired
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Last Name
-                </label>
-                <input
-                  type="text"
+                <Input
+                  label="Last Name"
                   value={formData.last_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, last_name: e.target.value })
-                  }
-                  required
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+                  onChange={(v) => setFormData({ ...formData, last_name: v })}
+                  isRequired
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Phone
-                </label>
-                <input
+                <Input
+                  label="Phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+                  onChange={(v) => setFormData({ ...formData, phone: v })}
                   placeholder="(555) 123-4567"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Email
-                </label>
-                <input
+                <Input
+                  label="Email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+                  onChange={(v) => setFormData({ ...formData, email: v })}
                   placeholder="name@company.com"
                 />
-              </div>
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-sm font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    "Submit for Review"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                <div className="flex items-center gap-3 pt-2">
+                  <Button
+                    type="button"
+                    color="secondary"
+                    size="md"
+                    className="flex-1"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    color="primary"
+                    size="md"
+                    className="flex-1"
+                    isLoading={submitting}
+                    showTextWhileLoading
+                  >
+                    {submitting ? "Submitting..." : "Submit for Review"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
     </div>
   );
 }

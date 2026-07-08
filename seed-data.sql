@@ -234,7 +234,7 @@ SELECT p.id, 'stats', 'metrics', '{
     {"value": 35, "suffix": "+", "label": "Years of Experience"},
     {"value": 1200, "suffix": "+", "label": "Successful Projects"},
     {"value": 500, "suffix": "+", "label": "Enterprise Clients"},
-    {"value": 100, "suffix": "%", "label": "Uptime SLA"}
+    {"value": 99.99, "suffix": "%", "label": "Uptime SLA"}
   ]
 }'::jsonb, 2, true
 FROM pages p WHERE p.slug = 'home';
@@ -243,7 +243,7 @@ INSERT INTO page_sections (page_id, section_key, section_type, content, sort_ord
 SELECT p.id, 'data_centers', 'content', '{
   "heading": "High-Security Data Centers",
   "description": "Tier-3 facilities with geographically separated infrastructure. PCI, HIPAA, SOX, and GDPR compliant.",
-  "features": ["Redundant Power Systems", "Enterprise-Grade Cooling", "Flash Systems Storage", "24/7 Physical Security", "Multiple Network Carriers", "SOC 1-SSAE 18 Certified"]
+  "features": ["Redundant Power Systems", "Enterprise-Grade Cooling", "Flash Systems Storage", "24/7 Physical Security", "Multiple Network Carriers", "SOC 2 Type II Certified"]
 }'::jsonb, 3, true
 FROM pages p WHERE p.slug = 'home';
 
@@ -343,7 +343,7 @@ SELECT p.id, 'stats', 'metrics', '{
     {"value": 35, "suffix": "+", "label": "Years of Experience"},
     {"value": 1200, "suffix": "+", "label": "Projects Delivered"},
     {"value": 500, "suffix": "+", "label": "Clients Served"},
-    {"value": 100, "suffix": "%", "label": "Uptime SLA"}
+    {"value": 99.99, "suffix": "%", "label": "Uptime SLA"}
   ]
 }'::jsonb, 1, true
 FROM pages p WHERE p.slug = 'why-ice';
@@ -352,7 +352,7 @@ INSERT INTO page_sections (page_id, section_key, section_type, content, sort_ord
 SELECT p.id, 'differentiators', 'features', '{
   "items": [
     {"icon": "Award", "title": "IBM Business Partner Since 1990", "description": "Over three decades of trusted expertise as an IBM Business Partner. We bring deep knowledge of IBM Power Systems, IBM i, and enterprise solutions to every engagement."},
-    {"icon": "Server", "title": "Enterprise-Grade Infrastructure", "description": "Our SOC 1-SSAE 18 certified data centers provide the reliability, security, and performance that enterprise workloads demand. Redundant power, cooling, and connectivity ensure maximum uptime."},
+    {"icon": "Server", "title": "Enterprise-Grade Infrastructure", "description": "Our SOC 2 Type II certified data centers provide the reliability, security, and performance that enterprise workloads demand. Redundant power, cooling, and connectivity ensure maximum uptime."},
     {"icon": "Layers", "title": "End-to-End Solutions", "description": "From cloud hosting and disaster recovery to hardware procurement and managed services, we provide comprehensive technology solutions that cover your entire IT lifecycle."}
   ]
 }'::jsonb, 2, true
@@ -425,7 +425,7 @@ SELECT p.id, 'sections', 'content', '{
     {"id": "services", "title": "2. Services", "content": "ICE provides managed IT services, cloud hosting, data protection, security solutions, and related technology services. The specific services provided to you will be outlined in your service agreement."},
     {"id": "accounts", "title": "3. User Accounts", "content": "You are responsible for maintaining the confidentiality of your account credentials. You agree to notify ICE immediately of any unauthorized access to or use of your account."},
     {"id": "acceptable-use", "title": "4. Acceptable Use", "content": "You agree not to use our services for any unlawful purpose or in any way that could damage, disable, or impair our services. You may not attempt to gain unauthorized access to any part of our systems."},
-    {"id": "data-protection", "title": "5. Data Protection", "content": "We implement industry-standard security measures to protect your data. Our data centers are SOC 1-SSAE 18 certified and comply with PCI, HIPAA, SOX, and GDPR requirements where applicable."},
+    {"id": "data-protection", "title": "5. Data Protection", "content": "We implement industry-standard security measures to protect your data. Our data centers are SOC 2 Type II certified and comply with PCI, HIPAA, SOX, and GDPR requirements where applicable."},
     {"id": "liability", "title": "6. Limitation of Liability", "content": "To the maximum extent permitted by law, ICE shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of our services."},
     {"id": "termination", "title": "7. Termination", "content": "Either party may terminate the service agreement as outlined in the specific terms of your contract. Upon termination, your access to our services will be discontinued."},
     {"id": "changes", "title": "8. Changes to Terms", "content": "ICE reserves the right to modify these terms at any time. We will notify users of significant changes via email or through our portal. Continued use of our services constitutes acceptance of modified terms."},
@@ -559,7 +559,7 @@ FROM pages p WHERE p.slug = 'managed-cloud-hosting';
 INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
 SELECT p.id, 'features', 'features', '{"items":[
   {"icon":"Monitor","title":"24/7 Proactive Monitoring","description":"Round-the-clock infrastructure monitoring with automated alerting and rapid incident response."},
-  {"icon":"Server","title":"Tier-3 Data Centers","description":"SOC 1-SSAE 18 certified facilities with redundant power, cooling, and multiple network carriers."},
+  {"icon":"Server","title":"Tier-3 Data Centers","description":"SOC 2 Type II certified facilities with redundant power, cooling, and multiple network carriers."},
   {"icon":"Database","title":"Redundant Infrastructure","description":"Geographically separated data centers with automatic failover and data replication."},
   {"icon":"Zap","title":"Scalable Resources","description":"Instantly scale compute, storage, and bandwidth to match your workload demands."},
   {"icon":"Users","title":"Dedicated Support Team","description":"Named account managers and certified engineers who know your environment."},
@@ -787,7 +787,7 @@ SELECT p.id, 'process', 'process', '{"items":[
 FROM pages p WHERE p.slug = 'ransomware-recovery';
 
 INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
-SELECT p.id, 'benefits', 'benefits', '{"items":["Immutable and air-gapped backups guarantee clean restore points","Clean room recovery prevents reinfection during restoration","70% cost reduction compared to unprepared organizations","Proactive threat scanning detects dormant threats before restore","ISO 27001, SOC 1 & 2, HIPAA, PCI-DSS, GDPR, NIST-800-53 compliant","24/7 incident response team with regular recovery drills"]}'::jsonb, 3, true
+SELECT p.id, 'benefits', 'benefits', '{"items":["Immutable and air-gapped backups guarantee clean restore points","Clean room recovery prevents reinfection during restoration","70% cost reduction compared to unprepared organizations","Proactive threat scanning detects dormant threats before restore","ISO 27001, SOC 2, HIPAA, PCI-DSS, GDPR, NIST-800-53 compliant","24/7 incident response team with regular recovery drills"]}'::jsonb, 3, true
 FROM pages p WHERE p.slug = 'ransomware-recovery';
 
 -- ─── IBM i Security ──────────────────────────────────────────────────────
@@ -817,7 +817,7 @@ SELECT p.id, 'process', 'process', '{"items":[
 FROM pages p WHERE p.slug = 'ibm-i-security';
 
 INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
-SELECT p.id, 'benefits', 'benefits', '{"items":["Reduce risk of data breaches on mission-critical IBM i systems","Achieve ISO 27001, SOC 1 & 2, HIPAA, PCI-DSS, GDPR, and NIST-800-53 compliance","SIEM-ready integration for centralized security event management","MFA and SecureShell lockdown for access point protection","Automated audit trails for regulatory requirements","Expert guidance from certified IBM i security specialists"]}'::jsonb, 3, true
+SELECT p.id, 'benefits', 'benefits', '{"items":["Reduce risk of data breaches on mission-critical IBM i systems","Achieve ISO 27001, SOC 2, HIPAA, PCI-DSS, GDPR, and NIST-800-53 compliance","SIEM-ready integration for centralized security event management","MFA and SecureShell lockdown for access point protection","Automated audit trails for regulatory requirements","Expert guidance from certified IBM i security specialists"]}'::jsonb, 3, true
 FROM pages p WHERE p.slug = 'ibm-i-security';
 
 -- ─── Protection Suite ────────────────────────────────────────────────────
@@ -1027,7 +1027,7 @@ SELECT p.id, 'process', 'process', '{"items":[
 FROM pages p WHERE p.slug = 'systems-management';
 
 INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
-SELECT p.id, 'benefits', 'benefits', '{"items":["100% uptime commitment for managed systems","40% reduction in IT support costs","Proactive patching and predictive analytics prevent issues","Certified engineers available 24/7/365","Multi-platform coverage across IBM i, AIX, Linux, and Windows","Monthly trend reviews and capacity planning"]}'::jsonb, 3, true
+SELECT p.id, 'benefits', 'benefits', '{"items":["99.99% uptime commitment for managed systems","40% reduction in IT support costs","Proactive patching and predictive analytics prevent issues","Certified engineers available 24/7/365","Multi-platform coverage across IBM i, AIX, Linux, and Windows","Monthly trend reviews and capacity planning"]}'::jsonb, 3, true
 FROM pages p WHERE p.slug = 'systems-management';
 
 -- ─── IBM Power VS ────────────────────────────────────────────────────────

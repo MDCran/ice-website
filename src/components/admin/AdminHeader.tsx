@@ -1,19 +1,23 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  LogOut,
-  User,
-  Settings,
   ChevronDown,
   ChevronRight,
-  PanelLeft,
-  PanelLeftClose,
-} from "lucide-react";
+  LayoutLeft,
+  LogOut01,
+  Moon01,
+  Settings01,
+  Sun,
+  User01,
+} from "@untitledui/icons";
+import { Button as AriaButton } from "react-aria-components";
 import { createClient } from "@/lib/supabase/client";
-import ThemeToggle from "@/components/ui/ThemeToggle";
+import { useTheme } from "@/lib/themeProvider";
+import { Avatar } from "@/components/base/avatar/avatar";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { useSidebar } from "./AdminSidebarContext";
 
 const PAGE_NAMES: Record<string, string> = {
@@ -64,21 +68,10 @@ export default function AdminHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { collapsed, toggle } = useSidebar();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme } = useTheme();
 
   const pageName = getPageName(pathname);
   const breadcrumbs = getBreadcrumbs(pathname);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -87,33 +80,44 @@ export default function AdminHeader() {
   };
 
   return (
-    <header className="h-16 admin-header flex items-center justify-between px-4 shrink-0">
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-secondary bg-primary px-4 md:px-6">
+      <div className="flex min-w-0 items-center gap-3">
         {/* Sidebar toggle */}
-        <button
+        <ButtonUtility
+          color="tertiary"
+          size="sm"
+          icon={LayoutLeft}
+          tooltip={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           onClick={toggle}
-          className="p-1.5 rounded-lg admin-hover admin-text-muted transition-colors cursor-pointer shrink-0"
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
-        </button>
+        />
 
         {/* Page name + breadcrumb */}
-        <div className="flex flex-col justify-center min-w-0">
-          <h2 className="text-sm font-semibold admin-text truncate">
+        <div className="flex min-w-0 flex-col justify-center">
+          <h2 className="truncate text-sm font-semibold text-primary">
             {pageName}
           </h2>
           {breadcrumbs.length > 1 && (
-            <nav className="flex items-center gap-1 text-xs admin-text-dimmed">
+            <nav
+              aria-label="Breadcrumb"
+              className="flex items-center gap-1 text-xs font-medium text-quaternary"
+            >
               {breadcrumbs.map((crumb, i) => (
                 <span key={crumb.href} className="flex items-center gap-1">
-                  {i > 0 && <ChevronRight size={10} />}
+                  {i > 0 && (
+                    <ChevronRight
+                      aria-hidden="true"
+                      className="size-3 shrink-0 text-fg-quaternary"
+                    />
+                  )}
                   {i < breadcrumbs.length - 1 ? (
-                    <Link href={crumb.href} className="hover:underline">
+                    <Link
+                      href={crumb.href}
+                      className="rounded-xs outline-focus-ring transition duration-100 ease-linear hover:text-tertiary focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
                       {crumb.label}
                     </Link>
                   ) : (
-                    <span>{crumb.label}</span>
+                    <span className="text-tertiary">{crumb.label}</span>
                   )}
                 </span>
               ))}
@@ -122,47 +126,47 @@ export default function AdminHeader() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <ThemeToggle />
+      <div className="flex items-center gap-2">
+        {/* Theme toggle */}
+        <ButtonUtility
+          color="tertiary"
+          size="sm"
+          icon={theme === "dark" ? Sun : Moon01}
+          tooltip={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          onClick={toggleTheme}
+        />
 
         {/* Account dropdown */}
-        <div ref={menuRef} className="relative">
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm admin-text-muted admin-hover transition-colors cursor-pointer"
+        <Dropdown.Root>
+          <AriaButton
+            className={({ isPressed, isHovered, isFocusVisible }) => {
+              const base =
+                "group flex cursor-pointer items-center gap-2 rounded-lg py-1.5 pr-2 pl-1.5 outline-focus-ring transition duration-100 ease-linear";
+              const hovered = isPressed || isHovered ? " bg-primary_hover" : "";
+              const focused = isFocusVisible ? " outline-2 outline-offset-2" : "";
+              return base + hovered + focused;
+            }}
           >
-            <User size={16} />
-            <span>Admin</span>
+            <Avatar size="xs" alt="Admin" placeholderIcon={User01} />
+            <span className="text-sm font-semibold text-secondary">Admin</span>
             <ChevronDown
-              size={14}
-              className={`transition-transform ${menuOpen ? "rotate-180" : ""}`}
+              aria-hidden="true"
+              className="size-4 shrink-0 stroke-[2.5px] text-fg-quaternary"
             />
-          </button>
-
-          {menuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 rounded-xl admin-dropdown shadow-2xl z-50 overflow-hidden">
-              <Link
-                href="/admin/settings"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 text-sm admin-text-muted admin-nav-hover transition-colors cursor-pointer"
-              >
-                <Settings size={16} />
-                Settings
-              </Link>
-              <div className="admin-border-t" />
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  handleLogout();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-              >
-                <LogOut size={16} />
-                Sign Out
-              </button>
-            </div>
-          )}
-        </div>
+          </AriaButton>
+          <Dropdown.Popover>
+            <Dropdown.Menu
+              onAction={(key) => {
+                if (key === "settings") router.push("/admin/settings");
+                if (key === "signout") handleLogout();
+              }}
+            >
+              <Dropdown.Item id="settings" label="Settings" icon={Settings01} />
+              <Dropdown.Separator />
+              <Dropdown.Item id="signout" label="Sign out" icon={LogOut01} />
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown.Root>
       </div>
     </header>
   );

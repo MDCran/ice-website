@@ -1,34 +1,34 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, type FC } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { motion, useInView } from "motion/react";
-import * as Accordion from "@radix-ui/react-accordion";
-import type { LucideIcon } from "lucide-react";
+import { motion, useInView, useReducedMotion } from "motion/react";
 import {
   ChevronRight,
-  ChevronDown,
   ArrowRight,
-  Shield,
-  Server,
-  Layers,
-  Factory,
-  Landmark,
-  HeartPulse,
-  ShieldCheck,
-  Scale,
-  Award,
-  Clock,
-  Users,
-  CheckCircle,
-} from "lucide-react";
-import TiltCard from "@/components/effects/TiltCard";
+  Server01,
+  LayersThree01,
+  Building07,
+  Bank,
+  ActivityHeart,
+  ShieldTick,
+  Scales01,
+  Award01,
+} from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
 import { resolveIcon } from "@/lib/iconMap";
+import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import { cx } from "@/utils/cx";
+
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 /* -------------------------------------------------------------------------- */
 /*  Data                                                                       */
 /* -------------------------------------------------------------------------- */
+
+type IconComponent = FC<{ className?: string }>;
 
 interface Stat {
   value: number;
@@ -44,26 +44,26 @@ const DEFAULT_STATS: Stat[] = [
 ];
 
 interface Differentiator {
-  icon: LucideIcon;
+  icon: IconComponent;
   title: string;
   description: string;
 }
 
 const DEFAULT_DIFFERENTIATORS: Differentiator[] = [
   {
-    icon: Award,
+    icon: Award01,
     title: "IBM Business Partner Since 1990",
     description:
       "Over three decades of trusted expertise as an IBM Business Partner. We bring deep knowledge of IBM Power Systems, IBM i, and enterprise solutions to every engagement.",
   },
   {
-    icon: Server,
+    icon: Server01,
     title: "Enterprise-Grade Infrastructure",
     description:
-      "Our SOC 1-SSAE 18 certified data centers provide the reliability, security, and performance that enterprise workloads demand. Redundant power, cooling, and connectivity ensure maximum uptime.",
+      "Our SOC 2 Type II certified data centers provide the reliability, security, and performance that enterprise workloads demand. Redundant power, cooling, and connectivity ensure maximum uptime.",
   },
   {
-    icon: Layers,
+    icon: LayersThree01,
     title: "End-to-End Solutions",
     description:
       "From cloud hosting and disaster recovery to hardware procurement and managed services, we provide comprehensive technology solutions that cover your entire IT lifecycle.",
@@ -81,7 +81,7 @@ const DEFAULT_FAQS: FAQ[] = [
     id: "faq-1",
     question: "Why choose International Computer Exchange?",
     answer:
-      "International Computer Exchange has been an IBM Business Partner since 1990, providing over 35 years of enterprise technology expertise. We specialize in IBM Power Systems, cloud hosting, disaster recovery, and managed services. Our SOC 1-SSAE 18 certified data centers, combined with our deep technical knowledge and personalized service, make us a trusted partner for businesses that demand reliability and performance.",
+      "International Computer Exchange has been an IBM Business Partner since 1990, providing over 35 years of enterprise technology expertise. We specialize in IBM Power Systems, cloud hosting, disaster recovery, and managed services. Our SOC 2 Type II certified data centers, combined with our deep technical knowledge and personalized service, make us a trusted partner for businesses that demand reliability and performance.",
   },
   {
     id: "faq-2",
@@ -110,38 +110,38 @@ const DEFAULT_FAQS: FAQ[] = [
 ];
 
 interface Industry {
-  icon: LucideIcon;
+  icon: IconComponent;
   title: string;
   description: string;
 }
 
 const DEFAULT_INDUSTRIES: Industry[] = [
   {
-    icon: Factory,
+    icon: Building07,
     title: "Manufacturing & Logistics",
     description:
       "Powering supply chains and production systems with reliable IBM infrastructure and cloud solutions.",
   },
   {
-    icon: Landmark,
+    icon: Bank,
     title: "Financial Services",
     description:
       "Secure, compliant hosting and data protection for banks, credit unions, and financial institutions.",
   },
   {
-    icon: HeartPulse,
+    icon: ActivityHeart,
     title: "Healthcare",
     description:
       "HIPAA-ready infrastructure and managed services for healthcare providers and health systems.",
   },
   {
-    icon: ShieldCheck,
+    icon: ShieldTick,
     title: "Insurance",
     description:
       "High-availability platforms and disaster recovery for insurance carriers and agencies.",
   },
   {
-    icon: Scale,
+    icon: Scales01,
     title: "Legal & Professional Services",
     description:
       "Secure document management, reliable hosting, and IT support for law firms and professional organizations.",
@@ -149,26 +149,17 @@ const DEFAULT_INDUSTRIES: Industry[] = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/*  Animation variants                                                         */
+/*  Brand hairline divider                                                     */
 /* -------------------------------------------------------------------------- */
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" as const },
-  }),
-};
-
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: (i: number) => ({
-    opacity: 1,
-    scale: 1,
-    transition: { delay: i * 0.08, duration: 0.5, ease: "easeOut" as const },
-  }),
-};
+function BrandHairline() {
+  return (
+    <div
+      aria-hidden="true"
+      className="mx-auto h-px w-full max-w-container bg-gradient-to-r from-transparent via-brand-500/40 to-transparent"
+    />
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /*  Animated Counter                                                           */
@@ -184,9 +175,15 @@ function AnimatedCounter({
   inView: boolean;
 }) {
   const [count, setCount] = useState(0);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!inView) return;
+
+    if (reduceMotion) {
+      setCount(target);
+      return;
+    }
 
     let start = 0;
     const duration = 2000;
@@ -202,7 +199,7 @@ function AnimatedCounter({
     }, 16);
 
     return () => clearInterval(timer);
-  }, [inView, target]);
+  }, [inView, target, reduceMotion]);
 
   return (
     <span>
@@ -213,361 +210,416 @@ function AnimatedCounter({
 }
 
 /* -------------------------------------------------------------------------- */
+/*  FAQ Accordion Item                                                         */
+/* -------------------------------------------------------------------------- */
+
+function FAQItem({
+  faq,
+  isOpen,
+  onToggle,
+}: {
+  faq: FAQ;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <div className="not-first:-mt-px not-first:border-t not-first:border-secondary not-first:pt-6">
+      <h3>
+        <button
+          onClick={onToggle}
+          aria-expanded={isOpen}
+          className="flex w-full cursor-pointer items-start justify-between gap-2 rounded-md text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:outline-offset-2 md:gap-6"
+        >
+          <span className="text-md font-semibold text-primary">{faq.question}</span>
+
+          <span aria-hidden="true" className="flex size-6 items-center text-fg-quaternary">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line
+                className={cx("origin-center rotate-0 transition duration-150 ease-out", isOpen && "-rotate-90")}
+                x1="12"
+                y1="8"
+                x2="12"
+                y2="16"
+              ></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+          </span>
+        </button>
+      </h3>
+
+      <motion.div
+        className="overflow-hidden"
+        initial={false}
+        animate={{
+          height: isOpen ? "auto" : 0,
+          opacity: isOpen ? 1 : 0,
+        }}
+        transition={
+          reduceMotion
+            ? { duration: 0 }
+            : {
+                type: "spring",
+                damping: 24,
+                stiffness: 240,
+                bounce: 0.4,
+              }
+        }
+      >
+        <div className="pt-1 pr-8 md:pr-12">
+          <p className="text-md text-tertiary">{faq.answer}</p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Component                                                                  */
 /* -------------------------------------------------------------------------- */
 
-export default function WhyICEPage({ cmsData }: { cmsData?: Record<string, any> }) {
-  const stats = cmsData?.stats?.items ?? DEFAULT_STATS;
-  const differentiators = (cmsData?.differentiators?.items ?? DEFAULT_DIFFERENTIATORS).map((d: any) => ({
+export default function WhyICEPage({
+  cmsData,
+  orderedSections,
+}: {
+  cmsData?: Record<string, any>;
+  orderedSections?: CMSRenderableSection[];
+}) {
+  const reduceMotion = useReducedMotion();
+
+  const hero = cmsData?.hero ?? {};
+  const statsSection = cmsData?.stats ?? {};
+  const differentiatorsSection = cmsData?.differentiators ?? {};
+  const faqsSection = cmsData?.faqs ?? {};
+  const industriesSection = cmsData?.industries ?? {};
+  const finalCta = cmsData?.final_cta ?? cmsData?.cta ?? {};
+  const stats = statsSection.items ?? DEFAULT_STATS;
+  const differentiators = (differentiatorsSection.items ?? DEFAULT_DIFFERENTIATORS).map((d: any) => ({
     ...d,
     icon: typeof d.icon === "string" ? resolveIcon(d.icon) : d.icon,
   }));
-  const faqs = cmsData?.faqs?.items ?? DEFAULT_FAQS;
-  const industries = (cmsData?.industries?.items ?? DEFAULT_INDUSTRIES).map((d: any) => ({
+  const faqs = faqsSection.items ?? DEFAULT_FAQS;
+  const industries = (industriesSection.items ?? DEFAULT_INDUSTRIES).map((d: any) => ({
     ...d,
     icon: typeof d.icon === "string" ? resolveIcon(d.icon) : d.icon,
   }));
+  const extraSections = (orderedSections ?? []).filter(
+    (section) => !["hero", "stats", "differentiators", "faqs", "industries", "final_cta", "cta"].includes(section.section_key)
+  );
 
   const statsRef = useRef<HTMLDivElement>(null);
-  const diffRef = useRef<HTMLDivElement>(null);
-  const faqRef = useRef<HTMLDivElement>(null);
-  const industryRef = useRef<HTMLDivElement>(null);
-
   const statsInView = useInView(statsRef, { once: true, margin: "-100px" });
-  const diffInView = useInView(diffRef, { once: true, margin: "-100px" });
-  const faqInView = useInView(faqRef, { once: true, margin: "-100px" });
-  const industryInView = useInView(industryRef, {
-    once: true,
-    margin: "-100px",
-  });
+
+  // Track open FAQs by array index so each item toggles independently —
+  // CMS-provided items may not carry a unique `id`, which previously made
+  // every item share the same key and expand/collapse together.
+  const [openFaqs, setOpenFaqs] = useState<Set<number>>(new Set());
+  const toggleFaq = (index: number) => {
+    setOpenFaqs((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 };
+  const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
+  const viewportOnce = { once: true, margin: "-80px" } as const;
 
   return (
-    <main className="min-h-screen overflow-x-hidden">
+    <main className="min-h-screen bg-primary">
       {/* ================================================================= */}
       {/*  Page Hero                                                        */}
       {/* ================================================================= */}
-      <section className="relative min-h-[400px] flex items-center justify-center overflow-hidden">
-        {/* Video background */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 h-full w-full object-cover"
+      <section className="relative overflow-hidden bg-primary pt-8 pb-8 md:pt-12 md:pb-12">
+        {/* Subtle techy grid backdrop with a slow ambient pulse */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3"
+          animate={reduceMotion ? undefined : { opacity: [0.65, 1, 0.65] }}
+          transition={reduceMotion ? undefined : { duration: 10, repeat: Infinity, ease: "easeInOut" }}
         >
-          <source src="/videos/data_center.mp4" type="video/mp4" />
-        </video>
+          <BackgroundPattern pattern="grid" size="lg" />
+        </motion.div>
 
-        {/* Dark overlay */}
-        <div className="absolute inset-0 hero-overlay" />
-
-        {/* Grid pattern */}
-        <div className="absolute inset-0 grid-pattern opacity-30" />
-
-        {/* Content */}
-        <div className="relative z-10 text-center px-6 pt-20 lg:pt-24">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: "easeOut" as const }}
-            className="text-4xl md:text-5xl font-bold text-white mb-4"
-          >
-            Why <span className="gradient-text">ICE</span>
-          </motion.h1>
-
-          <motion.nav
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            aria-label="Breadcrumb"
-            className="flex items-center justify-center gap-2 text-sm text-slate-400"
-          >
-            <Link href="/" className="hover:text-sky-400 transition-colors">
-              Home
-            </Link>
-            <ChevronRight className="h-4 w-4 text-slate-600" />
-            <span className="text-sky-400">Why ICE</span>
-          </motion.nav>
-        </div>
-      </section>
-
-      {/* ================================================================= */}
-      {/*  Value Proposition Section                                        */}
-      {/* ================================================================= */}
-      <section className="section-padding" ref={statsRef}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Heading */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={statsInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-              Why Choose{" "}
-              <span className="gradient-text">
-                International Computer Exchange?
-              </span>
-            </h2>
-            <p className="text-slate-400 text-lg max-w-3xl mx-auto">
-              For over three decades, businesses have trusted ICE to deliver
-              reliable, enterprise-grade technology solutions backed by deep
-              expertise and unmatched service.
-            </p>
-          </motion.div>
-
-          {/* Stats grid */}
-          <motion.div
-            initial="hidden"
-            animate={statsInView ? "visible" : "hidden"}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6"
-          >
-            {stats.map((stat: any, i: number) => (
-              <motion.div
-                key={stat.label}
-                custom={i}
-                variants={scaleIn}
-                className="glass-card rounded-2xl p-8 text-center group"
+        <div className="relative mx-auto max-w-container px-4 md:px-8">
+          <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+            <motion.nav
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, ease: EASE }}
+              aria-label="Breadcrumb"
+              className="flex items-center gap-2 text-sm font-medium text-tertiary"
+            >
+              <Link
+                href="/"
+                className="rounded-xs outline-focus-ring transition hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                <div className="text-4xl md:text-5xl font-bold gradient-text mb-2">
-                  <AnimatedCounter
-                    target={stat.value}
-                    suffix={stat.suffix}
-                    inView={statsInView}
-                  />
-                </div>
-                <p className="text-slate-400 text-sm font-medium">
-                  {stat.label}
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
+                Home
+              </Link>
+              <ChevronRight className="size-4 text-fg-quaternary" />
+              <span className="text-brand-secondary">Why ICE</span>
+            </motion.nav>
+
+            <motion.h1
+              initial={hidden}
+              animate={visible}
+              transition={{ duration: 0.6, ease: EASE }}
+              className="mt-4 text-display-md font-semibold tracking-tight text-primary md:text-display-lg"
+            >
+              {hero.headline ?? "Why ICE"}
+            </motion.h1>
+
+            {hero.subheadline && (
+              <motion.p
+                initial={hidden}
+                animate={visible}
+                transition={{ delay: 0.15, duration: 0.5, ease: EASE }}
+                className="mt-4 text-lg text-tertiary md:mt-6 md:text-xl"
+              >
+                {hero.subheadline}
+              </motion.p>
+            )}
+          </div>
         </div>
       </section>
+
+      {/* ================================================================= */}
+      {/*  Value Proposition / Stats Section                                */}
+      {/* ================================================================= */}
+      <section className="bg-primary py-16 md:py-24" ref={statsRef}>
+        <div className="mx-auto max-w-container px-4 md:px-8">
+          <div className="flex flex-col gap-12 md:gap-16">
+            <motion.div
+              initial={hidden}
+              whileInView={visible}
+              viewport={viewportOnce}
+              transition={{ duration: 0.6, ease: EASE }}
+              className="flex w-full flex-col self-center text-center md:max-w-3xl"
+            >
+              <h2 className="text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+                {statsSection.heading ?? "Why Choose International Computer Exchange?"}
+              </h2>
+              <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">
+                {statsSection.description ??
+                  "For over three decades, businesses have trusted ICE to deliver reliable, enterprise-grade technology solutions backed by deep expertise and unmatched service."}
+              </p>
+            </motion.div>
+
+            <motion.dl
+              initial={hidden}
+              animate={statsInView ? visible : undefined}
+              transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
+              className="grid grid-cols-1 gap-8 rounded-2xl bg-secondary px-6 py-10 ring-1 ring-secondary ring-inset sm:grid-cols-2 md:grid-cols-4 md:p-16"
+            >
+              {stats.map((stat: any) => (
+                <div key={stat.label} className="flex flex-col-reverse gap-3 text-center">
+                  <dt className="text-lg font-semibold text-primary">{stat.label}</dt>
+                  <dd className="font-mono text-display-lg font-semibold tracking-tight text-brand-tertiary_alt tabular-nums md:text-display-xl">
+                    <AnimatedCounter target={stat.value} suffix={stat.suffix} inView={statsInView} />
+                  </dd>
+                </div>
+              ))}
+            </motion.dl>
+          </div>
+        </div>
+      </section>
+
+      <BrandHairline />
 
       {/* ================================================================= */}
       {/*  Key Differentiators                                              */}
       {/* ================================================================= */}
-      <section className="section-padding bg-[#0a1020]/30" ref={diffRef}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="bg-primary py-16 md:py-24">
+        <div className="mx-auto max-w-container px-4 md:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={diffInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            initial={hidden}
+            whileInView={visible}
+            viewport={viewportOnce}
+            transition={{ duration: 0.6, ease: EASE }}
+            className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              What Sets Us <span className="gradient-text">Apart</span>
+            <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">
+              Differentiators
+            </span>
+            <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+              {differentiatorsSection.heading ?? "What Sets Us Apart"}
             </h2>
           </motion.div>
 
-          <motion.div
-            initial="hidden"
-            animate={diffInView ? "visible" : "hidden"}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          >
+          <ul className="mt-12 grid w-full grid-cols-1 justify-items-center gap-x-8 gap-y-10 sm:grid-cols-2 md:mt-16 md:gap-y-16 lg:grid-cols-3">
             {differentiators.map((item: any, i: number) => {
               const Icon = item.icon;
               return (
-                <motion.div
+                <motion.li
                   key={item.title}
-                  custom={i}
-                  variants={fadeUp}
+                  initial={hidden}
+                  whileInView={visible}
+                  viewport={viewportOnce}
+                  transition={{ duration: 0.5, delay: i * 0.06, ease: EASE }}
                 >
-                  <TiltCard>
-                    <div className="glass-card rounded-2xl p-8 group h-full">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-sky-400/10 text-sky-400 mb-6 transition-colors duration-300 group-hover:bg-sky-400/20">
-                        <Icon className="h-7 w-7" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-white mb-3">
-                        {item.title}
-                      </h3>
-                      <p className="text-slate-400 leading-relaxed">
-                        {item.description}
-                      </p>
+                  <div className="flex max-w-sm flex-col items-center gap-4 text-center">
+                    <FeaturedIcon icon={Icon} size="lg" color="brand" theme="light" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-primary">{item.title}</h3>
+                      <p className="mt-1 text-md text-tertiary">{item.description}</p>
                     </div>
-                  </TiltCard>
-                </motion.div>
+                  </div>
+                </motion.li>
               );
             })}
-          </motion.div>
+          </ul>
         </div>
       </section>
+
+      <BrandHairline />
 
       {/* ================================================================= */}
       {/*  FAQ Accordion Section                                            */}
       {/* ================================================================= */}
-      <section className="section-padding" ref={faqRef}>
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <section className="bg-primary py-16 md:py-24">
+        <div className="mx-auto max-w-container px-4 md:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={faqInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            initial={hidden}
+            whileInView={visible}
+            viewport={viewportOnce}
+            transition={{ duration: 0.6, ease: EASE }}
+            className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Frequently Asked{" "}
-              <span className="gradient-text">Questions</span>
+            <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">FAQ</span>
+            <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+              {faqsSection.heading ?? "Frequently Asked Questions"}
             </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Get answers to common questions about our services, capabilities,
-              and how we can help your business.
+            <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">
+              {faqsSection.description ??
+                "Get answers to common questions about our services, capabilities, and how we can help your business."}
             </p>
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={faqInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            initial={hidden}
+            whileInView={visible}
+            viewport={viewportOnce}
+            transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
+            className="mx-auto mt-12 max-w-3xl md:mt-16"
           >
-            <Accordion.Root type="single" collapsible className="space-y-4">
+            <div className="flex flex-col gap-8">
               {faqs.map((faq: any, i: number) => (
-                <motion.div
-                  key={faq.id}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={faqInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: 0.3 + i * 0.1, duration: 0.5 }}
-                >
-                  <Accordion.Item
-                    value={faq.id}
-                    className="glass-card rounded-xl overflow-hidden border-l-2 border-l-sky-500/50"
-                  >
-                    <Accordion.Trigger className="w-full flex items-center justify-between px-6 py-5 text-left group cursor-pointer">
-                      <span className="text-white font-medium text-base pr-4 group-hover:text-sky-400 transition-colors">
-                        {faq.question}
-                      </span>
-                      <ChevronDown className="h-5 w-5 text-sky-400 shrink-0 transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                    </Accordion.Trigger>
-                    <Accordion.Content className="overflow-hidden data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp">
-                      <div className="px-6 pb-5 pt-0">
-                        <div className="gradient-line mb-4" />
-                        <p className="text-slate-400 leading-relaxed">
-                          {faq.answer}
-                        </p>
-                      </div>
-                    </Accordion.Content>
-                  </Accordion.Item>
-                </motion.div>
+                <FAQItem
+                  key={faq.id ?? faq.question ?? i}
+                  faq={faq}
+                  isOpen={openFaqs.has(i)}
+                  onToggle={() => toggleFaq(i)}
+                />
               ))}
-            </Accordion.Root>
+            </div>
           </motion.div>
-
-          {/* Accordion animations defined in globals.css */}
         </div>
       </section>
+
+      <BrandHairline />
 
       {/* ================================================================= */}
       {/*  Industries Section                                               */}
       {/* ================================================================= */}
-      <section className="section-padding bg-[#0a1020]/30" ref={industryRef}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="bg-primary py-16 md:py-24">
+        <div className="mx-auto max-w-container px-4 md:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={industryInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            initial={hidden}
+            whileInView={visible}
+            viewport={viewportOnce}
+            transition={{ duration: 0.6, ease: EASE }}
+            className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Industries <span className="gradient-text">We Serve</span>
+            <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">
+              Industries
+            </span>
+            <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+              {industriesSection.heading ?? "Industries We Serve"}
             </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Trusted by organizations across critical industries that depend on
-              reliable, secure technology infrastructure.
+            <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">
+              {industriesSection.description ??
+                "Trusted by organizations across critical industries that depend on reliable, secure technology infrastructure."}
             </p>
           </motion.div>
 
-          <motion.div
-            initial="hidden"
-            animate={industryInView ? "visible" : "hidden"}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
+          <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-16 lg:grid-cols-3">
             {industries.map((industry: any, i: number) => {
               const Icon = industry.icon;
               return (
-                <motion.div
+                <motion.li
                   key={industry.title}
-                  custom={i}
-                  variants={scaleIn}
+                  initial={hidden}
+                  whileInView={visible}
+                  viewport={viewportOnce}
+                  transition={{ duration: 0.5, delay: i * 0.06, ease: EASE }}
+                  className="flex flex-col gap-4 rounded-2xl bg-secondary p-6 ring-1 ring-secondary transition duration-200 ease-out ring-inset hover:shadow-lg hover:ring-brand motion-safe:hover:-translate-y-1 md:p-8 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
                 >
-                  <TiltCard>
-                    <div className="glass-card rounded-2xl p-8 group h-full">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-400/10 text-sky-400 mb-5 transition-colors duration-300 group-hover:bg-sky-400/20">
-                        <Icon className="h-6 w-6" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        {industry.title}
-                      </h3>
-                      <p className="text-slate-400 text-sm leading-relaxed">
-                        {industry.description}
-                      </p>
-                    </div>
-                  </TiltCard>
-                </motion.div>
+                  <FeaturedIcon icon={Icon} size="lg" color="brand" theme="light" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-primary">{industry.title}</h3>
+                    <p className="mt-1 text-md text-tertiary">{industry.description}</p>
+                  </div>
+                </motion.li>
               );
             })}
-          </motion.div>
+          </ul>
         </div>
       </section>
+
+      <GenericCMSSections sections={extraSections} />
 
       {/* ================================================================= */}
       {/*  CTA Section                                                      */}
       {/* ================================================================= */}
-      <section className="section-padding">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="bg-primary py-16 md:py-24">
+        <div className="mx-auto max-w-container px-4 md:px-8">
           <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            className="glass-card rounded-2xl p-10 md:p-16 text-center relative overflow-hidden"
+            initial={hidden}
+            whileInView={visible}
+            viewport={viewportOnce}
+            transition={{ duration: 0.6, ease: EASE }}
+            className="flex flex-col gap-x-8 gap-y-8 rounded-2xl bg-secondary px-6 py-10 ring-1 ring-secondary ring-inset lg:flex-row lg:items-center lg:p-16"
           >
-            {/* Background glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-blue-500/5 pointer-events-none" />
-
-            <div className="relative z-10">
-              <motion.div
-                custom={0}
-                variants={fadeUp}
-                className="flex justify-center mb-6"
+            <div className="flex max-w-3xl flex-1 flex-col">
+              <h2 className="text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+                {finalCta.heading ?? "Ready to Get Started?"}
+              </h2>
+              <p className="mt-4 text-lg text-tertiary md:mt-5 lg:text-xl">
+                {finalCta.description ??
+                  "Let our team of experts help you find the right technology solution for your business. Contact us today for a free consultation."}
+              </p>
+            </div>
+            <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start">
+              <Button
+                color="secondary"
+                size="xl"
+                href={finalCta.cta_secondary?.href ?? finalCta.ctaSecondary?.href ?? "/solutions"}
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-400/10 text-sky-400">
-                  <CheckCircle className="h-8 w-8" />
-                </div>
-              </motion.div>
-
-              <motion.h2
-                custom={1}
-                variants={fadeUp}
-                className="text-3xl md:text-4xl font-bold text-white mb-4"
+                {finalCta.cta_secondary?.label ?? finalCta.ctaSecondary?.label ?? "Explore Solutions"}
+              </Button>
+              <Button
+                size="xl"
+                href={finalCta.cta_primary?.href ?? finalCta.ctaPrimary?.href ?? "/contact"}
+                iconTrailing={ArrowRight}
               >
-                Ready to{" "}
-                <span className="gradient-text">Get Started?</span>
-              </motion.h2>
-
-              <motion.p
-                custom={2}
-                variants={fadeUp}
-                className="text-slate-400 text-lg max-w-2xl mx-auto mb-8"
-              >
-                Let our team of experts help you find the right technology
-                solution for your business. Contact us today for a free
-                consultation.
-              </motion.p>
-
-              <motion.div
-                custom={3}
-                variants={fadeUp}
-                className="flex flex-col sm:flex-row items-center justify-center gap-4"
-              >
-                <Link href="/contact" className="btn-primary">
-                  <span className="flex items-center gap-2">
-                    Contact Us Today
-                    <ArrowRight className="h-4 w-4" />
-                  </span>
-                </Link>
-                <Link href="/solutions" className="btn-outline">
-                  Explore Solutions
-                </Link>
-              </motion.div>
+                {finalCta.cta_primary?.label ?? finalCta.ctaPrimary?.label ?? "Contact Us Today"}
+              </Button>
             </div>
           </motion.div>
         </div>

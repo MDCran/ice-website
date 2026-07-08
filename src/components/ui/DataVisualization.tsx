@@ -11,7 +11,7 @@ interface MetricRing {
 }
 
 const metrics: MetricRing[] = [
-  { label: "Uptime SLA", value: 99.999, suffix: "%", color: "#049bfb" },
+  { label: "Uptime SLA", value: 99.99, suffix: "%", color: "#049bfb" },
   { label: "Avg Response", value: 12, suffix: "ms", color: "#0474bc" },
   { label: "Threats Blocked", value: 99, suffix: "%", color: "#8b5cf6" },
   { label: "Client Satisfaction", value: 98, suffix: "%", color: "#049bfb" },

@@ -921,7 +921,7 @@ function ProposalContent() {
           <Prose>
             <p>International Computer Exchange (ICE), established in 1990, is an IBM Business Partner specializing in IBM Power Systems infrastructure, IBM i hosting, disaster recovery, and managed services.</p>
             <p>For more than three decades, ICE has supported organizations that rely on IBM i to operate critical business systems, providing infrastructure platforms designed for reliability, security, and long-term operational stability.</p>
-            <p>ICE hosted platforms operate from multiple enterprise-grade data centers designed for high availability and resiliency. These facilities provide redundant power, cooling, and network infrastructure and operate in accordance with SOC-audited standards including SOC 1 and SOC 2.</p>
+            <p>ICE hosted platforms operate from multiple enterprise-grade data centers designed for high availability and resiliency. These facilities provide redundant power, cooling, and network infrastructure and operate in accordance with SOC-audited standards including SOC 2 Type II.</p>
           </Prose>
         </section>
 

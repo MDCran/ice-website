@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { UserPlus } from "lucide-react";
+import { UserPlus01 } from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { Table, TableCard } from "@/components/application/table/table";
 
 export default async function SubscribersPage() {
   const supabase = await createClient();
@@ -10,7 +13,7 @@ export default async function SubscribersPage() {
 
   if (error) {
     return (
-      <div className="text-red-400">
+      <div className="text-sm text-error-primary">
         Failed to load subscribers: {error.message}
       </div>
     );
@@ -18,79 +21,62 @@ export default async function SubscribersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold admin-text">
+          <h1 className="text-display-xs font-semibold text-primary">
             Newsletter Subscribers
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="mt-1 text-sm text-tertiary">
             View newsletter subscriber information
           </p>
         </div>
-        <span className="text-sm text-slate-400">
+        <Badge size="md" color="gray">
           {subscribers?.length ?? 0} subscribers
-        </span>
+        </Badge>
       </div>
 
       {!subscribers || subscribers.length === 0 ? (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-12 text-center">
-          <UserPlus size={48} className="mx-auto text-slate-600 mb-4" />
-          <p className="text-slate-400 text-lg mb-2">No subscribers yet</p>
-          <p className="text-slate-500 text-sm">
+        <div className="flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-16 text-center shadow-xs ring-1 ring-secondary">
+          <FeaturedIcon color="gray" theme="modern" size="lg" icon={UserPlus01} />
+          <p className="mt-4 text-md font-semibold text-primary">No subscribers yet</p>
+          <p className="mt-1 text-sm text-tertiary">
             Newsletter subscribers will appear here.
           </p>
         </div>
       ) : (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm min-w-[700px]">
-            <thead>
-              <tr className="border-b border-white/10 text-left">
-                <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Company
-                </th>
-                <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Phone
-                </th>
-                <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  SMS Consent
-                </th>
-                <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Date
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {subscribers.map((sub, i) => (
-                <tr
-                  key={sub.id}
-                  className={`hover:bg-white/[0.03] transition-colors ${
-                    i % 2 === 0 ? "" : "bg-white/[0.01]"
-                  }`}
-                >
-                  <td className="px-6 py-4 admin-text font-medium whitespace-nowrap">
+        <TableCard.Root size="sm">
+          <Table aria-label="Newsletter subscribers" size="sm">
+            <Table.Header>
+              <Table.Head id="name" label="Name" isRowHeader />
+              <Table.Head id="company" label="Company" />
+              <Table.Head id="phone" label="Phone" />
+              <Table.Head id="sms" label="SMS Consent" />
+              <Table.Head id="date" label="Date" />
+            </Table.Header>
+            <Table.Body>
+              {subscribers.map((sub) => (
+                <Table.Row key={sub.id} id={sub.id}>
+                  <Table.Cell className="whitespace-nowrap text-sm font-medium text-primary">
                     {sub.name ?? "—"}
-                  </td>
-                  <td className="px-6 py-4 text-slate-400 whitespace-nowrap">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {sub.company ?? "—"}
-                  </td>
-                  <td className="px-6 py-4 text-slate-400 whitespace-nowrap">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {sub.phone ?? "—"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {sub.sms_consent ? (
-                      <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-300">
+                      <Badge size="sm" color="success">
                         Yes
-                      </span>
+                      </Badge>
                     ) : (
-                      <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-slate-500/20 text-slate-400">
+                      <Badge size="sm" color="gray">
                         No
-                      </span>
+                      </Badge>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-slate-400 text-xs whitespace-nowrap">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap text-xs">
                     {sub.created_at
                       ? new Date(sub.created_at).toLocaleDateString("en-US", {
                           month: "short",
@@ -98,12 +84,12 @@ export default async function SubscribersPage() {
                           year: "numeric",
                         })
                       : "—"}
-                  </td>
-                </tr>
+                  </Table.Cell>
+                </Table.Row>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </Table.Body>
+          </Table>
+        </TableCard.Root>
       )}
     </div>
   );

@@ -1,18 +1,367 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { type FormEvent, useEffect, useId, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
-import { MessageCircle, X, Send, CheckCircle, AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, MessageChatCircle, Send01, XClose } from "@untitledui/icons";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { Header as AriaHeader, ListBoxSection as AriaListBoxSection } from "react-aria-components";
+import { Button } from "@/components/base/buttons/button";
+import { CloseButton } from "@/components/base/buttons/close-button";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { Input } from "@/components/base/input/input";
+import { Label } from "@/components/base/input/label";
+import { Select, type SelectItemType } from "@/components/base/select/select";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { cx } from "@/utils/cx";
+import { pushEvent } from "@/lib/analytics";
 
-const SERVICE_OPTIONS = [
-  "Managed Cloud Services",
-  "Managed Data Protection",
-  "Managed Security",
-  "Managed Services",
-  "Hardware & Resale",
-  "Other",
+/* ------------------------------------------------------------------ */
+/*  ICE service catalog (shared by the widget + contact page form)    */
+/* ------------------------------------------------------------------ */
+
+export type ServiceGroup = { label: string; options: string[] };
+
+export const GENERAL_INQUIRY = "General Inquiry";
+
+/** The real ICE service catalog, grouped by pillar. */
+export const SERVICE_CATALOG: ServiceGroup[] = [
+  {
+    label: "Managed Cloud Services",
+    options: ["Managed Cloud Hosting", "Managed Private Cloud", "Managed Hybrid Cloud", "Cloud Migration"],
+  },
+  {
+    label: "Managed Data Protection",
+    options: ["Backup as a Service", "Disaster Recovery", "High Availability", "Ransomware Recovery"],
+  },
+  {
+    label: "Managed Security",
+    options: ["IBM i Security", "Protection Suite", "Security Monitoring", "Threat Detection & Response", "Endpoint Security"],
+  },
+  {
+    label: "Managed Services",
+    options: ["Managed Microsoft", "Automation Suite", "Systems Management", "IBM Power VS"],
+  },
 ];
+
+/** Default select structure: the full catalog plus a standalone "General Inquiry". */
+export const DEFAULT_SERVICE_GROUPS: ServiceGroup[] = [...SERVICE_CATALOG, { label: "", options: [GENERAL_INQUIRY] }];
+
+const SERVICE_TO_PILLAR = new Map<string, string>();
+for (const group of SERVICE_CATALOG) {
+  for (const option of group.options) {
+    SERVICE_TO_PILLAR.set(option.toLowerCase(), group.label);
+  }
+}
+
+/**
+ * Group a flat list of service names (e.g. from the CMS `service_options.options`
+ * field) into the ICE pillars. Unknown services are kept as ungrouped options so
+ * CMS-managed lists keep working. With no list provided, returns the full catalog.
+ */
+export function groupServiceOptions(options?: unknown): ServiceGroup[] {
+  if (!Array.isArray(options) || options.length === 0) return DEFAULT_SERVICE_GROUPS;
+
+  const grouped = new Map<string, string[]>();
+  const ungrouped: string[] = [];
+
+  for (const raw of options) {
+    if (typeof raw !== "string" || !raw.trim()) continue;
+    const option = raw.trim();
+    const pillar = SERVICE_TO_PILLAR.get(option.toLowerCase());
+    if (pillar) {
+      const list = grouped.get(pillar) ?? [];
+      list.push(option);
+      grouped.set(pillar, list);
+    } else {
+      ungrouped.push(option);
+    }
+  }
+
+  const result: ServiceGroup[] = [];
+  for (const group of SERVICE_CATALOG) {
+    const list = grouped.get(group.label);
+    if (list?.length) result.push({ label: group.label, options: list });
+  }
+  if (ungrouped.length) result.push({ label: "", options: ungrouped });
+
+  return result.length ? result : DEFAULT_SERVICE_GROUPS;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Grouped service select (Untitled UI Select, react-aria based)     */
+/* ------------------------------------------------------------------ */
+
+interface ServiceSelectProps {
+  label?: string;
+  placeholder?: string;
+  size?: "sm" | "md";
+  name?: string;
+  value: string;
+  onChange: (value: string) => void;
+  groups?: ServiceGroup[];
+}
+
+/** Sectioned service dropdown built on the Untitled UI Select (react-aria). */
+export function ServiceSelect({
+  label = "Service Interested In",
+  placeholder = "Select a service...",
+  size = "md",
+  name,
+  value,
+  onChange,
+  groups = DEFAULT_SERVICE_GROUPS,
+}: ServiceSelectProps) {
+  return (
+    <Select
+      name={name}
+      label={label}
+      size={size}
+      placeholder={placeholder}
+      selectedKey={value === "" ? null : value}
+      onSelectionChange={(key) => onChange(key == null ? "" : String(key))}
+      className="w-full"
+    >
+      {groups.map((group, index) =>
+        group.label ? (
+          <AriaListBoxSection
+            key={group.label}
+            id={group.label}
+            className={cx("pb-0.5", index > 0 && "mt-1 border-t border-secondary pt-1")}
+          >
+            <AriaHeader className="px-3.5 pt-1.5 pb-0.5 font-mono text-xs font-semibold tracking-widest text-quaternary uppercase">
+              {group.label}
+            </AriaHeader>
+            {group.options.map((option) => (
+              <Select.Item key={option} id={option} label={option} />
+            ))}
+          </AriaListBoxSection>
+        ) : (
+          group.options.map((option, optionIndex) => (
+            <Select.Item
+              key={`${index}-${option}`}
+              id={option}
+              label={option}
+              className={cx(index > 0 && optionIndex === 0 && "mt-1 border-t border-secondary pt-1")}
+            />
+          ))
+        ),
+      )}
+    </Select>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Phone field with country dial-code selector                       */
+/* ------------------------------------------------------------------ */
+
+export type Country = { code: string; name: string; dial: string; flag: string };
+
+/** Common countries for the dial-code selector (US pinned first). */
+export const COUNTRIES: Country[] = [
+  { code: "US", name: "United States", dial: "+1", flag: "🇺🇸" },
+  { code: "CA", name: "Canada", dial: "+1", flag: "🇨🇦" },
+  { code: "GB", name: "United Kingdom", dial: "+44", flag: "🇬🇧" },
+  { code: "AR", name: "Argentina", dial: "+54", flag: "🇦🇷" },
+  { code: "AU", name: "Australia", dial: "+61", flag: "🇦🇺" },
+  { code: "AT", name: "Austria", dial: "+43", flag: "🇦🇹" },
+  { code: "BE", name: "Belgium", dial: "+32", flag: "🇧🇪" },
+  { code: "BR", name: "Brazil", dial: "+55", flag: "🇧🇷" },
+  { code: "CL", name: "Chile", dial: "+56", flag: "🇨🇱" },
+  { code: "CN", name: "China", dial: "+86", flag: "🇨🇳" },
+  { code: "CO", name: "Colombia", dial: "+57", flag: "🇨🇴" },
+  { code: "CR", name: "Costa Rica", dial: "+506", flag: "🇨🇷" },
+  { code: "CZ", name: "Czechia", dial: "+420", flag: "🇨🇿" },
+  { code: "DK", name: "Denmark", dial: "+45", flag: "🇩🇰" },
+  { code: "DO", name: "Dominican Republic", dial: "+1", flag: "🇩🇴" },
+  { code: "EG", name: "Egypt", dial: "+20", flag: "🇪🇬" },
+  { code: "FI", name: "Finland", dial: "+358", flag: "🇫🇮" },
+  { code: "FR", name: "France", dial: "+33", flag: "🇫🇷" },
+  { code: "DE", name: "Germany", dial: "+49", flag: "🇩🇪" },
+  { code: "GR", name: "Greece", dial: "+30", flag: "🇬🇷" },
+  { code: "HK", name: "Hong Kong", dial: "+852", flag: "🇭🇰" },
+  { code: "HU", name: "Hungary", dial: "+36", flag: "🇭🇺" },
+  { code: "IN", name: "India", dial: "+91", flag: "🇮🇳" },
+  { code: "ID", name: "Indonesia", dial: "+62", flag: "🇮🇩" },
+  { code: "IE", name: "Ireland", dial: "+353", flag: "🇮🇪" },
+  { code: "IL", name: "Israel", dial: "+972", flag: "🇮🇱" },
+  { code: "IT", name: "Italy", dial: "+39", flag: "🇮🇹" },
+  { code: "JM", name: "Jamaica", dial: "+1", flag: "🇯🇲" },
+  { code: "JP", name: "Japan", dial: "+81", flag: "🇯🇵" },
+  { code: "KE", name: "Kenya", dial: "+254", flag: "🇰🇪" },
+  { code: "MY", name: "Malaysia", dial: "+60", flag: "🇲🇾" },
+  { code: "MX", name: "Mexico", dial: "+52", flag: "🇲🇽" },
+  { code: "NL", name: "Netherlands", dial: "+31", flag: "🇳🇱" },
+  { code: "NZ", name: "New Zealand", dial: "+64", flag: "🇳🇿" },
+  { code: "NG", name: "Nigeria", dial: "+234", flag: "🇳🇬" },
+  { code: "NO", name: "Norway", dial: "+47", flag: "🇳🇴" },
+  { code: "PA", name: "Panama", dial: "+507", flag: "🇵🇦" },
+  { code: "PE", name: "Peru", dial: "+51", flag: "🇵🇪" },
+  { code: "PH", name: "Philippines", dial: "+63", flag: "🇵🇭" },
+  { code: "PL", name: "Poland", dial: "+48", flag: "🇵🇱" },
+  { code: "PT", name: "Portugal", dial: "+351", flag: "🇵🇹" },
+  { code: "RO", name: "Romania", dial: "+40", flag: "🇷🇴" },
+  { code: "SA", name: "Saudi Arabia", dial: "+966", flag: "🇸🇦" },
+  { code: "SG", name: "Singapore", dial: "+65", flag: "🇸🇬" },
+  { code: "ZA", name: "South Africa", dial: "+27", flag: "🇿🇦" },
+  { code: "KR", name: "South Korea", dial: "+82", flag: "🇰🇷" },
+  { code: "ES", name: "Spain", dial: "+34", flag: "🇪🇸" },
+  { code: "SE", name: "Sweden", dial: "+46", flag: "🇸🇪" },
+  { code: "CH", name: "Switzerland", dial: "+41", flag: "🇨🇭" },
+  { code: "TW", name: "Taiwan", dial: "+886", flag: "🇹🇼" },
+  { code: "TH", name: "Thailand", dial: "+66", flag: "🇹🇭" },
+  { code: "TR", name: "Türkiye", dial: "+90", flag: "🇹🇷" },
+  { code: "UA", name: "Ukraine", dial: "+380", flag: "🇺🇦" },
+  { code: "AE", name: "United Arab Emirates", dial: "+971", flag: "🇦🇪" },
+  { code: "VN", name: "Vietnam", dial: "+84", flag: "🇻🇳" },
+];
+
+/** Dropdown items for the dial-code selector, e.g. "🇺🇸 +1" (keyed by country code). */
+const COUNTRY_ITEMS: SelectItemType[] = COUNTRIES.map((country) => ({
+  id: country.code,
+  label: `${country.flag} ${country.dial}`,
+}));
+
+/** Resolve the visitor's country from browser locale; falls back to US. */
+export function detectDefaultCountry(): string {
+  try {
+    const candidates: string[] = [];
+    if (typeof navigator !== "undefined") {
+      if (Array.isArray(navigator.languages)) candidates.push(...navigator.languages);
+      if (navigator.language) candidates.push(navigator.language);
+    }
+    const resolved = Intl.DateTimeFormat().resolvedOptions().locale;
+    if (resolved) candidates.push(resolved);
+
+    for (const tag of candidates) {
+      try {
+        const region = new Intl.Locale(tag).maximize().region;
+        if (region && COUNTRIES.some((c) => c.code === region)) return region;
+      } catch {
+        // Ignore malformed locale tags
+      }
+    }
+  } catch {
+    // Intl unavailable — fall through
+  }
+  return "US";
+}
+
+interface PhoneFieldProps {
+  label?: string;
+  placeholder?: string;
+  size?: "sm" | "md";
+  isRequired?: boolean;
+  /** Composed full value, e.g. "+1 (561) 555-0100". Used to reset the field when cleared. */
+  value: string;
+  /** Called with the composed full number (dial code + national number) or "" when empty. */
+  onChange: (value: string) => void;
+}
+
+/**
+ * Phone input: a compact Untitled UI Select with country dial codes ("🇺🇸 +1")
+ * next to a full-width tel input. Defaults the country from the visitor's
+ * locale and submits the full number with dial code (e.g. "+1 (561) 555-0100").
+ */
+export function PhoneField({
+  label = "Phone number",
+  placeholder = "(561) 555-0100",
+  size = "md",
+  isRequired,
+  value,
+  onChange,
+}: PhoneFieldProps) {
+  const id = useId();
+  const inputId = `phone-field-${id}`;
+  const [countryCode, setCountryCode] = useState("US");
+  const [national, setNational] = useState("");
+
+  // Default the dial code from the visitor's locale (client-only).
+  useEffect(() => {
+    setCountryCode(detectDefaultCountry());
+  }, []);
+
+  // When the parent form resets (value cleared after submit), clear the input.
+  useEffect(() => {
+    if (!value) setNational("");
+  }, [value]);
+
+  const country = COUNTRIES.find((c) => c.code === countryCode) ?? COUNTRIES[0];
+
+  const emit = (dial: string, nationalNumber: string) => {
+    const trimmed = nationalNumber.trim();
+    onChange(trimmed ? `${dial} ${trimmed}` : "");
+  };
+
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      <Label htmlFor={inputId} isRequired={isRequired}>
+        {label}
+      </Label>
+      <div className="flex w-full items-start gap-2">
+        {/* Country dial-code selector */}
+        <Select
+          aria-label="Country dial code"
+          size={size}
+          className="w-28 shrink-0"
+          popoverClassName="w-max min-w-(--trigger-width)"
+          selectedKey={country.code}
+          onSelectionChange={(key) => {
+            const next = COUNTRIES.find((c) => c.code === key) ?? COUNTRIES[0];
+            setCountryCode(next.code);
+            emit(next.dial, national);
+          }}
+          items={COUNTRY_ITEMS}
+        >
+          {(item) => <Select.Item id={item.id} label={item.label} />}
+        </Select>
+
+        {/* National number */}
+        <Input
+          id={inputId}
+          aria-label={label}
+          size={size}
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
+          isRequired={isRequired}
+          placeholder={placeholder}
+          value={national}
+          onChange={(next) => {
+            const sanitized = next.replace(/[^\d\s().-]/g, "");
+            setNational(sanitized);
+            emit(country.dial, sanitized);
+          }}
+          className="flex-1"
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Form state                                                        */
+/* ------------------------------------------------------------------ */
+
+type ContactFormState = {
+  name: string;
+  email: string;
+  company: string;
+  phone: string;
+  service: string;
+  message: string;
+  smsConsent: boolean;
+};
+
+const INITIAL_FORM: ContactFormState = {
+  name: "",
+  email: "",
+  company: "",
+  phone: "",
+  service: "",
+  message: "",
+  smsConsent: false,
+};
 
 /* ------------------------------------------------------------------ */
 /*  Floating Contact Widget                                           */
@@ -23,16 +372,9 @@ export default function ContactWidget() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const shouldReduceMotion = useReducedMotion();
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    company: "",
-    phone: "",
-    service: "",
-    message: "",
-    smsConsent: false,
-  });
+  const [form, setForm] = useState<ContactFormState>(INITIAL_FORM);
 
   /* ── Welcome bubble logic (first visit only, persists until interaction) */
 
@@ -58,15 +400,8 @@ export default function ContactWidget() {
 
   /* ── Form helpers ───────────────────────────────────────────────── */
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) {
-    const target = e.target;
-    const value =
-      target instanceof HTMLInputElement && target.type === "checkbox"
-        ? target.checked
-        : target.value;
-    setForm((prev) => ({ ...prev, [target.name]: value }));
+  function setField<K extends keyof ContactFormState>(name: K, value: ContactFormState[K]) {
+    setForm((prev) => ({ ...prev, [name]: value }));
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -86,8 +421,9 @@ export default function ContactWidget() {
         throw new Error(data?.error || "Something went wrong. Please try again.");
       }
 
+      pushEvent("contact_submitted", { form: "widget", service: form.service });
       setStatus("success");
-      setForm({ name: "", email: "", company: "", phone: "", service: "", message: "", smsConsent: false });
+      setForm(INITIAL_FORM);
     } catch (err) {
       setStatus("error");
       setErrorMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -103,78 +439,87 @@ export default function ContactWidget() {
     }
   }
 
-  /* ── Shared input classes ─────────────────────────────────────── */
+  /* ── Motion presets (respect reduced motion) ────────────────────── */
 
-  const inputClass =
-    "w-full bg-white/[0.06] dark:bg-white/[0.06] border border-slate-300 dark:border-white/20 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-sky-500 dark:focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/20 dark:focus:ring-sky-400/20 transition-all duration-300";
+  const panelMotion = shouldReduceMotion
+    ? {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.2 },
+      }
+    : {
+        initial: { opacity: 0, y: 20, scale: 0.94 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: 16, scale: 0.96 },
+        transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const },
+      };
 
-  const selectClass =
-    "w-full bg-white dark:bg-[#0f1729] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 dark:focus:border-sky-400/40 focus:ring-2 focus:ring-sky-500/20 dark:focus:ring-sky-400/20 transition-all duration-300 appearance-none cursor-pointer [color-scheme:dark]";
+  const bubbleMotion = shouldReduceMotion
+    ? {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.2 },
+      }
+    : {
+        initial: { opacity: 0, y: 8, scale: 0.9 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: 8, scale: 0.9 },
+        transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const },
+      };
 
   /* ── Render ─────────────────────────────────────────────────────── */
 
   return (
-    <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end">
+    <div data-contact-widget className="fixed right-6 bottom-6 z-[60] flex flex-col items-end">
       <AnimatePresence>
         {/* ── Contact Panel ────────────────────────────────────────── */}
         {isOpen && (
           <motion.div
             key="contact-panel"
-            initial={{ opacity: 0, y: 16, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.95 }}
-            transition={{ duration: 0.25, ease: "easeOut" as const }}
-            className="mb-4 w-[380px] max-w-[calc(100vw-3rem)] rounded-2xl border border-sky-500/15 dark:border-sky-500/15 border-slate-200 bg-white dark:bg-[#020617]/95 backdrop-blur-2xl shadow-2xl dark:shadow-sky-500/10 shadow-slate-200/60 overflow-hidden"
+            {...panelMotion}
+            className="mb-4 w-95 max-w-[calc(100vw-3rem)] origin-bottom-right overflow-hidden rounded-2xl bg-primary/90 shadow-xl ring-1 ring-secondary backdrop-blur-xl dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
           >
-            {/* Top gradient line */}
-            <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
-
             {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-1">
+            <div className="flex items-start justify-between gap-2 px-5 pt-5">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Send Us a Message</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                  We&apos;ll get back to you within 2-3 business days.
-                </p>
+                <h3 className="text-lg font-semibold text-primary">Send Us a Message</h3>
+                <p className="mt-1 text-sm text-tertiary">We&apos;ll get back to you within 2-3 business days.</p>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors"
-                aria-label="Close contact form"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <CloseButton size="sm" label="Close contact form" onPress={() => setIsOpen(false)} className="-mt-1.5 -mr-1.5" />
             </div>
 
+            {/* Brand hairline */}
+            <div className="mt-4 h-px w-full bg-gradient-to-r from-transparent via-brand-500/40 to-transparent" />
+
             {/* Body */}
-            <div className="px-5 pb-5 pt-4 max-h-[70vh] overflow-y-auto">
+            <div className="max-h-[70vh] overflow-y-auto px-5 pt-4 pb-5">
               <AnimatePresence mode="wait">
                 {status === "success" ? (
                   /* ── Success state ─────────────────────────────── */
                   <motion.div
                     key="success"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.2 }}
+                    initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.96 }}
+                    animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                     className="flex flex-col items-center py-8 text-center"
                   >
-                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/30">
-                      <CheckCircle className="h-7 w-7 text-emerald-400" />
-                    </div>
-                    <p className="text-base font-semibold text-slate-900 dark:text-white">Message Sent</p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      Thank you for reaching out. We&apos;ll be in touch soon.
-                    </p>
-                    <button
-                      onClick={() => {
+                    <FeaturedIcon icon={CheckCircle} color="success" theme="modern" size="lg" className="mb-4" />
+                    <p className="text-md font-semibold text-primary">Message Sent</p>
+                    <p className="mt-1 text-sm text-tertiary">Thank you for reaching out. We&apos;ll be in touch soon.</p>
+                    <Button
+                      color="link-color"
+                      size="sm"
+                      className="mt-5"
+                      onPress={() => {
                         setStatus("idle");
                         setIsOpen(false);
                       }}
-                      className="mt-5 text-xs text-sky-500 dark:text-sky-400 hover:text-sky-600 dark:hover:text-sky-300 transition-colors"
                     >
                       Close
-                    </button>
+                    </Button>
                   </motion.div>
                 ) : (
                   /* ── Form ──────────────────────────────────────── */
@@ -185,131 +530,95 @@ export default function ContactWidget() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.2 }}
                     onSubmit={handleSubmit}
-                    className="space-y-3"
+                    className="flex flex-col gap-3.5"
                   >
                     {/* Name & Email */}
                     <div className="grid grid-cols-2 gap-3">
-                      <input
-                        name="name"
-                        type="text"
-                        required
-                        placeholder="Name *"
+                      <Input
+                        size="sm"
+                        label="Name"
+                        placeholder="John Smith"
+                        isRequired
+                        validationBehavior="native"
                         value={form.name}
-                        onChange={handleChange}
-                        className={inputClass}
+                        onChange={(value) => setField("name", value)}
                       />
-                      <input
-                        name="email"
+                      <Input
+                        size="sm"
                         type="email"
-                        required
-                        placeholder="Email *"
+                        label="Email"
+                        placeholder="john@company.com"
+                        isRequired
+                        validationBehavior="native"
                         value={form.email}
-                        onChange={handleChange}
-                        className={inputClass}
+                        onChange={(value) => setField("email", value)}
                       />
                     </div>
 
-                    {/* Company & Phone */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        name="company"
-                        type="text"
-                        placeholder="Company"
-                        value={form.company}
-                        onChange={handleChange}
-                        className={inputClass}
-                      />
-                      <input
-                        name="phone"
-                        type="tel"
-                        placeholder="Phone"
-                        value={form.phone}
-                        onChange={handleChange}
-                        className={inputClass}
-                      />
-                    </div>
+                    {/* Company */}
+                    <Input size="sm" label="Company" placeholder="Acme Corp" value={form.company} onChange={(value) => setField("company", value)} />
+
+                    {/* Phone with country code */}
+                    <PhoneField size="sm" label="Phone number" value={form.phone} onChange={(value) => setField("phone", value)} />
 
                     {/* Service */}
-                    <div className="relative">
-                      <select
-                        name="service"
-                        value={form.service}
-                        onChange={handleChange}
-                        className={selectClass}
-                      >
-                        <option value="" className="bg-white dark:bg-[#0f1729] dark:text-white">Service Interested In...</option>
-                        {SERVICE_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt} className="bg-white dark:bg-[#0f1729] dark:text-white">{opt}</option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                        <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                      </div>
-                    </div>
+                    <ServiceSelect size="sm" label="Service Interested In" value={form.service} onChange={(value) => setField("service", value)} />
 
                     {/* Message */}
-                    <textarea
-                      name="message"
-                      required
+                    <TextArea
+                      size="sm"
                       rows={3}
-                      placeholder="Message *"
+                      label="Message"
+                      placeholder="How can we help?"
+                      isRequired
+                      validationBehavior="native"
                       value={form.message}
-                      onChange={handleChange}
-                      className={`${inputClass} resize-none`}
+                      onChange={(value) => setField("message", value)}
+                      textAreaClassName="resize-none"
                     />
 
                     {/* SMS Consent */}
-                    <div className="flex items-start gap-2.5">
-                      <input
-                        id="widget-smsConsent"
-                        name="smsConsent"
-                        type="checkbox"
-                        checked={form.smsConsent}
-                        onChange={handleChange}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-white/20 bg-white dark:bg-[#0a1020]/50 text-sky-500 focus:ring-sky-500/30 focus:ring-offset-0"
-                      />
-                      <label htmlFor="widget-smsConsent" className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                        I consent to receive SMS text messages from ICE. Message and data rates may apply. Reply STOP to opt out.
-                        See our{" "}
-                        <Link href="/sms-consent" className="text-sky-500 dark:text-sky-400 hover:text-sky-600 dark:hover:text-sky-300 underline underline-offset-2">
-                          SMS Consent Policy
-                        </Link>.
-                      </label>
-                    </div>
+                    <Checkbox
+                      size="sm"
+                      aria-label="SMS consent"
+                      isSelected={form.smsConsent}
+                      onChange={(isSelected) => setField("smsConsent", isSelected)}
+                      hint={
+                        <>
+                          I consent to receive SMS text messages from ICE. Message and data rates may apply. Reply STOP to opt out. See our{" "}
+                          <Link href="/sms-consent" className="text-brand-secondary underline underline-offset-2 hover:text-brand-secondary_hover">
+                            SMS Consent Policy
+                          </Link>
+                          .
+                        </>
+                      }
+                    />
 
                     {/* Error message */}
                     {status === "error" && (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2"
+                        className="flex items-start gap-2 rounded-lg p-3 ring-1 ring-error_subtle ring-inset"
                       >
-                        <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-                        <p className="text-xs text-red-500 dark:text-red-400">{errorMessage}</p>
+                        <AlertCircle className="mt-0.5 size-4 shrink-0 text-fg-error-secondary" />
+                        <p className="text-sm text-error-primary">{errorMessage}</p>
                       </motion.div>
                     )}
 
                     {/* Submit */}
-                    <button
+                    <Button
                       type="submit"
-                      disabled={status === "sending"}
-                      className="btn-primary w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                      size="md"
+                      color="primary"
+                      className="w-full"
+                      iconLeading={Send01}
+                      isLoading={status === "sending"}
+                      showTextWhileLoading
+                      isDisabled={status === "sending"}
                     >
-                      {status === "sending" ? (
-                        <>
-                          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                          </svg>
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4" />
-                          Send Message
-                        </>
-                      )}
-                    </button>
+                      {status === "sending" ? "Sending..." : "Send Message"}
+                    </Button>
                   </motion.form>
                 )}
               </AnimatePresence>
@@ -321,65 +630,36 @@ export default function ContactWidget() {
         {showWelcome && !isOpen && (
           <motion.div
             key="welcome-bubble"
-            initial={{ opacity: 0, y: 8, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.9 }}
-            transition={{ duration: 0.3, ease: "easeOut" as const }}
+            {...bubbleMotion}
             onClick={() => {
               dismissWelcome();
               setIsOpen(true);
             }}
-            className="mb-3 cursor-pointer rounded-2xl border border-slate-200 dark:border-sky-500/15 bg-white dark:bg-[#020617]/95 backdrop-blur-2xl px-4 py-3 shadow-xl dark:shadow-sky-500/10 shadow-slate-200/60 max-w-[260px]"
+            className="relative mb-3 max-w-65 cursor-pointer rounded-xl bg-primary/90 px-4 py-3 shadow-lg ring-1 ring-secondary backdrop-blur-xl"
           >
-            <p className="text-sm font-medium text-slate-900 dark:text-white leading-snug">
-              Need help? Schedule a free consultation!
-            </p>
-            <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">Click to get started</p>
+            <p className="text-sm font-medium text-primary">Need help? Schedule a free consultation!</p>
+            <p className="mt-1 text-xs text-tertiary">Click to get started</p>
             {/* Small arrow pointing down */}
-            <div className="absolute -bottom-1.5 right-6 h-3 w-3 rotate-45 border-r border-b" style={{ borderColor: 'var(--card-border)', background: 'var(--bg-primary)' }} />
+            <div className="absolute right-6 -bottom-1.5 size-3 rotate-45 border-r border-b border-secondary bg-primary" />
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* ── Floating Action Button (always visible) ─────────────── */}
-      <motion.button
-        onClick={handleToggle}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.95 }}
-        className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/30 transition-shadow duration-300 hover:shadow-xl hover:shadow-sky-500/40 cursor-pointer"
+      <Button
+        color="primary"
+        size="lg"
+        onPress={handleToggle}
         aria-label={isOpen ? "Close contact form" : "Open contact form"}
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          {isOpen ? (
-            <motion.span
-              key="close"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center justify-center"
-            >
-              <X className="h-6 w-6" />
-            </motion.span>
+        className="size-14 rounded-full shadow-lg before:rounded-full dark:shadow-[0_0_40px_rgb(4_155_251/0.25)]"
+        iconLeading={
+          isOpen ? (
+            <XClose aria-hidden="true" className="size-6 shrink-0 transition-inherit-all" />
           ) : (
-            <motion.span
-              key="open"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center justify-center"
-            >
-              <MessageCircle className="h-6 w-6" />
-            </motion.span>
-          )}
-        </AnimatePresence>
-
-        {/* Pulse ring when welcome bubble is visible */}
-        {showWelcome && !isOpen && (
-          <span className="absolute inset-0 rounded-full animate-ping bg-sky-400/20 pointer-events-none" />
-        )}
-      </motion.button>
+            <MessageChatCircle aria-hidden="true" className="size-6 shrink-0 transition-inherit-all" />
+          )
+        }
+      />
     </div>
   );
 }

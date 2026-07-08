@@ -1,156 +1,202 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import {
-  Cloud, Shield, Lock, Server, ArrowRight,
-  Database, HardDrive, RefreshCcw, ShieldAlert,
-  Monitor, Cpu, Settings, Workflow, Bug,
-  ShieldCheck, Radar, Crosshair,
-} from "lucide-react";
-import TiltCard from "@/components/effects/TiltCard";
+  Activity,
+  ArrowRight,
+  Cloud01,
+  CpuChip01,
+  Database01,
+  Dataflow01,
+  HardDrive,
+  Lock01,
+  Monitor01,
+  RefreshCcw01,
+  Scan,
+  Server01,
+  Settings01,
+  Shield01,
+  ShieldTick,
+  ShieldZap,
+  Target04,
+} from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
 import { resolveIcon } from "@/lib/iconMap";
+import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import { cx } from "@/utils/cx";
+
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const DEFAULT_CATEGORIES = [
   {
     title: "Managed Cloud Services",
     description: "Scalable, reliable cloud infrastructure tailored to enterprise workloads.",
-    icon: Cloud,
-    gradient: "from-sky-500/20 to-blue-500/20",
+    icon: Cloud01,
     services: [
-      { title: "Managed Cloud Hosting", href: "/solutions/managed-cloud-hosting", icon: Cloud, desc: "Enterprise-grade cloud hosting with 24/7 management and support." },
-      { title: "Managed Private Cloud", href: "/solutions/managed-private-cloud", icon: Server, desc: "Dedicated private cloud environments built for security and compliance." },
-      { title: "Managed Hybrid Cloud", href: "/solutions/managed-hybrid-cloud", icon: Database, desc: "Seamlessly bridge on-premises and cloud infrastructure." },
-      { title: "Cloud Migration Services", href: "/solutions/cloud-migration", icon: RefreshCcw, desc: "Zero-downtime migration strategy and execution for any workload." },
+      { title: "Managed Cloud Hosting", href: "/solutions/managed-cloud-hosting", icon: Cloud01, desc: "Enterprise-grade cloud hosting with 24/7 management and support." },
+      { title: "Managed Private Cloud", href: "/solutions/managed-private-cloud", icon: Server01, desc: "Dedicated private cloud environments built for security and compliance." },
+      { title: "Managed Hybrid Cloud", href: "/solutions/managed-hybrid-cloud", icon: Database01, desc: "Seamlessly bridge on-premises and cloud infrastructure." },
+      { title: "Cloud Migration Services", href: "/solutions/cloud-migration", icon: RefreshCcw01, desc: "Zero-downtime migration strategy and execution for any workload." },
     ],
   },
   {
     title: "Managed Data Protection",
     description: "Comprehensive data resilience and business continuity strategies.",
-    icon: Shield,
-    gradient: "from-blue-500/20 to-blue-500/20",
+    icon: Shield01,
     services: [
       { title: "Backup as a Service", href: "/solutions/backup-as-a-service", icon: HardDrive, desc: "Automated, encrypted backups with rapid restore capabilities." },
-      { title: "Disaster Recovery as a Service", href: "/solutions/disaster-recovery", icon: RefreshCcw, desc: "Full disaster recovery with guaranteed RTOs and RPOs." },
-      { title: "High Availability as a Service", href: "/solutions/high-availability", icon: Database, desc: "Real-time replication and automatic failover for critical systems." },
-      { title: "Ransomware Recovery", href: "/solutions/ransomware-recovery", icon: ShieldAlert, desc: "Immutable backups and rapid recovery from ransomware attacks." },
+      { title: "Disaster Recovery as a Service", href: "/solutions/disaster-recovery", icon: RefreshCcw01, desc: "Full disaster recovery with guaranteed RTOs and RPOs." },
+      { title: "High Availability as a Service", href: "/solutions/high-availability", icon: Database01, desc: "Real-time replication and automatic failover for critical systems." },
+      { title: "Ransomware Recovery", href: "/solutions/ransomware-recovery", icon: ShieldZap, desc: "Immutable backups and rapid recovery from ransomware attacks." },
     ],
   },
   {
     title: "Managed Security",
     description: "End-to-end cybersecurity for the modern enterprise threat landscape.",
-    icon: Lock,
-    gradient: "from-blue-500/20 to-sky-500/20",
+    icon: Lock01,
     services: [
-      { title: "IBM i Security", href: "/solutions/ibm-i-security", icon: ShieldCheck, desc: "Comprehensive security assessments and hardening for IBM i environments." },
-      { title: "Protection Suite", href: "/solutions/protection-suite", icon: Shield, desc: "Multi-layered endpoint and network protection suite." },
-      { title: "Security Monitoring", href: "/solutions/security-monitoring", icon: Radar, desc: "24/7 SOC monitoring with real-time threat intelligence." },
-      { title: "Threat Detection & Response", href: "/solutions/threat-detection", icon: Crosshair, desc: "Advanced threat hunting and automated incident response." },
-      { title: "Endpoint Security", href: "/solutions/endpoint-security", icon: Bug, desc: "Next-gen endpoint protection with AI-driven threat prevention." },
+      { title: "IBM i Security", href: "/solutions/ibm-i-security", icon: ShieldTick, desc: "Comprehensive security assessments and hardening for IBM i environments." },
+      { title: "Protection Suite", href: "/solutions/protection-suite", icon: Shield01, desc: "Multi-layered endpoint and network protection suite." },
+      { title: "Security Monitoring", href: "/solutions/security-monitoring", icon: Activity, desc: "24/7 SOC monitoring with real-time threat intelligence." },
+      { title: "Threat Detection & Response", href: "/solutions/threat-detection", icon: Target04, desc: "Advanced threat hunting and automated incident response." },
+      { title: "Endpoint Security", href: "/solutions/endpoint-security", icon: Scan, desc: "Next-gen endpoint protection with AI-driven threat prevention." },
     ],
   },
   {
     title: "Managed Services",
     description: "Fully managed IT operations so you can focus on your business.",
-    icon: Server,
-    gradient: "from-sky-500/20 to-sky-500/20",
+    icon: Server01,
     services: [
-      { title: "Managed Microsoft Services", href: "/solutions/managed-microsoft", icon: Monitor, desc: "Complete Microsoft 365 and Azure management and optimization." },
-      { title: "Automation Suite", href: "/solutions/automation-suite", icon: Workflow, desc: "AI-powered patch management, vulnerability remediation, and security automation." },
-      { title: "Systems Management", href: "/solutions/systems-management", icon: Settings, desc: "Proactive monitoring, patching, and performance management." },
-      { title: "IBM Power VS", href: "/solutions/ibm-power-vs", icon: Cpu, desc: "IBM Power Virtual Server management in the cloud." },
+      { title: "Managed Microsoft Services", href: "/solutions/managed-microsoft", icon: Monitor01, desc: "Complete Microsoft 365 and Azure management and optimization." },
+      { title: "Automation Suite", href: "/solutions/automation-suite", icon: Dataflow01, desc: "AI-powered patch management, vulnerability remediation, and security automation." },
+      { title: "Systems Management", href: "/solutions/systems-management", icon: Settings01, desc: "Proactive monitoring, patching, and performance management." },
+      { title: "IBM Power VS", href: "/solutions/ibm-power-vs", icon: CpuChip01, desc: "IBM Power Virtual Server management in the cloud." },
     ],
   },
 ];
 
-export default function SolutionsPage({ cmsData }: { cmsData?: Record<string, any> }) {
+/** Thin brand hairline separating major sections. */
+function BrandHairline() {
+  return (
+    <div
+      aria-hidden="true"
+      className="h-px w-full bg-gradient-to-r from-transparent via-brand-500/40 to-transparent"
+    />
+  );
+}
+
+export default function SolutionsPage({
+  cmsData,
+  orderedSections,
+}: {
+  cmsData?: Record<string, any>;
+  orderedSections?: CMSRenderableSection[];
+}) {
+  const reduceMotion = useReducedMotion();
+
+  const hero = cmsData?.hero ?? {};
   const categories = (cmsData?.categories?.items ?? DEFAULT_CATEGORIES).map((cat: any) => ({
     ...cat,
     icon: typeof cat.icon === "string" ? resolveIcon(cat.icon) : cat.icon,
-    gradient: cat.gradient ?? "from-sky-500/20 to-blue-500/20",
     services: (cat.services ?? []).map((svc: any) => ({
       ...svc,
       icon: typeof svc.icon === "string" ? resolveIcon(svc.icon) : svc.icon,
+      desc: svc.desc ?? svc.description ?? "",
     })),
   }));
+  const finalCta = cmsData?.final_cta ?? cmsData?.cta ?? {};
+  const extraSections = (orderedSections ?? []).filter(
+    (section) => !["hero", "categories", "final_cta", "cta"].includes(section.section_key)
+  );
+
+  const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 };
+  const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
 
   return (
-    <main className="pt-28 lg:pt-36">
-      {/* Hero */}
-      <section className="relative pb-16 overflow-hidden">
-        <div className="absolute inset-0 mesh-gradient" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <main className="bg-primary">
+      {/* Page header */}
+      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+        {/* Subtle techy grid backdrop */}
+        <BackgroundPattern
+          pattern="grid"
+          size="lg"
+          aria-hidden="true"
+          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3"
+        />
+
+        <div className="relative mx-auto max-w-container px-4 md:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl"
+            initial={hidden}
+            animate={visible}
+            transition={{ duration: 0.6, ease: EASE }}
+            className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-400 mb-4">Our Solutions</p>
-            <h1 className="text-4xl font-extrabold sm:text-5xl lg:text-6xl">
-              Enterprise <span className="gradient-text">Technology Solutions</span>
+            <span className="font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+              {hero.eyebrow ?? hero.badge ?? "Our Solutions"}
+            </span>
+            <h1 className="mt-3 text-display-md font-semibold tracking-tight text-primary md:text-display-lg">
+              {hero.headline ?? "Enterprise Technology Solutions"}
             </h1>
-            <p className="mt-6 text-lg text-slate-400 leading-relaxed max-w-2xl">
-              From cloud infrastructure to cybersecurity, we deliver end-to-end solutions engineered for reliability, performance, and scale.
+            <p className="mt-4 text-lg text-tertiary md:mt-6 md:text-xl">
+              {hero.subheadline ??
+                "From cloud infrastructure to cybersecurity, we deliver end-to-end solutions engineered for reliability, performance, and scale."}
             </p>
           </motion.div>
         </div>
       </section>
 
-      {/* Solutions Categories */}
-      {categories.map((cat: any, catIdx: number) => (
-        <section
-          key={cat.title}
-          className="section-padding relative overflow-hidden"
-          style={catIdx % 2 === 1 ? { background: "linear-gradient(180deg, rgba(10,16,32,0.5), rgba(2,6,23,1))" } : undefined}
-        >
-          {catIdx % 2 === 1 && <div className="grid-pattern absolute inset-0 opacity-40" />}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sky-400/10 to-transparent" />
+      <BrandHairline />
 
-          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Solution categories */}
+      {categories.map((cat: any, catIdx: number) => (
+        <section key={cat.title} className={cx("py-16 md:py-24", catIdx % 2 === 1 ? "bg-secondary" : "bg-primary")}>
+          <div className="mx-auto max-w-container px-4 md:px-8">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={hidden}
               {...(catIdx === 0
-                ? { animate: { opacity: 1, y: 0 } }
-                : { whileInView: { opacity: 1, y: 0 }, viewport: { once: true } }
-              )}
-              transition={{ duration: 0.6, delay: catIdx === 0 ? 0.3 : 0 }}
-              className="flex items-center gap-4 mb-10"
+                ? { animate: visible }
+                : { whileInView: visible, viewport: { once: true, margin: "-80px" } })}
+              transition={{ duration: 0.6, ease: EASE, delay: catIdx === 0 ? 0.15 : 0 }}
+              className="flex max-w-3xl flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5"
             >
-              <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${cat.gradient} text-sky-400`}>
-                <cat.icon className="h-6 w-6" />
-              </div>
+              <FeaturedIcon icon={cat.icon} size="xl" color="brand" theme="light" />
               <div>
-                <h2 className="text-2xl font-bold sm:text-3xl text-white">{cat.title}</h2>
-                <p className="text-sm text-slate-400 mt-1">{cat.description}</p>
+                <h2 className="text-display-sm font-semibold tracking-tight text-primary">{cat.title}</h2>
+                <p className="mt-1 text-lg text-tertiary">{cat.description}</p>
               </div>
             </motion.div>
 
-            <div className={`grid gap-6 sm:grid-cols-2 ${cat.services.length > 4 ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
+            <div
+              className={cx(
+                "mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-12 md:gap-6",
+                cat.services.length > 4 ? "lg:grid-cols-3" : "lg:grid-cols-2"
+              )}
+            >
               {cat.services.map((svc: any, i: number) => (
                 <motion.div
                   key={svc.title}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={hidden}
                   {...(catIdx === 0
-                    ? { animate: { opacity: 1, y: 0 } }
-                    : { whileInView: { opacity: 1, y: 0 }, viewport: { once: true } }
-                  )}
-                  transition={{ duration: 0.4, delay: catIdx === 0 ? 0.4 + i * 0.08 : i * 0.08 }}
+                    ? { animate: visible }
+                    : { whileInView: visible, viewport: { once: true, margin: "-80px" } })}
+                  transition={{ duration: 0.5, ease: EASE, delay: catIdx === 0 ? 0.25 + i * 0.06 : i * 0.06 }}
+                  className="h-full"
                 >
-                  <TiltCard className="h-full">
-                    <Link href={svc.href} className="group block h-full">
-                      <div className="glass-card rounded-2xl p-6 h-full flex flex-col">
-                        <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br ${cat.gradient} text-sky-400 transition-all duration-300 group-hover:scale-110`}>
-                          <svc.icon className="h-5 w-5" />
-                        </div>
-                        <h3 className="text-base font-semibold text-white mb-2">{svc.title}</h3>
-                        <p className="flex-1 text-sm text-slate-400 leading-relaxed">{svc.desc}</p>
-                        <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-sky-400 transition-all group-hover:text-sky-300 group-hover:gap-2.5">
-                          Learn more <ArrowRight className="h-3.5 w-3.5" />
-                        </div>
-                      </div>
-                    </Link>
-                  </TiltCard>
+                  <Link
+                    href={svc.href}
+                    className="group flex h-full flex-col items-start rounded-2xl bg-primary p-6 shadow-xs ring-1 ring-secondary transition duration-200 ease-out ring-inset hover:shadow-lg hover:ring-brand motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
+                  >
+                    <FeaturedIcon icon={svc.icon} size="lg" color="brand" theme="light" />
+                    <h3 className="mt-4 text-lg font-semibold text-primary">{svc.title}</h3>
+                    <p className="mt-1 flex-1 text-md text-tertiary">{svc.desc}</p>
+                    <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
+                      Learn more
+                      <ArrowRight aria-hidden="true" className="size-4" />
+                    </span>
+                  </Link>
                 </motion.div>
               ))}
             </div>
@@ -158,30 +204,60 @@ export default function SolutionsPage({ cmsData }: { cmsData?: Record<string, an
         </section>
       ))}
 
-      {/* CTA */}
-      <section className="section-padding relative overflow-hidden">
-        <div className="absolute inset-0 mesh-gradient opacity-40" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sky-400/20 to-transparent" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] ambient-orb ambient-orb-purple opacity-15" />
+      <GenericCMSSections sections={extraSections} />
 
-        <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
+      <BrandHairline />
+
+      {/* CTA — distinct brand band so it never reads as footer content */}
+      <section className="bg-primary py-16 md:py-24">
+        <div className="mx-auto max-w-container px-4 md:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
+            initial={hidden}
+            whileInView={visible}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6, ease: EASE }}
+            className="relative isolate overflow-hidden rounded-2xl bg-brand-section px-6 py-12 lg:p-16 dark:shadow-[0_0_60px_rgb(4_155_251/0.15)] dark:ring-1 dark:ring-secondary dark:ring-inset"
           >
-            <h2 className="text-3xl font-bold sm:text-4xl">
-              Need a Custom <span className="gradient-text">Solution?</span>
-            </h2>
-            <p className="mt-5 text-lg text-slate-400 leading-relaxed">
-              Our enterprise architects will design a tailored solution that fits your business requirements and budget.
-            </p>
-            <div className="mt-10">
-              <Link href="/contact" className="btn-primary">
-                <span>Contact Our Team</span>
-                <ArrowRight className="relative z-10 h-4 w-4" />
-              </Link>
+            {/* Techy grid overlay */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center opacity-20"
+            >
+              <BackgroundPattern pattern="grid" size="lg" className="shrink-0 text-primary_on-brand" />
+            </div>
+            {/* Ambient brand blooms — slow continuous pulse */}
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-24 -right-16 -z-10 size-72 rounded-full bg-brand-400/40 blur-3xl"
+              animate={reduceMotion ? undefined : { opacity: [0.5, 0.95, 0.5] }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-28 -left-20 -z-10 size-72 rounded-full bg-brand-600/50 blur-3xl"
+              animate={reduceMotion ? undefined : { opacity: [0.9, 0.5, 0.9] }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            <div className="flex flex-col gap-x-8 gap-y-8 lg:flex-row lg:items-center">
+              <div className="flex max-w-3xl flex-1 flex-col">
+                <h2 className="text-display-sm font-semibold tracking-tight text-primary_on-brand md:text-display-md">
+                  {finalCta.heading ?? "Need a Custom Solution?"}
+                </h2>
+                <p className="mt-4 text-lg text-tertiary_on-brand md:mt-5">
+                  {finalCta.description ??
+                    "Our enterprise architects will design a tailored solution that fits your business requirements and budget."}
+                </p>
+              </div>
+              <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start">
+                <Button
+                  size="xl"
+                  href={finalCta.cta_primary?.href ?? finalCta.ctaPrimary?.href ?? "/contact"}
+                  iconTrailing={ArrowRight}
+                >
+                  {finalCta.cta_primary?.label ?? finalCta.ctaPrimary?.label ?? "Contact Our Team"}
+                </Button>
+              </div>
             </div>
           </motion.div>
         </div>

@@ -1,10 +1,26 @@
+import { AlertCircle, Users01 } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/server";
-import Link from "next/link";
-import { Users, Plus, Search, Building2, CheckCircle, XCircle } from "lucide-react";
+import { Avatar } from "@/components/base/avatar/avatar";
+import { BadgeWithDot } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
+import { Table, TableCard } from "@/components/application/table/table";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import ClientsSearch from "@/components/admin/clients/ClientsSearch";
 import CreateClientModal from "@/components/admin/clients/CreateClientModal";
 
 export const metadata = { title: "Client Accounts | ICE Admin" };
+
+function getInitials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word.charAt(0).toUpperCase())
+      .join("") || undefined
+  );
+}
 
 export default async function ClientsListPage({
   searchParams,
@@ -27,14 +43,12 @@ export default async function ClientsListPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-            <Users size={20} className="text-violet-400" />
-          </div>
+          <FeaturedIcon icon={Users01} color="brand" theme="modern" size="lg" />
           <div>
-            <h1 className="text-2xl font-bold admin-text">Client Accounts</h1>
-            <p className="text-sm text-slate-400">
+            <h1 className="text-xl font-semibold text-primary">Client Accounts</h1>
+            <p className="text-sm text-tertiary">
               {clients?.length ?? 0} total clients
             </p>
           </div>
@@ -47,83 +61,84 @@ export default async function ClientsListPage({
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6">
+        <div className="mb-6 flex items-center gap-2 rounded-lg bg-utility-red-50 px-3.5 py-2.5 text-sm text-utility-red-700 ring-1 ring-utility-red-200 ring-inset">
+          <AlertCircle className="size-4 shrink-0 text-utility-red-500" />
           Failed to load clients: {error.message}
         </div>
       )}
 
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Company Name
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Created
-              </th>
-              <th className="px-6 py-4" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {clients && clients.length > 0 ? (
-              clients.map((client) => (
-                <tr
-                  key={client.id}
-                  className="hover:bg-white/[0.02] transition-colors"
-                >
-                  <td className="px-6 py-4">
+      <TableCard.Root size="sm">
+        {clients && clients.length > 0 ? (
+          <Table aria-label="Client accounts" size="sm">
+            <Table.Header>
+              <Table.Head id="company" label="Company Name" isRowHeader className="w-full" />
+              <Table.Head id="status" label="Status" />
+              <Table.Head id="created" label="Created" />
+              <Table.Head id="actions" />
+            </Table.Header>
+            <Table.Body>
+              {clients.map((client) => (
+                <Table.Row id={client.id} key={client.id}>
+                  <Table.Cell>
                     <div className="flex items-center gap-3">
-                      <Building2 size={16} className="text-slate-500" />
-                      <span className="text-sm font-medium admin-text">
+                      <Avatar
+                        size="sm"
+                        src={client.logo_url}
+                        alt={client.company_name}
+                        initials={getInitials(client.company_name ?? "")}
+                      />
+                      <span className="text-sm font-medium whitespace-nowrap text-primary">
                         {client.company_name}
                       </span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
+                  </Table.Cell>
+                  <Table.Cell>
                     {client.is_active !== false ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">
-                        <CheckCircle size={12} />
+                      <BadgeWithDot size="sm" type="pill-color" color="success">
                         Active
-                      </span>
+                      </BadgeWithDot>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400">
-                        <XCircle size={12} />
+                      <BadgeWithDot size="sm" type="pill-color" color="gray">
                         Inactive
-                      </span>
+                      </BadgeWithDot>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {client.created_at
                       ? new Date(client.created_at).toLocaleDateString()
                       : "N/A"}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <Link
-                      href={`/admin/clients/${client.id}`}
-                      className="text-sm text-sky-400 hover:text-sky-300 transition-colors"
-                    >
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-6 py-12 text-center text-slate-500 text-sm"
-                >
+                  </Table.Cell>
+                  <Table.Cell className="px-4">
+                    <div className="flex justify-end">
+                      <Button color="link-color" size="sm" href={`/admin/clients/${client.id}`}>
+                        View
+                      </Button>
+                    </div>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
+        ) : (
+          <div className="flex justify-center px-6 py-16">
+            <EmptyState size="sm">
+              <EmptyState.Header>
+                <EmptyState.FeaturedIcon color="gray" />
+              </EmptyState.Header>
+              <EmptyState.Content>
+                <EmptyState.Title>
                   {q ? "No clients match your search." : "No clients found."}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                </EmptyState.Title>
+                <EmptyState.Description>
+                  {q
+                    ? "Try adjusting your search terms."
+                    : "Create a client to get started."}
+                </EmptyState.Description>
+              </EmptyState.Content>
+            </EmptyState>
+          </div>
+        )}
+      </TableCard.Root>
     </div>
   );
 }

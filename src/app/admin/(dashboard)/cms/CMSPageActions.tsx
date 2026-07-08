@@ -3,7 +3,14 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, Pencil, Trash2, X, Loader2, AlertCircle } from "lucide-react";
+import { AlertCircle, Pencil01, Plus, Trash01, XClose } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { Input } from "@/components/base/input/input";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { NativeSelect } from "@/components/base/select/select-native";
+import { Toggle } from "@/components/base/toggle/toggle";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 
 interface PageData {
   id: string;
@@ -154,13 +161,9 @@ export default function CMSPageActions({
   if (mode === "create") {
     return (
       <>
-        <button
-          onClick={openCreate}
-          className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer"
-        >
-          <Plus size={16} />
+        <Button size="md" iconLeading={Plus} onClick={openCreate}>
           Create Page
-        </button>
+        </Button>
         {modalOpen && renderModal()}
       </>
     );
@@ -170,20 +173,20 @@ export default function CMSPageActions({
   return (
     <>
       <div className="flex items-center gap-1">
-        <a
+        <ButtonUtility
+          size="xs"
+          color="tertiary"
+          icon={Pencil01}
+          tooltip="Edit page"
           href={`/admin/cms/${page?.slug}`}
-          className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-          title="Edit page"
-        >
-          <Pencil size={14} />
-        </a>
-        <button
+        />
+        <ButtonUtility
+          size="xs"
+          color="tertiary"
+          icon={Trash01}
+          tooltip="Delete page"
           onClick={openDelete}
-          className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
-          title="Delete page"
-        >
-          <Trash2 size={14} />
-        </button>
+        />
       </div>
       {modalOpen && renderModal()}
     </>
@@ -192,190 +195,141 @@ export default function CMSPageActions({
   function renderModal() {
     if (modalType === "delete") {
       return (
-        <>
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            onClick={() => setModalOpen(false)}
-          />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              <h2 className="text-lg font-bold admin-text mb-2">Delete Page</h2>
-              <p className="text-sm text-slate-400 mb-6">
-                Are you sure you want to delete <strong className="admin-text">{page?.title}</strong>?
-                This will also remove all its sections. This cannot be undone.
-              </p>
-              {error && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">
-                  <AlertCircle size={16} />
-                  {error}
+        <ModalOverlay isDismissable isOpen onOpenChange={(open) => !open && setModalOpen(false)}>
+          <Modal className="w-full max-w-sm">
+            <Dialog aria-label="Delete page">
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-primary">Delete Page</h2>
+                <p className="mt-2 text-sm text-tertiary">
+                  Are you sure you want to delete{" "}
+                  <strong className="font-semibold text-primary">{page?.title}</strong>?
+                  This will also remove all its sections. This cannot be undone.
+                </p>
+                {error && (
+                  <div className="mt-4 flex items-center gap-2 rounded-lg bg-error-primary p-3 text-sm text-error-primary ring-1 ring-error_subtle ring-inset">
+                    <AlertCircle className="size-4 shrink-0" />
+                    {error}
+                  </div>
+                )}
+                <div className="mt-6 flex items-center gap-3">
+                  <Button
+                    color="primary-destructive"
+                    className="flex-1"
+                    isLoading={isPending}
+                    showTextWhileLoading
+                    onClick={handleDelete}
+                  >
+                    {isPending ? "Deleting..." : "Delete"}
+                  </Button>
+                  <Button color="secondary" className="flex-1" onClick={() => setModalOpen(false)}>
+                    Cancel
+                  </Button>
                 </div>
-              )}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleDelete}
-                  disabled={isPending}
-                  className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {isPending ? "Deleting..." : "Delete"}
-                </button>
-                <button
-                  onClick={() => setModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
               </div>
-            </div>
-          </div>
-        </>
+            </Dialog>
+          </Modal>
+        </ModalOverlay>
       );
     }
 
     return (
-      <>
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-          onClick={() => setModalOpen(false)}
-        />
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold admin-text">
-                {modalType === "create" ? "Create Page" : "Edit Page"}
-              </h2>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
+      <ModalOverlay isDismissable isOpen onOpenChange={(open) => !open && setModalOpen(false)}>
+        <Modal className="w-full max-w-lg">
+          <Dialog aria-label={modalType === "create" ? "Create page" : "Edit page"}>
+            <div className="p-6">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-primary">
+                  {modalType === "create" ? "Create Page" : "Edit Page"}
+                </h2>
+                <ButtonUtility
+                  size="sm"
+                  color="tertiary"
+                  icon={XClose}
+                  tooltip="Close"
+                  onClick={() => setModalOpen(false)}
+                />
+              </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                  <AlertCircle size={16} />
-                  {error}
-                </div>
-              )}
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                  <div className="flex items-center gap-2 rounded-lg bg-error-primary p-3 text-sm text-error-primary ring-1 ring-error_subtle ring-inset">
+                    <AlertCircle className="size-4 shrink-0" />
+                    {error}
+                  </div>
+                )}
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Title *
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => {
-                    setTitle(e.target.value);
-                    if (modalType === "create") setSlug(slugify(e.target.value));
-                  }}
+                <Input
+                  label="Title"
+                  isRequired
                   placeholder="Page Title"
-                  required
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+                  value={title}
+                  onChange={(value) => {
+                    setTitle(value);
+                    if (modalType === "create") setSlug(slugify(value));
+                  }}
                 />
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Slug
-                </label>
-                <input
-                  type="text"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
+                <Input
+                  label="Slug"
                   placeholder="auto-generated-from-title"
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all font-mono text-sm"
+                  value={slug}
+                  onChange={setSlug}
+                  inputClassName="font-mono text-sm"
                 />
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Page Type
-                </label>
-                <select
+                <NativeSelect
+                  label="Page Type"
                   value={pageType}
                   onChange={(e) => setPageType(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-                >
-                  {PAGE_TYPES.map((t) => (
-                    <option key={t.value} value={t.value} className="bg-slate-900">
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Meta Title
-                </label>
-                <input
-                  type="text"
-                  value={metaTitle}
-                  onChange={(e) => setMetaTitle(e.target.value)}
-                  placeholder="SEO title"
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+                  options={PAGE_TYPES}
                 />
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Meta Description
-                </label>
-                <textarea
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
+                <Input
+                  label="Meta Title"
+                  placeholder="SEO title"
+                  value={metaTitle}
+                  onChange={setMetaTitle}
+                />
+
+                <TextArea
+                  label="Meta Description"
                   placeholder="SEO description"
                   rows={2}
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all resize-none"
+                  value={metaDescription}
+                  onChange={setMetaDescription}
                 />
-              </div>
 
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsPublished(!isPublished)}
-                  className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${
-                    isPublished ? "bg-emerald-500" : "bg-white/10"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                      isPublished ? "translate-x-5" : ""
-                    }`}
-                  />
-                </button>
-                <span className="text-sm text-slate-300">Published</span>
-              </div>
+                <Toggle
+                  size="sm"
+                  label="Published"
+                  isSelected={isPublished}
+                  onChange={setIsPublished}
+                />
 
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="flex-1 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      {modalType === "create" ? "Creating..." : "Saving..."}
-                    </>
-                  ) : (
-                    modalType === "create" ? "Create Page" : "Save Changes"
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </>
+                <div className="flex items-center gap-3 pt-2">
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    isLoading={isPending}
+                    showTextWhileLoading
+                  >
+                    {isPending
+                      ? modalType === "create"
+                        ? "Creating..."
+                        : "Saving..."
+                      : modalType === "create"
+                        ? "Create Page"
+                        : "Save Changes"}
+                  </Button>
+                  <Button color="secondary" onClick={() => setModalOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
     );
   }
 }

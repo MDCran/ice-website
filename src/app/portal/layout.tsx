@@ -11,11 +11,13 @@ export default function PortalLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen admin-shell overflow-hidden">
+    <div className="flex h-dvh overflow-hidden bg-primary">
       <PortalSidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <PortalHeader />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-secondary px-4 py-6 md:px-8 md:py-8">
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { SearchLg, XClose } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { NativeSelect } from "@/components/base/select/select-native";
 
 export default function ContactsFilter({
   initialQuery,
@@ -50,82 +53,79 @@ export default function ContactsFilter({
   return (
     <form onSubmit={handleSearch} className="mb-6 flex flex-wrap items-end gap-3">
       {/* Search */}
-      <div className="relative flex-1 min-w-[220px]">
-        <Search
-          size={16}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-        />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+      <div className="relative min-w-55 flex-1">
+        <Input
+          size="sm"
+          icon={SearchLg}
+          aria-label="Search contacts"
           placeholder="Search by name or email..."
-          className="w-full bg-white/[0.06] border border-white/10 rounded-xl pl-11 pr-10 py-2.5 admin-text text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+          value={query}
+          onChange={(value) => setQuery(value)}
+          inputClassName={query ? "pr-9" : undefined}
         />
         {query && (
           <button
             type="button"
+            aria-label="Clear search"
             onClick={() => {
               setQuery("");
               applyFilters({ q: "" });
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors cursor-pointer"
+            className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer rounded-md p-0.5 text-fg-quaternary transition duration-100 ease-linear hover:text-fg-quaternary_hover"
           >
-            <X size={16} />
+            <XClose className="size-4" />
           </button>
         )}
       </div>
 
       {/* Date from */}
-      <div className="flex items-center gap-2">
-        <label className="text-xs text-slate-500">From</label>
-        <input
-          type="date"
-          value={fromDate}
-          onChange={(e) => {
-            setFromDate(e.target.value);
-            applyFilters({ from: e.target.value });
-          }}
-          className="bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2.5 admin-text text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50"
-        />
-      </div>
+      <Input
+        size="sm"
+        type="date"
+        label="From"
+        value={fromDate}
+        onChange={(value) => {
+          setFromDate(value);
+          applyFilters({ from: value });
+        }}
+        className="w-max min-w-36"
+      />
 
       {/* Date to */}
-      <div className="flex items-center gap-2">
-        <label className="text-xs text-slate-500">To</label>
-        <input
-          type="date"
-          value={toDate}
-          onChange={(e) => {
-            setToDate(e.target.value);
-            applyFilters({ to: e.target.value });
-          }}
-          className="bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2.5 admin-text text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50"
-        />
-      </div>
+      <Input
+        size="sm"
+        type="date"
+        label="To"
+        value={toDate}
+        onChange={(value) => {
+          setToDate(value);
+          applyFilters({ to: value });
+        }}
+        className="w-max min-w-36"
+      />
 
       {/* Sort */}
-      <select
+      <NativeSelect
+        size="sm"
+        aria-label="Sort order"
         value={sort}
         onChange={(e) => {
           setSort(e.target.value);
           applyFilters({ sort: e.target.value });
         }}
-        className="bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2.5 admin-text text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 cursor-pointer"
-      >
-        <option value="newest" className="bg-slate-900">Newest</option>
-        <option value="oldest" className="bg-slate-900">Oldest</option>
-      </select>
+        options={[
+          { label: "Newest", value: "newest" },
+          { label: "Oldest", value: "oldest" },
+        ]}
+        className="w-max"
+        selectClassName="pr-8"
+      />
 
       {/* Clear all */}
       {(query || fromDate || toDate || sort !== "newest") && (
-        <button
-          type="button"
-          onClick={handleClear}
-          className="px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 text-slate-400 hover:text-white text-sm transition-colors cursor-pointer"
-        >
+        <Button type="button" size="sm" color="secondary" onClick={handleClear}>
           Clear
-        </button>
+        </Button>
       )}
     </form>
   );

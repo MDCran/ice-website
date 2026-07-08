@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { resolveIcon } from "@/lib/iconMap";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
 import type { MetricPreset } from "@/components/solutions/SolutionMetrics";
+import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import { pushEvent } from "@/lib/analytics";
 
 // Hero component map — lazy loaded
 import dynamic from "next/dynamic";
@@ -48,28 +51,100 @@ const CATEGORY_MAP: Record<string, { label: string; icon: string }> = {
   "ibm-power-vs": { label: "Managed Services", icon: "Server" },
 };
 
-interface SectionData {
-  hero?: { headline: string; subheadline: string };
-  features?: { items: { icon: string; title: string; description: string }[] };
-  process?: { items: { step: string; title: string; description: string }[] };
-  benefits?: { items: string[] };
+interface CtaLink {
+  label?: string;
+  href?: string;
 }
+
+interface SectionData {
+  hero?: {
+    headline: string;
+    subheadline: string;
+    eyebrow?: string;
+    proof_labels?: string[];
+    proofLabels?: string[];
+    cta_primary?: CtaLink;
+    ctaPrimary?: CtaLink;
+    cta_secondary?: CtaLink;
+    ctaSecondary?: CtaLink;
+  };
+  features?: {
+    eyebrow?: string;
+    heading?: string;
+    description?: string;
+    items: { icon: string; title: string; description: string; proof?: string }[];
+  };
+  process?: {
+    eyebrow?: string;
+    heading?: string;
+    description?: string;
+    items: { step: string; title: string; description: string }[];
+  };
+  benefits?: {
+    eyebrow?: string;
+    heading?: string;
+    description?: string;
+    items: Array<string | { text?: string; label?: string; title?: string }>;
+  };
+  cta?: {
+    heading?: string;
+    headline?: string;
+    description?: string;
+    subheadline?: string;
+    cta_primary?: CtaLink;
+    ctaPrimary?: CtaLink;
+    cta_secondary?: CtaLink;
+    ctaSecondary?: CtaLink;
+  };
+}
+
+/** Section keys the layout renders bespoke (everything else goes through GenericCMSSections). */
+const KNOWN_KEYS = ["hero", "features", "process", "benefits", "cta"];
 
 export default function DynamicSolutionPage({
   slug,
   sections,
+  orderedSections,
 }: {
   slug: string;
   sections: SectionData;
+  orderedSections?: CMSRenderableSection[];
 }) {
   const hero = sections.hero;
   const features = (sections.features?.items ?? []).map((f) => ({
-    icon: (() => { const Icon = resolveIcon(f.icon); return <Icon className="h-6 w-6" />; })(),
+    icon: (() => { const Icon = resolveIcon(f.icon); return <Icon className="size-6" aria-hidden="true" />; })(),
     title: f.title,
     description: f.description,
+    proof: f.proof,
   }));
   const process = sections.process?.items ?? [];
-  const benefits = sections.benefits?.items ?? [];
+  const benefits = (sections.benefits?.items ?? [])
+    .map((item) => (typeof item === "string" ? item : (item?.text ?? item?.label ?? item?.title ?? "")))
+    .filter(Boolean);
+  const cta = sections.cta;
+
+  // Fire a single `solution_viewed` event when this solution page mounts.
+  const solutionTitle = hero?.headline?.replace(/<[^>]*>/g, "") ?? slug;
+  useEffect(() => {
+    pushEvent("solution_viewed", { slug, title: solutionTitle });
+    // Intentionally keyed to `slug` only: one event per solution navigated to.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
+
+  // Every visible seeded section, in sort_order — nothing gets dropped.
+  const visibleOrdered = (orderedSections ?? [])
+    .filter((section) => section.is_visible !== false)
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const sectionOrder = visibleOrdered.map((section) => section.section_key);
+  const orderedExtras: Record<string, React.ReactNode> = {};
+  for (const section of visibleOrdered) {
+    if (!KNOWN_KEYS.includes(section.section_key)) {
+      orderedExtras[section.section_key] = <GenericCMSSections sections={[section]} />;
+    }
+  }
+  // Legacy fallback path (no ordered data): render extras as one block.
+  const extraSections = visibleOrdered.filter((section) => !KNOWN_KEYS.includes(section.section_key));
 
   const HeroComponent = HERO_MAP[slug];
   const category = CATEGORY_MAP[slug] ?? { label: "Solutions", icon: "Globe" };
@@ -82,15 +157,46 @@ export default function DynamicSolutionPage({
       subtitle={hero?.subheadline ?? ""}
       categoryBadge={{
         label: category.label,
-        icon: <CategoryIcon className="h-4 w-4 text-sky-400" />,
+        icon: <CategoryIcon className="size-4" aria-hidden="true" />,
       }}
       heroVisualization={HeroComponent ? <HeroComponent /> : undefined}
+      heroEyebrow={hero?.eyebrow}
+      heroProofLabels={hero?.proof_labels ?? hero?.proofLabels}
+      heroCtaPrimary={hero?.cta_primary ?? hero?.ctaPrimary}
+      heroCtaSecondary={hero?.cta_secondary ?? hero?.ctaSecondary}
       features={features}
+      featuresIntro={{
+        eyebrow: sections.features?.eyebrow,
+        heading: sections.features?.heading,
+        description: sections.features?.description,
+      }}
       process={process}
+      processIntro={{
+        eyebrow: sections.process?.eyebrow,
+        heading: sections.process?.heading,
+        description: sections.process?.description,
+      }}
       benefits={benefits}
-      ctaTitle={`Ready to Get Started?`}
-      ctaSubtitle="Contact our enterprise architects to design a solution tailored to your needs."
-      breadcrumbLabel={hero?.headline?.replace(/<[^>]*>/g, "") ?? slug}
+      benefitsIntro={{
+        eyebrow: sections.benefits?.eyebrow,
+        heading: sections.benefits?.heading,
+        description: sections.benefits?.description,
+      }}
+      sectionOrder={sectionOrder.length > 0 ? sectionOrder : undefined}
+      orderedExtras={sectionOrder.length > 0 ? orderedExtras : undefined}
+      extraSections={
+        sectionOrder.length > 0 ? undefined : <GenericCMSSections sections={extraSections} />
+      }
+      ctaTitle={cta?.heading ?? cta?.headline ?? "Ready to Get Started?"}
+      ctaSubtitle={
+        cta?.description ??
+        cta?.subheadline ??
+        "Contact our enterprise architects to design a solution tailored to your needs."
+      }
+      ctaButtonLabel={cta?.cta_primary?.label ?? cta?.ctaPrimary?.label}
+      ctaPrimaryHref={cta?.cta_primary?.href ?? cta?.ctaPrimary?.href}
+      ctaSecondary={cta?.cta_secondary ?? cta?.ctaSecondary}
+      breadcrumbLabel={solutionTitle}
     />
   );
 }

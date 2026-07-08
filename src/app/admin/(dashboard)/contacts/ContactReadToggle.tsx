@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Mail01, Mail04 } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
-import { MailOpen, Mail } from "lucide-react";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { cx } from "@/utils/cx";
 
 export default function ContactReadToggle({
   id,
@@ -23,16 +25,13 @@ export default function ContactReadToggle({
   };
 
   return (
-    <button
+    <ButtonUtility
+      size="xs"
+      color="tertiary"
+      icon={isRead ? Mail04 : Mail01}
+      tooltip={isRead ? "Mark as unread" : "Mark as read"}
       onClick={toggle}
-      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-        isRead
-          ? "text-slate-500 hover:text-sky-400 hover:bg-sky-500/10"
-          : "text-sky-400 hover:text-slate-400 hover:bg-white/10"
-      }`}
-      title={isRead ? "Mark as unread" : "Mark as read"}
-    >
-      {isRead ? <MailOpen size={15} /> : <Mail size={15} />}
-    </button>
+      className={cx(!isRead && "text-fg-brand-primary hover:text-fg-brand-primary")}
+    />
   );
 }

@@ -2,19 +2,23 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  X,
-  Upload,
-  Search,
+  File02,
   Folder,
-  FolderOpen,
-  File,
-  Image as ImageIcon,
-  Loader2,
-  Check,
-  Grid3x3,
+  Grid01,
+  Image01,
   List,
-} from "lucide-react";
+  SearchLg,
+  Upload01,
+  XClose,
+} from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { Input } from "@/components/base/input/input";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
+import { cx } from "@/utils/cx";
 
 interface MediaFile {
   id: string;
@@ -142,159 +146,192 @@ export default function MediaBrowserModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="admin-card rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl mx-4 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
-          <h2 className="text-lg font-semibold admin-text">{title}</h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white rounded-xl px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer"
-            >
-              {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-              Upload
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept={accept}
-              className="hidden"
-              onChange={(e) => handleUpload(e.target.files)}
-            />
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* Toolbar */}
-        <div className="flex items-center gap-3 px-6 py-3 border-b border-white/5 shrink-0">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search files..."
-              className="w-full bg-white/[0.06] border border-white/10 rounded-xl pl-9 pr-3 py-2 admin-text text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
-            />
-          </div>
-          {/* View toggle */}
-          <div className="flex items-center bg-white/[0.04] rounded-lg p-0.5">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-md transition-colors cursor-pointer ${viewMode === "grid" ? "bg-white/10 text-white" : "text-slate-500 hover:text-white"}`}
-            >
-              <Grid3x3 size={14} />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-1.5 rounded-md transition-colors cursor-pointer ${viewMode === "list" ? "bg-white/10 text-white" : "text-slate-500 hover:text-white"}`}
-            >
-              <List size={14} />
-            </button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Folder sidebar */}
-          <div className="w-44 border-r border-white/5 p-3 overflow-y-auto shrink-0">
-            <div className="space-y-1">
-              <button
-                onClick={() => setSelectedFolder(null)}
-                className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                  selectedFolder === null ? "bg-sky-500/10 text-sky-400" : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <FolderOpen size={14} /> All Files
-              </button>
-              {folders.map((folder) => (
-                <button
-                  key={folder}
-                  onClick={() => setSelectedFolder(folder)}
-                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                    selectedFolder === folder ? "bg-sky-500/10 text-sky-400" : "text-slate-400 hover:text-white hover:bg-white/5"
-                  }`}
+    <ModalOverlay isDismissable isOpen onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <Modal className="w-full max-w-4xl">
+        <Dialog aria-label={title}>
+          <div className="flex h-[720px] max-h-[80vh] flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-secondary px-6 py-4">
+              <h2 className="text-lg font-semibold text-primary">{title}</h2>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  color="secondary"
+                  iconLeading={Upload01}
+                  isLoading={uploading}
+                  showTextWhileLoading
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  <Folder size={14} /> {folder}
+                  Upload
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept={accept}
+                  className="hidden"
+                  onChange={(e) => handleUpload(e.target.files)}
+                />
+                <ButtonUtility size="sm" color="tertiary" icon={XClose} tooltip="Close" onClick={onClose} />
+              </div>
+            </div>
+
+            {/* Toolbar */}
+            <div className="flex shrink-0 items-center gap-3 border-b border-secondary px-6 py-3">
+              {/* Search */}
+              <div className="flex-1">
+                <Input
+                  size="sm"
+                  icon={SearchLg}
+                  placeholder="Search files..."
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                />
+              </div>
+              {/* View toggle */}
+              <div className="flex items-center gap-0.5 rounded-lg bg-secondary p-0.5">
+                <button
+                  type="button"
+                  aria-label="Grid view"
+                  onClick={() => setViewMode("grid")}
+                  className={cx(
+                    "cursor-pointer rounded-md p-1.5 transition-colors",
+                    viewMode === "grid"
+                      ? "bg-primary text-fg-secondary shadow-xs ring-1 ring-secondary ring-inset"
+                      : "text-fg-quaternary hover:text-fg-quaternary_hover"
+                  )}
+                >
+                  <Grid01 className="size-4" />
                 </button>
-              ))}
+                <button
+                  type="button"
+                  aria-label="List view"
+                  onClick={() => setViewMode("list")}
+                  className={cx(
+                    "cursor-pointer rounded-md p-1.5 transition-colors",
+                    viewMode === "list"
+                      ? "bg-primary text-fg-secondary shadow-xs ring-1 ring-secondary ring-inset"
+                      : "text-fg-quaternary hover:text-fg-quaternary_hover"
+                  )}
+                >
+                  <List className="size-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Folder sidebar */}
+              <div className="w-44 shrink-0 overflow-y-auto border-r border-secondary p-3">
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFolder(null)}
+                    className={cx(
+                      "flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                      selectedFolder === null
+                        ? "bg-active text-secondary"
+                        : "text-tertiary hover:bg-primary_hover hover:text-secondary"
+                    )}
+                  >
+                    <Folder className="size-4 text-fg-quaternary" /> All Files
+                  </button>
+                  {folders.map((folder) => (
+                    <button
+                      key={folder}
+                      type="button"
+                      onClick={() => setSelectedFolder(folder)}
+                      className={cx(
+                        "flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                        selectedFolder === folder
+                          ? "bg-active text-secondary"
+                          : "text-tertiary hover:bg-primary_hover hover:text-secondary"
+                      )}
+                    >
+                      <Folder className="size-4 text-fg-quaternary" /> {folder}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* File grid */}
+              <div className="flex-1 overflow-y-auto p-4">
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <LoadingIndicator type="line-spinner" size="sm" />
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className="py-8">
+                    <EmptyState size="sm">
+                      <EmptyState.Header>
+                        <EmptyState.FeaturedIcon icon={Image01} color="gray" />
+                      </EmptyState.Header>
+                      <EmptyState.Content>
+                        <EmptyState.Title>No files found</EmptyState.Title>
+                        <EmptyState.Description>
+                          Upload a file or adjust your search to see results.
+                        </EmptyState.Description>
+                      </EmptyState.Content>
+                    </EmptyState>
+                  </div>
+                ) : viewMode === "grid" ? (
+                  <div className="grid grid-cols-3 gap-3 md:grid-cols-4 lg:grid-cols-5">
+                    {filtered.map((file) => (
+                      <button
+                        key={file.id}
+                        type="button"
+                        onClick={() => {
+                          if (file.public_url) {
+                            onSelect(file.public_url, file.file_name);
+                            onClose();
+                          }
+                        }}
+                        className="group cursor-pointer rounded-xl bg-primary p-2 text-left ring-1 ring-secondary transition hover:bg-secondary hover:ring-brand"
+                      >
+                        <div className="mb-2 flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                          {isImage(file.file_type) && file.public_url ? (
+                            <img src={file.public_url} alt={file.file_name} className="h-full w-full rounded-lg object-cover" />
+                          ) : (
+                            <File02 className="size-6 text-fg-quaternary" />
+                          )}
+                        </div>
+                        <p className="truncate text-xs font-medium text-primary">{file.file_name}</p>
+                        <p className="text-xs text-quaternary">{formatSize(file.file_size)}</p>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {filtered.map((file) => (
+                      <button
+                        key={file.id}
+                        type="button"
+                        onClick={() => {
+                          if (file.public_url) {
+                            onSelect(file.public_url, file.file_name);
+                            onClose();
+                          }
+                        }}
+                        className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-secondary"
+                      >
+                        {isImage(file.file_type) && file.public_url ? (
+                          <img src={file.public_url} alt="" className="size-8 shrink-0 rounded object-cover" />
+                        ) : (
+                          <div className="flex size-8 shrink-0 items-center justify-center rounded bg-secondary">
+                            <File02 className="size-4 text-fg-quaternary" />
+                          </div>
+                        )}
+                        <span className="flex-1 truncate text-sm font-medium text-primary">{file.file_name}</span>
+                        <span className="shrink-0 text-xs text-quaternary">{formatSize(file.file_size)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* File grid */}
-          <div className="flex-1 overflow-y-auto p-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 size={24} className="animate-spin text-slate-500" />
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-12">
-                <ImageIcon size={40} className="mx-auto text-slate-600 mb-3" />
-                <p className="text-slate-400 text-sm">No files found</p>
-              </div>
-            ) : viewMode === "grid" ? (
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {filtered.map((file) => (
-                  <button
-                    key={file.id}
-                    onClick={() => {
-                      if (file.public_url) {
-                        onSelect(file.public_url, file.file_name);
-                        onClose();
-                      }
-                    }}
-                    className="bg-white/[0.03] border border-white/10 rounded-xl p-2 text-left hover:bg-white/[0.06] hover:border-sky-500/30 transition-all group cursor-pointer"
-                  >
-                    <div className="aspect-square rounded-lg bg-white/[0.04] mb-2 flex items-center justify-center overflow-hidden">
-                      {isImage(file.file_type) && file.public_url ? (
-                        <img src={file.public_url} alt={file.file_name} className="w-full h-full object-cover rounded-lg" />
-                      ) : (
-                        <File size={24} className="text-slate-600" />
-                      )}
-                    </div>
-                    <p className="admin-text text-[11px] font-medium truncate">{file.file_name}</p>
-                    <p className="text-slate-500 text-[10px]">{formatSize(file.file_size)}</p>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {filtered.map((file) => (
-                  <button
-                    key={file.id}
-                    onClick={() => {
-                      if (file.public_url) {
-                        onSelect(file.public_url, file.file_name);
-                        onClose();
-                      }
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/[0.04] transition-colors cursor-pointer text-left"
-                  >
-                    {isImage(file.file_type) && file.public_url ? (
-                      <img src={file.public_url} alt="" className="w-8 h-8 rounded object-cover shrink-0" />
-                    ) : (
-                      <div className="w-8 h-8 rounded bg-white/[0.04] flex items-center justify-center shrink-0">
-                        <File size={14} className="text-slate-500" />
-                      </div>
-                    )}
-                    <span className="text-sm admin-text font-medium truncate flex-1">{file.file_name}</span>
-                    <span className="text-xs text-slate-500 shrink-0">{formatSize(file.file_size)}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+        </Dialog>
+      </Modal>
+    </ModalOverlay>
   );
 }

@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
-import { ClipboardList, Calendar, ArrowRight } from "lucide-react";
+import { ClipboardCheck, Calendar, ArrowRight } from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import type { Survey } from "@/lib/types/database";
 
 async function getSurveys(): Promise<{ surveys: Survey[] }> {
@@ -33,66 +35,69 @@ export default async function SurveysPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center">
-          <ClipboardList size={20} className="text-sky-400" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold admin-text">Surveys</h1>
-          <p className="text-sm text-slate-400">
-            {surveys.length} active survey{surveys.length !== 1 ? "s" : ""}
-          </p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-display-xs font-semibold text-primary">Surveys</h1>
+        <p className="mt-1 text-md text-tertiary">
+          {surveys.length} active survey{surveys.length !== 1 ? "s" : ""}
+        </p>
       </div>
 
       {surveys.length === 0 ? (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-12 text-center">
-          <ClipboardList size={32} className="text-slate-500 mx-auto mb-3" />
-          <p className="text-sm text-slate-400">
+        <div className="rounded-xl bg-primary p-12 text-center shadow-xs ring-1 ring-secondary">
+          <FeaturedIcon
+            color="gray"
+            theme="modern"
+            size="lg"
+            icon={ClipboardCheck}
+            className="mx-auto mb-4"
+          />
+          <h3 className="mb-1 text-md font-semibold text-primary">
+            No surveys available
+          </h3>
+          <p className="text-sm text-tertiary">
             No surveys are currently available.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {surveys.map((survey) => (
             <div
               key={survey.id}
-              className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] transition-colors group"
+              className="flex flex-col rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center shrink-0">
-                  <ClipboardList size={18} className="text-sky-400" />
-                </div>
+              <div className="mb-3 flex items-start justify-between">
+                <FeaturedIcon color="brand" theme="light" size="md" icon={ClipboardCheck} />
                 {survey.current_question_index > 0 && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400">
+                  <Badge type="pill-color" size="sm" color="warning">
                     In Progress
-                  </span>
+                  </Badge>
                 )}
               </div>
-              <h3 className="text-sm font-semibold admin-text mb-1 line-clamp-2">
+              <h3 className="mb-1 line-clamp-2 text-sm font-semibold text-primary">
                 {survey.title}
               </h3>
               {survey.description && (
-                <p className="text-xs text-slate-400 line-clamp-2 mb-3">
+                <p className="mb-3 line-clamp-2 text-sm text-tertiary">
                   {survey.description}
                 </p>
               )}
               {survey.deadline_at && (
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-4">
-                  <Calendar size={10} />
-                  Expires{" "}
-                  {new Date(survey.deadline_at).toLocaleDateString()}
+                <div className="mb-4 flex items-center gap-1.5 text-xs text-quaternary">
+                  <Calendar aria-hidden="true" className="size-3" />
+                  Expires {new Date(survey.deadline_at).toLocaleDateString()}
                 </div>
               )}
-              <Link
+              <Button
                 href={`/portal/surveys/${survey.id}`}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium transition-colors"
+                size="md"
+                color="primary"
+                className="mt-auto w-full"
+                iconTrailing={<ArrowRight data-icon />}
               >
                 {survey.current_question_index > 0
                   ? "Continue Survey"
                   : "Start Survey"}
-                <ArrowRight size={14} />
-              </Link>
+              </Button>
             </div>
           ))}
         </div>

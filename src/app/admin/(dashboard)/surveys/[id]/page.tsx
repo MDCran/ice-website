@@ -5,19 +5,30 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
-  ArrowLeft,
-  ClipboardList,
-  Plus,
-  X,
-  Trash2,
-  Pencil,
-  Loader2,
   AlertCircle,
-  Save,
-  GripVertical,
-  Send,
-  RotateCcw,
-} from "lucide-react";
+  ArrowLeft,
+  ClipboardCheck,
+  DotsGrid,
+  FlipBackward,
+  Pencil01,
+  Plus,
+  Save01,
+  Send01,
+  Trash01,
+  XClose,
+} from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
+import type { BadgeColor } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { CloseButton } from "@/components/base/buttons/close-button";
+import { Input } from "@/components/base/input/input";
+import { NativeSelect } from "@/components/base/select/select-native";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Toggle } from "@/components/base/toggle/toggle";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -56,14 +67,14 @@ const QUESTION_TYPES = [
   { value: "star_rating", label: "Star Rating" },
 ];
 
-const typeBadge: Record<string, { bg: string; text: string }> = {
-  short_text: { bg: "bg-blue-500/10", text: "text-blue-400" },
-  long_text: { bg: "bg-indigo-500/10", text: "text-indigo-400" },
-  multiple_choice: { bg: "bg-violet-500/10", text: "text-violet-400" },
-  yes_no: { bg: "bg-emerald-500/10", text: "text-emerald-400" },
-  ranking: { bg: "bg-amber-500/10", text: "text-amber-400" },
-  phone_time_day: { bg: "bg-cyan-500/10", text: "text-cyan-400" },
-  star_rating: { bg: "bg-yellow-500/10", text: "text-yellow-400" },
+const typeBadge: Record<string, BadgeColor<"pill-color">> = {
+  short_text: "blue",
+  long_text: "indigo",
+  multiple_choice: "purple",
+  yes_no: "success",
+  ranking: "warning",
+  phone_time_day: "sky",
+  star_rating: "orange",
 };
 
 /* ------------------------------------------------------------------ */
@@ -322,15 +333,15 @@ export default function SurveyBuilderPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-slate-400" />
+      <div className="flex h-64 items-center justify-center">
+        <LoadingIndicator type="line-spinner" size="md" />
       </div>
     );
   }
 
   if (!survey) {
     return (
-      <div className="text-red-400 text-center py-12">Survey not found.</div>
+      <div className="py-12 text-center text-sm text-error-primary">Survey not found.</div>
     );
   }
 
@@ -342,22 +353,20 @@ export default function SurveyBuilderPage() {
       <div className="mb-6">
         <Link
           href="/admin/surveys"
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-tertiary transition-colors hover:text-tertiary_hover"
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft className="size-4" />
           Back to Surveys
         </Link>
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center">
-            <ClipboardList size={20} className="text-sky-400" />
-          </div>
+          <FeaturedIcon color="brand" theme="modern" size="md" icon={ClipboardCheck} />
           <div>
-            <h1 className="text-2xl font-bold admin-text">Survey Builder</h1>
-            <p className="text-sm text-slate-400">
+            <h1 className="text-display-xs font-semibold text-primary">Survey Builder</h1>
+            <p className="text-sm text-tertiary">
               Editing: {survey.title}
             </p>
           </div>
@@ -365,224 +374,189 @@ export default function SurveyBuilderPage() {
         <div className="flex items-center gap-3">
           {/* Status transition buttons */}
           {survey.status === "draft" && (
-            <button
+            <Button
+              size="md"
+              color="secondary"
+              iconLeading={Send01}
+              isDisabled={saving}
               onClick={() => handleStatusChange("active")}
-              disabled={saving}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
             >
-              <Send size={16} />
               Send to Client
-            </button>
+            </Button>
           )}
           {survey.status === "active" && (
-            <button
+            <Button
+              size="md"
+              color="secondary"
+              iconLeading={FlipBackward}
+              isDisabled={saving}
               onClick={() => handleStatusChange("draft")}
-              disabled={saving}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
             >
-              <RotateCcw size={16} />
               Revoke
-            </button>
+            </Button>
           )}
           {survey.status === "completed" && (
-            <span className="px-4 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm font-medium">
+            <Badge size="md" color="success">
               Completed
-            </span>
+            </Badge>
           )}
 
-          <button
+          <Button
+            size="md"
+            color="primary"
+            iconLeading={Save01}
+            isLoading={saving}
+            showTextWhileLoading
+            isDisabled={saving || survey.status === "completed"}
             onClick={handleSaveAll}
-            disabled={saving || survey.status === "completed"}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
           >
-            {saving ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Save size={16} />
-            )}
             {saving ? "Saving..." : "Save All"}
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Status messages */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6">
-          <AlertCircle size={16} />
+        <div className="mb-6 flex items-center gap-2 rounded-lg bg-utility-red-50 p-3 text-sm text-utility-red-700 ring-1 ring-utility-red-200 ring-inset">
+          <AlertCircle className="size-4 shrink-0 text-utility-red-500" />
           {error}
         </div>
       )}
       {success && (
-        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm mb-6">
+        <div className="mb-6 rounded-lg bg-utility-green-50 p-3 text-sm text-utility-green-700 ring-1 ring-utility-green-200 ring-inset">
           {success}
         </div>
       )}
 
       {/* Survey meta fields */}
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 mb-8">
-        <h2 className="text-lg font-semibold admin-text mb-6">
+      <div className="mb-8 rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary">
+        <h2 className="mb-6 text-lg font-semibold text-primary">
           Survey Details
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <Input
+            label="Title"
+            value={survey.title}
+            onChange={(value) => setSurvey({ ...survey, title: value })}
+          />
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Title
-            </label>
-            <input
-              type="text"
-              value={survey.title}
-              onChange={(e) =>
-                setSurvey({ ...survey, title: e.target.value })
-              }
-              className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Status
-            </label>
-            <div className="flex items-center gap-3">
+            <p className="mb-1.5 text-sm font-medium text-secondary">Status</p>
+            <div className="flex items-center gap-2 pt-1.5">
               {(["draft", "active", "completed"] as const).map((s) => {
-                const colors = {
-                  draft: "bg-slate-600 text-white",
-                  active: "bg-sky-500 text-white",
-                  completed: "bg-emerald-500 text-white",
+                const activeColors: Record<string, BadgeColor<"pill-color">> = {
+                  draft: "gray",
+                  active: "brand",
+                  completed: "success",
                 };
                 return (
-                  <span
+                  <Badge
                     key={s}
-                    className={`px-4 py-2.5 rounded-xl text-sm font-medium capitalize ${
-                      survey.status === s
-                        ? colors[s]
-                        : "bg-white/[0.06] border border-white/10 text-slate-500"
-                    }`}
+                    size="lg"
+                    color={survey.status === s ? activeColors[s] : "gray"}
+                    className={survey.status === s ? "capitalize" : "capitalize opacity-50"}
                   >
                     {s}
-                  </span>
+                  </Badge>
                 );
               })}
             </div>
           </div>
           <div className="md:col-span-2">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Description
-            </label>
-            <textarea
-              value={survey.description ?? ""}
-              onChange={(e) =>
-                setSurvey({
-                  ...survey,
-                  description: e.target.value || null,
-                })
-              }
+            <TextArea
+              label="Description"
               rows={3}
-              className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all resize-none"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Expiration Date
-            </label>
-            <input
-              type="date"
-              value={
-                survey.expires_at
-                  ? survey.expires_at.substring(0, 10)
-                  : ""
-              }
-              onChange={(e) =>
+              value={survey.description ?? ""}
+              onChange={(value) =>
                 setSurvey({
                   ...survey,
-                  expires_at: e.target.value || null,
+                  description: value || null,
                 })
               }
-              className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
+              textAreaClassName="resize-none"
             />
           </div>
+          <Input
+            label="Expiration Date"
+            type="date"
+            value={survey.expires_at ? survey.expires_at.substring(0, 10) : ""}
+            onChange={(value) =>
+              setSurvey({
+                ...survey,
+                expires_at: value || null,
+              })
+            }
+          />
         </div>
       </div>
 
       {/* Questions section */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold admin-text">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-primary">
           Questions ({visibleQuestions.length})
         </h2>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.06] border border-white/10 text-sm text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-        >
-          <Plus size={16} />
+        <Button size="sm" color="secondary" iconLeading={Plus} onClick={openAddModal}>
           Add Question
-        </button>
+        </Button>
       </div>
 
       {visibleQuestions.length === 0 ? (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-12 text-center">
-          <ClipboardList
-            size={48}
-            className="mx-auto text-slate-600 mb-4"
-          />
-          <p className="text-slate-400 text-lg mb-2">No questions yet</p>
-          <p className="text-slate-500 text-sm">
+        <div className="flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-16 text-center shadow-xs ring-1 ring-secondary">
+          <FeaturedIcon color="gray" theme="modern" size="lg" icon={ClipboardCheck} />
+          <p className="mt-4 text-md font-semibold text-primary">No questions yet</p>
+          <p className="mt-1 text-sm text-tertiary">
             Add questions to build your survey.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
           {visibleQuestions.map((q, idx) => {
-            const badge = typeBadge[q.question_type] ?? {
-              bg: "bg-slate-500/10",
-              text: "text-slate-400",
-            };
             const realIndex = questions.indexOf(q);
             return (
               <div
                 key={q.id}
-                className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 flex items-start gap-4"
+                className="flex items-start gap-4 rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary"
               >
-                <div className="pt-1 text-slate-600">
-                  <GripVertical size={16} />
+                <div className="pt-1 text-fg-quaternary">
+                  <DotsGrid className="size-4" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xs text-slate-500 font-mono">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <span className="font-mono text-xs text-quaternary">
                       Q{idx + 1}
                     </span>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${badge.bg} ${badge.text}`}
-                    >
+                    <Badge size="sm" color={typeBadge[q.question_type] ?? "gray"} className="uppercase">
                       {q.question_type.replace(/_/g, " ")}
-                    </span>
+                    </Badge>
                     {q.is_required && (
-                      <span className="text-[10px] text-red-400 font-medium">
+                      <span className="text-xs font-medium text-error-primary">
                         Required
                       </span>
                     )}
                   </div>
-                  <p className="text-sm admin-text font-medium">
+                  <p className="text-sm font-medium text-primary">
                     {q.question_text}
                   </p>
                   {q.description && (
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="mt-1 text-xs text-tertiary">
                       {q.description}
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
+                <div className="flex shrink-0 items-center gap-1">
+                  <ButtonUtility
+                    size="sm"
+                    color="tertiary"
+                    icon={Pencil01}
+                    tooltip="Edit"
                     onClick={() => openEditModal(realIndex)}
-                    className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                    title="Edit"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
+                  />
+                  <ButtonUtility
+                    size="sm"
+                    color="tertiary"
+                    icon={Trash01}
+                    tooltip="Delete"
                     onClick={() => handleDeleteQuestion(realIndex)}
-                    className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  />
                 </div>
               </div>
             );
@@ -591,254 +565,198 @@ export default function SurveyBuilderPage() {
       )}
 
       {/* Question modal */}
-      {modalOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            onClick={() => {
-              setModalOpen(false);
-              resetForm();
-            }}
-          />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold admin-text">
+      <ModalOverlay
+        isOpen={modalOpen}
+        onOpenChange={(isOpen) => {
+          setModalOpen(isOpen);
+          if (!isOpen) resetForm();
+        }}
+        isDismissable
+      >
+        <Modal className="w-full max-w-lg">
+          <Dialog>
+            <div className="p-6">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-primary">
                   {editingIndex !== null ? "Edit Question" : "Add Question"}
                 </h2>
-                <button
-                  onClick={() => {
+                <CloseButton
+                  size="sm"
+                  onPress={() => {
                     setModalOpen(false);
                     resetForm();
                   }}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                >
-                  <X size={18} />
-                </button>
+                />
               </div>
 
               <div className="space-y-5">
                 {/* Type */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Question Type
-                  </label>
-                  <select
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-                  >
-                    {QUESTION_TYPES.map((t) => (
-                      <option
-                        key={t.value}
-                        value={t.value}
-                        className="bg-slate-900"
-                      >
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <NativeSelect
+                  label="Question Type"
+                  value={formType}
+                  onChange={(e) => setFormType(e.target.value)}
+                  options={QUESTION_TYPES.map((t) => ({ label: t.label, value: t.value }))}
+                />
 
                 {/* Question text */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Question Text
-                  </label>
-                  <input
-                    type="text"
-                    value={formText}
-                    onChange={(e) => setFormText(e.target.value)}
-                    placeholder="Enter your question..."
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all"
-                  />
-                </div>
+                <Input
+                  label="Question Text"
+                  placeholder="Enter your question..."
+                  value={formText}
+                  onChange={(value) => setFormText(value)}
+                />
 
                 {/* Description */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Description (optional)
-                  </label>
-                  <textarea
-                    value={formDesc}
-                    onChange={(e) => setFormDesc(e.target.value)}
-                    placeholder="Additional context for this question..."
-                    rows={2}
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 transition-all resize-none"
-                  />
-                </div>
+                <TextArea
+                  label="Description (optional)"
+                  placeholder="Additional context for this question..."
+                  rows={2}
+                  value={formDesc}
+                  onChange={(value) => setFormDesc(value)}
+                  textAreaClassName="resize-none"
+                />
 
                 {/* Required toggle */}
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setFormRequired(!formRequired)}
-                    className={`relative w-11 h-6 rounded-full transition-colors ${
-                      formRequired ? "bg-sky-500" : "bg-white/10"
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                        formRequired ? "translate-x-5" : ""
-                      }`}
-                    />
-                  </button>
-                  <span className="text-sm text-slate-300">Required</span>
-                </div>
+                <Toggle
+                  size="sm"
+                  label="Required"
+                  isSelected={formRequired}
+                  onChange={(isSelected) => setFormRequired(isSelected)}
+                />
 
                 {/* Multiple choice config */}
                 {formType === "multiple_choice" && (
-                  <div className="space-y-3 border-t border-white/10 pt-5">
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Choices
-                    </label>
+                  <div className="space-y-3 border-t border-secondary pt-5">
+                    <p className="text-sm font-medium text-secondary">Choices</p>
                     {formChoices.map((c, i) => (
                       <div key={i} className="flex items-center gap-2">
-                        <input
-                          type="text"
+                        <Input
+                          size="sm"
+                          aria-label={`Choice ${i + 1}`}
+                          placeholder={`Choice ${i + 1}`}
                           value={c}
-                          onChange={(e) => {
+                          onChange={(value) => {
                             const updated = [...formChoices];
-                            updated[i] = e.target.value;
+                            updated[i] = value;
                             setFormChoices(updated);
                           }}
-                          placeholder={`Choice ${i + 1}`}
-                          className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 admin-text text-sm placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 transition-all"
+                          className="flex-1"
                         />
                         {formChoices.length > 1 && (
-                          <button
-                            type="button"
+                          <ButtonUtility
+                            size="xs"
+                            color="tertiary"
+                            icon={XClose}
+                            tooltip="Remove choice"
                             onClick={() =>
-                              setFormChoices(
-                                formChoices.filter((_, j) => j !== i)
-                              )
+                              setFormChoices(formChoices.filter((_, j) => j !== i))
                             }
-                            className="p-2 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-colors"
-                          >
-                            <X size={14} />
-                          </button>
+                          />
                         )}
                       </div>
                     ))}
-                    <button
-                      type="button"
+                    <Button
+                      size="sm"
+                      color="link-color"
+                      iconLeading={Plus}
                       onClick={() => setFormChoices([...formChoices, ""])}
-                      className="text-xs text-sky-400 hover:text-sky-300 transition-colors"
                     >
-                      + Add choice
-                    </button>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                        Max Selections
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={formMaxSelections}
-                        onChange={(e) =>
-                          setFormMaxSelections(
-                            parseInt(e.target.value) || 1
-                          )
-                        }
-                        className="w-32 px-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 admin-text text-sm focus:outline-none focus:border-sky-400/60 transition-all"
-                      />
-                    </div>
+                      Add choice
+                    </Button>
+                    <Input
+                      size="sm"
+                      type="number"
+                      label="Max Selections"
+                      value={String(formMaxSelections)}
+                      onChange={(value) => setFormMaxSelections(parseInt(value) || 1)}
+                      className="w-32"
+                    />
                   </div>
                 )}
 
                 {/* Ranking config */}
                 {formType === "ranking" && (
-                  <div className="space-y-3 border-t border-white/10 pt-5">
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Items to Rank
-                    </label>
+                  <div className="space-y-3 border-t border-secondary pt-5">
+                    <p className="text-sm font-medium text-secondary">Items to Rank</p>
                     {formRankItems.map((item, i) => (
                       <div key={i} className="flex items-center gap-2">
-                        <input
-                          type="text"
+                        <Input
+                          size="sm"
+                          aria-label={`Item ${i + 1}`}
+                          placeholder={`Item ${i + 1}`}
                           value={item}
-                          onChange={(e) => {
+                          onChange={(value) => {
                             const updated = [...formRankItems];
-                            updated[i] = e.target.value;
+                            updated[i] = value;
                             setFormRankItems(updated);
                           }}
-                          placeholder={`Item ${i + 1}`}
-                          className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 admin-text text-sm placeholder:text-slate-500 focus:outline-none focus:border-sky-400/60 transition-all"
+                          className="flex-1"
                         />
                         {formRankItems.length > 1 && (
-                          <button
-                            type="button"
+                          <ButtonUtility
+                            size="xs"
+                            color="tertiary"
+                            icon={XClose}
+                            tooltip="Remove item"
                             onClick={() =>
-                              setFormRankItems(
-                                formRankItems.filter((_, j) => j !== i)
-                              )
+                              setFormRankItems(formRankItems.filter((_, j) => j !== i))
                             }
-                            className="p-2 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-colors"
-                          >
-                            <X size={14} />
-                          </button>
+                          />
                         )}
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFormRankItems([...formRankItems, ""])
-                      }
-                      className="text-xs text-sky-400 hover:text-sky-300 transition-colors"
+                    <Button
+                      size="sm"
+                      color="link-color"
+                      iconLeading={Plus}
+                      onClick={() => setFormRankItems([...formRankItems, ""])}
                     >
-                      + Add item
-                    </button>
+                      Add item
+                    </Button>
                   </div>
                 )}
 
                 {/* Star rating config */}
                 {formType === "star_rating" && (
-                  <div className="border-t border-white/10 pt-5">
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Max Stars
-                    </label>
-                    <input
+                  <div className="border-t border-secondary pt-5">
+                    <Input
+                      size="sm"
                       type="number"
-                      min={1}
-                      max={10}
-                      value={formMaxStars}
-                      onChange={(e) =>
-                        setFormMaxStars(parseInt(e.target.value) || 5)
-                      }
-                      className="w-32 px-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 admin-text text-sm focus:outline-none focus:border-sky-400/60 transition-all"
+                      label="Max Stars"
+                      value={String(formMaxStars)}
+                      onChange={(value) => setFormMaxStars(parseInt(value) || 5)}
+                      className="w-32"
                     />
                   </div>
                 )}
 
                 {/* Actions */}
                 <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="button"
+                  <Button
+                    size="md"
+                    color="primary"
+                    isDisabled={!formText.trim()}
                     onClick={handleSaveQuestion}
-                    disabled={!formText.trim()}
-                    className="flex-1 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors disabled:opacity-50"
+                    className="flex-1"
                   >
-                    {editingIndex !== null
-                      ? "Update Question"
-                      : "Add Question"}
-                  </button>
-                  <button
-                    type="button"
+                    {editingIndex !== null ? "Update Question" : "Add Question"}
+                  </Button>
+                  <Button
+                    size="md"
+                    color="secondary"
                     onClick={() => {
                       setModalOpen(false);
                       resetForm();
                     }}
-                    className="px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
     </div>
   );
 }

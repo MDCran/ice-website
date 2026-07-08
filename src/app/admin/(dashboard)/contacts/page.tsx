@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { Mail } from "lucide-react";
+import { Mail01 } from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { Table, TableCard } from "@/components/application/table/table";
 import ContactsFilter from "./ContactsFilter";
 import ContactReadToggle from "./ContactReadToggle";
 
@@ -33,7 +36,7 @@ export default async function ContactsPage({
 
   if (error) {
     return (
-      <div className="text-red-400">
+      <div className="text-sm text-error-primary">
         Failed to load contacts: {error.message}
       </div>
     );
@@ -43,12 +46,12 @@ export default async function ContactsPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold admin-text">
+          <h1 className="text-display-xs font-semibold text-primary">
             Form Submissions
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="mt-1 text-sm text-tertiary">
             {contacts?.length ?? 0} total{unreadCount > 0 && ` · ${unreadCount} unread`}
           </p>
         </div>
@@ -62,95 +65,75 @@ export default async function ContactsPage({
       />
 
       {!contacts || contacts.length === 0 ? (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-12 text-center">
-          <Mail size={48} className="mx-auto text-slate-600 mb-4" />
-          <p className="text-slate-400 text-lg mb-2">
+        <div className="flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-16 text-center shadow-xs ring-1 ring-secondary">
+          <FeaturedIcon color="gray" theme="modern" size="lg" icon={Mail01} />
+          <p className="mt-4 text-md font-semibold text-primary">
             {q || from || to ? "No contacts match your filters" : "No submissions yet"}
           </p>
-          <p className="text-slate-500 text-sm">
+          <p className="mt-1 text-sm text-tertiary">
             {q || from || to
               ? "Try different search terms or date range."
               : "Contact form submissions will appear here."}
           </p>
         </div>
       ) : (
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm min-w-[1000px]">
-            <thead>
-              <tr className="border-b border-white/10 text-left">
-                <th className="px-4 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider w-10">
-                </th>
-                <th className="px-4 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-4 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-4 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Company
-                </th>
-                <th className="px-4 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Phone
-                </th>
-                <th className="px-4 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Service
-                </th>
-                <th className="px-4 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider max-w-[200px]">
-                  Message
-                </th>
-                <th className="px-4 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Date
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
+        <TableCard.Root size="sm">
+          <Table aria-label="Form submissions" size="sm">
+            <Table.Header>
+              <Table.Head id="read" aria-label="Read status" className="w-10" />
+              <Table.Head id="name" label="Name" isRowHeader />
+              <Table.Head id="email" label="Email" />
+              <Table.Head id="company" label="Company" />
+              <Table.Head id="phone" label="Phone" />
+              <Table.Head id="service" label="Service" />
+              <Table.Head id="message" label="Message" />
+              <Table.Head id="date" label="Date" />
+            </Table.Header>
+            <Table.Body>
               {contacts.map((contact) => (
-                <tr
-                  key={contact.id}
-                  className={`hover:bg-white/[0.03] transition-colors ${
-                    !contact.is_read ? "bg-sky-500/[0.03]" : ""
-                  }`}
-                >
-                  <td className="px-4 py-4">
+                <Table.Row key={contact.id} id={contact.id}>
+                  <Table.Cell className="px-3">
                     <ContactReadToggle
                       id={contact.id}
                       isRead={contact.is_read ?? false}
                     />
-                  </td>
-                  <td className="px-4 py-4 admin-text font-medium whitespace-nowrap">
-                    {!contact.is_read && (
-                      <span className="inline-block w-2 h-2 rounded-full bg-sky-400 mr-2" />
-                    )}
-                    {contact.name ?? "—"}
-                  </td>
-                  <td className="px-4 py-4 text-slate-300 whitespace-nowrap">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
+                    <span className="flex items-center gap-2 text-sm font-medium text-primary">
+                      {!contact.is_read && (
+                        <span className="size-2 shrink-0 rounded-full bg-fg-brand-primary" />
+                      )}
+                      {contact.name ?? "—"}
+                    </span>
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {contact.email ? (
                       <a
                         href={`mailto:${contact.email}`}
-                        className="text-sky-400 hover:text-sky-300 transition-colors"
+                        className="font-medium text-brand-secondary transition-colors hover:text-brand-secondary_hover"
                       >
                         {contact.email}
                       </a>
                     ) : (
                       "—"
                     )}
-                  </td>
-                  <td className="px-4 py-4 text-slate-400 whitespace-nowrap">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {contact.company ?? "—"}
-                  </td>
-                  <td className="px-4 py-4 text-slate-400 whitespace-nowrap">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {contact.phone ?? "—"}
-                  </td>
-                  <td className="px-4 py-4 text-slate-400 whitespace-nowrap">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap">
                     {contact.service ? (
-                      <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-sky-500/20 text-sky-300">
+                      <Badge size="sm" color="brand">
                         {contact.service}
-                      </span>
+                      </Badge>
                     ) : (
                       "—"
                     )}
-                  </td>
-                  <td className="px-4 py-4 text-slate-400 max-w-[200px]">
+                  </Table.Cell>
+                  <Table.Cell className="max-w-50">
                     <span className="block truncate" title={contact.message ?? ""}>
                       {contact.message
                         ? contact.message.length > 80
@@ -158,8 +141,8 @@ export default async function ContactsPage({
                           : contact.message
                         : "—"}
                     </span>
-                  </td>
-                  <td className="px-4 py-4 text-slate-400 text-xs whitespace-nowrap">
+                  </Table.Cell>
+                  <Table.Cell className="whitespace-nowrap text-xs">
                     {contact.created_at
                       ? new Date(contact.created_at).toLocaleDateString("en-US", {
                           month: "short",
@@ -169,12 +152,12 @@ export default async function ContactsPage({
                           minute: "2-digit",
                         })
                       : "—"}
-                  </td>
-                </tr>
+                  </Table.Cell>
+                </Table.Row>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </Table.Body>
+          </Table>
+        </TableCard.Root>
       )}
     </div>
   );

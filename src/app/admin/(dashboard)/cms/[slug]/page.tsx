@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@untitledui/icons";
 import CMSPageEditor from "./CMSPageEditor";
 
 interface PageProps {
@@ -30,12 +30,12 @@ export default async function CMSSectionEditorPage({ params }: PageProps) {
 
   return (
     <div>
-      <div className="flex items-center gap-4 mb-6">
+      <div className="mb-6 flex items-center gap-4">
         <Link
           href="/admin/cms"
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-tertiary transition-colors hover:text-tertiary_hover"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft className="size-4" />
           Back to Pages
         </Link>
       </div>

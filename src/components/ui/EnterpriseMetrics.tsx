@@ -32,10 +32,10 @@ function useCountUp(target: number, inView: boolean, decimals = 0, duration = 20
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function UptimeGauge({ inView }: { inView: boolean }) {
-  const value = useCountUp(99.999, inView, 3);
+  const value = useCountUp(99.99, inView, 2);
   const radius = 60;
   const circumference = Math.PI * radius;
-  const progress = inView ? (99.999 / 100) * circumference : 0;
+  const progress = inView ? (99.99 / 100) * circumference : 0;
 
   return (
     <div className="flex flex-col items-center">
