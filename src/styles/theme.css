@@ -738,7 +738,7 @@
 
         --color-app-store-badge-border: var(--color-white);
         --color-avatar-styles-bg-neutral: 224 224 224 1;
-        --color-featured-icon-light-fg-brand: var(--color-brand-200);
+        --color-featured-icon-light-fg-brand: var(--color-white);
         --color-featured-icon-light-fg-error: var(--color-red-200);
         --color-featured-icon-light-fg-gray: var(--color-neutral-200);
         --color-featured-icon-light-fg-success: var(--color-green-200);

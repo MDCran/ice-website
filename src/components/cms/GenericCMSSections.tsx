@@ -8,7 +8,7 @@ import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { Grid as GridPattern } from "@/components/shared-assets/background-patterns/grid";
 import { IllustrationRenderer } from "@/components/illustrations/IllustrationRenderer";
-import { BrandOrbs, Drift } from "@/components/effects/AmbientMotion";
+import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import { resolveIcon } from "@/lib/iconMap";
 import { cx } from "@/utils/cx";
 
@@ -300,7 +300,7 @@ function SectionHeading({
   return (
     <Reveal className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
       {eyebrow && (
-        <span className="text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+        <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
           {eyebrow}
         </span>
       )}
@@ -338,11 +338,11 @@ function renderHero(section: CMSRenderableSection) {
       <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
         <Reveal className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
           {eyebrow && (
-            <span className="text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+            <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
               {eyebrow}
             </span>
           )}
-          <h1 className={cx("text-display-md font-semibold tracking-tight text-primary md:text-display-lg", eyebrow && "mt-4")}>
+          <h1 className={cx("text-display-lg font-semibold tracking-tight text-primary md:text-display-xl", eyebrow && "mt-4")}>
             {headline}
             {highlight && <span className="text-brand-tertiary_alt"> {highlight}</span>}
           </h1>
@@ -354,19 +354,17 @@ function renderHero(section: CMSRenderableSection) {
             </div>
           )}
           {proofLabels.length > 0 && (
-            <div className="mt-10 flex w-full flex-col items-center gap-4 md:mt-12">
-              <Hairline />
-              <ul className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
-                {proofLabels.map((label, index) => (
-                  <li key={`${label}-${index}`} className="flex items-center gap-3">
-                    {index > 0 && <span aria-hidden="true" className="size-1 rounded-full bg-fg-brand-secondary/60" />}
-                    <span className="text-xs font-medium tracking-wide text-quaternary uppercase">
-                      {label}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ul className="mt-10 flex w-full max-w-2xl flex-col gap-3 border-t border-secondary pt-6 sm:flex-row sm:flex-wrap sm:items-stretch sm:justify-center sm:gap-0 sm:divide-x sm:divide-secondary">
+              {proofLabels.map((label) => (
+                <li
+                  key={label}
+                  className="flex flex-1 items-center justify-center gap-2.5 sm:px-4"
+                >
+                  <Check className="size-4 shrink-0 text-fg-brand-primary dark:text-white" aria-hidden="true" />
+                  <span className="text-sm font-medium text-secondary">{label}</span>
+                </li>
+              ))}
+            </ul>
           )}
         </Reveal>
       </div>
@@ -374,7 +372,7 @@ function renderHero(section: CMSRenderableSection) {
   );
 }
 
-/** Full-width brand statement band — a distinct mid-page brand moment. */
+/** Statement band — restrained secondary surface, not a loud blue wash. */
 function renderBanner(section: CMSRenderableSection) {
   const content = section.content ?? {};
   const eyebrow = text(content.eyebrow ?? content.label);
@@ -382,54 +380,40 @@ function renderBanner(section: CMSRenderableSection) {
   const description = text(content.description ?? content.subheadline);
   const cta = content.cta ?? content.cta_primary ?? content.ctaPrimary;
   const hasCta = Boolean(text(cta?.label) && text(cta?.href));
-  const watermarkIconName = text(content.icon);
-  const WatermarkIcon = watermarkIconName ? resolveIcon(watermarkIconName) : Zap;
 
   return (
-    <section className="relative isolate overflow-hidden bg-brand-section py-16 md:py-24">
+    <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-solid/25 via-transparent to-brand-solid/10"
-      />
-      {/* Slow-drifting sheen — a diagonal light band that sways across the band */}
-      <Drift
-        className="absolute inset-y-0 -left-1/4 w-1/2 bg-gradient-to-r from-transparent via-white/[0.07] to-transparent blur-2xl"
-        distance={220}
-        duration={20}
-      />
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 flex justify-center opacity-[0.08]">
-        <GridPattern size="lg" className="-translate-y-1/2 text-primary_on-brand" />
-      </div>
-      <AmbientOrb className="-top-20 left-[15%] size-72 bg-brand-solid/30" />
-      <AmbientOrb className="-bottom-24 right-[10%] size-80 bg-brand-solid/25" duration={9.5} delay={1.6} />
-      {/* Matte film grain + rotated icon watermark bleeding past the band edge */}
-      <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.05]" />
-      <WatermarkIcon
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-4 -bottom-8 size-40 -rotate-12 text-white/[0.07] md:size-48"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/[0.06] via-transparent to-brand-600/[0.04]"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
+        className="texture-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_at_center,black_15%,transparent_70%)]"
+      />
+      <BrandOrbs />
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/30 to-transparent"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
+        className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand-500/30 to-transparent"
       />
       <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
-        <Reveal className="mx-auto flex w-full max-w-4xl flex-col items-center text-center">
+        <Reveal className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
           {eyebrow && (
-            <span className="mb-3 text-xs font-semibold tracking-widest text-secondary_on-brand uppercase md:text-sm">
+            <span className="mb-3 text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
               {eyebrow}
             </span>
           )}
-          <p className="text-display-xs font-semibold tracking-tight text-primary_on-brand md:text-display-md">
+          <p className="text-display-xs font-semibold tracking-tight text-primary md:text-display-sm">
             {statement}
           </p>
-          {description && <p className="mt-4 max-w-2xl text-lg text-tertiary_on-brand md:mt-5">{description}</p>}
+          {description && <p className="mt-4 max-w-2xl text-lg text-tertiary md:mt-5">{description}</p>}
           {hasCta && (
             <div className="mt-8">
-              <CTAButton button={cta} color="secondary" />
+              <CTAButton button={cta} color="primary" />
             </div>
           )}
         </Reveal>
@@ -458,7 +442,16 @@ function renderUseCases(section: CMSRenderableSection) {
           heading={text(content.heading, titleFromKey(section.section_key))}
           description={text(content.description)}
         />
-        <ul className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-16 lg:grid-cols-3">
+        <ul
+          className={cx(
+            "mt-12 grid grid-cols-1 gap-5 md:mt-16",
+            items.length === 4
+              ? "sm:grid-cols-2 lg:grid-cols-4"
+              : items.length === 3
+                ? "sm:grid-cols-3"
+                : "sm:grid-cols-2 lg:grid-cols-3",
+          )}
+        >
           {items.map((item, index) => {
             const Icon = resolveIcon(item.icon);
             return (
@@ -494,7 +487,7 @@ function renderRelated(section: CMSRenderableSection) {
         aria-hidden="true"
         className="texture-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_at_bottom,black_15%,transparent_70%)]"
       />
-      <AmbientOrb className="-bottom-28 left-[10%] size-80 bg-brand-solid/10" duration={12} delay={1.5} />
+      <AmbientOrb className="bottom-0 left-[10%] size-72 bg-brand-solid/10" duration={12} delay={1.5} />
       <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
@@ -534,7 +527,7 @@ function renderRelated(section: CMSRenderableSection) {
   );
 }
 
-/** Numbered operating-model steps. */
+/** Numbered operating-model steps with staggered entrance. */
 function renderProcess(section: CMSRenderableSection) {
   const content = section.content ?? {};
   const items = list(content.items);
@@ -551,9 +544,9 @@ function renderProcess(section: CMSRenderableSection) {
         <ol className="mt-12 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 md:mt-16 lg:grid-cols-4">
           {items.map((item, index) => (
             <li key={`${item.step ?? item.title ?? section.section_key}-${index}`}>
-              <Reveal delay={index * 0.06} className="flex h-full flex-col">
+              <Reveal delay={index * 0.1} className="flex h-full flex-col">
                 <div className="flex items-center gap-3">
-                  <span className="text-display-xs font-semibold tracking-tight text-brand-tertiary_alt">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-solid text-sm font-semibold text-white ring-4 ring-brand-solid/10">
                     {text(String(item.step ?? ""), String(index + 1).padStart(2, "0"))}
                   </span>
                   <PulseDot delay={index * 0.9} />
@@ -588,13 +581,30 @@ function renderFeatureGrid(section: CMSRenderableSection) {
           heading={text(content.heading, titleFromKey(section.section_key))}
           description={text(content.description)}
         />
-        <ul className="mt-12 grid w-full grid-cols-1 justify-items-center gap-x-8 gap-y-10 sm:grid-cols-2 md:mt-16 md:gap-y-16 lg:grid-cols-3">
+        <ul
+          className={cx(
+            "mt-12 grid w-full justify-items-center gap-x-8 gap-y-10 md:mt-16 md:gap-y-16",
+            items.length === 4
+              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+              : items.length === 3
+                ? "grid-cols-1 sm:grid-cols-3"
+                : items.length === 2
+                  ? "grid-cols-1 sm:grid-cols-2"
+                  : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+          )}
+        >
           {items.map((item, index) => {
             const Icon = resolveIcon(item.icon);
             const proof = text(item.proof);
             return (
               <li key={`${item.title ?? section.section_key}-${index}`}>
-                <Reveal delay={index * 0.06} className="flex max-w-sm flex-col items-center gap-4 text-center">
+                <Reveal
+                  delay={index * 0.06}
+                  className={cx(
+                    "flex flex-col items-center gap-4 text-center",
+                    items.length === 4 ? "max-w-xs" : "max-w-sm",
+                  )}
+                >
                   <AmbientIcon icon={Icon} size="lg" delay={(index % 3) * 1.1} />
                   <div>
                     <h3 className="text-lg font-semibold text-primary">
@@ -630,37 +640,39 @@ function renderStats(section: CMSRenderableSection) {
           heading={text(content.heading, titleFromKey(section.section_key))}
           description={text(content.description)}
         />
-        <div className="relative mt-12 overflow-hidden rounded-3xl bg-secondary ring-1 ring-secondary ring-inset md:mt-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]">
-          {/* Panel depth: brand hairline, masked grid, film grain */}
+        <div className="relative mt-12 overflow-hidden rounded-2xl bg-secondary ring-1 ring-secondary ring-inset md:mt-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent"
           />
-          <div
-            aria-hidden="true"
-            className="texture-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_75%)]"
-          />
-          <div
-            aria-hidden="true"
-            className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.07]"
-          />
-          <dl className="relative grid grid-cols-2 gap-8 px-6 py-10 md:grid-cols-4 md:p-16">
-          {items.map((item, index) => {
-            const sourceNote = text(item.source_note ?? item.sourceNote);
-            return (
-              <Reveal
-                key={`${item.label ?? section.section_key}-${index}`}
-                delay={index * 0.06}
-                className="flex flex-1 flex-col-reverse gap-3 text-center"
-              >
-                {sourceNote && <p className="text-xs text-quaternary">{sourceNote}</p>}
-                <dt className="text-md font-semibold text-primary md:text-lg">{text(item.label)}</dt>
-                <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
-                  <StatValue value={item.value} suffix={text(item.suffix)} />
-                </dd>
-              </Reveal>
-            );
-          })}
+          <dl
+            className={cx(
+              "relative grid grid-cols-2 divide-y divide-secondary sm:divide-y-0 md:divide-x",
+              items.length === 3
+                ? "md:grid-cols-3"
+                : items.length === 2
+                  ? "md:grid-cols-2"
+                  : items.length === 1
+                    ? "md:grid-cols-1"
+                    : "md:grid-cols-4",
+            )}
+          >
+            {items.map((item, index) => {
+              const sourceNote = text(item.source_note ?? item.sourceNote);
+              return (
+                <Reveal
+                  key={`${item.label ?? section.section_key}-${index}`}
+                  delay={index * 0.08}
+                  className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center md:px-8 md:py-14"
+                >
+                  <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
+                    <StatValue value={item.value} suffix={text(item.suffix)} />
+                  </dd>
+                  <dt className="text-sm font-semibold text-primary md:text-md">{text(item.label)}</dt>
+                  {sourceNote && <p className="text-xs text-quaternary">{sourceNote}</p>}
+                </Reveal>
+              );
+            })}
           </dl>
         </div>
       </div>
@@ -692,7 +704,18 @@ function renderValueProps(section: CMSRenderableSection) {
           heading={text(content.heading, titleFromKey(section.section_key))}
           description={text(content.description)}
         />
-        <ul className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-16 lg:grid-cols-4">
+        <ul
+          className={cx(
+            "mt-12 grid grid-cols-1 gap-5 md:mt-16",
+            items.length === 4
+              ? "sm:grid-cols-2 lg:grid-cols-4"
+              : items.length === 3
+                ? "sm:grid-cols-3"
+                : items.length === 2
+                  ? "sm:grid-cols-2"
+                  : "sm:grid-cols-2 lg:grid-cols-3",
+          )}
+        >
           {items.map((item, index) => {
             const Icon = resolveIcon(item.icon);
             const outcome = text(item.outcome ?? item.description ?? item.desc ?? item.text);
@@ -716,7 +739,7 @@ function renderValueProps(section: CMSRenderableSection) {
   );
 }
 
-/** The conversion money-band — count-up ROI metrics, before/after proof, and a decisive CTA. */
+/** ROI band — clean secondary surface with a proper comparison table. */
 function renderRoi(section: CMSRenderableSection) {
   const content = section.content ?? {};
   const metrics = list(content.metrics);
@@ -728,61 +751,70 @@ function renderRoi(section: CMSRenderableSection) {
   const ctaLabel = text(cta?.label);
   const ctaHref = text(cta?.href, "/contact");
   const hasCta = Boolean(ctaLabel);
+  const beforeLabel = text(comparison?.before_label ?? comparison?.beforeLabel, "In-House / DIY");
+  const afterLabel = text(comparison?.after_label ?? comparison?.afterLabel, "With ICE");
 
   if (metrics.length === 0 && !hasComparison && !hasCta) {
     return renderContentBlock(section);
   }
 
   return (
-    <section className="relative isolate overflow-hidden bg-brand-section py-16 md:py-24">
+    <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-solid/25 via-transparent to-brand-solid/10"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/[0.05] via-transparent to-transparent"
       />
-      <BrandOrbs variant="onBrand" />
-      {/* Engineering grid + film grain for depth on the brand band */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 flex justify-center opacity-[0.08]">
-        <GridPattern size="lg" className="-translate-y-1/2 text-primary_on-brand" />
-      </div>
-      <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.05]" />
+      <BrandOrbs />
       <div
         aria-hidden="true"
-        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/30 to-transparent"
       />
       <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
         <Reveal className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
           {text(content.eyebrow ?? content.label) && (
-            <span className="text-xs font-semibold tracking-widest text-secondary_on-brand uppercase md:text-sm">
+            <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
               {text(content.eyebrow ?? content.label)}
             </span>
           )}
-          <h2 className={cx("text-display-sm font-semibold tracking-tight text-primary_on-brand md:text-display-md", (content.eyebrow || content.label) && "mt-3")}>
+          <h2
+            className={cx(
+              "text-display-sm font-semibold tracking-tight text-primary md:text-display-md",
+              (content.eyebrow || content.label) && "mt-3",
+            )}
+          >
             {text(content.heading, titleFromKey(section.section_key))}
           </h2>
           {text(content.description) && (
-            <p className="mt-4 max-w-2xl text-lg text-tertiary_on-brand md:mt-5">{text(content.description)}</p>
+            <p className="mt-4 max-w-2xl text-lg text-tertiary md:mt-5">{text(content.description)}</p>
           )}
         </Reveal>
 
         {metrics.length > 0 && (
-          <dl className="mx-auto mt-12 grid max-w-4xl grid-cols-2 gap-8 md:mt-16 md:grid-cols-4">
+          <dl
+            className={cx(
+              "mx-auto mt-12 grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl bg-secondary ring-1 ring-secondary md:mt-16",
+              metrics.length === 3
+                ? "md:grid-cols-3"
+                : metrics.length === 2
+                  ? "md:grid-cols-2"
+                  : metrics.length === 1
+                    ? "md:grid-cols-1"
+                    : "md:grid-cols-4",
+            )}
+          >
             {metrics.map((metric, index) => {
               const note = text(metric.note ?? metric.source_note ?? metric.sourceNote);
               return (
                 <Reveal
                   key={`${metric.label ?? section.section_key}-${index}`}
                   delay={index * 0.08}
-                  className="flex flex-col-reverse gap-2 text-center"
+                  className="flex flex-col items-center justify-center gap-2 bg-primary px-5 py-8 text-center md:px-6 md:py-10"
                 >
-                  {note && <p className="text-xs text-quaternary_on-brand">{note}</p>}
-                  <dt className="text-md font-semibold text-secondary_on-brand">{text(metric.label)}</dt>
-                  <dd className="text-display-md font-semibold tracking-tight text-primary_on-brand md:text-display-lg">
+                  <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
                     <StatValue value={metric.value} suffix={text(metric.suffix)} />
                   </dd>
+                  <dt className="text-sm font-semibold text-primary">{text(metric.label)}</dt>
+                  {note && <p className="text-xs text-quaternary">{note}</p>}
                 </Reveal>
               );
             })}
@@ -790,42 +822,54 @@ function renderRoi(section: CMSRenderableSection) {
         )}
 
         {hasComparison && (
-          <Reveal delay={0.12} className="mx-auto mt-12 w-full max-w-2xl md:mt-16">
-            <div className="overflow-hidden rounded-2xl bg-primary/10 ring-1 ring-white/15 ring-inset backdrop-blur-sm">
-              <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 border-b border-white/15 px-5 py-4 md:gap-x-8 md:px-8">
-                <span className="text-sm font-semibold text-secondary_on-brand" />
-                <span className="text-right text-xs font-semibold tracking-wide text-quaternary_on-brand uppercase md:text-sm">
-                  {text(comparison?.before_label ?? comparison?.beforeLabel, "Before")}
-                </span>
-                <span className="text-right text-xs font-semibold tracking-wide text-primary_on-brand uppercase md:text-sm">
-                  {text(comparison?.after_label ?? comparison?.afterLabel, "With ICE")}
-                </span>
-              </div>
-              <ul>
-                {comparisonRows.map((row, index) => (
-                  <li
-                    key={`${row.label ?? index}`}
-                    className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 not-first:border-t not-first:border-white/10 px-5 py-4 md:gap-x-8 md:px-8"
-                  >
-                    <span className="text-md font-medium text-primary_on-brand">{text(row.label)}</span>
-                    <span className="flex items-center justify-end gap-2 text-right text-md text-quaternary_on-brand">
-                      <XClose aria-hidden="true" className="size-4 shrink-0 text-quaternary_on-brand" />
-                      <span>{text(row.before)}</span>
-                    </span>
-                    <span className="flex items-center justify-end gap-2 text-right text-md font-semibold text-primary_on-brand">
-                      <Check aria-hidden="true" className="size-4 shrink-0 text-primary_on-brand" />
-                      <span>{text(row.after)}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
+          <Reveal delay={0.12} className="mx-auto mt-12 w-full max-w-3xl md:mt-16">
+            <div className="overflow-hidden rounded-2xl bg-primary ring-1 ring-secondary ring-inset">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-secondary bg-secondary/60">
+                    <th scope="col" className="px-5 py-4 text-xs font-medium tracking-[0.15em] text-quaternary uppercase md:px-6">
+                      Capability
+                    </th>
+                    <th scope="col" className="px-4 py-4 text-center text-xs font-medium tracking-[0.15em] text-quaternary uppercase md:px-5">
+                      {beforeLabel}
+                    </th>
+                    <th scope="col" className="px-4 py-4 text-center text-xs font-medium tracking-[0.15em] text-brand-secondary uppercase md:px-5">
+                      {afterLabel}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisonRows.map((row, index) => (
+                    <tr
+                      key={`${row.label ?? index}`}
+                      className="border-b border-secondary last:border-b-0"
+                    >
+                      <th scope="row" className="px-5 py-4 text-md font-medium text-primary md:px-6">
+                        {text(row.label)}
+                      </th>
+                      <td className="px-4 py-4 text-center md:px-5">
+                        <span className="inline-flex items-center justify-center gap-1.5 text-sm text-tertiary">
+                          <XClose aria-hidden="true" className="size-4 shrink-0 text-fg-quaternary" />
+                          <span className="hidden sm:inline">{text(row.before)}</span>
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-center md:px-5">
+                        <span className="inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-primary">
+                          <Check aria-hidden="true" className="size-4 shrink-0 text-fg-brand-primary dark:text-white" />
+                          <span className="hidden sm:inline">{text(row.after)}</span>
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </Reveal>
         )}
 
         {hasCta && (
           <Reveal delay={0.16} className="mt-10 flex justify-center md:mt-12">
-            <Button color="secondary" size="xl" href={ctaHref} iconTrailing={ArrowRight}>
+            <Button color="primary" size="xl" href={ctaHref} iconTrailing={ArrowRight}>
               {ctaLabel}
             </Button>
           </Reveal>
@@ -856,7 +900,7 @@ function renderTimeline(section: CMSRenderableSection) {
               className="relative flex gap-4 md:gap-6"
             >
               <div className="flex flex-col items-center">
-                <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-secondary text-md font-semibold text-brand-secondary">
+                <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-solid text-md font-semibold text-white">
                   <AmbientHalo className="bg-brand-solid/20 blur-sm" delay={index * 0.8} />
                   <span className="relative">{index + 1}</span>
                 </div>
@@ -1091,7 +1135,7 @@ function renderContentBlock(section: CMSRenderableSection) {
   const textBlock = (
     <div className="flex flex-col items-start">
       {(content.eyebrow || content.label) && (
-        <span className="mb-3 text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+        <span className="mb-3 text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
           {text(content.eyebrow ?? content.label)}
         </span>
       )}

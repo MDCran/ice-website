@@ -3,31 +3,106 @@
 import { useEffect } from "react";
 import { resolveIcon } from "@/lib/iconMap";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
+import SolutionHeroImage from "@/components/solutions/SolutionHeroImage";
 import type { MetricPreset } from "@/components/solutions/SolutionMetrics";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 import { pushEvent } from "@/lib/analytics";
 
 // Hero component map — lazy loaded
-import dynamic from "next/dynamic";
+/*
+ * Previous animated JSX illustration map, kept commented for rollback.
+ *
+ * import dynamic from "next/dynamic";
+ * const HERO_MAP: Record<string, React.ComponentType> = {
+ *   "managed-cloud-hosting": dynamic(() => import("@/components/solutions/heroes/CloudHostingHero")),
+ *   "managed-private-cloud": dynamic(() => import("@/components/solutions/heroes/PrivateCloudHero")),
+ *   "managed-hybrid-cloud": dynamic(() => import("@/components/solutions/heroes/HybridCloudHero")),
+ *   "cloud-migration": dynamic(() => import("@/components/solutions/heroes/CloudMigrationHero")),
+ *   "backup-as-a-service": dynamic(() => import("@/components/solutions/heroes/BackupHero")),
+ *   "disaster-recovery": dynamic(() => import("@/components/solutions/heroes/DisasterRecoveryHero")),
+ *   "high-availability": dynamic(() => import("@/components/solutions/heroes/HighAvailabilityHero")),
+ *   "ransomware-recovery": dynamic(() => import("@/components/solutions/heroes/RansomwareRecoveryHero")),
+ *   "ibm-i-security": dynamic(() => import("@/components/solutions/heroes/IBMiSecurityHero")),
+ *   "protection-suite": dynamic(() => import("@/components/solutions/heroes/ProtectionSuiteHero")),
+ *   "security-monitoring": dynamic(() => import("@/components/solutions/heroes/SecurityMonitoringHero")),
+ *   "threat-detection": dynamic(() => import("@/components/solutions/heroes/ThreatDetectionHero")),
+ *   "endpoint-security": dynamic(() => import("@/components/solutions/heroes/EndpointSecurityHero")),
+ *   "managed-microsoft": dynamic(() => import("@/components/solutions/heroes/ManagedMicrosoftHero")),
+ *   "automation-suite": dynamic(() => import("@/components/solutions/heroes/AutomationSuiteHero")),
+ *   "systems-management": dynamic(() => import("@/components/solutions/heroes/SystemsManagementHero")),
+ *   "ibm-power-vs": dynamic(() => import("@/components/solutions/heroes/IBMPowerVSHero")),
+ * };
+ */
 
-const HERO_MAP: Record<string, React.ComponentType> = {
-  "managed-cloud-hosting": dynamic(() => import("@/components/solutions/heroes/CloudHostingHero")),
-  "managed-private-cloud": dynamic(() => import("@/components/solutions/heroes/PrivateCloudHero")),
-  "managed-hybrid-cloud": dynamic(() => import("@/components/solutions/heroes/HybridCloudHero")),
-  "cloud-migration": dynamic(() => import("@/components/solutions/heroes/CloudMigrationHero")),
-  "backup-as-a-service": dynamic(() => import("@/components/solutions/heroes/BackupHero")),
-  "disaster-recovery": dynamic(() => import("@/components/solutions/heroes/DisasterRecoveryHero")),
-  "high-availability": dynamic(() => import("@/components/solutions/heroes/HighAvailabilityHero")),
-  "ransomware-recovery": dynamic(() => import("@/components/solutions/heroes/RansomwareRecoveryHero")),
-  "ibm-i-security": dynamic(() => import("@/components/solutions/heroes/IBMiSecurityHero")),
-  "protection-suite": dynamic(() => import("@/components/solutions/heroes/ProtectionSuiteHero")),
-  "security-monitoring": dynamic(() => import("@/components/solutions/heroes/SecurityMonitoringHero")),
-  "threat-detection": dynamic(() => import("@/components/solutions/heroes/ThreatDetectionHero")),
-  "endpoint-security": dynamic(() => import("@/components/solutions/heroes/EndpointSecurityHero")),
-  "managed-microsoft": dynamic(() => import("@/components/solutions/heroes/ManagedMicrosoftHero")),
-  "automation-suite": dynamic(() => import("@/components/solutions/heroes/AutomationSuiteHero")),
-  "systems-management": dynamic(() => import("@/components/solutions/heroes/SystemsManagementHero")),
-  "ibm-power-vs": dynamic(() => import("@/components/solutions/heroes/IBMPowerVSHero")),
+const SOLUTION_HERO_IMAGES: Record<string, { src: string; alt: string }> = {
+  "managed-cloud-hosting": {
+    src: "/images/solutions/heroes/managed-cloud-hosting.webp",
+    alt: "Generated illustration of managed cloud hosting infrastructure",
+  },
+  "managed-private-cloud": {
+    src: "/images/solutions/heroes/managed-private-cloud.webp",
+    alt: "Generated illustration of a secure private cloud environment",
+  },
+  "managed-hybrid-cloud": {
+    src: "/images/solutions/heroes/managed-hybrid-cloud.webp",
+    alt: "Generated illustration of hybrid cloud infrastructure",
+  },
+  "cloud-migration": {
+    src: "/images/solutions/heroes/cloud-migration.webp",
+    alt: "Generated illustration of workloads migrating to cloud infrastructure",
+  },
+  "backup-as-a-service": {
+    src: "/images/solutions/heroes/backup-as-a-service.webp",
+    alt: "Generated illustration of secure backup storage",
+  },
+  "disaster-recovery": {
+    src: "/images/solutions/heroes/disaster-recovery.webp",
+    alt: "Generated illustration of disaster recovery replication",
+  },
+  "high-availability": {
+    src: "/images/solutions/heroes/high-availability.webp",
+    alt: "Generated illustration of mirrored high availability systems",
+  },
+  "ransomware-recovery": {
+    src: "/images/solutions/heroes/ransomware-recovery.webp",
+    alt: "Generated illustration of ransomware recovery from protected backups",
+  },
+  "ibm-i-security": {
+    src: "/images/solutions/heroes/ibm-i-security.webp",
+    alt: "Generated illustration of enterprise server security",
+  },
+  "protection-suite": {
+    src: "/images/solutions/heroes/protection-suite.webp",
+    alt: "Generated illustration of layered security protection",
+  },
+  "security-monitoring": {
+    src: "/images/solutions/heroes/security-monitoring.webp",
+    alt: "Generated illustration of security monitoring operations",
+  },
+  "threat-detection": {
+    src: "/images/solutions/heroes/threat-detection.webp",
+    alt: "Generated illustration of threat detection and response",
+  },
+  "endpoint-security": {
+    src: "/images/solutions/heroes/endpoint-security.webp",
+    alt: "Generated illustration of endpoint security protection",
+  },
+  "managed-microsoft": {
+    src: "/images/solutions/heroes/managed-microsoft.webp",
+    alt: "Generated illustration of managed cloud productivity services",
+  },
+  "automation-suite": {
+    src: "/images/solutions/heroes/automation-suite.webp",
+    alt: "Generated illustration of IT automation workflows",
+  },
+  "systems-management": {
+    src: "/images/solutions/heroes/systems-management.webp",
+    alt: "Generated illustration of systems management operations",
+  },
+  "ibm-power-vs": {
+    src: "/images/solutions/heroes/ibm-power-vs.webp",
+    alt: "Generated illustration of enterprise power virtualization",
+  },
 };
 
 // Category badge config per solution
@@ -67,6 +142,15 @@ interface SectionData {
     ctaPrimary?: CtaLink;
     cta_secondary?: CtaLink;
     ctaSecondary?: CtaLink;
+    hero_image?: string;
+    heroImage?: string;
+    image?: string;
+    visual_image?: string;
+    visualImage?: string;
+    image_alt?: string;
+    imageAlt?: string;
+    hero_image_alt?: string;
+    heroImageAlt?: string;
   };
   features?: {
     eyebrow?: string;
@@ -101,6 +185,10 @@ interface SectionData {
 /** Section keys the layout renders bespoke (everything else goes through GenericCMSSections). */
 const KNOWN_KEYS = ["hero", "features", "process", "benefits", "cta"];
 
+function firstText(...values: Array<string | undefined>): string | undefined {
+  return values.find((value) => typeof value === "string" && value.trim().length > 0)?.trim();
+}
+
 export default function DynamicSolutionPage({
   slug,
   sections,
@@ -123,8 +211,13 @@ export default function DynamicSolutionPage({
     .filter(Boolean);
   const cta = sections.cta;
 
-  // Fire a single `solution_viewed` event when this solution page mounts.
-  const solutionTitle = hero?.headline?.replace(/<[^>]*>/g, "") ?? slug;
+  // Prefer a clean page name for the breadcrumb (strip HTML from CMS headlines).
+  const solutionTitle =
+    (hero?.headline?.replace(/<[^>]*>/g, "").trim() ||
+      slug
+        .split("-")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" "));
   useEffect(() => {
     pushEvent("solution_viewed", { slug, title: solutionTitle });
     // Intentionally keyed to `slug` only: one event per solution navigated to.
@@ -146,9 +239,25 @@ export default function DynamicSolutionPage({
   // Legacy fallback path (no ordered data): render extras as one block.
   const extraSections = visibleOrdered.filter((section) => !KNOWN_KEYS.includes(section.section_key));
 
-  const HeroComponent = HERO_MAP[slug];
   const category = CATEGORY_MAP[slug] ?? { label: "Solutions", icon: "Globe" };
   const CategoryIcon = resolveIcon(category.icon);
+  const defaultHeroImage = SOLUTION_HERO_IMAGES[slug];
+  const heroImageSrc = firstText(
+    hero?.hero_image,
+    hero?.heroImage,
+    hero?.image,
+    hero?.visual_image,
+    hero?.visualImage,
+    defaultHeroImage?.src,
+  );
+  const heroImageAlt = firstText(
+    hero?.image_alt,
+    hero?.imageAlt,
+    hero?.hero_image_alt,
+    hero?.heroImageAlt,
+    defaultHeroImage?.alt,
+    `${solutionTitle} illustration`,
+  );
 
   return (
     <SolutionPageLayout
@@ -159,11 +268,16 @@ export default function DynamicSolutionPage({
         label: category.label,
         icon: <CategoryIcon className="size-4" aria-hidden="true" />,
       }}
-      heroVisualization={HeroComponent ? <HeroComponent /> : undefined}
+      heroVisualization={
+        heroImageSrc ? <SolutionHeroImage src={heroImageSrc} alt={heroImageAlt ?? ""} /> : undefined
+      }
       heroEyebrow={hero?.eyebrow}
       heroProofLabels={hero?.proof_labels ?? hero?.proofLabels}
-      heroCtaPrimary={hero?.cta_primary ?? hero?.ctaPrimary}
-      heroCtaSecondary={hero?.cta_secondary ?? hero?.ctaSecondary}
+      heroCtaPrimary={{
+        label: "Speak to an Expert",
+        href: hero?.cta_primary?.href ?? hero?.ctaPrimary?.href ?? "/contact",
+      }}
+      heroCtaSecondary={undefined}
       features={features}
       featuresIntro={{
         eyebrow: sections.features?.eyebrow,
@@ -187,15 +301,14 @@ export default function DynamicSolutionPage({
       extraSections={
         sectionOrder.length > 0 ? undefined : <GenericCMSSections sections={extraSections} />
       }
-      ctaTitle={cta?.heading ?? cta?.headline ?? "Ready to Get Started?"}
+      ctaTitle={cta?.heading ?? cta?.headline ?? "Ready to Speak to an Expert?"}
       ctaSubtitle={
         cta?.description ??
         cta?.subheadline ??
         "Contact our enterprise architects to design a solution tailored to your needs."
       }
-      ctaButtonLabel={cta?.cta_primary?.label ?? cta?.ctaPrimary?.label}
-      ctaPrimaryHref={cta?.cta_primary?.href ?? cta?.ctaPrimary?.href}
-      ctaSecondary={cta?.cta_secondary ?? cta?.ctaSecondary}
+      ctaButtonLabel="Speak to an Expert"
+      ctaPrimaryHref={cta?.cta_primary?.href ?? cta?.ctaPrimary?.href ?? "/contact"}
       breadcrumbLabel={solutionTitle}
     />
   );

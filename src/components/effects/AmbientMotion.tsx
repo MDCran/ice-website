@@ -193,7 +193,7 @@ export function BrandOrbs({
       <div aria-hidden="true" className={cx("pointer-events-none absolute inset-0 -z-10 overflow-hidden", className)}>
         <div className={cx(orbBase, tint.a, "-top-24 -left-16 size-72 opacity-50")} />
         <div className={cx(orbBase, tint.b, "top-1/3 -right-20 size-80 opacity-40")} />
-        <div className={cx(orbBase, tint.c, "-bottom-28 left-1/3 size-72 opacity-40")} />
+        <div className={cx(orbBase, tint.c, "bottom-0 left-1/3 size-64 opacity-40")} />
       </div>
     );
   }
@@ -213,7 +213,7 @@ export function BrandOrbs({
         transition={{ duration: 22, delay: 1.5, repeat: Infinity, ease: AMBIENT_EASE }}
       />
       <motion.div
-        className={cx(orbBase, tint.c, "-bottom-28 left-1/3 size-72")}
+        className={cx(orbBase, tint.c, "bottom-0 left-1/3 size-64")}
         style={{ willChange: "transform, opacity" }}
         animate={{ x: [0, 18, 0], y: [0, -14, 0], opacity: [0.35, 0.6, 0.35], scale: [1, 1.12, 1] }}
         transition={{ duration: 26, delay: 3, repeat: Infinity, ease: AMBIENT_EASE }}

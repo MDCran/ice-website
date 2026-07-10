@@ -27,7 +27,107 @@ const PAGE_TYPES = [
   { value: "static", label: "Generic" },
   { value: "solution", label: "Solution" },
   { value: "legal", label: "Legal" },
+  { value: "settings", label: "Settings" },
 ];
+
+function solutionStarterSections(title: string) {
+  const serviceName = title.trim() || "New Solution";
+  return [
+    {
+      section_key: "hero",
+      section_type: "hero",
+      sort_order: 0,
+      is_visible: true,
+      content: {
+        eyebrow: "Managed Solution",
+        headline: serviceName,
+        subheadline: "Describe the business problem this service solves and why ICE is the right partner.",
+        cta_primary: { label: "Talk to an Architect", href: "/contact" },
+        cta_secondary: { label: "Explore Solutions", href: "/solutions" },
+        proof_labels: ["24/7/365 Support", "Enterprise Architecture", "Managed by ICE"],
+        hero_image: "/images/solutions/heroes/managed-cloud-hosting.webp",
+        image_alt: `${serviceName} solution illustration`,
+      },
+    },
+    {
+      section_key: "features",
+      section_type: "features",
+      sort_order: 1,
+      is_visible: true,
+      content: {
+        eyebrow: "Capabilities",
+        heading: "What You Get",
+        description: "Enterprise-grade capabilities included with this service.",
+        items: [
+          { icon: "Monitor", title: "24/7 Monitoring", description: "Proactive monitoring and rapid incident response.", proof: "Always-on coverage" },
+          { icon: "Shield", title: "Enterprise Security", description: "Layered controls for mission-critical workloads.", proof: "Security-first delivery" },
+          { icon: "Zap", title: "Fast Implementation", description: "A practical path from assessment to production.", proof: "Designed for momentum" },
+        ],
+      },
+    },
+    {
+      section_key: "stats",
+      section_type: "stats",
+      sort_order: 2,
+      is_visible: true,
+      content: {
+        eyebrow: "By The Numbers",
+        heading: "Proof Points",
+        description: "Update these metrics to match the offer.",
+        items: [
+          { value: 35, suffix: "+", label: "Years of Experience", source_note: "" },
+          { value: 24, suffix: "/7", label: "US-Based Support", source_note: "" },
+          { value: 15, suffix: " min", label: "Response Target", source_note: "Example placeholder" },
+        ],
+      },
+    },
+    {
+      section_key: "process",
+      section_type: "process",
+      sort_order: 3,
+      is_visible: true,
+      content: {
+        eyebrow: "How We Work",
+        heading: "Our Operating Model",
+        description: "A proven, repeatable path from assessment to steady-state operations.",
+        items: [
+          { step: "01", title: "Assess", description: "Understand the current environment and requirements." },
+          { step: "02", title: "Design", description: "Create a practical architecture and rollout plan." },
+          { step: "03", title: "Implement", description: "Deploy with clear milestones and minimal disruption." },
+          { step: "04", title: "Operate", description: "Monitor, optimize, and report against service goals." },
+        ],
+      },
+    },
+    {
+      section_key: "benefits",
+      section_type: "benefits",
+      sort_order: 4,
+      is_visible: true,
+      content: {
+        eyebrow: "Why It Matters",
+        heading: "Business Benefits",
+        description: "What this service changes for your organization.",
+        items: [
+          { icon: "Zap", title: "Reduce Operational Overhead", text: "Offload day-to-day management to a dedicated team." },
+          { icon: "Shield", title: "Improve Reliability and Security", text: "Hardened, monitored infrastructure with clear accountability." },
+          { icon: "BarChart3", title: "Scale With Demand", text: "Capacity that grows with the business." },
+        ],
+      },
+    },
+    {
+      section_key: "cta",
+      section_type: "cta",
+      sort_order: 5,
+      is_visible: true,
+      content: {
+        heading: "Ready to Get Started?",
+        description: "Contact our enterprise architects to design a solution tailored to your needs.",
+        cta_primary: { label: "Contact Us", href: "/contact" },
+        cta_secondary: { label: "Explore Solutions", href: "/solutions" },
+      },
+    },
+  ];
+}
 
 function slugify(text: string): string {
   return text
@@ -103,18 +203,33 @@ export default function CMSPageActions({
     const finalSlug = slug.trim() || slugify(title);
 
     if (modalType === "create") {
-      const { error: insertError } = await supabase.from("pages").insert({
+      const { data: insertedPage, error: insertError } = await supabase.from("pages").insert({
         title: title.trim(),
         slug: finalSlug,
         page_type: pageType,
         meta_title: metaTitle.trim() || null,
         meta_description: metaDescription.trim() || null,
         is_published: isPublished,
-      });
+      }).select("id").single();
       if (insertError) {
         setError(insertError.message);
         return;
       }
+      if (pageType === "solution" && insertedPage?.id) {
+        const { error: sectionsError } = await supabase.from("page_sections").insert(
+          solutionStarterSections(title).map((section) => ({
+            ...section,
+            page_id: insertedPage.id,
+          })),
+        );
+        if (sectionsError) {
+          setError(sectionsError.message);
+          return;
+        }
+      }
+      setModalOpen(false);
+      startTransition(() => router.push(`/admin/cms/${finalSlug}`));
+      return;
     } else if (modalType === "edit" && page) {
       const { error: updateError } = await supabase
         .from("pages")

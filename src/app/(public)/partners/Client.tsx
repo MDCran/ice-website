@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Award02, Building07, CheckCircle, ChevronRight, Settings01 } from "@untitledui/icons";
+import { ArrowRight, Building07, CheckCircle, ChevronRight, Settings01, ShieldTick } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -16,18 +16,6 @@ import { cx } from "@/utils/cx";
 /* -------------------------------------------------------------------------- */
 /*  Data                                                                       */
 /* -------------------------------------------------------------------------- */
-
-/** Marquee strip logos — alt text reflects the brand mark each PNG depicts. */
-const PARTNER_LOGOS = [
-    { src: "/images/v3/b_1.png", alt: "IBM" },
-    { src: "/images/v3/b_2.png", alt: "Lenovo" },
-    { src: "/images/v3/b_3.png", alt: "Cisco" },
-    { src: "/images/v3/b_4.png", alt: "Dell" },
-    { src: "/images/v3/b_5.png", alt: "Printronix" },
-    { src: "/images/v3/b_6.png", alt: "Acronis" },
-    { src: "/images/v3/b_7.png", alt: "Cybernetics" },
-    { src: "/images/v3/b_8.png", alt: "DASCOM" },
-];
 
 interface Partner {
     name: string;
@@ -85,7 +73,6 @@ const DEFAULT_PARTNERS: Partner[] = [
         name: "CloudSafe",
         description:
             "Enterprise cloud hosting and managed services. Reliable infrastructure for businesses that demand uptime and performance.",
-        logoSrc: "/images/v3/b_6.png",
         specializations: ["Cloud Hosting", "Managed Services", "Business Continuity"],
         partnerSince: "2012",
     },
@@ -98,20 +85,20 @@ const DEFAULT_PARTNERS: Partner[] = [
         partnerSince: "2008",
     },
     {
-        name: "Acronix",
+        name: "Acronis",
         description:
-            "Technology solutions and services provider specializing in enterprise infrastructure and support.",
-        logoSrc: "/images/v3/b_7.png",
-        specializations: ["Infrastructure", "Enterprise Support"],
+            "Cyber protection and data backup for enterprise workloads — backup, disaster recovery, and anti-ransomware.",
+        logoSrc: "/images/v3/b_6.png",
+        specializations: ["Backup", "Disaster Recovery", "Cyber Protection"],
         partnerSince: "2016",
     },
     {
         name: "Cybernetics",
         description:
             "Enterprise technology solutions and services. Infrastructure, security, and managed services for modern businesses.",
+        logoSrc: "/images/v3/b_7.png",
         specializations: ["Tape Solutions", "Data Backup", "Archive Storage"],
         partnerSince: "2000",
-        fullWidth: true,
     },
 ];
 
@@ -158,13 +145,37 @@ function Hairline({ className }: { className?: string }) {
     );
 }
 
-/** Mono uppercase eyebrow label. */
+/** Wide-tracking eyebrow — matches the home hero badge style. */
 function Eyebrow({ children }: { children: ReactNode }) {
     return (
-        <span className="font-mono text-xs font-semibold tracking-[0.2em] text-brand-secondary uppercase md:text-sm">
+        <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
             {children}
         </span>
     );
+}
+
+/** Correct known partner name/logo mismatches from CMS or legacy data. */
+function normalizePartner(p: any): Partner {
+    let name = typeof p.name === "string" ? p.name.trim() : "";
+    if (/^acronix$/i.test(name)) name = "Acronis";
+
+    let logoSrc: string | undefined = p.logo_src ?? p.logoSrc;
+    const key = name.toLowerCase();
+    if (key === "acronis") logoSrc = "/images/v3/b_6.png";
+    else if (key === "cybernetics") logoSrc = "/images/v3/b_7.png";
+    else if (key === "cloudsafe" && typeof logoSrc === "string" && logoSrc.includes("b_6")) {
+        logoSrc = undefined;
+    }
+
+    return {
+        name,
+        description: p.description,
+        logoSrc,
+        specializations: p.specializations ?? [],
+        partnerSince: p.partner_since ?? p.partnerSince,
+        // Keep every partner card the same size — never span full row.
+        fullWidth: false,
+    };
 }
 
 /** Navy logo tile surface — the partner marks are white-on-transparent PNGs,
@@ -203,14 +214,7 @@ export default function PartnersPage({
     const intro = cmsData?.intro ?? {};
     const benefitsSection = cmsData?.benefits ?? {};
     const finalCta = cmsData?.final_cta ?? cmsData?.cta ?? {};
-    const partners = (cmsData?.partners_grid?.partners ?? DEFAULT_PARTNERS).map((p: any) => ({
-        name: p.name,
-        description: p.description,
-        logoSrc: p.logo_src ?? p.logoSrc,
-        specializations: p.specializations ?? [],
-        partnerSince: p.partner_since ?? p.partnerSince,
-        fullWidth: p.full_width ?? p.fullWidth,
-    }));
+    const partners = (cmsData?.partners_grid?.partners ?? DEFAULT_PARTNERS).map(normalizePartner);
     const benefits = (benefitsSection.items ?? benefitsSection.benefits ?? DEFAULT_BENEFITS).map(
         (b: any, i: number) => ({
             title: b.title ?? b.heading,
@@ -300,61 +304,17 @@ export default function PartnersPage({
                         </Button>
                     </motion.div>
 
-                    {/* Quiet mono proof row */}
+                    {/* Quiet proof row */}
                     <motion.div
                         {...enter(0.55)}
-                        className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-xs font-medium tracking-[0.15em] text-quaternary uppercase md:mt-12"
+                        className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium tracking-[0.15em] text-quaternary uppercase md:mt-12"
                     >
-                        <span>IBM Business Partner since 1990</span>
+                        <span>Trusted IBM Business Partner for over 35 years</span>
                         <span aria-hidden="true" className="size-1 rounded-full bg-brand-solid/60" />
                         <span>{partners.length} strategic technology alliances</span>
                         <span aria-hidden="true" className="hidden size-1 rounded-full bg-brand-solid/60 sm:inline-flex" />
                         <span className="hidden sm:inline">Boca Raton, FL</span>
                     </motion.div>
-                </div>
-            </section>
-
-            {/* ================================================================= */}
-            {/*  Logo cloud strip — distinct textured band                        */}
-            {/* ================================================================= */}
-            <section className="relative isolate overflow-hidden border-b border-secondary bg-secondary py-12 md:py-16">
-                <div
-                    aria-hidden="true"
-                    className="texture-grid pointer-events-none absolute inset-0 opacity-[0.45] [mask-image:radial-gradient(ellipse_at_center,black_25%,transparent_80%)]"
-                />
-                <BrandOrbs />
-
-                <div className="relative mx-auto w-full max-w-5xl px-4 md:px-8">
-                    <motion.p
-                        {...reveal()}
-                        className="text-center font-mono text-xs font-semibold tracking-[0.2em] text-quaternary uppercase"
-                    >
-                        Trusted technology brands we represent
-                    </motion.p>
-                    <div className="mt-8 flex flex-wrap items-center justify-center gap-4 md:gap-5">
-                        {PARTNER_LOGOS.map((logo, i) => (
-                            <motion.div
-                                key={logo.src}
-                                initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-40px" }}
-                                transition={{ duration: 0.5, ease: EASE, delay: i * 0.05 }}
-                                className={cx(
-                                    "group flex h-16 items-center justify-center rounded-xl px-6 shadow-sm transition duration-200 ease-out hover:ring-brand md:h-[4.25rem] md:px-7",
-                                    NAVY_TILE,
-                                )}
-                            >
-                                <Image
-                                    src={logo.src}
-                                    alt={logo.alt}
-                                    width={160}
-                                    height={60}
-                                    loading="lazy"
-                                    className="h-9 w-auto object-contain opacity-85 transition duration-200 ease-out group-hover:scale-105 group-hover:opacity-100 md:h-10"
-                                />
-                            </motion.div>
-                        ))}
-                    </div>
                 </div>
             </section>
 
@@ -413,7 +373,7 @@ export default function PartnersPage({
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true, margin: "-80px" }}
                                 transition={{ duration: 0.6, ease: EASE, delay: (i % 2) * 0.08 }}
-                                className={cx("h-full", partner.fullWidth && "sm:col-span-2")}
+                                className="h-full"
                             >
                                 <div className="group flex h-full flex-col rounded-2xl bg-primary p-3 ring-1 ring-secondary transition duration-200 ease-out ring-inset hover:ring-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_32px_rgb(4_155_251/0.14)]">
                                     {/* Logo tile — the partner marks are white-on-transparent
@@ -529,9 +489,9 @@ export default function PartnersPage({
                 <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.05]" />
 
                 {/* Oversized decorative glyph bleeding past the band edge */}
-                <Award02
+                <ShieldTick
                     aria-hidden="true"
-                    className="pointer-events-none absolute -right-8 -bottom-10 size-56 -rotate-12 text-brand-500/10 md:size-72 dark:text-brand-500/15"
+                    className="pointer-events-none absolute -right-6 bottom-0 size-48 text-brand-500/10 md:size-64 dark:text-brand-500/15"
                 />
 
                 <div className="relative mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-12 px-4 md:px-8 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
@@ -595,7 +555,7 @@ export default function PartnersPage({
                                     Years as an IBM Business Partner
                                 </span>
                                 <Hairline className="my-6 max-w-60" />
-                                <span className="font-mono text-xs font-semibold tracking-[0.2em] text-quaternary uppercase">
+                                <span className="text-xs font-medium tracking-[0.2em] text-quaternary uppercase">
                                     Partnership est. 1990
                                 </span>
                             </div>

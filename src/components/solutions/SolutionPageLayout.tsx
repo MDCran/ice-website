@@ -1,14 +1,14 @@
 "use client";
 
 import { Fragment } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import Link from "next/link";
 import { ArrowRight, Check, ChevronRight, MessageChatCircle } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { Grid as GridPattern } from "@/components/shared-assets/background-patterns/grid";
 import { BrandOrbs, FloatY, PulseGlow } from "@/components/effects/AmbientMotion";
+import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { cx } from "@/utils/cx";
 import SolutionMetrics, { type MetricPreset } from "./SolutionMetrics";
 
@@ -24,7 +24,7 @@ function BrandHairline() {
   );
 }
 
-/** Shared section-intro typography: mono eyebrow, display heading, lg supporting. */
+/** Shared section-intro typography: wide-tracking eyebrow (matches home badge), display heading. */
 function SectionIntroBlock({
   eyebrow,
   heading,
@@ -39,7 +39,7 @@ function SectionIntroBlock({
   return (
     <>
       {eyebrow && (
-        <span className="text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+        <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
           {eyebrow}
         </span>
       )}
@@ -121,7 +121,7 @@ export default function SolutionPageLayout({
   extraSections,
   ctaTitle,
   ctaSubtitle,
-  ctaButtonLabel = "Schedule a Consultation",
+  ctaButtonLabel = "Speak to an Expert",
   breadcrumbLabel,
   heroEyebrow,
   heroProofLabels,
@@ -131,11 +131,11 @@ export default function SolutionPageLayout({
   processIntro,
   benefitsIntro,
   ctaPrimaryHref,
-  ctaSecondary,
+  ctaSecondary: _ctaSecondary,
   sectionOrder,
   orderedExtras,
 }: SolutionPageLayoutProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
 
   const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 };
   const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
@@ -165,7 +165,16 @@ export default function SolutionPageLayout({
             />
           </motion.div>
 
-          <ul className="mt-12 grid w-full grid-cols-1 justify-items-center gap-x-8 gap-y-10 sm:grid-cols-2 md:mt-16 md:gap-y-12 lg:grid-cols-3">
+          <ul className={cx(
+            "mt-12 grid w-full justify-items-center gap-x-8 gap-y-10 md:mt-16 md:gap-y-12",
+            features.length === 4
+              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+              : features.length === 3
+                ? "grid-cols-1 sm:grid-cols-3"
+                : features.length === 2
+                  ? "grid-cols-1 sm:grid-cols-2"
+                  : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+          )}>
             {features.map((feature, i) => (
               <motion.li
                 key={feature.title}
@@ -173,7 +182,10 @@ export default function SolutionPageLayout({
                 whileInView={visible}
                 viewport={viewportOnce}
                 transition={{ duration: 0.5, delay: i * 0.06, ease: EASE }}
-                className="flex max-w-sm flex-col items-center text-center"
+                className={cx(
+                  "flex flex-col items-center text-center",
+                  features.length === 4 ? "max-w-xs" : "max-w-sm",
+                )}
               >
                 <FeaturedIcon icon={feature.icon} size="lg" color="brand" theme="light" />
                 <h3 className="mt-4 text-lg font-semibold text-primary">{feature.title}</h3>
@@ -213,21 +225,31 @@ export default function SolutionPageLayout({
             {process.map((step, i) => (
               <motion.li
                 key={step.step}
-                initial={hidden}
-                whileInView={visible}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.96 }}
+                whileInView={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
                 viewport={viewportOnce}
-                transition={{ duration: 0.5, delay: i * 0.08, ease: EASE }}
+                transition={{ duration: 0.55, delay: i * 0.1, ease: EASE }}
                 className="relative flex flex-col items-center text-center"
               >
                 {i < process.length - 1 && (
-                  <div
+                  <motion.div
                     aria-hidden="true"
-                    className="absolute top-6 left-[calc(50%+2.5rem)] hidden h-px w-[calc(100%-5rem)] bg-gradient-to-r from-brand-500/40 to-border-secondary lg:block"
+                    initial={reduceMotion ? undefined : { scaleX: 0, opacity: 0 }}
+                    whileInView={reduceMotion ? undefined : { scaleX: 1, opacity: 1 }}
+                    viewport={viewportOnce}
+                    transition={{ duration: 0.7, delay: 0.25 + i * 0.1, ease: EASE }}
+                    className="absolute top-6 left-[calc(50%+2.5rem)] hidden h-px w-[calc(100%-5rem)] origin-left bg-gradient-to-r from-brand-500/50 to-border-secondary lg:block"
                   />
                 )}
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-secondary text-lg font-semibold text-fg-brand-primary dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]">
+                <motion.div
+                  initial={reduceMotion ? undefined : { scale: 0.8, opacity: 0 }}
+                  whileInView={reduceMotion ? undefined : { scale: 1, opacity: 1 }}
+                  viewport={viewportOnce}
+                  transition={{ duration: 0.45, delay: i * 0.1, ease: EASE }}
+                  className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-solid text-lg font-semibold text-white ring-4 ring-brand-solid/10 dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
+                >
                   {step.step}
-                </div>
+                </motion.div>
                 <h3 className="mt-4 text-lg font-semibold text-primary">{step.title}</h3>
                 <p className="mt-1 text-md text-tertiary">{step.description}</p>
               </motion.li>
@@ -270,8 +292,8 @@ export default function SolutionPageLayout({
                   transition={{ duration: 0.5, delay: i * 0.06, ease: EASE }}
                   className="flex items-start gap-3"
                 >
-                  <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-secondary">
-                    <Check className="size-4 text-fg-brand-primary" aria-hidden="true" />
+                  <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-solid">
+                    <Check className="size-4 text-white" aria-hidden="true" />
                   </div>
                   <span className="text-md text-tertiary">{benefit}</span>
                 </motion.li>
@@ -291,53 +313,49 @@ export default function SolutionPageLayout({
     </section>
   ) : null;
 
-  /* ── CTA Banner — distinct brand band so it never reads as footer ──── */
+  /* ── CTA Banner — contained brand card (not a full-bleed blue wash) ── */
   const ctaBlock = (
     <>
       <BrandHairline />
-      <section className="bg-primary py-16 md:py-24">
+      <section className="relative bg-primary py-16 md:py-24">
         <div className="mx-auto max-w-container px-4 md:px-8">
           <motion.div
             initial={hidden}
             whileInView={visible}
             viewport={viewportOnce}
             transition={{ duration: 0.6, ease: EASE }}
-            className="relative isolate overflow-hidden rounded-2xl bg-brand-section px-6 py-12 lg:p-16 dark:shadow-[0_0_60px_rgb(4_155_251/0.15)] dark:ring-1 dark:ring-secondary dark:ring-inset"
+            className="relative isolate overflow-hidden rounded-2xl bg-secondary px-6 py-12 ring-1 ring-secondary ring-inset lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]"
           >
-            {/* Techy grid overlay */}
+            {/* Soft brand wash — restrained, corporate */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center opacity-20"
-            >
-              <GridPattern size="lg" className="shrink-0 text-primary_on-brand" />
-            </div>
-            {/* Film-grain matte finish over the brand band */}
-            <div
-              aria-hidden="true"
-              className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.12]"
+              className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-brand-500/[0.08] via-transparent to-brand-600/[0.06]"
             />
-            {/* Oversized consultation glyph bleeding past the card edge */}
+            <div
+              aria-hidden="true"
+              className="texture-grid pointer-events-none absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_at_top_left,black_20%,transparent_70%)]"
+            />
+            <div
+              aria-hidden="true"
+              className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.04] dark:opacity-[0.06]"
+            />
             <MessageChatCircle
               aria-hidden="true"
-              className="pointer-events-none absolute -right-8 -bottom-12 -z-10 size-56 -rotate-12 text-brand-400/15 md:size-72 dark:text-brand-500/15"
+              className="pointer-events-none absolute -right-8 -bottom-12 -z-10 size-56 -rotate-12 text-brand-500/10 md:size-72"
             />
-            {/* Ambient brand orbs — slow continuous drift */}
-            <BrandOrbs variant="onBrand" />
+            <BrandOrbs />
 
             <div className="flex flex-col gap-x-8 gap-y-8 lg:flex-row lg:items-center">
               <div className="flex max-w-3xl flex-1 flex-col">
                 <h2
-                  className="text-display-sm font-semibold tracking-tight text-primary_on-brand md:text-display-md"
+                  className="text-display-sm font-semibold tracking-tight text-primary md:text-display-md"
                   dangerouslySetInnerHTML={{ __html: ctaTitle }}
                 />
-                <p className="mt-4 text-lg text-tertiary_on-brand md:mt-5">{ctaSubtitle}</p>
+                <p className="mt-4 text-lg text-tertiary md:mt-5">{ctaSubtitle}</p>
               </div>
               <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start">
-                <Button href={ctaSecondary?.href ?? "/solutions"} color="secondary" size="xl">
-                  {ctaSecondary?.label ?? "Explore All Solutions"}
-                </Button>
                 <Button href={ctaPrimaryHref ?? "/contact"} size="xl" iconTrailing={ArrowRight}>
-                  {ctaButtonLabel}
+                  {ctaButtonLabel ?? "Speak to an Expert"}
                 </Button>
               </div>
             </div>
@@ -406,7 +424,7 @@ export default function SolutionPageLayout({
               </Badge>
 
               {heroEyebrow && (
-                <span className="mt-4 flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+                <span className="mt-4 flex items-center gap-2.5 text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
                   <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
                   {heroEyebrow}
                 </span>
@@ -414,34 +432,32 @@ export default function SolutionPageLayout({
 
               <h1
                 className={cx(
-                  "text-display-md font-semibold tracking-tight text-primary lg:text-display-lg",
+                  "text-display-lg font-semibold tracking-tight text-primary md:text-display-xl",
                   heroEyebrow ? "mt-3" : "mt-4",
                 )}
                 dangerouslySetInnerHTML={{ __html: title }}
               />
 
-              <p className="mt-4 max-w-xl text-lg text-tertiary md:mt-6 md:text-xl">{subtitle}</p>
+              <p className="mt-4 max-w-xl text-lg text-tertiary line-clamp-3 md:mt-6 md:text-xl">{subtitle}</p>
 
               <div className="mt-8 flex flex-col-reverse items-stretch gap-3 self-stretch sm:flex-row sm:items-start sm:self-auto md:mt-10">
-                <Button href={heroCtaSecondary?.href ?? "/solutions"} color="secondary" size="xl">
-                  {heroCtaSecondary?.label ?? "All Solutions"}
-                </Button>
                 <Button href={heroCtaPrimary?.href ?? "/contact"} size="xl" iconTrailing={ArrowRight}>
-                  {heroCtaPrimary?.label ?? "Get Started"}
+                  {heroCtaPrimary?.label ?? "Speak to an Expert"}
                 </Button>
               </div>
 
-              {/* Proof labels — quiet mono trust bar under the CTAs */}
+              {/* Proof labels — 2×2 grid so long labels don't wrap awkwardly in a row */}
               {proofLabels.length > 0 && (
-                <ul className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 md:mt-10">
-                  {proofLabels.map((label, index) => (
-                    <li key={`${label}-${index}`} className="flex items-center gap-3">
-                      {index > 0 && (
-                        <span aria-hidden="true" className="size-1 rounded-full bg-fg-brand-secondary/60" />
-                      )}
-                      <span className="text-xs font-medium tracking-wide text-quaternary uppercase">
-                        {label}
-                      </span>
+                <ul
+                  className={cx(
+                    "mt-10 grid w-full gap-x-6 gap-y-3 border-t border-secondary pt-6",
+                    proofLabels.length === 3 ? "max-w-2xl sm:grid-cols-3" : "max-w-xl sm:grid-cols-2",
+                  )}
+                >
+                  {proofLabels.map((label) => (
+                    <li key={label} className="flex items-start gap-2.5">
+                      <Check className="mt-0.5 size-4 shrink-0 text-fg-brand-primary dark:text-white" aria-hidden="true" />
+                      <span className="text-sm leading-snug font-medium text-secondary">{label}</span>
                     </li>
                   ))}
                 </ul>
@@ -453,7 +469,7 @@ export default function SolutionPageLayout({
                 initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
                 animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
                 transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
-                className="relative hidden justify-center lg:flex"
+                className="relative flex w-full justify-center lg:justify-end"
               >
                 {/* Soft brand glow disc anchoring the visualization — both themes */}
                 <div
@@ -472,7 +488,7 @@ export default function SolutionPageLayout({
                   to={0.9}
                 />
                 {/* Slow continuous float keeps the graphic alive after entrance */}
-                <FloatY distance={10} duration={7}>
+                <FloatY className="w-full max-w-xl" distance={10} duration={7}>
                   {heroVisualization}
                 </FloatY>
               </motion.div>
@@ -484,14 +500,15 @@ export default function SolutionPageLayout({
       {useOrderedFlow ? (
         <>
           {orderedKeys.map((key) => {
-            if (key === "hero") return null;
-            if (key === "cta") {
-              return (
-                <Fragment key="cta">
-                  {metricsBlock}
-                  {ctaBlock}
-                </Fragment>
-              );
+            // Pin FAQ, related, and CTA after measurable results (see below).
+            if (
+              key === "hero" ||
+              key === "cta" ||
+              key === "related" ||
+              key === "faq" ||
+              key === "faqs"
+            ) {
+              return null;
             }
             if (KNOWN_SECTION_KEYS.has(key)) {
               return <Fragment key={key}>{knownBlocks[key] ?? null}</Fragment>;
@@ -499,20 +516,19 @@ export default function SolutionPageLayout({
             const node = orderedExtras?.[key];
             return node ? <Fragment key={key}>{node}</Fragment> : null;
           })}
-          {!orderedKeys.includes("cta") && (
-            <>
-              {metricsBlock}
-              {ctaBlock}
-            </>
-          )}
+          {/* Bottom stack: metrics → FAQ → related services → CTA */}
+          {metricsBlock}
+          {orderedExtras?.faq ?? orderedExtras?.faqs ?? null}
+          {orderedExtras?.related ?? null}
+          {ctaBlock}
         </>
       ) : (
         <>
           {featuresBlock}
           {processBlock}
           {benefitsBlock}
-          {metricsBlock}
           {extraSections}
+          {metricsBlock}
           {ctaBlock}
         </>
       )}

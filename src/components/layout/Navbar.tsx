@@ -90,9 +90,34 @@ const SOLUTIONS_MEGA: MegaColumn[] = [
 const openSearch = () =>
   document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true }));
 
+export interface NavbarCompanyInfo {
+  address?: string;
+  city?: string;
+  phone?: string;
+  email?: string;
+  logo?: string;
+}
+
 /* ─── Component ────────────────────────────────────────────────────────── */
 
-export default function Navbar({ navItems }: { navItems?: any[] }) {
+export default function Navbar({
+  navItems,
+  companyInfo,
+}: {
+  navItems?: any[];
+  companyInfo?: NavbarCompanyInfo;
+}) {
+  const addressLine = [
+    companyInfo?.address ?? "1279 W Palmetto Park Rd #272415",
+    companyInfo?.city ?? "Boca Raton, FL 33427",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const phone = companyInfo?.phone ?? "1-800-786-9188";
+  const email = companyInfo?.email ?? "info@icesales.com";
+  const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`;
+  const logoSrc = companyInfo?.logo ?? "/images/logo/ice-logo.jpg";
+
   // Resolve nav links from CMS or fallback
   // Seed data uses location "navbar"; older rows may use "navbar_top" — accept both.
   const navbarTopItems = navItems?.filter((i: any) => (i.location === "navbar_top" || i.location === "navbar") && i.is_visible)
@@ -133,18 +158,34 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
   // Close-intent delay so the mega menu doesn't flicker when the cursor
   // briefly leaves the trigger/panel while moving between them.
   const megaCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const megaOpenRef = useRef(false);
 
   const openMega = useCallback(() => {
     if (megaCloseTimer.current) {
       clearTimeout(megaCloseTimer.current);
       megaCloseTimer.current = null;
     }
+    megaOpenRef.current = true;
     setMegaOpen(true);
   }, []);
 
   const scheduleMegaClose = useCallback(() => {
     if (megaCloseTimer.current) clearTimeout(megaCloseTimer.current);
-    megaCloseTimer.current = setTimeout(() => setMegaOpen(false), 100);
+    // Generous delay: crossing the trigger→panel gap or a column border
+    // shouldn't collapse the menu mid-hover.
+    megaCloseTimer.current = setTimeout(() => {
+      megaOpenRef.current = false;
+      setMegaOpen(false);
+    }, 320);
+  }, []);
+
+  const closeMegaNow = useCallback(() => {
+    if (megaCloseTimer.current) {
+      clearTimeout(megaCloseTimer.current);
+      megaCloseTimer.current = null;
+    }
+    megaOpenRef.current = false;
+    setMegaOpen(false);
   }, []);
 
   useEffect(() => {
@@ -152,6 +193,16 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
       if (megaCloseTimer.current) clearTimeout(megaCloseTimer.current);
     };
   }, []);
+
+  // Keep open while pointer is anywhere over the trigger+panel hit area.
+  // pointerenter/leave is more reliable than mouseenter when children remount.
+  const onMegaPointerEnter = useCallback(() => {
+    openMega();
+  }, [openMega]);
+
+  const onMegaPointerLeave = useCallback(() => {
+    scheduleMegaClose();
+  }, [scheduleMegaClose]);
 
   const handleScroll = useCallback(() => {
     setScrolled(window.scrollY > 40);
@@ -176,9 +227,9 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
 
   useEffect(() => {
     setMobileOpen(false);
-    setMegaOpen(false);
+    closeMegaNow();
     setMobileSolutionsOpen(false);
-  }, [pathname]);
+  }, [pathname, closeMegaNow]);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -198,22 +249,22 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
           <div className="mx-auto flex max-w-container items-center justify-between px-4 py-2 text-xs text-tertiary md:px-8">
             <span className="inline-flex items-center gap-1.5">
               <MarkerPin02 className="size-3.5 shrink-0 text-fg-quaternary" />
-              1279 W Palmetto Park Rd #272415, Boca Raton, FL 33427
+              {addressLine}
             </span>
             <div className="flex items-center gap-6">
               <a
-                href="tel:18007869188"
+                href={phoneHref}
                 className="inline-flex items-center gap-1.5 rounded-sm outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <Phone01 className="size-3.5 shrink-0 text-fg-quaternary" />
-                1-800-786-9188
+                {phone}
               </a>
               <a
-                href="mailto:info@icesales.com"
+                href={`mailto:${email}`}
                 className="inline-flex items-center gap-1.5 rounded-sm outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <Mail01 className="size-3.5 shrink-0 text-fg-quaternary" />
-                info@icesales.com
+                {email}
               </a>
             </div>
           </div>
@@ -239,7 +290,7 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
             {/* Desktop: full logo (with tagline) on a white plate. */}
             <span className="hidden items-center rounded-lg bg-white px-3 py-2 lg:flex">
               <Image
-                src="/images/logo/ice-logo.jpg"
+                src={logoSrc}
                 alt="International Computer Exchange"
                 width={220}
                 height={66}
@@ -276,16 +327,16 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                 <div
                   key={link.label}
                   className="relative"
-                  onMouseEnter={openMega}
-                  onMouseLeave={scheduleMegaClose}
+                  onPointerEnter={onMegaPointerEnter}
+                  onPointerLeave={onMegaPointerLeave}
                   onBlur={(e) => {
                     // Close when keyboard focus leaves the trigger + panel entirely
                     if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-                      setMegaOpen(false);
+                      closeMegaNow();
                     }
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === "Escape") setMegaOpen(false);
+                    if (e.key === "Escape") closeMegaNow();
                   }}
                 >
                   {/* Dropdown trigger — a button, not a page link. The index
@@ -295,7 +346,10 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                     aria-expanded={megaOpen}
                     aria-haspopup="true"
                     onFocus={openMega}
-                    onClick={() => setMegaOpen((prev) => !prev)}
+                    onClick={() => {
+                      if (megaOpenRef.current) closeMegaNow();
+                      else openMega();
+                    }}
                     className={cx(
                       "inline-flex cursor-pointer items-center gap-0.5 rounded-lg px-3 py-2 text-sm font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
                       isActive(link.href)
@@ -312,66 +366,73 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                     />
                   </button>
 
-                  {/* ── Mega Dropdown ── */}
+                  {/* ── Mega Dropdown ──
+                      Positioning lives on a static wrapper so Framer's transform
+                      (opacity/y) never fights `-translate-x-1/2` — that conflict
+                      was shifting the panel under the cursor and causing flicker.
+                      No scale animation: shrinking the hit box mid-hover also
+                      fires pointerleave. */}
                   <AnimatePresence>
                     {megaOpen && (
-                      <motion.div
-                        initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
-                        animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-                        exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
-                        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute top-full left-1/2 -translate-x-1/2 pt-3"
-                        style={{ transformOrigin: "top center" }}
-                      >
-                        <div className="w-[820px] overflow-hidden rounded-2xl bg-primary/75 shadow-2xl ring-1 ring-black/5 backdrop-blur-2xl backdrop-saturate-150 dark:ring-white/10">
-                          {/* Brand gradient hairline */}
-                          <div aria-hidden="true" className="h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent" />
-                          <div className="grid grid-cols-4 p-6">
-                            {solutionsMega.map((col, colIdx) => (
-                              <div
-                                key={col.heading}
-                                className={cx(
-                                  "flex flex-col px-4",
-                                  colIdx < solutionsMega.length - 1 && "border-r border-secondary"
-                                )}
-                              >
-                                {/* Category header — fixed height for uniform alignment */}
-                                <div className="mb-3 flex h-10 items-center gap-2 border-b border-secondary pb-3">
-                                  <col.icon className="size-4 shrink-0 text-fg-brand-primary" />
-                                  <span className="font-mono text-[11px] leading-tight font-semibold tracking-wider text-brand-tertiary uppercase">
-                                    {col.heading}
-                                  </span>
+                      <div className="absolute top-full left-1/2 z-50 -translate-x-1/2 pt-2">
+                        {/* Invisible bridge fills the gap between trigger and panel */}
+                        <div aria-hidden="true" className="absolute inset-x-0 top-0 h-2" />
+                        <motion.div
+                          initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                          animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                          exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                          transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          <div className="w-[980px] overflow-hidden rounded-2xl bg-primary shadow-2xl ring-1 ring-black/5 dark:bg-primary dark:ring-white/10">
+                            {/* Brand gradient hairline */}
+                            <div aria-hidden="true" className="h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent" />
+                            <div className="grid grid-cols-4 p-6">
+                              {solutionsMega.map((col, colIdx) => (
+                                <div
+                                  key={col.heading}
+                                  className={cx(
+                                    "flex flex-col px-4",
+                                    colIdx < solutionsMega.length - 1 && "border-r border-secondary"
+                                  )}
+                                >
+                                  {/* Category header — same wide-tracking eyebrow as home hero badge */}
+                                  <div className="mb-3 flex h-12 items-center gap-2 border-b border-secondary pb-3">
+                                    <col.icon className="size-4 shrink-0 text-fg-brand-primary" />
+                                    <span className="text-xs leading-snug font-medium tracking-[0.2em] text-brand-tertiary uppercase">
+                                      {col.heading}
+                                    </span>
+                                  </div>
+
+                                  {/* Links — flex-1 fills remaining space for uniform column height */}
+                                  <ul className="flex flex-1 flex-col gap-0.5">
+                                    {col.links.map((item) => (
+                                      <li key={item.href}>
+                                        <Link
+                                          href={item.href}
+                                          className="group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm leading-snug text-secondary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover/60 hover:text-primary focus-visible:outline-2"
+                                        >
+                                          <span className="flex-1 text-balance">{item.label}</span>
+                                          <ArrowRight className="size-3.5 shrink-0 -translate-x-1 text-fg-brand-primary opacity-0 transition duration-100 ease-linear group-hover:translate-x-0 group-hover:opacity-100" />
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
                                 </div>
+                              ))}
+                            </div>
 
-                                {/* Links — flex-1 fills remaining space for uniform column height */}
-                                <ul className="flex flex-1 flex-col gap-0.5">
-                                  {col.links.map((item) => (
-                                    <li key={item.href}>
-                                      <Link
-                                        href={item.href}
-                                        className="group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-secondary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover/60 hover:text-primary focus-visible:outline-2"
-                                      >
-                                        <span className="flex-1">{item.label}</span>
-                                        <ArrowRight className="size-3.5 shrink-0 -translate-x-1 text-fg-brand-primary opacity-0 transition duration-100 ease-linear group-hover:translate-x-0 group-hover:opacity-100" />
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ))}
+                            {/* Bottom bar */}
+                            <div className="flex items-center justify-between border-t border-secondary bg-secondary/50 px-6 py-3">
+                              <span className="text-xs text-quaternary">
+                                Providing Enterprise solutions since 1990.
+                              </span>
+                              <Button href="/solutions" color="link-color" size="sm" iconTrailing={ArrowRight}>
+                                View All Solutions
+                              </Button>
+                            </div>
                           </div>
-
-                          {/* Bottom bar */}
-                          <div className="flex items-center justify-between border-t border-secondary bg-secondary/50 px-6 py-3">
-                            <span className="text-xs text-quaternary">
-                              Enterprise solutions since 1990
-                            </span>
-                            <Button href="/solutions" color="link-color" size="sm" iconTrailing={ArrowRight}>
-                              View All Solutions
-                            </Button>
-                          </div>
-                        </div>
-                      </motion.div>
+                        </motion.div>
+                      </div>
                     )}
                   </AnimatePresence>
                 </div>
@@ -527,7 +588,7 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                               </Link>
                               {solutionsMega.map((col) => (
                                 <div key={col.heading}>
-                                  <h4 className="mb-2 flex items-center gap-2 px-4 text-xs font-semibold text-brand-tertiary uppercase">
+                                  <h4 className="mb-2 flex items-center gap-2 px-4 text-xs font-medium tracking-[0.2em] text-brand-tertiary uppercase">
                                     <col.icon className="size-3.5 shrink-0 text-fg-brand-primary" />
                                     {col.heading}
                                   </h4>
@@ -571,18 +632,18 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
 
               <div className="flex shrink-0 flex-col gap-3 border-t border-secondary px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
                 <a
-                  href="tel:18007869188"
+                  href={phoneHref}
                   className="flex items-center gap-3 rounded-sm text-sm text-tertiary outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   <Phone01 className="size-4 shrink-0 text-fg-quaternary" />
-                  1-800-786-9188
+                  {phone}
                 </a>
                 <a
-                  href="mailto:info@icesales.com"
+                  href={`mailto:${email}`}
                   className="flex items-center gap-3 rounded-sm text-sm text-tertiary outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   <Mail01 className="size-4 shrink-0 text-fg-quaternary" />
-                  info@icesales.com
+                  {email}
                 </a>
               </div>
             </motion.nav>

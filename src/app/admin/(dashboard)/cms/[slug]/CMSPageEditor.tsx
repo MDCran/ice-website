@@ -71,6 +71,7 @@ interface SectionTemplate {
   type: string;
   content: Record<string, any>;
   slugs?: string[];
+  excludeSlugs?: string[];
   pageTypes?: string[];
   excludePageTypes?: string[];
   required?: boolean;
@@ -135,14 +136,20 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     description: "Top page headline, supporting copy, calls to action, and proof-label trust bar.",
     key: "hero",
     type: "hero",
+    excludePageTypes: ["legal", "settings"],
+    excludeSlugs: ["site-settings"],
     required: true,
     content: {
-      eyebrow: "IBM Business Partner Since 1990",
-      headline: "Page headline",
-      subheadline: "Short page introduction.",
-      cta_primary: { label: "Get Started", href: "/contact" },
+      eyebrow: "Trusted IBM Business Partner for over 35 years",
+      headline: "You Know Your Business.",
+      headline_highlight: "We Know Technology.",
+      subheadline:
+        "Together, we create innovative solutions. We support IBM Power environments, cloud infrastructure, cybersecurity, data protection, and managed services.",
+      cta_primary: { label: "Call 1-800-786-9188", href: "tel:18007869188" },
       cta_secondary: { label: "Explore Solutions", href: "/solutions" },
       proof_labels: ["35+ Years in Business", "SOC 2 Type II", "24/7/365 US-Based Support"],
+      hero_image: "/images/solutions/heroes/managed-cloud-hosting.webp",
+      image_alt: "Enterprise technology solution illustration",
     },
   },
   {
@@ -171,7 +178,8 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     description: "Number cards for proof points and performance claims.",
     key: "stats",
     type: "stats",
-    excludePageTypes: ["solution"],
+    excludePageTypes: ["solution", "legal", "settings"],
+    excludeSlugs: ["site-settings"],
     required: true,
     content: {
       eyebrow: "By The Numbers",
@@ -294,12 +302,12 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     },
   },
   {
-    id: "partners-intro",
-    label: "Partners Intro",
-    description: "Intro copy beside the image on the partners page.",
+    id: "intro",
+    label: "Intro / Lead-in",
+    description: "Short intro heading and copy for the top of a page section.",
     key: "intro",
     type: "content",
-    slugs: ["partners", "contact"],
+    slugs: ["partners", "contact", "why-ice", "solutions", "home"],
     content: {
       heading: "Technology Partners We Work With",
       description: "Introductory copy for this page section.",
@@ -419,6 +427,8 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     description: "Scannable outcome band — 3-4 payoff pillars with icons for the message that sells.",
     key: "value_props",
     type: "value_props",
+    excludePageTypes: ["legal", "settings"],
+    excludeSlugs: ["site-settings"],
     content: {
       eyebrow: "Why It Pays Off",
       heading: "Enterprise Power, Without the Headaches",
@@ -437,6 +447,8 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     description: "The conversion money-band — count-up ROI metrics, a before/after comparison, and a decisive CTA.",
     key: "roi",
     type: "roi",
+    excludePageTypes: ["legal", "settings"],
+    excludeSlugs: ["site-settings"],
     content: {
       eyebrow: "The Payoff",
       heading: "Clear, Provable ROI",
@@ -606,13 +618,150 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     description: "Closing call to action with one or two buttons.",
     key: "final_cta",
     type: "cta",
-    excludePageTypes: ["solution"],
+    excludePageTypes: ["solution", "legal", "settings"],
+    excludeSlugs: ["site-settings"],
     required: true,
     content: {
       heading: "Ready to Get Started?",
       description: "Talk with our team about your goals and requirements.",
       cta_primary: { label: "Contact Us", href: "/contact" },
       cta_secondary: { label: "Explore Solutions", href: "/solutions" },
+    },
+  },
+  {
+    id: "home-infrastructure",
+    label: "Home Infrastructure",
+    description: "Architecture / infrastructure intro copy on the home page.",
+    key: "infrastructure",
+    type: "content",
+    slugs: ["home"],
+    content: {
+      eyebrow: "Architecture",
+      heading: "Built for Enterprise Workloads",
+      description: "Our infrastructure spans data centers, cloud platforms, and security layers.",
+    },
+  },
+  {
+    id: "home-metrics",
+    label: "Home Metrics",
+    description: "Performance metrics band on the home page.",
+    key: "metrics",
+    type: "metrics",
+    slugs: ["home"],
+    content: {
+      eyebrow: "Performance",
+      heading: "Operational Excellence",
+      description: "Real-time metrics from our managed infrastructure.",
+    },
+  },
+  {
+    id: "partners-benefits",
+    label: "Benefits",
+    description: "Benefit cards (title + description) for a marketing page.",
+    key: "benefits",
+    type: "benefits",
+    slugs: ["partners", "why-ice", "solutions"],
+    content: {
+      heading: "Why Partner-Backed Solutions",
+      description: "Decades of vendor relationships mean better outcomes for your business.",
+      items: [
+        {
+          title: "Certified expertise",
+          description:
+            "Our engineers hold certifications across the platforms we resell, so your solutions are designed and deployed by people who know them inside and out.",
+        },
+        {
+          title: "Direct vendor relationships",
+          description:
+            "Decades-long partnerships give us priority escalation paths, competitive pricing, and early access to new technology.",
+        },
+        {
+          title: "End-to-end delivery",
+          description:
+            "From sizing and procurement to integration, migration, and ongoing support — one partner accountable for the entire lifecycle.",
+        },
+      ],
+    },
+  },
+  {
+    id: "legal-hero",
+    label: "Legal Hero",
+    description: "Header copy for Terms of Service and SMS Consent pages.",
+    key: "hero",
+    type: "hero",
+    pageTypes: ["legal"],
+    required: true,
+    content: {
+      eyebrow: "Legal · Website Terms",
+      headline: "Terms of Service",
+      subheadline: "Please read these terms carefully before using our services.",
+      last_updated: "March 2026",
+      badge_note: "Applies to icesales.com",
+      document_title: "Website Terms and Conditions",
+      document_intro: "These Terms govern your access to and use of the International Computer Exchange, Inc. website.",
+      related_label: "SMS Consent Policy",
+      related_href: "/sms-consent",
+    },
+  },
+  {
+    id: "legal-sections",
+    label: "Legal Sections",
+    description: "Editable policy sections (id, title, content) for Terms and SMS Consent.",
+    key: "sections",
+    type: "content",
+    pageTypes: ["legal"],
+    required: true,
+    content: {
+      items: [
+        {
+          id: "acceptance",
+          title: "1. Acceptance of Terms",
+          content: "By accessing and using ICE services, you agree to be bound by these Terms of Service.",
+        },
+      ],
+    },
+  },
+  {
+    id: "site-company-info",
+    label: "Company Info",
+    description: "Address, phone, email, hours, and logo used in the navbar and footer.",
+    key: "company_info",
+    type: "content",
+    slugs: ["site-settings"],
+    required: true,
+    content: {
+      name: "International Computer Exchange",
+      tagline: "IBM Business Partner Since 1990",
+      address: "1279 W Palmetto Park Rd #272415",
+      city: "Boca Raton, FL 33427",
+      phone: "1-800-786-9188",
+      email: "info@icesales.com",
+      hours: "Mon - Fri, 9:00 AM - 5:00 PM ET",
+      logo: "/images/logo/ice-logo.jpg",
+    },
+  },
+  {
+    id: "site-footer",
+    label: "Footer Copy",
+    description: "Copyright, IBM partner badge labels, and optional get-in-touch CTA.",
+    key: "footer",
+    type: "content",
+    slugs: ["site-settings"],
+    required: true,
+    content: {
+      ibm_partner_text:
+        "As an IBM Business Partner since 1990, ICE delivers enterprise-grade cloud hosting, data protection, security, and managed services for businesses worldwide.",
+      ibm_partner_label: "IBM Business Partner",
+      ibm_partner_sublabel: "Since 1990",
+      copyright: "International Computer Exchange, Inc.",
+      get_in_touch_heading: "Get in touch",
+      get_in_touch_description: "Ready to modernize your IT infrastructure? Our experts are here to help.",
+      get_in_touch_cta_label: "Contact Us",
+      get_in_touch_cta_href: "/contact",
+      show_get_in_touch: false,
+      show_contact_bar: true,
+      show_solutions_accordion: true,
+      social_links: [],
     },
   },
 ];
@@ -667,9 +816,10 @@ function uniqueSectionKey(baseKey: string, existingKeys: string[]): string {
 
 function templateAppliesToPage(template: SectionTemplate, page: PageMeta): boolean {
   const slugMatch = !template.slugs || template.slugs.includes(page.slug);
+  const slugNotExcluded = !template.excludeSlugs || !template.excludeSlugs.includes(page.slug);
   const typeMatch = !template.pageTypes || template.pageTypes.includes(page.page_type);
   const notExcluded = !template.excludePageTypes || !template.excludePageTypes.includes(page.page_type);
-  return slugMatch && typeMatch && notExcluded;
+  return slugMatch && slugNotExcluded && typeMatch && notExcluded;
 }
 
 function defaultContentForType(type: string): Record<string, any> {
@@ -781,6 +931,42 @@ function defaultContentForType(type: string): Record<string, any> {
   }
   if (type === "form") {
     return { options: ["Option one", "Option two"] };
+  }
+  if (type === "timeline") {
+    return {
+      eyebrow: "",
+      heading: "Timeline",
+      description: "",
+      items: [
+        { year: "2020", title: "Milestone", description: "What happened." },
+        { year: "2025", title: "Milestone", description: "What happened." },
+      ],
+    };
+  }
+  if (type === "gallery" || type === "partners") {
+    return {
+      eyebrow: "",
+      heading: "Partners",
+      description: "",
+      partners: [
+        { name: "IBM", description: "Partner description.", logo_src: "", specializations: ["Specialty"], partner_since: "1990" },
+      ],
+    };
+  }
+  if (type === "illustration") {
+    return {
+      heading: "Section Heading",
+      description: "Supporting copy for this section.",
+      illustration: "",
+    };
+  }
+  if (type === "content") {
+    return {
+      eyebrow: "",
+      heading: "Section Heading",
+      description: "Section content.",
+      features: [],
+    };
   }
   return { heading: "Section Heading", description: "Section content." };
 }
@@ -977,7 +1163,9 @@ export default function CMSPageEditor({
 
   const previewUrl = page.page_type === "solution"
     ? `/solutions/${slug}`
-    : slug === "home" ? "/" : `/${slug}`;
+    : slug === "home" || slug === "site-settings"
+      ? "/"
+      : `/${slug}`;
 
   /* ═══ RENDER ═══ */
 
@@ -1251,7 +1439,10 @@ export default function CMSPageEditor({
                     }}
                     options={[
                       { label: "Blank section", value: "" },
-                      ...pageTemplates.map((template) => ({ label: template.label, value: template.id })),
+                      ...pageTemplates.map((template) => ({
+                        label: `${template.label} — ${getTypeLabel(template.type)}${template.required ? " (recommended)" : ""}`,
+                        value: template.id,
+                      })),
                     ]}
                     hint={selectedTemplate?.description}
                   />
@@ -1800,13 +1991,14 @@ function SubFieldInput({ fieldKey, value, onChange }: {
 function AddFieldButton({ onAdd, existingKeys }: { onAdd: (k: string, v: unknown) => void; existingKeys: string[] }) {
   const [open, setOpen] = useState(false);
   const [key, setKey] = useState("");
-  const [type, setType] = useState<"text" | "number" | "boolean" | "icon" | "illustration" | "list" | "items" | "object">("text");
+  const [type, setType] = useState<"text" | "number" | "boolean" | "icon" | "image" | "illustration" | "list" | "items" | "object">("text");
 
   const handleAdd = () => {
     const cleanKey = key.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^\w]/g, "");
-    if (!cleanKey || existingKeys.includes(cleanKey)) return;
-    const defaults: Record<string, unknown> = { text: "", number: 0, boolean: false, icon: "Globe", illustration: "", list: [""], items: [{}], object: {} };
-    onAdd(type === "illustration" ? "illustration" : cleanKey, defaults[type]);
+    const fieldKey = type === "illustration" ? "illustration" : type === "image" && !cleanKey ? "image" : cleanKey;
+    if (!fieldKey || existingKeys.includes(fieldKey)) return;
+    const defaults: Record<string, unknown> = { text: "", number: 0, boolean: false, icon: "Globe", image: "", illustration: "", list: [""], items: [{}], object: {} };
+    onAdd(fieldKey, defaults[type]);
     setKey(""); setOpen(false);
   };
 
@@ -1843,6 +2035,7 @@ function AddFieldButton({ onAdd, existingKeys }: { onAdd: (k: string, v: unknown
             { label: "Number", value: "number" },
             { label: "Toggle", value: "boolean" },
             { label: "Icon", value: "icon" },
+            { label: "Image", value: "image" },
             { label: "Illustration", value: "illustration" },
             { label: "List", value: "list" },
             { label: "Items", value: "items" },

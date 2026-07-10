@@ -1,20 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef, type FC } from "react";
+import { useState, useEffect, useRef, type FC, type ReactNode } from "react";
 import { motion, useInView, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle,
+  ChevronDown,
   ChevronRight,
   Cloud01,
   Database01,
   MessageChatCircle,
   Monitor04,
+  Phone01,
   RefreshCw01,
+  Server01,
   Server03,
   Shield01,
+  ShieldTick,
+  LayersThree01,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -119,9 +124,54 @@ const INFRASTRUCTURE_FLOW: { label: string; icon: IconComponent }[] = [
   { label: "Backup", icon: RefreshCw01 },
 ];
 
-/** Performance indicators (replaces the old EnterpriseMetrics dashboard). */
+/** Most-requested solutions — card treatment matches /solutions. */
+const POPULAR_SOLUTIONS: {
+  title: string;
+  href: string;
+  desc: string;
+  icon: IconComponent;
+  image: string;
+}[] = [
+  {
+    title: "Managed Cloud Hosting",
+    href: "/solutions/managed-cloud-hosting",
+    desc: "Enterprise-grade cloud hosting with 24/7 management and support.",
+    icon: Cloud01,
+    image: "/images/solutions/heroes/managed-cloud-hosting.webp",
+  },
+  {
+    title: "Managed Private Cloud",
+    href: "/solutions/managed-private-cloud",
+    desc: "Dedicated private cloud environments built for security and compliance.",
+    icon: Server01,
+    image: "/images/solutions/heroes/managed-private-cloud.webp",
+  },
+  {
+    title: "Disaster Recovery as a Service",
+    href: "/solutions/disaster-recovery",
+    desc: "Full disaster recovery with guaranteed RTOs and RPOs.",
+    icon: RefreshCw01,
+    image: "/images/solutions/heroes/disaster-recovery.webp",
+  },
+  {
+    title: "High Availability as a Service",
+    href: "/solutions/high-availability",
+    desc: "Real-time replication and automatic failover for critical systems.",
+    icon: Database01,
+    image: "/images/solutions/heroes/high-availability.webp",
+  },
+  {
+    title: "IBM i Security",
+    href: "/solutions/ibm-i-security",
+    desc: "Comprehensive security assessments and hardening for IBM i environments.",
+    icon: ShieldTick,
+    image: "/images/solutions/heroes/ibm-i-security.webp",
+  },
+];
+
+/** Performance indicators — distinct from By The Numbers (years / projects / clients / uptime). */
 const PERFORMANCE_METRICS = [
-  { value: "99.99%", label: "Uptime SLA" },
+  { value: "15", suffix: " min", label: "Mean Incident Response" },
   { value: "24/7/365", label: "Always-On Operations" },
   { value: "14,723", label: "Threats Blocked (30d)" },
   { value: "0", label: "Active Threats" },
@@ -164,78 +214,159 @@ function SectionHeader({
    ANIMATED COUNTER
    ══════════════════════════════════════════════════════════════════════════ */
 
+/** Ease-out cubic — fast start, settles on the final value. */
+function easeOutCubic(t: number) {
+  return 1 - (1 - t) ** 3;
+}
+
 function useCountUp(target: number, inView: boolean, duration = 2000, decimals = 0) {
   const reduceMotion = useReducedMotion();
   const [count, setCount] = useState(0);
+
   useEffect(() => {
-    if (!inView) return;
+    if (!inView) {
+      setCount(0);
+      return;
+    }
+
     if (reduceMotion) {
       setCount(target);
       return;
     }
+
+    // Scramble briefly, then ease 0 → target. No startedRef latch so Strict Mode remounts still animate.
+    let cancelled = false;
+    let raf = 0;
+    const start = performance.now();
+    const scrambleMs = Math.min(520, duration * 0.28);
     const factor = 10 ** decimals;
-    let start = 0;
-    const increment = target / (duration / 16);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= target) {
-        setCount(target);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start * factor) / factor);
+    const scrambleCeiling = Math.max(target, 1) * (target >= 10 ? 1.15 : 4);
+
+    const tick = (now: number) => {
+      if (cancelled) return;
+      const elapsed = now - start;
+
+      if (elapsed < scrambleMs) {
+        const raw = Math.random() * scrambleCeiling;
+        setCount(Math.floor(raw * factor) / factor);
+        raf = requestAnimationFrame(tick);
+        return;
       }
-    }, 16);
-    return () => clearInterval(timer);
+
+      const t = Math.min(1, (elapsed - scrambleMs) / Math.max(1, duration - scrambleMs));
+      const eased = easeOutCubic(t);
+      const next = Math.floor(target * eased * factor) / factor;
+      setCount(t >= 1 ? target : next);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+
+    setCount(0);
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
   }, [inView, target, duration, decimals, reduceMotion]);
+
   return count;
 }
 
-/** Matches a leading number (with optional thousands commas / decimals) in a stat string. */
-const LEADING_NUMBER_RE = /^(\d[\d,]*(?:\.\d+)?)([\s\S]*)$/;
+const NUMBER_TOKEN_RE = /\d[\d,]*(?:\.\d+)?/g;
+
+function formatCount(count: number, decimals: number, grouped: boolean) {
+  if (grouped) return Math.round(count).toLocaleString("en-US");
+  return count.toFixed(decimals);
+}
+
+/** Single numeric token that counts from 0 → target. */
+function AnimatedNumber({
+  raw,
+  inView,
+  duration = 2000,
+}: {
+  raw: string;
+  inView: boolean;
+  duration?: number;
+}) {
+  const target = parseFloat(raw.replace(/,/g, "")) || 0;
+  const decimals = raw.includes(".") ? (raw.split(".")[1]?.length ?? 0) : 0;
+  const grouped = raw.includes(",");
+  const count = useCountUp(target, inView, duration, decimals);
+  return <>{formatCount(count, decimals, grouped)}</>;
+}
 
 /**
- * Renders any stat string ("35+", "99.999% Uptime SLA", "14,723", "24/7/365")
- * and counts the leading number up when it scrolls into view. Non-numeric
- * strings render as-is.
+ * Renders any string and counts every numeric token up from 0 when in view
+ * ("35+", "99.99%", "14,723", "24/7/365").
  */
-function AnimatedValue({ value, className }: { value: string; className?: string }) {
+function AnimatedValue({
+  value,
+  suffix = "",
+  className,
+  inView: inViewProp,
+  duration = 2000,
+}: {
+  value: string;
+  suffix?: string;
+  className?: string;
+  inView?: boolean;
+  duration?: number;
+}) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.5 });
-  const match = value.match(LEADING_NUMBER_RE);
-  const raw = match?.[1] ?? "";
-  const rest = match?.[2] ?? "";
-  const target = match ? parseFloat(raw.replace(/,/g, "")) : 0;
-  const decimals = raw.includes(".") ? raw.split(".")[1].length : 0;
-  const grouped = raw.includes(",");
-  const count = useCountUp(target, inView, 2000, decimals);
+  const selfInView = useInView(ref, { once: true, amount: 0.25, margin: "0px 0px -10% 0px" });
+  const inView = inViewProp ?? selfInView;
 
-  if (!match) {
+  const tokens = value.match(NUMBER_TOKEN_RE);
+  if (!tokens) {
     return (
       <span ref={ref} className={className}>
         {value}
+        {suffix}
       </span>
     );
   }
 
-  const display = grouped ? Math.round(count).toLocaleString("en-US") : count.toFixed(decimals);
+  const parts: ReactNode[] = [];
+  let last = 0;
+  let key = 0;
+  for (const match of value.matchAll(NUMBER_TOKEN_RE)) {
+    const idx = match.index ?? 0;
+    if (idx > last) parts.push(value.slice(last, idx));
+    parts.push(
+      <AnimatedNumber key={`n-${key++}`} raw={match[0]} inView={inView} duration={duration} />,
+    );
+    last = idx + match[0].length;
+  }
+  if (last < value.length) parts.push(value.slice(last));
+
   return (
     <span ref={ref} className={className}>
-      {display}
-      {rest}
+      {parts}
+      {suffix}
     </span>
   );
 }
 
-function StatItem({ value, suffix, label, inView }: {
-  value: number; suffix: string; label: string; inView: boolean;
+function StatItem({
+  value,
+  suffix,
+  label,
+  inView,
+}: {
+  value: number;
+  suffix: string;
+  label: string;
+  inView: boolean;
 }) {
-  const decimals = Number.isInteger(value) ? 0 : (String(value).split(".")[1]?.length ?? 0);
-  const count = useCountUp(value, inView, 2000, decimals);
+  const numeric = typeof value === "number" ? value : parseFloat(String(value).replace(/,/g, "")) || 0;
+  const decimals = Number.isInteger(numeric) ? 0 : (String(numeric).split(".")[1]?.length ?? 0);
+  const count = useCountUp(numeric, inView, 2400, decimals);
   return (
     <div className="flex flex-1 flex-col-reverse gap-3 text-center">
       <dt className="text-md font-semibold text-primary md:text-lg">{label}</dt>
-      <dd className="text-display-lg font-semibold tracking-tight text-brand-tertiary_alt md:text-display-xl">
-        {count.toFixed(decimals)}
+      <dd className="text-display-lg font-semibold tracking-tight text-brand-tertiary_alt tabular-nums md:text-display-xl">
+        {decimals > 0 ? count.toFixed(decimals) : Math.round(count).toLocaleString("en-US")}
         {suffix}
       </dd>
     </div>
@@ -271,14 +402,25 @@ export default function Home({
   });
 
   /* ── Resolve CMS data with fallbacks ── */
-  const hero = data?.hero ?? {
-    badge: "IBM Business Partner Since 1990",
+  const heroDefaults = {
+    badge: "Trusted IBM Business Partner for over 35 years",
     headline: "You Know Your Business.",
     headline_highlight: "We Know Technology.",
     subheadline:
-      "Together, we create innovative solutions. Cloud hosting, data protection, cybersecurity, and managed services delivered by a team with 35+ years of enterprise expertise.",
-    cta_primary: { label: "Schedule a Consultation", href: "/contact" },
+      "Together, we create innovative solutions. We support IBM Power environments, cloud infrastructure, cybersecurity, data protection, and managed services.",
+    cta_primary: { label: "Call 1-800-786-9188", href: "tel:18007869188" },
     cta_secondary: { label: "Explore Solutions", href: "/solutions" },
+  };
+  const hero = {
+    ...heroDefaults,
+    ...data?.hero,
+    // Keep the requested home-hero marketing copy even if CMS still has older strings.
+    badge: heroDefaults.badge,
+    headline: heroDefaults.headline,
+    headline_highlight: heroDefaults.headline_highlight,
+    subheadline: heroDefaults.subheadline,
+    cta_primary: heroDefaults.cta_primary,
+    cta_secondary: data?.hero?.cta_secondary ?? heroDefaults.cta_secondary,
   };
   const servicesSection = data?.services_grid;
   const statsSection = data?.stats;
@@ -297,8 +439,16 @@ export default function Home({
     description: s.description,
     href: s.href,
   }));
-  const stats: { value: number; suffix: string; label: string }[] =
-    data?.stats?.items ?? DEFAULT_STATS;
+  const stats: { value: number; suffix: string; label: string }[] = (
+    data?.stats?.items ?? DEFAULT_STATS
+  ).map((s) => ({
+    value:
+      typeof s.value === "number"
+        ? s.value
+        : parseFloat(String(s.value).replace(/,/g, "").replace(/[^\d.-]/g, "")) || 0,
+    suffix: s.suffix ?? "",
+    label: s.label,
+  }));
   const timeline = data?.timeline?.items ?? DEFAULT_TIMELINE;
   const industries = (data?.industries_cta?.items ?? DEFAULT_INDUSTRIES).map((ind) => ({
     name: ind.name,
@@ -335,31 +485,22 @@ export default function Home({
   );
 
   const statsRef = useRef<HTMLDivElement>(null);
-  const [statsInView, setStatsInView] = useState(false);
+  const metricsRef = useRef<HTMLDivElement>(null);
+  const heroProofRef = useRef<HTMLUListElement>(null);
+  const timelineRailRef = useRef<HTMLDivElement>(null);
+  const statsInView = useInView(statsRef, { once: true, amount: 0.2, margin: "0px 0px -80px 0px" });
+  const metricsInView = useInView(metricsRef, { once: true, amount: 0.2, margin: "0px 0px -80px 0px" });
+  // Delay hero proof count-up until the proof row has entered (after CTA reveal).
+  const heroProofInView = useInView(heroProofRef, { once: true, amount: 0.6 });
+  const timelineRailInView = useInView(timelineRailRef, { once: true, margin: "-80px" });
   const [marqueePaused, setMarqueePaused] = useState(false);
-
-  useEffect(() => {
-    const el = statsRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setStatsInView(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.3 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <main className="bg-primary">
       {/* ═══════════════════════════════════════════════════════════════════
           HERO — cinematic full-bleed background video
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden border-b border-secondary">
+      <section className="relative flex min-h-[calc(100svh-4.5rem)] flex-col overflow-hidden border-b border-secondary">
         {/* Background video + readability treatment */}
         <div aria-hidden="true" className="absolute inset-0">
           <video
@@ -387,91 +528,113 @@ export default function Home({
           <PulseGlow className="right-[6%] bottom-[-14%] size-[26rem] bg-brand-400/20" duration={11} delay={2} />
         </div>
 
-        <div className="relative mx-auto w-full max-w-container px-4 py-16 md:px-8 md:py-24 lg:py-32">
-          <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-            {/* Quiet eyebrow — brand dot + mono caps, no pill */}
-            <motion.p
-              {...heroReveal(0.1)}
-              className="flex items-center gap-2.5"
-            >
-              <span aria-hidden="true" className="relative flex size-1.5 items-center justify-center">
-                {!reduceMotion && (
-                  <motion.span
-                    className="absolute inset-0 rounded-full bg-brand-400"
-                    style={{ willChange: "transform, opacity" }}
-                    animate={{ scale: [1, 3], opacity: [0.7, 0] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeOut" }}
-                  />
-                )}
-                <span className="relative size-1.5 rounded-full bg-brand-400 shadow-[0_0_8px_rgb(4_155_251/0.8)]" />
-              </span>
-              <span className="text-xs font-medium tracking-[0.2em] text-white/70 uppercase">
-                {hero.badge ?? "IBM Business Partner Since 1990"}
-              </span>
-            </motion.p>
-
-            {/* Hardcoded white is intentional here — text sits over the video in both themes */}
-            <motion.h1
-              {...heroReveal(0.2)}
-              className="mt-4 text-display-md font-semibold text-white md:text-display-lg lg:text-display-xl"
-            >
-              {hero.headline}
-              {hero.headline_highlight && (
-                <>
-                  {" "}
-                  <br className="hidden sm:block" />
-                  <span className="text-brand-300">{hero.headline_highlight}</span>
-                </>
-              )}
-            </motion.h1>
-
-            <motion.p
-              {...heroReveal(0.35)}
-              className="mt-4 max-w-2xl text-lg text-white/80 md:mt-6 md:text-xl"
-            >
-              {hero.subheadline}
-            </motion.p>
-
-            <motion.div
-              {...heroReveal(0.5)}
-              className="mt-8 flex w-full flex-col-reverse items-stretch gap-3 sm:w-auto sm:flex-row sm:items-start md:mt-12"
-            >
-              <Button color="secondary" size="xl" href={hero.cta_secondary?.href ?? "/solutions"}>
-                {hero.cta_secondary?.label ?? "Explore Solutions"}
-              </Button>
-              <Button
-                size="xl"
-                href={hero.cta_primary?.href ?? "/contact"}
-                iconTrailing={ArrowRight}
-                className="shadow-[0_0_40px_rgb(4_155_251/0.3)]"
+        <div className="relative flex flex-1 flex-col justify-center px-4 py-20 md:px-8 md:py-24">
+          <div className="mx-auto flex w-full max-w-container flex-col items-center">
+            <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+              {/* Quiet eyebrow — brand dot + mono caps, no pill */}
+              <motion.p
+                {...heroReveal(0.1)}
+                className="flex items-center gap-2.5"
               >
-                {hero.cta_primary?.label ?? "Schedule a Consultation"}
-              </Button>
-            </motion.div>
+                <span aria-hidden="true" className="relative flex size-1.5 items-center justify-center">
+                  {!reduceMotion && (
+                    <motion.span
+                      className="absolute inset-0 rounded-full bg-brand-400"
+                      style={{ willChange: "transform, opacity" }}
+                      animate={{ scale: [1, 3], opacity: [0.7, 0] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeOut" }}
+                    />
+                  )}
+                  <span className="relative size-1.5 rounded-full bg-brand-400 shadow-[0_0_8px_rgb(4_155_251/0.8)]" />
+                </span>
+                <span className="text-xs font-medium tracking-[0.2em] text-white/70 uppercase">
+                  {hero.badge}
+                </span>
+              </motion.p>
 
-            {/* Proof row — quiet, single understated line under the CTAs */}
-            <motion.ul
-              {...heroReveal(0.65)}
-              className="mt-12 flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5 md:mt-16 md:gap-x-5"
-            >
-              {HERO_PROOF.map((item, i) => (
-                <li key={item} className="flex items-center gap-x-4 md:gap-x-5">
-                  {i > 0 && <span aria-hidden="true" className="hidden h-3 w-px bg-white/20 sm:block" />}
-                  <AnimatedValue
-                    value={item}
-                    className="text-xs tracking-wide text-white/60 uppercase"
-                  />
-                </li>
-              ))}
-            </motion.ul>
+              {/* Hardcoded white is intentional here — text sits over the video in both themes */}
+              <motion.h1
+                {...heroReveal(0.2)}
+                className="mt-4 text-display-md font-semibold text-white md:text-display-lg lg:text-display-xl"
+              >
+                {hero.headline}
+                {hero.headline_highlight && (
+                  <>
+                    <br />
+                    <span className="ice-gradient-text">{hero.headline_highlight}</span>
+                  </>
+                )}
+              </motion.h1>
+
+              <motion.p
+                {...heroReveal(0.35)}
+                className="mt-4 max-w-2xl text-lg text-white/80 md:mt-6 md:text-xl"
+              >
+                {hero.subheadline}
+              </motion.p>
+
+              <motion.div
+                {...heroReveal(0.5)}
+                className="mt-8 flex w-full flex-col-reverse items-stretch gap-3 sm:w-auto sm:flex-row sm:items-start md:mt-12"
+              >
+                <Button color="secondary" size="xl" href={hero.cta_secondary?.href ?? "/solutions"}>
+                  {hero.cta_secondary?.label ?? "Explore Solutions"}
+                </Button>
+                <Button
+                  size="xl"
+                  href={hero.cta_primary?.href ?? "tel:18007869188"}
+                  iconLeading={Phone01}
+                  className="shadow-[0_0_40px_rgb(4_155_251/0.3)]"
+                >
+                  {hero.cta_primary?.label ?? "Call 1-800-786-9188"}
+                </Button>
+              </motion.div>
+
+              {/* Proof row — single line under the CTAs */}
+              <motion.ul
+                {...heroReveal(0.65)}
+                ref={heroProofRef}
+                className="mt-12 flex max-w-full flex-nowrap items-center justify-center gap-x-2 overflow-x-auto scrollbar-hide md:mt-16 md:gap-x-3"
+              >
+                {HERO_PROOF.map((item, i) => (
+                  <li key={item} className="flex shrink-0 items-center gap-x-2 md:gap-x-3">
+                    {i > 0 && <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/20" />}
+                    <AnimatedValue
+                      value={item}
+                      inView={heroProofInView}
+                      duration={2200}
+                      className="whitespace-nowrap text-[10px] tracking-wide text-white/60 uppercase tabular-nums sm:text-xs"
+                    />
+                  </li>
+                ))}
+              </motion.ul>
+            </div>
           </div>
         </div>
+
+        {/* Scroll cue — pinned near the bottom of the first viewport */}
+        <motion.a
+          {...heroReveal(0.8)}
+          href="#services"
+          aria-label="Scroll to explore"
+          className="relative z-10 mb-4 flex flex-col items-center gap-1 self-center pb-[max(0.5rem,env(safe-area-inset-bottom))] text-white/70 transition hover:text-white md:mb-6"
+        >
+          <span className="text-[10px] font-medium tracking-[0.2em] uppercase">Scroll</span>
+          <motion.span
+            aria-hidden="true"
+            animate={reduceMotion ? undefined : { y: [0, 8, 0] }}
+            transition={{ duration: 1.25, repeat: Infinity, ease: "easeInOut" }}
+            className="inline-flex"
+          >
+            <ChevronDown className="size-6 drop-shadow-[0_0_8px_rgb(4_155_251/0.45)]" />
+          </motion.span>
+        </motion.a>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
           SERVICES GRID
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+      <section id="services" className="relative scroll-mt-20 overflow-hidden bg-primary py-16 md:py-24">
         {/* Depth: engineering grid fading down from the hero's hard edge + grain */}
         <div
           aria-hidden="true"
@@ -513,14 +676,103 @@ export default function Home({
                     <h3 className="text-lg font-semibold text-primary">{s.title}</h3>
                     <p className="text-md text-tertiary">{s.description}</p>
                   </div>
-                  <span className="relative inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition-all duration-200 group-hover:gap-2.5 group-hover:text-brand-secondary_hover">
-                    Learn more
-                    <ArrowRight className="size-4" />
+                  <span className="relative inline-flex items-center gap-1.5 text-sm leading-none font-semibold text-brand-secondary transition-all duration-200 group-hover:gap-2.5 group-hover:text-brand-secondary_hover">
+                    <span>Learn more</span>
+                    <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
                   </span>
                 </Link>
               </motion.li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          POPULAR SOLUTIONS — same card treatment as /solutions
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="relative isolate overflow-hidden border-y border-secondary bg-secondary py-16 md:py-24">
+        <div
+          aria-hidden="true"
+          className="texture-dots pointer-events-none absolute inset-0 -z-10 opacity-50 [mask-image:radial-gradient(ellipse_at_top_left,black_10%,transparent_65%)]"
+        />
+        <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
+          <SectionHeader
+            eyebrow="Most Popular"
+            heading="Solutions Teams Ask For First"
+            description="High-demand services that keep enterprise workloads available, recoverable, and secure."
+          />
+
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-12 md:gap-6 lg:grid-cols-3">
+            {POPULAR_SOLUTIONS.map((svc, i) => (
+              <motion.div key={svc.title} {...reveal(i * 0.06)} className="h-full">
+                <Link
+                  href={svc.href}
+                  className="group relative isolate flex h-full min-h-56 overflow-hidden rounded-2xl border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
+                >
+                  {/* Right-side hero wash — matches /solutions (opacity only, no pan) */}
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[58%] overflow-hidden sm:w-[62%]"
+                  >
+                    <img
+                      src={svc.image}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full translate-x-[12%] object-cover object-center opacity-[0.18] transition-opacity duration-500 ease-out group-hover:opacity-[0.55] dark:opacity-[0.22] dark:group-hover:opacity-[0.62]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg-primary)] from-0% via-[var(--color-bg-primary)]/90 via-35% to-transparent to-85%" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-bg-primary)]/40 via-transparent to-[var(--color-bg-primary)]/50 dark:from-[var(--color-bg-primary)]/20 dark:to-[var(--color-bg-primary)]/30" />
+                  </div>
+
+                  <div className="relative z-10 flex h-full max-w-[70%] flex-col items-start sm:max-w-[74%]">
+                    <FeaturedIcon icon={svc.icon} size="lg" color="brand" theme="light" />
+                    <h3 className="mt-4 text-lg font-semibold text-primary">{svc.title}</h3>
+                    <p className="mt-1 flex-1 text-md text-tertiary">{svc.desc}</p>
+                    <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
+                      Learn more
+                      <ArrowRight aria-hidden="true" className="size-4" />
+                    </span>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+
+            {/* 6th tile — View All Solutions CTA */}
+            <motion.div {...reveal(POPULAR_SOLUTIONS.length * 0.06)} className="h-full">
+              <Link
+                href="/solutions"
+                className="group relative isolate flex h-full min-h-56 overflow-hidden rounded-2xl border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
+              >
+                <div
+                  aria-hidden="true"
+                  className="texture-grid pointer-events-none absolute inset-0 -z-10 opacity-60 transition-opacity duration-300 group-hover:opacity-90 [mask-image:radial-gradient(ellipse_at_bottom_right,black_25%,transparent_75%)]"
+                />
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-brand-500/[0.06] via-transparent to-brand-600/[0.08]"
+                />
+                <LayersThree01
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-4 -bottom-6 -z-10 size-44 -rotate-12 text-brand-500/15 transition duration-500 ease-out group-hover:text-brand-500/25 md:size-52"
+                />
+
+                <div className="relative z-10 flex h-full flex-col items-start justify-between">
+                  <div>
+                    <FeaturedIcon icon={LayersThree01} size="lg" color="brand" theme="light" />
+                    <h3 className="mt-4 text-lg font-semibold text-primary">View All Solutions</h3>
+                    <p className="mt-1 text-md text-tertiary">
+                      Browse the full catalog of managed cloud, security, and data protection services.
+                    </p>
+                  </div>
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
+                    Explore solutions
+                    <ArrowRight aria-hidden="true" className="size-4" />
+                  </span>
+                </div>
+              </Link>
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -653,42 +905,42 @@ export default function Home({
             heading={timelineSection?.heading ?? "35+ Years of Innovation"}
           />
 
-          <div className="relative mx-auto mt-12 max-w-4xl md:mt-16">
-            {/* Pipeline rail — a subtle brand-tinted track the beam runs along */}
+          <div ref={timelineRailRef} className="relative mx-auto mt-12 max-w-4xl md:mt-16">
+            {/* Rail + beam stop at the endcap center (bottom-2.5 = half of size-5). */}
             <div
               aria-hidden="true"
-              className="absolute top-0 bottom-0 left-4 w-[3px] -translate-x-px rounded-full bg-gradient-to-b from-brand-500/20 via-brand-500/25 to-brand-500/10 md:left-1/2"
-            />
-            {/* Vertical line — draws in from the top as the section scrolls into view */}
-            <motion.div
-              aria-hidden="true"
-              initial={{ scaleY: reduceMotion ? 1 : 0 }}
-              whileInView={{ scaleY: 1 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 1.4, ease: EASE }}
-              style={{ transformOrigin: "top" }}
-              className="absolute top-0 bottom-0 left-4 w-[3px] -translate-x-px rounded-full bg-border-brand md:left-1/2"
-            />
+              className="pointer-events-none absolute inset-x-0 top-0 bottom-2.5 overflow-hidden"
+            >
+              {/* Pipeline rail — a subtle brand-tinted track the beam runs along */}
+              <div className="absolute inset-y-0 left-4 w-[3px] -translate-x-px rounded-full bg-gradient-to-b from-brand-500/20 via-brand-500/25 to-transparent md:left-1/2" />
+              {/* Vertical line — draws in from the top as the section scrolls into view */}
+              <motion.div
+                initial={{ scaleY: reduceMotion ? 1 : 0 }}
+                animate={timelineRailInView ? { scaleY: 1 } : undefined}
+                transition={{ duration: 1.4, ease: EASE }}
+                style={{ transformOrigin: "top" }}
+                className="absolute inset-y-0 left-4 w-[3px] -translate-x-px rounded-full bg-border-brand md:left-1/2"
+              />
 
-            {/* Constant flowing beam — a bright brand pulse that continuously
-                travels down the rail to signal an always-on pipeline. */}
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute left-4 z-[1] h-[22%] w-[3px] -translate-x-px rounded-full motion-reduce:hidden md:left-1/2"
-              style={{
-                animation: "timeline-flow 3.2s linear infinite",
-                background:
-                  "linear-gradient(to bottom, transparent, var(--color-brand-solid) 50%, transparent)",
-                boxShadow: "0 0 16px 2px var(--color-brand-solid)",
-              }}
-            />
+              {/* Constant flowing beam — a bright brand pulse that continuously
+                  travels down the rail to signal an always-on pipeline. */}
+              <span
+                className="ice-timeline-beam absolute left-4 z-[1] h-[22%] w-[3px] -translate-x-px rounded-full md:left-1/2"
+                style={{
+                  animation: "timeline-flow 2.8s linear infinite",
+                  background:
+                    "linear-gradient(to bottom, transparent, var(--color-brand-solid) 40%, rgb(124 212 253) 55%, transparent)",
+                  boxShadow: "0 0 18px 3px rgb(4 155 251 / 0.55)",
+                }}
+              />
+            </div>
 
             {timeline.map((item, i) => {
               const isLast = i === timeline.length - 1;
               return (
                 <div
                   key={item.year}
-                  className={`relative mb-12 flex items-start gap-8 last:mb-0 ${
+                  className={`relative mb-12 flex items-start gap-8 last:mb-8 ${
                     i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
                   }`}
                 >
@@ -704,7 +956,7 @@ export default function Home({
                     }
                     className="absolute left-4 z-10 -translate-x-1/2 md:left-1/2"
                   >
-                    <span className="relative flex size-6 items-center justify-center rounded-full bg-brand-secondary">
+                    <span className="relative flex size-5 items-center justify-center rounded-full bg-brand-secondary">
                       {isLast && !reduceMotion && (
                         <motion.span
                           aria-hidden="true"
@@ -713,7 +965,7 @@ export default function Home({
                           transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut" }}
                         />
                       )}
-                      <span className="size-2 rounded-full bg-brand-solid" />
+                      <span className="size-1.5 rounded-full bg-brand-solid" />
                     </span>
                   </motion.div>
 
@@ -734,6 +986,27 @@ export default function Home({
                 </div>
               );
             })}
+
+            {/* Pipeline endcap — same size as milestone dots; rail ends on its center */}
+            <div className="relative h-5">
+              <motion.span
+                aria-hidden="true"
+                initial={{ scale: reduceMotion ? 1 : 0, opacity: reduceMotion ? 1 : 0 }}
+                animate={
+                  timelineRailInView
+                    ? { scale: 1, opacity: 1 }
+                    : { scale: reduceMotion ? 1 : 0, opacity: reduceMotion ? 1 : 0 }
+                }
+                transition={
+                  reduceMotion
+                    ? { duration: 0 }
+                    : { type: "spring", stiffness: 280, damping: 18, delay: 1.35 }
+                }
+                className="absolute bottom-0 left-4 z-10 flex size-5 -translate-x-1/2 items-center justify-center rounded-full bg-brand-secondary shadow-[0_0_12px_2px_rgb(4_155_251/0.45)] md:left-1/2"
+              >
+                <span className="size-1.5 rounded-full bg-brand-solid" />
+              </motion.span>
+            </div>
           </div>
         </div>
       </section>
@@ -750,20 +1023,16 @@ export default function Home({
           <div className="mx-auto mt-12 h-px max-w-4xl bg-gradient-to-r from-transparent via-brand-500/40 to-transparent md:mt-16" />
         </div>
 
-        {/* Seamless infinite marquee — pauses on hover. The animation is applied
-            inline (keyframes live in legacy.css) so Tailwind purging can never
-            strip it. */}
+        {/* Seamless infinite marquee — pauses on hover. Uses a dedicated CSS
+            class so the animation can't be stripped by Tailwind purging. */}
         <div
           className="mt-10 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)] md:mt-12"
           onMouseEnter={() => setMarqueePaused(true)}
           onMouseLeave={() => setMarqueePaused(false)}
         >
           <div
-            className="flex w-max items-center"
+            className="animate-ice-marquee flex w-max items-center"
             style={{
-              // Dedicated keyframe (see globals.css). Always animates; the
-              // reduced-motion media query clamps it for users who opt out.
-              animation: "ice-marquee 35s linear infinite",
               animationPlayState: marqueePaused ? "paused" : "running",
             }}
           >
@@ -774,7 +1043,7 @@ export default function Home({
                 className="flex shrink-0 items-center"
               >
                 {Array.from({ length: 8 }, (_, i) => (
-                  <div key={i} className="mx-8 flex shrink-0 items-center justify-center">
+                  <div key={i} className="mx-8 flex shrink-0 items-center justify-center md:mx-10">
                     <Image
                       src={`/images/v3/b_${i + 1}.png`}
                       alt={partnerNames[i] || `Partner ${i + 1}`}
@@ -877,7 +1146,9 @@ export default function Home({
                 <div className="flex max-w-sm flex-col items-center gap-4 text-center">
                   <FeaturedIcon icon={item.icon} size="lg" color="brand" theme="light" />
                   <div>
-                    <h3 className="text-lg font-semibold text-primary">{item.title}</h3>
+                    <h3 className="text-lg font-semibold text-primary">
+                      <AnimatedValue value={item.title} className="tabular-nums" />
+                    </h3>
                     <p className="mt-1 text-md text-tertiary">{item.description}</p>
                   </div>
                 </div>
@@ -890,7 +1161,7 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           PERFORMANCE METRICS
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+      <section ref={metricsRef} className="relative overflow-hidden bg-primary py-16 md:py-24">
         {/* Depth: faint centered dot field behind the metrics panel */}
         <div
           aria-hidden="true"
@@ -928,8 +1199,13 @@ export default function Home({
                 {PERFORMANCE_METRICS.map((metric) => (
                   <div key={metric.label} className="flex flex-col-reverse gap-3 text-center">
                     <dt className="text-md font-semibold text-primary md:text-lg">{metric.label}</dt>
-                    <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
-                      <AnimatedValue value={metric.value} />
+                    <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt tabular-nums md:text-display-lg">
+                      <AnimatedValue
+                        value={metric.value}
+                        suffix={"suffix" in metric ? metric.suffix : ""}
+                        inView={metricsInView}
+                        duration={2400}
+                      />
                     </dd>
                   </div>
                 ))}

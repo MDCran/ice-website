@@ -13,14 +13,21 @@ const typeConfig: Record<
   static: { label: "Generic", color: "blue", icon: Globe01 },
   solution: { label: "Solution", color: "success", icon: LayersTwo01 },
   legal: { label: "Legal", color: "warning", icon: Scales01 },
+  settings: { label: "Settings", color: "gray", icon: File02 },
 };
+
+/** Human-readable hint shown under a page title so admins know what it controls. */
+function pageSubtitle(page: { slug: string; page_type: string }): string | null {
+  if (page.slug === "site-settings") return "Footer, navbar & company info";
+  if (page.page_type === "legal") return "Legal / policy content";
+  return null;
+}
 
 export default async function CMSPagesPage() {
   const supabase = await createClient();
   const { data: pages, error } = await supabase
     .from("pages")
     .select("*")
-    .neq("slug", "site-settings")
     .order("sort_order", { ascending: true });
 
   if (error) {
@@ -79,7 +86,10 @@ export default async function CMSPagesPage() {
               </thead>
               <tbody>
                 {pages.map((page) => {
-                  const config = typeConfig[page.page_type] ?? typeConfig.static;
+                  const config =
+                    page.slug === "site-settings"
+                      ? typeConfig.settings
+                      : (typeConfig[page.page_type] ?? typeConfig.static);
                   const TypeIcon = config.icon;
                   return (
                     <tr
@@ -93,6 +103,9 @@ export default async function CMSPagesPage() {
                         >
                           {page.title}
                         </Link>
+                        {pageSubtitle(page) && (
+                          <p className="mt-0.5 text-xs text-tertiary">{pageSubtitle(page)}</p>
+                        )}
                       </td>
                       <td className="px-6 py-4 font-mono text-xs text-tertiary">
                         /{page.slug}

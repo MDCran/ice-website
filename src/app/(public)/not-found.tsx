@@ -2,11 +2,11 @@ import { Button } from "@/components/base/buttons/button";
 import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
 
 /**
- * Root 404 — used when no segment layout wraps the request (e.g. outside
- * `(public)`). Keep this content-only so public routes that fall through
- * here via a parent layout don't get a second Navbar/Footer.
+ * Public-route 404 — content only. Navbar/Footer come from `(public)/layout.tsx`.
+ * Using a segment-level not-found prevents the double chrome that happens when
+ * the root `app/not-found.tsx` (which also renders Navbar/Footer) is used.
  */
-export default function NotFound() {
+export default function PublicNotFound() {
   return (
     <>
       <style>{`
@@ -22,7 +22,7 @@ export default function NotFound() {
         }
       `}</style>
 
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-primary py-16 md:py-24">
+      <main className="relative flex min-h-[70vh] items-center justify-center overflow-hidden bg-primary py-16 md:py-24">
         <BackgroundPattern
           pattern="grid"
           size="lg"

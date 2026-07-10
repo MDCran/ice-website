@@ -328,6 +328,18 @@ SELECT p.id, 'partners_grid', 'partners', '{
 }'::jsonb, 1, true
 FROM pages p WHERE p.slug = 'partners';
 
+INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
+SELECT p.id, 'benefits', 'benefits', '{
+  "heading": "Why Partner-Backed Solutions",
+  "description": "Decades of vendor relationships mean better outcomes for your business.",
+  "items": [
+    {"title": "Certified expertise", "description": "Our engineers hold certifications across the platforms we resell, so your solutions are designed and deployed by people who know them inside and out."},
+    {"title": "Direct vendor relationships", "description": "Decades-long partnerships give us priority escalation paths, competitive pricing, and early access to new technology."},
+    {"title": "End-to-end delivery", "description": "From sizing and procurement to integration, migration, and ongoing support — one partner accountable for the entire lifecycle."}
+  ]
+}'::jsonb, 2, true
+FROM pages p WHERE p.slug = 'partners';
+
 -- ─── Why ICE Page Sections ───────────────────────────────────────────────────
 
 INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
@@ -413,8 +425,15 @@ FROM pages p WHERE p.slug = 'contact';
 
 INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
 SELECT p.id, 'hero', 'hero', '{
+  "eyebrow": "Legal · Website Terms",
   "headline": "Terms of Service",
-  "subheadline": "Please read these terms carefully before using our services."
+  "subheadline": "Please read these terms and conditions carefully before using the International Computer Exchange, Inc. website.",
+  "last_updated": "March 2026",
+  "badge_note": "Applies to icesales.com",
+  "document_title": "Website Terms and Conditions",
+  "document_intro": "These Terms govern your access to and use of the International Computer Exchange, Inc. website. By using the site, you agree to be bound by the sections below.",
+  "related_label": "SMS Consent Policy",
+  "related_href": "/sms-consent"
 }'::jsonb, 0, true
 FROM pages p WHERE p.slug = 'terms-of-service';
 
@@ -438,21 +457,27 @@ FROM pages p WHERE p.slug = 'terms-of-service';
 
 INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
 SELECT p.id, 'hero', 'hero', '{
+  "eyebrow": "Legal · Messaging Policy",
   "headline": "SMS Consent",
-  "subheadline": "Information about our SMS messaging practices and your consent."
+  "subheadline": "SMS / Text messaging – opt-in & opt-out policy.",
+  "last_updated": "March 2026",
+  "badge_note": "Reply STOP to opt out at any time",
+  "document_title": "SMS / Text Messaging – Opt-In & Opt-Out",
+  "document_intro": "International Computer Exchange, Inc. (\"ICE\") uses SMS text messaging via RingCentral to communicate with customers who have opted in. Below you will find information about how we handle SMS consent, how to opt in, and how to opt out at any time.",
+  "related_label": "Terms of Service",
+  "related_href": "/terms-of-service"
 }'::jsonb, 0, true
 FROM pages p WHERE p.slug = 'sms-consent';
 
 INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
 SELECT p.id, 'sections', 'content', '{
   "items": [
-    {"id": "consent", "title": "1. SMS Consent", "content": "By providing your phone number and opting in, you consent to receive SMS messages from International Computer Exchange, Inc. regarding your account, service updates, and important notifications."},
-    {"id": "frequency", "title": "2. Message Frequency", "content": "Message frequency varies. You may receive messages related to service alerts, account notifications, appointment reminders, and promotional communications."},
-    {"id": "costs", "title": "3. Message and Data Rates", "content": "Standard message and data rates may apply. Please contact your mobile carrier for details about your messaging plan."},
-    {"id": "opt-out", "title": "4. Opt-Out", "content": "You can opt out of SMS messages at any time by replying STOP to any message. After opting out, you will receive a confirmation message and will no longer receive SMS communications from us."},
-    {"id": "help", "title": "5. Help", "content": "For help with SMS messaging, reply HELP to any message or contact us at info@icesales.com or 1-800-786-9188."},
-    {"id": "privacy", "title": "6. Privacy", "content": "Your phone number and messaging data will be handled in accordance with our privacy practices. We do not sell or share your phone number with third parties for marketing purposes."},
-    {"id": "carriers", "title": "7. Supported Carriers", "content": "Our SMS service is supported by all major US carriers including AT&T, Verizon, T-Mobile, Sprint, and others. Carrier-specific terms may apply."}
+    {"id": "default-opt-in", "title": "Default Opt-In", "content": "By providing your phone number through our website contact form, during a phone call with our sales or support team, or by texting us directly, you are giving International Computer Exchange consent to send you SMS text messages related to your inquiry, account, services, and promotional information. Message and data rates may apply depending on your carrier plan. You may opt out at any time using any of the methods described below."},
+    {"id": "opting-out", "title": "Opting Out", "content": "You can opt out of receiving SMS text messages from ICE at any time:\n\n• Reply STOP to any SMS message you receive from us.\n• Send an email to info@icesales.com with the subject \"SMS Opt-Out\".\n• Call 1-800-786-9188 during business hours (9:00 AM – 5:00 PM ET).\n\nAfter opting out, you will receive a confirmation message and will no longer receive SMS communications from us unless you opt in again."},
+    {"id": "sign-up", "title": "How You Can Sign Up", "content": "You can opt in to SMS messaging from ICE in any of the following ways:\n\n• By phone: Provide verbal consent during a phone call with our team.\n• By texting us: Send a text message to our business number to initiate communication.\n• Via our website: Check the SMS consent checkbox on our contact form or footer subscription form."},
+    {"id": "frequency", "title": "Frequency & Types of Messages", "content": "Message frequency varies. You may receive:\n\n• Responses to your inquiries or support requests\n• Service updates, appointment confirmations, or account notifications\n• Promotional offers, product announcements, or newsletters\n• Follow-up communications related to ongoing projects\n\nStandard message and data rates may apply. Carriers are not liable for delayed or undelivered messages."},
+    {"id": "carrier", "title": "Carrier Compliance", "content": "Our SMS messaging program is compliant with carrier requirements and industry best practices. We use RingCentral as our messaging platform. Carriers supported include but are not limited to AT&T, Verizon, T-Mobile, Sprint, and other major US carriers."},
+    {"id": "questions", "title": "Questions?", "content": "If you have any questions about our SMS messaging practices, please contact us:\n\nInternational Computer Exchange, Inc.\nEmail: info@icesales.com\nPhone: 1-800-786-9188"}
   ]
 }'::jsonb, 1, true
 FROM pages p WHERE p.slug = 'sms-consent';
@@ -460,8 +485,10 @@ FROM pages p WHERE p.slug = 'sms-consent';
 -- ─── Site Settings (footer info, company details) ────────────────────────
 
 INSERT INTO pages (slug, title, page_type, is_published, sort_order)
-VALUES ('site-settings', 'Site Settings', 'static', true, 99)
+VALUES ('site-settings', 'Site Settings', 'settings', true, 99)
 ON CONFLICT (slug) DO NOTHING;
+
+UPDATE pages SET page_type = 'settings', title = 'Site Settings' WHERE slug = 'site-settings';
 
 INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
 SELECT p.id, 'company_info', 'content', '{
@@ -479,7 +506,16 @@ FROM pages p WHERE p.slug = 'site-settings';
 INSERT INTO page_sections (page_id, section_key, section_type, content, sort_order, is_visible)
 SELECT p.id, 'footer', 'content', '{
   "ibm_partner_text": "As an IBM Business Partner since 1990, ICE delivers enterprise-grade cloud hosting, data protection, security, and managed services for businesses worldwide.",
+  "ibm_partner_label": "IBM Business Partner",
+  "ibm_partner_sublabel": "Since 1990",
   "copyright": "International Computer Exchange, Inc.",
+  "get_in_touch_heading": "Get in touch",
+  "get_in_touch_description": "Ready to modernize your IT infrastructure? Our experts are here to help.",
+  "get_in_touch_cta_label": "Contact Us",
+  "get_in_touch_cta_href": "/contact",
+  "show_get_in_touch": false,
+  "show_contact_bar": true,
+  "show_solutions_accordion": true,
   "social_links": []
 }'::jsonb, 1, true
 FROM pages p WHERE p.slug = 'site-settings';

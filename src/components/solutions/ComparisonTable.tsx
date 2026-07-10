@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import { Check, XClose } from "@untitledui/icons";
+import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -23,7 +24,7 @@ interface ComparisonTableProps {
 export default function ComparisonTable({ mode, title, data }: ComparisonTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
 
   useEffect(() => {
     const el = containerRef.current;

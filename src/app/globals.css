@@ -28,7 +28,8 @@ body {
 }
 
 /* Ambient brand blooms — fixed, subtle blue glows layered over every surface
-   in dark mode (screen blend ≈ invisible on light content, glow on dark). */
+   in dark mode (screen blend ≈ invisible on light content, glow on dark).
+   Kept away from the bottom edge so the footer doesn't sit in a large empty wash. */
 :is(.dark-mode, [data-theme="dark"]) body::after {
   content: "";
   position: fixed;
@@ -39,8 +40,7 @@ body {
   background:
     radial-gradient(55rem 36rem ellipse at 12% -4%, rgb(4 155 251 / 0.13), transparent 62%),
     radial-gradient(50rem 34rem ellipse at 92% 12%, rgb(4 116 188 / 0.11), transparent 60%),
-    radial-gradient(44rem 30rem ellipse at 4% 62%, rgb(4 155 251 / 0.07), transparent 60%),
-    radial-gradient(60rem 40rem ellipse at 50% 108%, rgb(2 106 162 / 0.12), transparent 65%);
+    radial-gradient(44rem 30rem ellipse at 4% 62%, rgb(4 155 251 / 0.07), transparent 60%);
 }
 
 /* Light mode: soft sky-blue blooms so light pages carry the ICE brand too. */
@@ -53,8 +53,7 @@ body {
   background:
     radial-gradient(52rem 34rem ellipse at 10% -6%, rgb(4 155 251 / 0.10), transparent 60%),
     radial-gradient(48rem 32rem ellipse at 94% 10%, rgb(4 116 188 / 0.08), transparent 58%),
-    radial-gradient(42rem 28rem ellipse at 2% 58%, rgb(4 155 251 / 0.06), transparent 58%),
-    radial-gradient(56rem 38rem ellipse at 50% 110%, rgb(4 155 251 / 0.09), transparent 62%);
+    radial-gradient(42rem 28rem ellipse at 2% 58%, rgb(4 155 251 / 0.06), transparent 58%);
 }
 
 /* ═══ Reusable surface textures ═══
@@ -97,6 +96,48 @@ body.menu-open [data-contact-widget] {
 @keyframes ice-marquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
+}
+
+.animate-ice-marquee {
+  animation: ice-marquee 30s linear infinite;
+  will-change: transform;
+}
+
+/* Animated blue gradient for hero highlight text — a bright white sheen sweeps
+   continuously through the ICE-blue. Gradient ends match so the loop is
+   seamless. Requires -webkit-text-fill-color: transparent (Chrome/Safari
+   ignore `color: transparent` for -webkit-background-clip: text). */
+@keyframes ice-gradient-shift {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+.ice-gradient-text {
+  background-image: linear-gradient(
+    100deg,
+    rgb(4 116 188) 0%,
+    rgb(4 155 251) 18%,
+    rgb(186 230 254) 36%,
+    rgb(255 255 255) 44%,
+    rgb(186 230 254) 52%,
+    rgb(4 155 251) 70%,
+    rgb(4 116 188) 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  /* Soft brand glow so the sheen reads as glistening over the dark hero video */
+  filter: drop-shadow(0 0 22px rgb(4 155 251 / 0.4));
+  animation: ice-gradient-shift 3.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ice-gradient-text {
+    animation: none;
+    background-position: 44% center;
+  }
 }
 
 /* Interactive elements always read as clickable. */

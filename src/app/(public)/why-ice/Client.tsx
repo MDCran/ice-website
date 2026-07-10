@@ -329,7 +329,7 @@ export default function WhyICEPage({
   );
 
   const statsRef = useRef<HTMLDivElement>(null);
-  const statsInView = useInView(statsRef, { once: true, margin: "-100px" });
+  const statsInView = useInView(statsRef, { once: true, amount: 0.25, margin: "0px 0px -40px 0px" });
 
   // Track open FAQs by array index so each item toggles independently —
   // CMS-provided items may not carry a unique `id`, which previously made
@@ -395,7 +395,7 @@ export default function WhyICEPage({
               className="mt-6 flex items-center gap-2.5"
             >
               <PulseAccent />
-              <span className="font-mono text-xs font-semibold tracking-[0.2em] text-brand-secondary uppercase">
+              <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
                 {hero.badge ?? hero.eyebrow ?? "The ICE Advantage"}
               </span>
             </motion.p>
@@ -434,7 +434,7 @@ export default function WhyICEPage({
                   return (
                     <li
                       key={label}
-                      className="flex items-center gap-2 rounded-full bg-primary/70 py-1.5 pr-3.5 pl-3 font-mono text-xs font-medium tracking-wide text-tertiary uppercase ring-1 ring-secondary backdrop-blur-sm ring-inset"
+                      className="flex items-center gap-2 rounded-full bg-primary/70 py-1.5 pr-3.5 pl-3 text-xs font-medium tracking-[0.15em] text-tertiary uppercase ring-1 ring-secondary backdrop-blur-sm ring-inset"
                     >
                       <span aria-hidden="true" className="size-1 rounded-full bg-brand-solid" />
                       {label}
@@ -460,16 +460,12 @@ export default function WhyICEPage({
               transition={{ duration: 0.6, ease: EASE }}
               className="flex w-full flex-col items-center self-center text-center md:max-w-3xl"
             >
-              <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">
+              <h2 className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
                 {statsSection.eyebrow ?? "By the Numbers"}
-              </span>
-              <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
-                {statsSection.heading ?? "Why Choose International Computer Exchange?"}
               </h2>
-              <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">
-                {statsSection.description ??
-                  "For over three decades, businesses have trusted ICE to deliver reliable, enterprise-grade technology solutions backed by deep expertise and unmatched service."}
-              </p>
+              {statsSection.description ? (
+                <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">{statsSection.description}</p>
+              ) : null}
             </motion.div>
 
             {/* Dark navy band — pops out of the white page in light mode,
@@ -491,7 +487,7 @@ export default function WhyICEPage({
                 {stats.map((stat: any) => (
                   <div key={stat.label} className="flex flex-col-reverse gap-3 text-center">
                     <dt className="text-md font-medium text-secondary_on-brand">{stat.label}</dt>
-                    <dd className="font-mono text-display-lg font-semibold tracking-tight text-primary_on-brand tabular-nums md:text-display-xl">
+                    <dd className="text-display-lg font-semibold tracking-tight text-primary_on-brand tabular-nums md:text-display-xl">
                       <AnimatedCounter target={stat.value} suffix={stat.suffix} inView={statsInView} />
                     </dd>
                   </div>
@@ -522,7 +518,7 @@ export default function WhyICEPage({
             transition={{ duration: 0.6, ease: EASE }}
             className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
-            <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">
+            <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
               {differentiatorsSection.eyebrow ?? "Differentiators"}
             </span>
             <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
@@ -557,59 +553,6 @@ export default function WhyICEPage({
       </section>
 
       {/* ================================================================= */}
-      {/*  FAQ Accordion — bg-secondary band with elevated panel            */}
-      {/* ================================================================= */}
-      <section className="relative isolate overflow-hidden border-y border-secondary bg-secondary py-16 md:py-24">
-        <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04]" />
-        <div
-          aria-hidden="true"
-          className="texture-dots pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_70%)]"
-        />
-
-        <div className="relative mx-auto max-w-container px-4 md:px-8">
-          <motion.div
-            initial={hidden}
-            whileInView={visible}
-            viewport={viewportOnce}
-            transition={{ duration: 0.6, ease: EASE }}
-            className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
-          >
-            <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">
-              {faqsSection.eyebrow ?? "FAQ"}
-            </span>
-            <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
-              {faqsSection.heading ?? "Frequently Asked Questions"}
-            </h2>
-            <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">
-              {faqsSection.description ??
-                "Get answers to common questions about our services, capabilities, and how we can help your business."}
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={hidden}
-            whileInView={visible}
-            viewport={viewportOnce}
-            transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
-            className="mx-auto mt-12 max-w-3xl md:mt-16"
-          >
-            <div className="rounded-2xl bg-primary p-6 shadow-sm ring-1 ring-secondary ring-inset md:p-10">
-              <div className="flex flex-col gap-8">
-                {faqs.map((faq: any, i: number) => (
-                  <FAQItem
-                    key={faq.id ?? faq.question ?? i}
-                    faq={faq}
-                    isOpen={openFaqs.has(i)}
-                    onToggle={() => toggleFaq(i)}
-                  />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ================================================================= */}
       {/*  Industries Section                                               */}
       {/* ================================================================= */}
       <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
@@ -626,7 +569,7 @@ export default function WhyICEPage({
             transition={{ duration: 0.6, ease: EASE }}
             className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
-            <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">
+            <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
               {industriesSection.eyebrow ?? "Industries"}
             </span>
             <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
@@ -663,6 +606,59 @@ export default function WhyICEPage({
       </section>
 
       <GenericCMSSections sections={extraSections} />
+
+      {/* ================================================================= */}
+      {/*  FAQ Accordion — bottom of page, before final CTA                 */}
+      {/* ================================================================= */}
+      <section className="relative isolate overflow-hidden border-y border-secondary bg-secondary py-16 md:py-24">
+        <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04]" />
+        <div
+          aria-hidden="true"
+          className="texture-dots pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_70%)]"
+        />
+
+        <div className="relative mx-auto max-w-container px-4 md:px-8">
+          <motion.div
+            initial={hidden}
+            whileInView={visible}
+            viewport={viewportOnce}
+            transition={{ duration: 0.6, ease: EASE }}
+            className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
+          >
+            <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+              {faqsSection.eyebrow ?? "FAQ"}
+            </span>
+            <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+              {faqsSection.heading ?? "Frequently Asked Questions"}
+            </h2>
+            <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">
+              {faqsSection.description ??
+                "Get answers to common questions about our services, capabilities, and how we can help your business."}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={hidden}
+            whileInView={visible}
+            viewport={viewportOnce}
+            transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
+            className="mx-auto mt-12 max-w-3xl md:mt-16"
+          >
+            <div className="rounded-2xl bg-primary p-6 shadow-sm ring-1 ring-secondary ring-inset md:p-10">
+              <div className="flex flex-col gap-8">
+                {faqs.map((faq: any, i: number) => (
+                  <FAQItem
+                    key={faq.id ?? faq.question ?? i}
+                    faq={faq}
+                    isOpen={openFaqs.has(i)}
+                    onToggle={() => toggleFaq(i)}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       <BrandHairline />
 

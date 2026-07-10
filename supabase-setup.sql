@@ -350,7 +350,7 @@ create policy "pages: admins can update" on pages for update to authenticated us
 drop policy if exists "pages: admins can delete" on pages;
 create policy "pages: admins can delete" on pages for delete to authenticated using (is_admin());
 drop policy if exists "pages: public can select published" on pages;
-create policy "pages: public can select published" on pages for select to anon using (is_published = true);
+create policy "pages: public can select published" on pages for select using (is_published = true);
 
 -- page_sections
 alter table page_sections enable row level security;
@@ -363,7 +363,7 @@ create policy "page_sections: admins can update" on page_sections for update to 
 drop policy if exists "page_sections: admins can delete" on page_sections;
 create policy "page_sections: admins can delete" on page_sections for delete to authenticated using (is_admin());
 drop policy if exists "page_sections: public can select published" on page_sections;
-create policy "page_sections: public can select published" on page_sections for select to anon using (exists(select 1 from pages where pages.id = page_sections.page_id and pages.is_published = true));
+create policy "page_sections: public can select published" on page_sections for select using (exists(select 1 from pages where pages.id = page_sections.page_id and pages.is_published = true));
 
 -- page_section_versions
 alter table page_section_versions enable row level security;

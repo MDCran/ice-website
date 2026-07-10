@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SHARED UTILITIES
@@ -607,7 +608,7 @@ function getMetrics(preset: MetricPreset, inView: boolean): ReactNode[] {
 
 export default function SolutionMetrics({ preset }: { preset: MetricPreset }) {
   const { ref, inView } = useInView(0.15);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
   const resolved = PRESET_ALIAS[preset] || preset;
   const config = getPageConfig(resolved);
   const metrics = getMetrics(preset, inView);
@@ -624,7 +625,7 @@ export default function SolutionMetrics({ preset }: { preset: MetricPreset }) {
         transition={{ duration: 0.5, ease: "easeOut" as const }}
         className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
       >
-        <span className="font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+        <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
           Measurable results
         </span>
         <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">{config.heading}</h2>

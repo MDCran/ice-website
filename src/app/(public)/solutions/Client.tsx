@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import Link from "next/link";
 import {
   Activity,
@@ -24,13 +24,33 @@ import {
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
 import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import { resolveIcon } from "@/lib/iconMap";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { cx } from "@/utils/cx";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+const SOLUTION_HERO_IMAGE_BY_SLUG: Record<string, string> = {
+  "managed-cloud-hosting": "/images/solutions/heroes/managed-cloud-hosting.webp",
+  "managed-private-cloud": "/images/solutions/heroes/managed-private-cloud.webp",
+  "managed-hybrid-cloud": "/images/solutions/heroes/managed-hybrid-cloud.webp",
+  "cloud-migration": "/images/solutions/heroes/cloud-migration.webp",
+  "backup-as-a-service": "/images/solutions/heroes/backup-as-a-service.webp",
+  "disaster-recovery": "/images/solutions/heroes/disaster-recovery.webp",
+  "high-availability": "/images/solutions/heroes/high-availability.webp",
+  "ransomware-recovery": "/images/solutions/heroes/ransomware-recovery.webp",
+  "ibm-i-security": "/images/solutions/heroes/ibm-i-security.webp",
+  "protection-suite": "/images/solutions/heroes/protection-suite.webp",
+  "security-monitoring": "/images/solutions/heroes/security-monitoring.webp",
+  "threat-detection": "/images/solutions/heroes/threat-detection.webp",
+  "endpoint-security": "/images/solutions/heroes/endpoint-security.webp",
+  "managed-microsoft": "/images/solutions/heroes/managed-microsoft.webp",
+  "automation-suite": "/images/solutions/heroes/automation-suite.webp",
+  "systems-management": "/images/solutions/heroes/systems-management.webp",
+  "ibm-power-vs": "/images/solutions/heroes/ibm-power-vs.webp",
+};
 
 const DEFAULT_CATEGORIES = [
   {
@@ -90,6 +110,24 @@ function BrandHairline() {
   );
 }
 
+function serviceImageFor(svc: any): string | undefined {
+  const directImage =
+    svc.hero_image ??
+    svc.heroImage ??
+    svc.background_image ??
+    svc.backgroundImage ??
+    svc.image ??
+    svc.image_src ??
+    svc.imageSrc;
+
+  if (typeof directImage === "string" && directImage.trim()) {
+    return directImage.trim();
+  }
+
+  const slug = typeof svc.href === "string" ? svc.href.split("/").filter(Boolean).pop() : undefined;
+  return slug ? SOLUTION_HERO_IMAGE_BY_SLUG[slug] : undefined;
+}
+
 export default function SolutionsPage({
   cmsData,
   orderedSections,
@@ -97,7 +135,7 @@ export default function SolutionsPage({
   cmsData?: Record<string, any>;
   orderedSections?: CMSRenderableSection[];
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
 
   const hero = cmsData?.hero ?? {};
   const categories = (cmsData?.categories?.items ?? DEFAULT_CATEGORIES).map((cat: any) => ({
@@ -116,16 +154,6 @@ export default function SolutionsPage({
 
   const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 };
   const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
-
-  const totalServices = categories.reduce(
-    (sum: number, cat: any) => sum + (cat.services?.length ?? 0),
-    0
-  );
-  const heroProofLabels = [
-    totalServices > 0 ? `${totalServices} managed solutions` : null,
-    categories.length > 0 ? `${categories.length} practice areas` : null,
-    "IBM Business Partner since 1990",
-  ].filter((label): label is string => Boolean(label));
 
   return (
     <main className="bg-primary">
@@ -151,7 +179,7 @@ export default function SolutionsPage({
             transition={{ duration: 0.6, ease: EASE }}
             className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
-            <span className="inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+            <span className="inline-flex items-center gap-2 text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
               <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
               {hero.eyebrow ?? hero.badge ?? "Our Solutions"}
             </span>
@@ -162,20 +190,6 @@ export default function SolutionsPage({
               {hero.subheadline ??
                 "From cloud infrastructure to cybersecurity, we deliver end-to-end solutions engineered for reliability, performance, and scale."}
             </p>
-
-            {/* Quiet mono proof row */}
-            <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 md:mt-10">
-              {heroProofLabels.map((label, index) => (
-                <li key={label} className="flex items-center gap-3">
-                  {index > 0 && (
-                    <span aria-hidden="true" className="size-1 rounded-full bg-fg-brand-secondary/60" />
-                  )}
-                  <span className="font-mono text-xs font-medium tracking-wide text-quaternary uppercase">
-                    {label}
-                  </span>
-                </li>
-              ))}
-            </ul>
           </motion.div>
         </div>
       </section>
@@ -218,36 +232,56 @@ export default function SolutionsPage({
               </div>
             </motion.div>
 
-            <div
-              className={cx(
-                "mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-12 md:gap-6",
-                cat.services.length > 4 ? "lg:grid-cols-3" : "lg:grid-cols-2"
-              )}
-            >
-              {cat.services.map((svc: any, i: number) => (
-                <motion.div
-                  key={svc.title}
-                  initial={hidden}
-                  {...(catIdx === 0
-                    ? { animate: visible }
-                    : { whileInView: visible, viewport: { once: true, margin: "-80px" } })}
-                  transition={{ duration: 0.5, ease: EASE, delay: catIdx === 0 ? 0.25 + i * 0.06 : i * 0.06 }}
-                  className="h-full"
-                >
-                  <Link
-                    href={svc.href}
-                    className="group flex h-full flex-col items-start rounded-2xl bg-primary p-6 shadow-xs ring-1 ring-secondary transition duration-200 ease-out ring-inset hover:shadow-lg hover:ring-brand motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
+            <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-12 md:gap-6">
+              {cat.services.map((svc: any, i: number) => {
+                const serviceImage = serviceImageFor(svc);
+
+                return (
+                  <motion.div
+                    key={svc.title}
+                    initial={hidden}
+                    {...(catIdx === 0
+                      ? { animate: visible }
+                      : { whileInView: visible, viewport: { once: true, margin: "-80px" } })}
+                    transition={{ duration: 0.5, ease: EASE, delay: catIdx === 0 ? 0.25 + i * 0.06 : i * 0.06 }}
+                    className="h-full"
                   >
-                    <FeaturedIcon icon={svc.icon} size="lg" color="brand" theme="light" />
-                    <h3 className="mt-4 text-lg font-semibold text-primary">{svc.title}</h3>
-                    <p className="mt-1 flex-1 text-md text-tertiary">{svc.desc}</p>
-                    <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
-                      Learn more
-                      <ArrowRight aria-hidden="true" className="size-4" />
-                    </span>
-                  </Link>
-                </motion.div>
-              ))}
+                    <Link
+                      href={svc.href}
+                      className="group relative isolate flex h-full min-h-56 overflow-hidden rounded-2xl border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
+                    >
+                      {/* Right-side hero wash — faint at rest, clearer on hover (no pan/zoom) */}
+                      {serviceImage && (
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[58%] overflow-hidden sm:w-[62%]"
+                        >
+                          <img
+                            src={serviceImage}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full translate-x-[12%] object-cover object-center opacity-[0.18] transition-opacity duration-500 ease-out group-hover:opacity-[0.55] dark:opacity-[0.22] dark:group-hover:opacity-[0.62]"
+                          />
+                          {/* Soft left fade so the image blends into the card — stronger in light mode */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg-primary)] from-0% via-[var(--color-bg-primary)]/90 via-35% to-transparent to-85%" />
+                          <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-bg-primary)]/40 via-transparent to-[var(--color-bg-primary)]/50 dark:from-[var(--color-bg-primary)]/20 dark:to-[var(--color-bg-primary)]/30" />
+                        </div>
+                      )}
+
+                      <div className="relative z-10 flex h-full max-w-[70%] flex-col items-start sm:max-w-[74%]">
+                        <FeaturedIcon icon={svc.icon} size="lg" color="brand" theme="light" />
+                        <h3 className="mt-4 text-lg font-semibold text-primary">{svc.title}</h3>
+                        <p className="mt-1 flex-1 text-md text-tertiary">{svc.desc}</p>
+                        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
+                          Learn more
+                          <ArrowRight aria-hidden="true" className="size-4" />
+                        </span>
+                      </div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -257,7 +291,7 @@ export default function SolutionsPage({
 
       <BrandHairline />
 
-      {/* CTA — distinct brand band so it never reads as footer content */}
+      {/* CTA — soft secondary card so it never reads as a loud blue wash */}
       <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto max-w-container px-4 md:px-8">
           <motion.div
@@ -265,34 +299,32 @@ export default function SolutionsPage({
             whileInView={visible}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6, ease: EASE }}
-            className="relative isolate overflow-hidden rounded-2xl bg-brand-section px-6 py-12 lg:p-16 dark:shadow-[0_0_60px_rgb(4_155_251/0.15)] dark:ring-1 dark:ring-secondary dark:ring-inset"
+            className="relative isolate overflow-hidden rounded-2xl bg-secondary px-6 py-12 ring-1 ring-secondary ring-inset lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]"
           >
-            {/* Techy grid overlay */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center opacity-20"
-            >
-              <BackgroundPattern pattern="grid" size="lg" className="shrink-0 text-primary_on-brand" />
-            </div>
-            {/* Film-grain matte finish over the brand band */}
-            <div
-              aria-hidden="true"
-              className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.12]"
+              className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-brand-500/[0.08] via-transparent to-brand-600/[0.06]"
             />
-            {/* Oversized solution glyph bleeding past the card edge */}
+            <div
+              aria-hidden="true"
+              className="texture-grid pointer-events-none absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_at_top_left,black_20%,transparent_70%)]"
+            />
+            <div
+              aria-hidden="true"
+              className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.04] dark:opacity-[0.06]"
+            />
             <Zap
               aria-hidden="true"
-              className="pointer-events-none absolute -right-8 -bottom-12 -z-10 size-56 -rotate-12 text-brand-400/15 md:size-72 dark:text-brand-500/15"
+              className="pointer-events-none absolute -right-8 -bottom-12 -z-10 size-56 -rotate-12 text-brand-500/10 md:size-72"
             />
-            {/* Ambient brand orbs — slow continuous drift */}
-            <BrandOrbs variant="onBrand" />
+            <BrandOrbs />
 
             <div className="flex flex-col gap-x-8 gap-y-8 lg:flex-row lg:items-center">
               <div className="flex max-w-3xl flex-1 flex-col">
-                <h2 className="text-display-sm font-semibold tracking-tight text-primary_on-brand md:text-display-md">
+                <h2 className="text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
                   {finalCta.heading ?? "Need a Custom Solution?"}
                 </h2>
-                <p className="mt-4 text-lg text-tertiary_on-brand md:mt-5">
+                <p className="mt-4 text-lg text-tertiary md:mt-5">
                   {finalCta.description ??
                     "Our enterprise architects will design a tailored solution that fits your business requirements and budget."}
                 </p>

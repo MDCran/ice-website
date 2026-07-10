@@ -32,15 +32,12 @@ function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark-mode", theme === "dark");
 }
 
-function getSystemTheme(): Theme {
-  if (typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
-    return "dark";
-  }
-  return "light";
+function getDefaultTheme(): Theme {
+  return "dark";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
     const stored = localStorage.getItem("ice-theme") as Theme | null;
@@ -48,9 +45,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setTheme(stored);
       applyTheme(stored);
     } else {
-      const sys = getSystemTheme();
-      setTheme(sys);
-      applyTheme(sys);
+      const fallback = getDefaultTheme();
+      setTheme(fallback);
+      applyTheme(fallback);
     }
   }, []);
 

@@ -44,8 +44,11 @@ export const SERVICE_CATALOG: ServiceGroup[] = [
   },
 ];
 
-/** Default select structure: the full catalog plus a standalone "General Inquiry". */
-export const DEFAULT_SERVICE_GROUPS: ServiceGroup[] = [...SERVICE_CATALOG, { label: "", options: [GENERAL_INQUIRY] }];
+/** Default select structure: General Inquiry first, then the full catalog. */
+export const DEFAULT_SERVICE_GROUPS: ServiceGroup[] = [
+  { label: "", options: [GENERAL_INQUIRY] },
+  ...SERVICE_CATALOG,
+];
 
 const SERVICE_TO_PILLAR = new Map<string, string>();
 for (const group of SERVICE_CATALOG) {
@@ -68,6 +71,8 @@ export function groupServiceOptions(options?: unknown): ServiceGroup[] {
   for (const raw of options) {
     if (typeof raw !== "string" || !raw.trim()) continue;
     const option = raw.trim();
+    // General Inquiry is always injected at the top — skip duplicates from CMS.
+    if (option.toLowerCase() === GENERAL_INQUIRY.toLowerCase()) continue;
     const pillar = SERVICE_TO_PILLAR.get(option.toLowerCase());
     if (pillar) {
       const list = grouped.get(pillar) ?? [];
@@ -78,14 +83,14 @@ export function groupServiceOptions(options?: unknown): ServiceGroup[] {
     }
   }
 
-  const result: ServiceGroup[] = [];
+  const result: ServiceGroup[] = [{ label: "", options: [GENERAL_INQUIRY] }];
   for (const group of SERVICE_CATALOG) {
     const list = grouped.get(group.label);
     if (list?.length) result.push({ label: group.label, options: list });
   }
   if (ungrouped.length) result.push({ label: "", options: ungrouped });
 
-  return result.length ? result : DEFAULT_SERVICE_GROUPS;
+  return result;
 }
 
 /* ------------------------------------------------------------------ */
@@ -129,7 +134,7 @@ export function ServiceSelect({
             id={group.label}
             className={cx("pb-0.5", index > 0 && "mt-1 border-t border-secondary pt-1")}
           >
-            <AriaHeader className="px-3.5 pt-1.5 pb-0.5 text-xs font-semibold tracking-widest text-quaternary uppercase">
+            <AriaHeader className="px-3.5 pt-1.5 pb-0.5 text-xs font-medium tracking-[0.2em] text-quaternary uppercase">
               {group.label}
             </AriaHeader>
             {group.options.map((option) => (
@@ -156,6 +161,22 @@ export function ServiceSelect({
 /* ------------------------------------------------------------------ */
 
 export type Country = { code: string; name: string; dial: string; flag: string };
+
+/**
+ * Format a US/CA national number as the user types: (561) 555-0100.
+ * Other countries get light digit grouping.
+ */
+function formatNationalNumber(raw: string, countryCode: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 15);
+  if (countryCode === "US" || countryCode === "CA") {
+    const d = digits.slice(0, 10);
+    if (d.length === 0) return "";
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+    return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  }
+  return digits.replace(/(\d{3,4})(?=\d)/g, "$1 ").trim();
+}
 
 /** Common countries for the dial-code selector (US pinned first). */
 export const COUNTRIES: Country[] = [
@@ -298,18 +319,20 @@ export function PhoneField({
       <Label htmlFor={inputId} isRequired={isRequired}>
         {label}
       </Label>
-      <div className="flex w-full items-start gap-2">
+      <div className="flex w-full items-stretch gap-3">
         {/* Country dial-code selector */}
         <Select
           aria-label="Country dial code"
           size={size}
-          className="w-28 shrink-0"
+          className="w-[6.75rem] shrink-0 sm:w-28"
           popoverClassName="w-max min-w-(--trigger-width)"
           selectedKey={country.code}
           onSelectionChange={(key) => {
             const next = COUNTRIES.find((c) => c.code === key) ?? COUNTRIES[0];
             setCountryCode(next.code);
-            emit(next.dial, national);
+            const reformatted = formatNationalNumber(national, next.code);
+            setNational(reformatted);
+            emit(next.dial, reformatted);
           }}
           items={COUNTRY_ITEMS}
         >
@@ -328,11 +351,12 @@ export function PhoneField({
           placeholder={placeholder}
           value={national}
           onChange={(next) => {
-            const sanitized = next.replace(/[^\d\s().-]/g, "");
-            setNational(sanitized);
-            emit(country.dial, sanitized);
+            const formatted = formatNationalNumber(next, country.code);
+            setNational(formatted);
+            emit(country.dial, formatted);
           }}
-          className="flex-1"
+          className="min-w-0 flex-1"
+          wrapperClassName="w-full"
         />
       </div>
     </div>

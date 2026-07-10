@@ -11,7 +11,6 @@ import {
   MarkerPin02,
   Phone01,
   Send01,
-  Zap,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
@@ -161,30 +160,25 @@ export default function ContactPage({
   };
 
   return (
-    <main className="min-h-screen bg-primary">
-      {/* ── Hero band ────────────────────────────────────────────────────── */}
-      <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
-        {/* Engineering-grid texture, fading out from the top of the band */}
+    <main className="bg-primary">
+      {/* ── Hero + form — single viewport composition ───────────────────── */}
+      <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)]">
         <div
           aria-hidden="true"
           className="texture-grid pointer-events-none absolute inset-0 -z-10 opacity-[0.5] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]"
         />
-        {/* Film-grain finish over the band */}
         <div
           aria-hidden="true"
           className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.04] dark:opacity-[0.06]"
         />
-        {/* Top-center brand bloom so the hero pops */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-72 w-[46rem] max-w-full -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(4_155_251/0.16),transparent)] blur-2xl"
+          className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-72 w-[46rem] max-w-full -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(4_155_251/0.18),transparent)] blur-2xl"
         />
-        {/* Ambient brand orbs — slow continuous drift */}
         <BrandOrbs />
 
-        <div className="relative container mx-auto max-w-container px-4 md:px-8">
-          {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="mb-8 flex items-center gap-1.5 text-sm">
+        <div className="relative mx-auto flex w-full max-w-container flex-col px-4 py-10 md:px-8 md:py-12 lg:py-14">
+          <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-1.5 text-sm md:mb-8">
             <Link
               href="/"
               className="rounded-xs font-medium text-tertiary outline-focus-ring transition-colors hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -195,62 +189,36 @@ export default function ContactPage({
             <span className="font-medium text-secondary">Contact</span>
           </nav>
 
-          {/* Heading */}
-          <div className="flex w-full max-w-3xl flex-col items-start">
-            <span className="inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
-              <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
-              Contact us
-            </span>
-            <h1 className="mt-3 text-display-md font-semibold tracking-tight text-primary md:text-display-lg">
-              {hero.headline ?? "Contact Us"}
-            </h1>
-            {hero.subheadline && (
-              <p className="mt-4 text-lg text-tertiary md:mt-6 md:text-xl">{hero.subheadline}</p>
-            )}
+          <div className="grid flex-1 grid-cols-1 items-start gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-16">
+            {/* Left: hero copy + contact details */}
+            <div className="flex flex-col">
+              <span className="inline-flex items-center gap-2.5 text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+                <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
+                Contact us
+              </span>
+              <h1 className="mt-3 text-display-lg font-semibold tracking-tight text-primary md:text-display-xl">
+                {hero.headline ?? "Contact Us"}
+              </h1>
+              <p className="mt-4 max-w-xl text-lg text-tertiary md:mt-5 md:text-xl">
+                {hero.subheadline ??
+                  intro.description ??
+                  "Talk with our enterprise architects about cloud, security, data protection, and managed services."}
+              </p>
 
-            {/* Quiet mono proof row */}
-            <ul className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 md:mt-10">
-              {["IBM Business Partner since 1990", "Boca Raton, Florida"].map((label, index) => (
-                <li key={label} className="flex items-center gap-3">
-                  {index > 0 && (
-                    <span aria-hidden="true" className="size-1 rounded-full bg-fg-brand-secondary/60" />
-                  )}
-                  <span className="font-mono text-xs font-medium tracking-wide text-quaternary uppercase">
-                    {label}
+              <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-secondary pt-5 md:mt-8">
+                <li className="flex items-center gap-2">
+                  <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
+                  <span className="text-xs font-medium tracking-[0.15em] text-quaternary uppercase">
+                    Trusted IBM Business Partner for over 35 years
                   </span>
                 </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
+              </ul>
 
-      {/* ── Contact content — textured band with elevated form card ─────── */}
-      <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
-        {/* Dot-matrix texture, fading toward the edges */}
-        <div
-          aria-hidden="true"
-          className="texture-dots pointer-events-none absolute inset-0 -z-10 opacity-50 [mask-image:radial-gradient(ellipse_at_top_left,black_10%,transparent_65%)]"
-        />
-
-        <div className="relative container mx-auto max-w-container px-4 md:px-8">
-          <div className="mx-auto grid max-w-xl grid-cols-1 items-start gap-12 md:gap-16 lg:mx-0 lg:max-w-none lg:grid-cols-2">
-            {/* Left: Contact info */}
-            <div className="flex w-full flex-col">
-              <div>
-                <h2 className="text-display-xs font-semibold text-primary">{intro.heading ?? "Contact Information"}</h2>
-                <p className="mt-2 text-md text-tertiary">
-                  {intro.description ??
-                    "We'd love to hear from you. Reach out to our team for enterprise technology solutions, pricing, or any questions."}
-                </p>
-              </div>
-
-              <ul className="mt-8 grid w-full grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 md:mt-10 md:gap-y-10">
+              <ul className="mt-8 hidden grid-cols-1 gap-6 sm:grid-cols-2 lg:mt-10 lg:grid">
                 {contactItems.map((item: any) => (
-                  <li key={item.label} className="flex max-w-sm flex-col items-start">
+                  <li key={item.label} className="flex flex-col items-start">
                     <FeaturedIcon icon={item.icon} size="md" color="brand" theme="light" />
-
-                    <h3 className="mt-3 text-md font-semibold text-primary md:mt-4">{item.label}</h3>
+                    <h3 className="mt-3 text-md font-semibold text-primary">{item.label}</h3>
                     {item.href ? (
                       <Button href={item.href} color="link-color" size="md" className="mt-1">
                         {item.value}
@@ -262,25 +230,18 @@ export default function ContactPage({
                   </li>
                 ))}
               </ul>
-
-              {/* Response time */}
-              <div className="mt-10 flex items-start gap-4 rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset md:mt-12">
-                <FeaturedIcon icon={Zap} size="md" color="success" theme="light" />
-                <div>
-                  <p className="text-sm font-semibold text-primary">Typical Response Time</p>
-                  <p className="mt-0.5 text-md text-tertiary">2-3 Business Days</p>
-                </div>
-              </div>
             </div>
 
-            {/* Right: Contact form — elevated card over the textured band */}
-            <div className="flex flex-col gap-6 rounded-2xl bg-primary p-6 shadow-lg ring-1 ring-secondary ring-inset sm:p-8 md:p-10 dark:shadow-[0_0_60px_rgb(4_155_251/0.08)]">
+            {/* Right: form card — visible in the first viewport */}
+            <div
+              id="contact-form"
+              className="flex flex-col gap-5 rounded-2xl bg-primary p-5 shadow-lg ring-1 ring-secondary ring-inset sm:p-7 md:p-8 dark:shadow-[0_0_60px_rgb(4_155_251/0.08)]"
+            >
               <h2 className="text-display-xs font-semibold text-primary">Send Us a Message</h2>
 
-              <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-                <div className="flex flex-col gap-6">
-                  {/* Name & Email */}
-                  <div className="flex flex-col gap-x-8 gap-y-6 sm:flex-row">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-x-6 gap-y-5 sm:flex-row">
                     <Input
                       isRequired
                       validationBehavior="native"
@@ -298,6 +259,8 @@ export default function ContactPage({
                       size="md"
                       name="email"
                       type="email"
+                      inputMode="email"
+                      autoComplete="email"
                       label="Email"
                       placeholder="john@company.com"
                       value={formData.email}
@@ -306,28 +269,22 @@ export default function ContactPage({
                     />
                   </div>
 
-                  {/* Company & Phone */}
-                  <div className="flex flex-col gap-x-8 gap-y-6 sm:flex-row">
-                    <Input
-                      size="md"
-                      name="company"
-                      label="Company"
-                      placeholder="Acme Corp"
-                      value={formData.company}
-                      onChange={handleFieldChange("company")}
-                      wrapperClassName="flex-1"
-                    />
-                    <div className="flex-1">
-                      <PhoneField
-                        size="md"
-                        label="Phone number"
-                        value={formData.phone}
-                        onChange={handleFieldChange("phone")}
-                      />
-                    </div>
-                  </div>
+                  <Input
+                    size="md"
+                    name="company"
+                    label="Company"
+                    placeholder="Acme Corp"
+                    value={formData.company}
+                    onChange={handleFieldChange("company")}
+                  />
 
-                  {/* Service */}
+                  <PhoneField
+                    size="md"
+                    label="Phone number"
+                    value={formData.phone}
+                    onChange={handleFieldChange("phone")}
+                  />
+
                   <ServiceSelect
                     size="md"
                     name="service"
@@ -337,19 +294,18 @@ export default function ContactPage({
                     groups={serviceGroups}
                   />
 
-                  {/* Message */}
                   <TextArea
                     isRequired
                     validationBehavior="native"
                     name="message"
                     label="Message"
                     placeholder="Tell us about your project or question..."
-                    rows={5}
+                    rows={4}
                     value={formData.message}
                     onChange={handleFieldChange("message")}
+                    textAreaClassName="min-h-[6.5rem]"
                   />
 
-                  {/* SMS consent */}
                   <Checkbox
                     name="smsConsent"
                     size="md"
@@ -373,7 +329,6 @@ export default function ContactPage({
                   />
                 </div>
 
-                {/* Submit */}
                 <Button
                   type="submit"
                   size="xl"
@@ -385,7 +340,6 @@ export default function ContactPage({
                   {status === "loading" ? "Sending..." : "Send Message"}
                 </Button>
 
-                {/* Status */}
                 {status === "success" && (
                   <div role="alert" className="flex items-start gap-2 rounded-lg bg-success-secondary px-4 py-3">
                     <CheckCircle className="mt-0.5 size-5 shrink-0 text-fg-success-primary" />
@@ -401,6 +355,24 @@ export default function ContactPage({
               </form>
             </div>
           </div>
+
+          {/* Contact details on smaller screens (shown below the form) */}
+          <ul className="mt-12 grid grid-cols-1 gap-6 border-t border-secondary pt-10 sm:grid-cols-2 lg:hidden">
+            {contactItems.map((item: any) => (
+              <li key={item.label} className="flex flex-col items-start">
+                <FeaturedIcon icon={item.icon} size="md" color="brand" theme="light" />
+                <h3 className="mt-3 text-md font-semibold text-primary">{item.label}</h3>
+                {item.href ? (
+                  <Button href={item.href} color="link-color" size="md" className="mt-1">
+                    {item.value}
+                  </Button>
+                ) : (
+                  <p className="mt-1 text-md text-tertiary">{item.value}</p>
+                )}
+                {item.subValue && <p className="text-md text-tertiary">{item.subValue}</p>}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

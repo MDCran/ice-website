@@ -75,6 +75,16 @@ export interface FooterCMSData {
     tagline?: string;
     logo?: string;
   };
+  footerCopy?: {
+    ibm_partner_text?: string;
+    ibm_partner_label?: string;
+    ibm_partner_sublabel?: string;
+    copyright?: string;
+    get_in_touch_heading?: string;
+    get_in_touch_description?: string;
+    get_in_touch_cta_label?: string;
+    get_in_touch_cta_href?: string;
+  };
   showSolutionsAccordion?: boolean;
   showGetInTouch?: boolean;
   showContactBar?: boolean;
@@ -88,12 +98,22 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   const solutionCategories = cmsData?.solutionCategories ?? DEFAULT_SOLUTION_CATEGORIES;
   const legalLinks = cmsData?.legalLinks ?? DEFAULT_LEGAL_LINKS;
   const company = cmsData?.companyInfo;
+  const footerCopy = cmsData?.footerCopy;
 
   const showSolutionsAccordion = cmsData?.showSolutionsAccordion ?? true;
-  const showGetInTouch = cmsData?.showGetInTouch ?? true;
+  const showGetInTouch = cmsData?.showGetInTouch ?? false;
   const showContactBar = cmsData?.showContactBar ?? true;
 
   const logoSrc = company?.logo ?? "/images/logo/ice-logo.jpg";
+  const copyrightName = footerCopy?.copyright ?? "International Computer Exchange, Inc.";
+  const ibmLabel = footerCopy?.ibm_partner_label ?? "IBM Business Partner";
+  const ibmSublabel = footerCopy?.ibm_partner_sublabel ?? "Since 1990";
+  const getInTouchHeading = footerCopy?.get_in_touch_heading ?? "Get in touch";
+  const getInTouchDescription =
+    footerCopy?.get_in_touch_description ??
+    "Ready to modernize your IT infrastructure? Our experts are here to help.";
+  const getInTouchCtaLabel = footerCopy?.get_in_touch_cta_label ?? "Contact Us";
+  const getInTouchCtaHref = footerCopy?.get_in_touch_cta_href ?? "/contact";
 
   const navColumns = [
     ...(showSolutionsAccordion ? solutionCategories : []),
@@ -101,23 +121,28 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   ];
 
   return (
-    <footer className="relative overflow-hidden bg-primary py-12 md:pt-16">
-      {/* Faint techy grid backdrop */}
-      <Grid
-        size="lg"
+    <footer className="relative z-10 overflow-hidden bg-primary pt-12 pb-4 md:pt-16 md:pb-5">
+      {/* Soft top fade so page blooms blend under the footer instead of hard-cutting */}
+      <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-32 right-0 hidden opacity-40 md:block"
+        className="pointer-events-none absolute inset-x-0 -top-16 h-16 bg-gradient-to-b from-transparent to-bg-primary"
+      />
+      {/* Faint techy grid — clipped by footer overflow so it can't extend scroll height */}
+      <Grid
+        size="md"
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 right-0 hidden size-96 opacity-25 md:block"
       />
       <div className="relative mx-auto max-w-container px-4 md:px-8">
         {/* Get in touch CTA */}
         {showGetInTouch && (
           <div className="flex flex-col items-start justify-between gap-6 border-b border-secondary pb-12 md:flex-row md:items-center md:pb-16">
             <div className="flex flex-col gap-2">
-              <p className="text-lg font-semibold text-primary md:text-xl">Get in touch</p>
-              <p className="text-md text-tertiary">Ready to modernize your IT infrastructure? Our experts are here to help.</p>
+              <p className="text-lg font-semibold text-primary md:text-xl">{getInTouchHeading}</p>
+              <p className="text-md text-tertiary">{getInTouchDescription}</p>
             </div>
-            <Button size="xl" href="/contact" iconTrailing={ArrowRight}>
-              Contact Us
+            <Button size="xl" href={getInTouchCtaHref} iconTrailing={ArrowRight}>
+              {getInTouchCtaLabel}
             </Button>
           </div>
         )}
@@ -137,9 +162,6 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
                 className="h-12 w-auto"
               />
             </Link>
-            <p className="text-md text-tertiary">
-              {company?.tagline ?? "IBM Business Partner since 1990. Delivering enterprise-grade cloud, security, and managed IT solutions."}
-            </p>
 
             {showContactBar && (
               <ul className="flex flex-col gap-4">
@@ -179,9 +201,9 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
             <div className="flex w-max items-center gap-3 rounded-xl border border-secondary px-4 py-3">
               <Image src="/images/ibm.svg" alt="IBM" width={48} height={20} />
               <p className="text-sm font-medium text-secondary">
-                IBM Business Partner
+                {ibmLabel}
                 <br />
-                <span className="font-normal text-quaternary">Since 1990</span>
+                <span className="font-normal text-quaternary">{ibmSublabel}</span>
               </p>
             </div>
           </div>
@@ -209,13 +231,13 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
         {/* Brand hairline */}
         <div
           aria-hidden="true"
-          className="mt-12 h-px w-full bg-gradient-to-r from-transparent via-brand-500/40 to-transparent md:mt-16"
+          className="mt-8 h-px w-full bg-gradient-to-r from-transparent via-brand-500/40 to-transparent md:mt-10"
         />
 
         {/* Bottom bar */}
-        <div className="flex flex-col-reverse justify-between gap-6 pt-8 md:flex-row md:items-center">
+        <div className="flex flex-col-reverse justify-between gap-3 pt-4 md:flex-row md:items-center md:pt-5">
           <p className="text-sm text-quaternary">
-            &copy; {new Date().getFullYear()} International Computer Exchange, Inc. All Rights Reserved.
+            &copy; {new Date().getFullYear()} {copyrightName}. All Rights Reserved.
           </p>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             {legalLinks.map((link) => (

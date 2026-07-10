@@ -97,11 +97,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html lang="en" data-theme="dark" className="dark-mode" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var apply=function(t){document.documentElement.setAttribute("data-theme",t);document.documentElement.classList.toggle("dark-mode",t==="dark")};if(location.pathname.startsWith("/access/")){apply("dark");return}var t=localStorage.getItem("ice-theme");if(t==="light"||t==="dark"){apply(t)}else{var d=window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";apply(d)}}catch(e){}})()`,
+            __html: `(function(){try{var apply=function(t){document.documentElement.setAttribute("data-theme",t);document.documentElement.classList.toggle("dark-mode",t==="dark")};if(location.pathname.startsWith("/access/")){apply("dark");return}var t=localStorage.getItem("ice-theme");if(t==="light"||t==="dark"){apply(t)}else{apply("dark")}}catch(e){apply("dark")}})()`,
           }}
         />
       </head>

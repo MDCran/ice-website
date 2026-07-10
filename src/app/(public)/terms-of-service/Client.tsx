@@ -11,6 +11,20 @@ import { cx } from "@/utils/cx";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
+const DEFAULT_HERO = {
+  eyebrow: "Legal · Website Terms",
+  headline: "Terms of Service",
+  subheadline:
+    "Please read these terms and conditions carefully before using the International Computer Exchange, Inc. website.",
+  last_updated: "March 2026",
+  badge_note: "Applies to icesales.com",
+  document_title: "Website Terms and Conditions",
+  document_intro:
+    "These Terms govern your access to and use of the International Computer Exchange, Inc. website. By using the site, you agree to be bound by the sections below.",
+  related_label: "SMS Consent Policy",
+  related_href: "/sms-consent",
+};
+
 const DEFAULT_SECTIONS = [
   {
     id: "acceptance",
@@ -81,9 +95,14 @@ Phone: 1-800-786-9188`,
 ];
 
 export default function TermsOfServicePage({ cmsData }: { cmsData?: Record<string, any> }) {
+  const hero = { ...DEFAULT_HERO, ...(cmsData?.hero ?? {}) };
   const sections: { id: string; title: string; content: string }[] = useMemo(() => cmsData?.sections?.items ?? DEFAULT_SECTIONS, [cmsData]);
-  const [activeId, setActiveId] = useState(DEFAULT_SECTIONS[0].id);
+  const [activeId, setActiveId] = useState(sections[0]?.id ?? DEFAULT_SECTIONS[0].id);
   const shouldReduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (sections[0]?.id) setActiveId(sections[0].id);
+  }, [sections]);
 
   useEffect(() => {
     const ids = sections.map((s) => s.id);
@@ -137,26 +156,25 @@ export default function TermsOfServicePage({ cmsData }: { cmsData?: Record<strin
                 Home
               </Link>
               <ChevronRight aria-hidden="true" className="size-4 text-fg-quaternary" />
-              <span aria-current="page" className="font-semibold text-brand-secondary">Terms of Service</span>
+              <span aria-current="page" className="font-semibold text-brand-secondary">{hero.headline}</span>
             </nav>
 
-            <p className="mt-8 font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase">
-              Legal &middot; Website Terms
+            <p className="mt-8 text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+              {hero.eyebrow}
             </p>
             <h1 className="mt-3 max-w-3xl text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
-              Terms of Service
+              {hero.headline}
             </h1>
             <p className="mt-4 max-w-2xl text-md text-tertiary md:text-lg">
-              Please read these terms and conditions carefully before using the
-              International Computer Exchange, Inc. website.
+              {hero.subheadline}
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <Badge size="md" color="brand">Last Updated: March 2026</Badge>
+              <Badge size="md" color="brand">Last Updated: {hero.last_updated}</Badge>
               <span className="hidden h-4 w-px bg-border-secondary sm:block" aria-hidden="true" />
               <span className="flex items-center gap-1.5 text-sm text-quaternary">
                 <FileCheck02 aria-hidden="true" className="size-4" />
-                Applies to icesales.com
+                {hero.badge_note}
               </span>
             </div>
           </motion.div>
@@ -170,7 +188,7 @@ export default function TermsOfServicePage({ cmsData }: { cmsData?: Record<strin
             {/* Sticky Table of Contents (desktop) */}
             <aside className="hidden lg:block print:hidden">
               <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto overscroll-contain pb-6">
-                <p className="font-mono text-xs font-semibold tracking-widest text-quaternary uppercase">On this page</p>
+                <p className="text-xs font-medium tracking-[0.2em] text-quaternary uppercase">On this page</p>
                 <nav aria-label="Table of contents" className="mt-4 flex flex-col gap-0.5 border-l border-secondary">
                   {sections.map((section) => (
                     <a
@@ -195,7 +213,7 @@ export default function TermsOfServicePage({ cmsData }: { cmsData?: Record<strin
             <div className="min-w-0">
               {/* Mobile table of contents */}
               <div className="mb-10 rounded-xl bg-secondary p-5 ring-1 ring-secondary ring-inset lg:hidden print:hidden">
-                <p className="font-mono text-xs font-semibold tracking-widest text-quaternary uppercase">On this page</p>
+                <p className="text-xs font-medium tracking-[0.2em] text-quaternary uppercase">On this page</p>
                 <nav aria-label="Table of contents" className="mt-3 flex flex-col gap-2">
                   {sections.map((section) => (
                     <a
@@ -213,12 +231,10 @@ export default function TermsOfServicePage({ cmsData }: { cmsData?: Record<strin
               {/* Document header */}
               <div className="border-b border-secondary pb-8">
                 <h2 className="text-display-xs font-semibold tracking-tight text-primary md:text-display-sm">
-                  Website Terms and Conditions
+                  {hero.document_title}
                 </h2>
                 <p className="prose mt-4">
-                  These Terms govern your access to and use of the International Computer
-                  Exchange, Inc. website. By using the site, you agree to be bound by the
-                  sections below.
+                  {hero.document_intro}
                 </p>
               </div>
 
@@ -246,10 +262,10 @@ export default function TermsOfServicePage({ cmsData }: { cmsData?: Record<strin
                 <p className="text-sm text-tertiary">
                   Related:{" "}
                   <Link
-                    href="/sms-consent"
+                    href={hero.related_href ?? "/sms-consent"}
                     className="inline-flex items-center gap-1 font-medium text-brand-secondary hover:underline"
                   >
-                    SMS Consent Policy
+                    {hero.related_label ?? "SMS Consent Policy"}
                     <ArrowRight aria-hidden="true" className="size-3.5" />
                   </Link>
                 </p>

@@ -29,6 +29,19 @@ export default async function PublicLayout({
     footerData.companyInfo = settings.company_info;
   }
 
+  if (settings?.footer) {
+    footerData.footerCopy = settings.footer;
+    if (typeof settings.footer.show_get_in_touch === "boolean") {
+      footerData.showGetInTouch = settings.footer.show_get_in_touch;
+    }
+    if (typeof settings.footer.show_contact_bar === "boolean") {
+      footerData.showContactBar = settings.footer.show_contact_bar;
+    }
+    if (typeof settings.footer.show_solutions_accordion === "boolean") {
+      footerData.showSolutionsAccordion = settings.footer.show_solutions_accordion;
+    }
+  }
+
   // Quick links from footer_quick nav items
   const quickLinks = navItems
     .filter((i: any) => i.location === "footer_quick" && i.is_visible)
@@ -77,7 +90,7 @@ export default async function PublicLayout({
       <JsonLd data={webSite(seo)} />
       <Analytics gtmId={seo.analytics.gtmId} ga4Id={seo.analytics.ga4Id} />
       <SearchModal items={searchItems} />
-      <Navbar navItems={navItems} />
+      <Navbar navItems={navItems} companyInfo={settings?.company_info} />
       <PageTransition>{children}</PageTransition>
       <Footer cmsData={footerData} />
       <ContactWidget />
