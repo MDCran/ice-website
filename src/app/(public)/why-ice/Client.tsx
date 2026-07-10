@@ -14,10 +14,11 @@ import {
   ShieldTick,
   Scales01,
   Award01,
+  MessageChatCircle,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
+import { BrandOrbs, PulseAccent } from "@/components/effects/AmbientMotion";
 import { resolveIcon } from "@/lib/iconMap";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 import { cx } from "@/utils/cx";
@@ -41,6 +42,14 @@ const DEFAULT_STATS: Stat[] = [
   { value: 1200, suffix: "+", label: "Projects Delivered" },
   { value: 500, suffix: "+", label: "Clients Served" },
   { value: 100, suffix: "%", label: "Uptime SLA" },
+];
+
+/** Quiet mono proof chips shown under the hero lead. */
+const DEFAULT_PROOF: string[] = [
+  "IBM Business Partner Since 1990",
+  "SOC 2 Type II Data Centers",
+  "Tier-3 Infrastructure",
+  "24/7/365 U.S. Support",
 ];
 
 interface Differentiator {
@@ -314,6 +323,7 @@ export default function WhyICEPage({
     ...d,
     icon: typeof d.icon === "string" ? resolveIcon(d.icon) : d.icon,
   }));
+  const proofPoints: any[] = hero.proof_points ?? hero.proof ?? DEFAULT_PROOF;
   const extraSections = (orderedSections ?? []).filter(
     (section) => !["hero", "stats", "differentiators", "faqs", "industries", "final_cta", "cta"].includes(section.section_key)
   );
@@ -344,18 +354,19 @@ export default function WhyICEPage({
   return (
     <main className="min-h-screen bg-primary">
       {/* ================================================================= */}
-      {/*  Page Hero                                                        */}
+      {/*  Page Hero — gradient band + grid texture + drifting brand orbs   */}
       {/* ================================================================= */}
-      <section className="relative overflow-hidden bg-primary pt-8 pb-8 md:pt-12 md:pb-12">
-        {/* Subtle techy grid backdrop with a slow ambient pulse */}
-        <motion.div
+      <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
+        {/* Depth layers — decorative only */}
+        <div
           aria-hidden="true"
-          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3"
-          animate={reduceMotion ? undefined : { opacity: [0.65, 1, 0.65] }}
-          transition={reduceMotion ? undefined : { duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <BackgroundPattern pattern="grid" size="lg" />
-        </motion.div>
+          className="texture-grid pointer-events-none absolute inset-0 opacity-[0.5] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="texture-noise pointer-events-none absolute inset-0 opacity-[0.025] dark:opacity-[0.04]"
+        />
+        <BrandOrbs />
 
         <div className="relative mx-auto max-w-container px-4 md:px-8">
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
@@ -364,7 +375,7 @@ export default function WhyICEPage({
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, ease: EASE }}
               aria-label="Breadcrumb"
-              className="flex items-center gap-2 text-sm font-medium text-tertiary"
+              className="flex items-center gap-2 text-sm font-medium text-quaternary"
             >
               <Link
                 href="/"
@@ -375,6 +386,19 @@ export default function WhyICEPage({
               <ChevronRight className="size-4 text-fg-quaternary" />
               <span className="text-brand-secondary">Why ICE</span>
             </motion.nav>
+
+            {/* Eyebrow — pulsing brand dot + mono caps */}
+            <motion.p
+              initial={hidden}
+              animate={visible}
+              transition={{ delay: 0.05, duration: 0.5, ease: EASE }}
+              className="mt-6 flex items-center gap-2.5"
+            >
+              <PulseAccent />
+              <span className="font-mono text-xs font-semibold tracking-[0.2em] text-brand-secondary uppercase">
+                {hero.badge ?? hero.eyebrow ?? "The ICE Advantage"}
+              </span>
+            </motion.p>
 
             <motion.h1
               initial={hidden}
@@ -395,12 +419,36 @@ export default function WhyICEPage({
                 {hero.subheadline}
               </motion.p>
             )}
+
+            {/* Quiet mono proof chips */}
+            {proofPoints.length > 0 && (
+              <motion.ul
+                initial={hidden}
+                animate={visible}
+                transition={{ delay: 0.3, duration: 0.5, ease: EASE }}
+                className="mt-8 flex flex-wrap items-center justify-center gap-2.5 md:mt-10"
+              >
+                {proofPoints.map((point: any) => {
+                  const label = typeof point === "string" ? point : (point?.label ?? "");
+                  if (!label) return null;
+                  return (
+                    <li
+                      key={label}
+                      className="flex items-center gap-2 rounded-full bg-primary/70 py-1.5 pr-3.5 pl-3 font-mono text-xs font-medium tracking-wide text-tertiary uppercase ring-1 ring-secondary backdrop-blur-sm ring-inset"
+                    >
+                      <span aria-hidden="true" className="size-1 rounded-full bg-brand-solid" />
+                      {label}
+                    </li>
+                  );
+                })}
+              </motion.ul>
+            )}
           </div>
         </div>
       </section>
 
       {/* ================================================================= */}
-      {/*  Value Proposition / Stats Section                                */}
+      {/*  Value Proposition / Stats — dark brand feature band              */}
       {/* ================================================================= */}
       <section className="bg-primary py-16 md:py-24" ref={statsRef}>
         <div className="mx-auto max-w-container px-4 md:px-8">
@@ -410,9 +458,12 @@ export default function WhyICEPage({
               whileInView={visible}
               viewport={viewportOnce}
               transition={{ duration: 0.6, ease: EASE }}
-              className="flex w-full flex-col self-center text-center md:max-w-3xl"
+              className="flex w-full flex-col items-center self-center text-center md:max-w-3xl"
             >
-              <h2 className="text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+              <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">
+                {statsSection.eyebrow ?? "By the Numbers"}
+              </span>
+              <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
                 {statsSection.heading ?? "Why Choose International Computer Exchange?"}
               </h2>
               <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">
@@ -421,21 +472,32 @@ export default function WhyICEPage({
               </p>
             </motion.div>
 
-            <motion.dl
+            {/* Dark navy band — pops out of the white page in light mode,
+                reads as an elevated surface in dark mode. */}
+            <motion.div
               initial={hidden}
               animate={statsInView ? visible : undefined}
               transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
-              className="grid grid-cols-1 gap-8 rounded-2xl bg-secondary px-6 py-10 ring-1 ring-secondary ring-inset sm:grid-cols-2 md:grid-cols-4 md:p-16"
+              className="relative isolate overflow-hidden rounded-3xl bg-brand-section shadow-xl ring-1 ring-white/10 ring-inset dark:shadow-[0_0_60px_rgb(4_155_251/0.1)]"
             >
-              {stats.map((stat: any) => (
-                <div key={stat.label} className="flex flex-col-reverse gap-3 text-center">
-                  <dt className="text-lg font-semibold text-primary">{stat.label}</dt>
-                  <dd className="font-mono text-display-lg font-semibold tracking-tight text-brand-tertiary_alt tabular-nums md:text-display-xl">
-                    <AnimatedCounter target={stat.value} suffix={stat.suffix} inView={statsInView} />
-                  </dd>
-                </div>
-              ))}
-            </motion.dl>
+              <div
+                aria-hidden="true"
+                className="texture-grid pointer-events-none absolute inset-0 opacity-70 [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_85%)]"
+              />
+              <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.07]" />
+              <BrandOrbs variant="onBrand" />
+
+              <dl className="relative grid grid-cols-1 gap-x-8 gap-y-10 px-6 py-12 sm:grid-cols-2 md:grid-cols-4 md:p-16">
+                {stats.map((stat: any) => (
+                  <div key={stat.label} className="flex flex-col-reverse gap-3 text-center">
+                    <dt className="text-md font-medium text-secondary_on-brand">{stat.label}</dt>
+                    <dd className="font-mono text-display-lg font-semibold tracking-tight text-primary_on-brand tabular-nums md:text-display-xl">
+                      <AnimatedCounter target={stat.value} suffix={stat.suffix} inView={statsInView} />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -443,10 +505,16 @@ export default function WhyICEPage({
       <BrandHairline />
 
       {/* ================================================================= */}
-      {/*  Key Differentiators                                              */}
+      {/*  Key Differentiators — bordered cards over a textured backdrop    */}
       {/* ================================================================= */}
-      <section className="bg-primary py-16 md:py-24">
-        <div className="mx-auto max-w-container px-4 md:px-8">
+      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+        <div
+          aria-hidden="true"
+          className="texture-grid pointer-events-none absolute inset-0 opacity-[0.45] [mask-image:radial-gradient(ellipse_at_center,black_10%,transparent_70%)]"
+        />
+        <BrandOrbs className="opacity-70" />
+
+        <div className="relative mx-auto max-w-container px-4 md:px-8">
           <motion.div
             initial={hidden}
             whileInView={visible}
@@ -455,14 +523,14 @@ export default function WhyICEPage({
             className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
             <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">
-              Differentiators
+              {differentiatorsSection.eyebrow ?? "Differentiators"}
             </span>
             <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
               {differentiatorsSection.heading ?? "What Sets Us Apart"}
             </h2>
           </motion.div>
 
-          <ul className="mt-12 grid w-full grid-cols-1 justify-items-center gap-x-8 gap-y-10 sm:grid-cols-2 md:mt-16 md:gap-y-16 lg:grid-cols-3">
+          <ul className="mt-12 grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:mt-16 lg:grid-cols-3">
             {differentiators.map((item: any, i: number) => {
               const Icon = item.icon;
               return (
@@ -472,12 +540,13 @@ export default function WhyICEPage({
                   whileInView={visible}
                   viewport={viewportOnce}
                   transition={{ duration: 0.5, delay: i * 0.06, ease: EASE }}
+                  className="h-full"
                 >
-                  <div className="flex max-w-sm flex-col items-center gap-4 text-center">
+                  <div className="flex h-full flex-col gap-5 rounded-2xl bg-primary p-6 shadow-xs ring-1 ring-secondary transition duration-200 ease-out ring-inset hover:shadow-lg hover:ring-brand motion-safe:hover:-translate-y-1 md:p-8 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]">
                     <FeaturedIcon icon={Icon} size="lg" color="brand" theme="light" />
                     <div>
                       <h3 className="text-lg font-semibold text-primary">{item.title}</h3>
-                      <p className="mt-1 text-md text-tertiary">{item.description}</p>
+                      <p className="mt-2 text-md text-tertiary">{item.description}</p>
                     </div>
                   </div>
                 </motion.li>
@@ -487,13 +556,17 @@ export default function WhyICEPage({
         </div>
       </section>
 
-      <BrandHairline />
+      {/* ================================================================= */}
+      {/*  FAQ Accordion — bg-secondary band with elevated panel            */}
+      {/* ================================================================= */}
+      <section className="relative isolate overflow-hidden border-y border-secondary bg-secondary py-16 md:py-24">
+        <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04]" />
+        <div
+          aria-hidden="true"
+          className="texture-dots pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_70%)]"
+        />
 
-      {/* ================================================================= */}
-      {/*  FAQ Accordion Section                                            */}
-      {/* ================================================================= */}
-      <section className="bg-primary py-16 md:py-24">
-        <div className="mx-auto max-w-container px-4 md:px-8">
+        <div className="relative mx-auto max-w-container px-4 md:px-8">
           <motion.div
             initial={hidden}
             whileInView={visible}
@@ -501,7 +574,9 @@ export default function WhyICEPage({
             transition={{ duration: 0.6, ease: EASE }}
             className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
-            <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">FAQ</span>
+            <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">
+              {faqsSection.eyebrow ?? "FAQ"}
+            </span>
             <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
               {faqsSection.heading ?? "Frequently Asked Questions"}
             </h2>
@@ -518,27 +593,32 @@ export default function WhyICEPage({
             transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
             className="mx-auto mt-12 max-w-3xl md:mt-16"
           >
-            <div className="flex flex-col gap-8">
-              {faqs.map((faq: any, i: number) => (
-                <FAQItem
-                  key={faq.id ?? faq.question ?? i}
-                  faq={faq}
-                  isOpen={openFaqs.has(i)}
-                  onToggle={() => toggleFaq(i)}
-                />
-              ))}
+            <div className="rounded-2xl bg-primary p-6 shadow-sm ring-1 ring-secondary ring-inset md:p-10">
+              <div className="flex flex-col gap-8">
+                {faqs.map((faq: any, i: number) => (
+                  <FAQItem
+                    key={faq.id ?? faq.question ?? i}
+                    faq={faq}
+                    isOpen={openFaqs.has(i)}
+                    onToggle={() => toggleFaq(i)}
+                  />
+                ))}
+              </div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      <BrandHairline />
-
       {/* ================================================================= */}
       {/*  Industries Section                                               */}
       {/* ================================================================= */}
-      <section className="bg-primary py-16 md:py-24">
-        <div className="mx-auto max-w-container px-4 md:px-8">
+      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+        <div
+          aria-hidden="true"
+          className="texture-dots pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_bottom,black_10%,transparent_70%)]"
+        />
+
+        <div className="relative mx-auto max-w-container px-4 md:px-8">
           <motion.div
             initial={hidden}
             whileInView={visible}
@@ -547,7 +627,7 @@ export default function WhyICEPage({
             className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
             <span className="font-mono text-sm font-semibold tracking-widest text-brand-secondary uppercase">
-              Industries
+              {industriesSection.eyebrow ?? "Industries"}
             </span>
             <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
               {industriesSection.heading ?? "Industries We Serve"}
@@ -584,8 +664,10 @@ export default function WhyICEPage({
 
       <GenericCMSSections sections={extraSections} />
 
+      <BrandHairline />
+
       {/* ================================================================= */}
-      {/*  CTA Section                                                      */}
+      {/*  CTA Section — icon watermark + texture + drifting orbs           */}
       {/* ================================================================= */}
       <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto max-w-container px-4 md:px-8">
@@ -594,32 +676,47 @@ export default function WhyICEPage({
             whileInView={visible}
             viewport={viewportOnce}
             transition={{ duration: 0.6, ease: EASE }}
-            className="flex flex-col gap-x-8 gap-y-8 rounded-2xl bg-secondary px-6 py-10 ring-1 ring-secondary ring-inset lg:flex-row lg:items-center lg:p-16"
+            className="relative isolate overflow-hidden rounded-3xl bg-secondary px-6 py-10 ring-1 ring-secondary ring-inset lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.1)]"
           >
-            <div className="flex max-w-3xl flex-1 flex-col">
-              <h2 className="text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
-                {finalCta.heading ?? "Ready to Get Started?"}
-              </h2>
-              <p className="mt-4 text-lg text-tertiary md:mt-5 lg:text-xl">
-                {finalCta.description ??
-                  "Let our team of experts help you find the right technology solution for your business. Contact us today for a free consultation."}
-              </p>
-            </div>
-            <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start">
-              <Button
-                color="secondary"
-                size="xl"
-                href={finalCta.cta_secondary?.href ?? finalCta.ctaSecondary?.href ?? "/solutions"}
-              >
-                {finalCta.cta_secondary?.label ?? finalCta.ctaSecondary?.label ?? "Explore Solutions"}
-              </Button>
-              <Button
-                size="xl"
-                href={finalCta.cta_primary?.href ?? finalCta.ctaPrimary?.href ?? "/contact"}
-                iconTrailing={ArrowRight}
-              >
-                {finalCta.cta_primary?.label ?? finalCta.ctaPrimary?.label ?? "Contact Us Today"}
-              </Button>
+            {/* Depth layers */}
+            <div
+              aria-hidden="true"
+              className="texture-grid pointer-events-none absolute inset-0 opacity-[0.4] [mask-image:radial-gradient(ellipse_at_bottom_right,black_10%,transparent_70%)]"
+            />
+            <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.05]" />
+            <BrandOrbs />
+            {/* Oversized rotated icon watermark bleeding past the card edge */}
+            <MessageChatCircle
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-8 -bottom-12 size-56 -rotate-12 text-brand-500/10 md:size-72 dark:text-brand-500/15"
+            />
+
+            <div className="relative flex flex-col gap-x-8 gap-y-8 lg:flex-row lg:items-center">
+              <div className="flex max-w-3xl flex-1 flex-col">
+                <h2 className="text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+                  {finalCta.heading ?? "Ready to Get Started?"}
+                </h2>
+                <p className="mt-4 text-lg text-tertiary md:mt-5 lg:text-xl">
+                  {finalCta.description ??
+                    "Let our team of experts help you find the right technology solution for your business. Contact us today for a free consultation."}
+                </p>
+              </div>
+              <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start">
+                <Button
+                  color="secondary"
+                  size="xl"
+                  href={finalCta.cta_secondary?.href ?? finalCta.ctaSecondary?.href ?? "/solutions"}
+                >
+                  {finalCta.cta_secondary?.label ?? finalCta.ctaSecondary?.label ?? "Explore Solutions"}
+                </Button>
+                <Button
+                  size="xl"
+                  href={finalCta.cta_primary?.href ?? finalCta.ctaPrimary?.href ?? "/contact"}
+                  iconTrailing={ArrowRight}
+                >
+                  {finalCta.cta_primary?.label ?? finalCta.ctaPrimary?.label ?? "Contact Us Today"}
+                </Button>
+              </div>
             </div>
           </motion.div>
         </div>

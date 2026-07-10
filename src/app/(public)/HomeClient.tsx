@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Cloud01,
   Database01,
+  MessageChatCircle,
   Monitor04,
   RefreshCw01,
   Server03,
@@ -469,8 +470,17 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           SERVICES GRID
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-primary py-16 md:py-24">
-        <div className="mx-auto w-full max-w-container px-4 md:px-8">
+      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+        {/* Depth: engineering grid fading down from the hero's hard edge + grain */}
+        <div
+          aria-hidden="true"
+          className="texture-grid pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_top,black_25%,transparent_70%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="texture-noise pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+        />
+        <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
           <SectionHeader
             eyebrow={servicesSection?.eyebrow ?? "What We Do"}
             heading={servicesSection?.heading ?? "Enterprise-Grade Solutions"}
@@ -869,8 +879,13 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           PERFORMANCE METRICS
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-primary py-16 md:py-24">
-        <div className="mx-auto w-full max-w-container px-4 md:px-8">
+      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+        {/* Depth: faint centered dot field behind the metrics panel */}
+        <div
+          aria-hidden="true"
+          className="texture-dots pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_center,black_15%,transparent_70%)]"
+        />
+        <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
           <div className="flex flex-col gap-8 md:gap-16">
             <SectionHeader
               eyebrow={metricsSection?.eyebrow ?? "Performance"}
@@ -881,19 +896,34 @@ export default function Home({
               }
             />
 
-            <motion.dl
+            <motion.div
               {...reveal(0.1)}
-              className="grid grid-cols-2 gap-x-4 gap-y-8 rounded-2xl bg-secondary px-6 py-10 md:grid-cols-4 md:p-16"
+              className="relative overflow-hidden rounded-3xl bg-secondary ring-1 ring-secondary ring-inset dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]"
             >
-              {PERFORMANCE_METRICS.map((metric) => (
-                <div key={metric.label} className="flex flex-col-reverse gap-3 text-center">
-                  <dt className="text-md font-semibold text-primary md:text-lg">{metric.label}</dt>
-                  <dd className="font-mono text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
-                    <AnimatedValue value={metric.value} />
-                  </dd>
-                </div>
-              ))}
-            </motion.dl>
+              {/* Panel depth: brand hairline, masked grid, film grain */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent"
+              />
+              <div
+                aria-hidden="true"
+                className="texture-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_75%)]"
+              />
+              <div
+                aria-hidden="true"
+                className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.07]"
+              />
+              <dl className="relative grid grid-cols-2 gap-x-4 gap-y-8 px-6 py-10 md:grid-cols-4 md:p-16">
+                {PERFORMANCE_METRICS.map((metric) => (
+                  <div key={metric.label} className="flex flex-col-reverse gap-3 text-center">
+                    <dt className="text-md font-semibold text-primary md:text-lg">{metric.label}</dt>
+                    <dd className="font-mono text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
+                      <AnimatedValue value={metric.value} />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -908,8 +938,22 @@ export default function Home({
           <div className="mx-auto mb-12 h-px max-w-4xl bg-gradient-to-r from-transparent via-brand-500/40 to-transparent md:mb-16" />
           <motion.div
             {...reveal()}
-            className="relative isolate flex flex-col gap-x-8 gap-y-8 overflow-hidden rounded-2xl bg-secondary px-6 py-10 lg:flex-row lg:items-center lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.1)]"
+            className="relative isolate flex flex-col gap-x-8 gap-y-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--color-bg-secondary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary)] px-6 py-10 ring-1 ring-secondary ring-inset lg:flex-row lg:items-center lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.1)]"
           >
+            {/* Depth layers: masked grid, film grain, and a large rotated icon
+                watermark bleeding past the card corner. */}
+            <div
+              aria-hidden="true"
+              className="texture-grid pointer-events-none absolute inset-0 -z-10 opacity-50 [mask-image:radial-gradient(ellipse_at_top_left,black_25%,transparent_75%)]"
+            />
+            <div
+              aria-hidden="true"
+              className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.04] dark:opacity-[0.07]"
+            />
+            <MessageChatCircle
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-6 -bottom-12 -z-10 size-56 -rotate-12 text-brand-500/10 md:size-72 dark:text-brand-500/15"
+            />
             <BrandOrbs />
             <div className="relative flex max-w-3xl flex-1 flex-col">
               <h2 className="text-display-sm font-semibold text-primary md:text-display-md">

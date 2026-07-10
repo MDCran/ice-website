@@ -3,11 +3,10 @@
 import { Fragment } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronRight } from "@untitledui/icons";
+import { ArrowRight, Check, ChevronRight, MessageChatCircle } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
 import { Grid as GridPattern } from "@/components/shared-assets/background-patterns/grid";
 import { BrandOrbs, FloatY, PulseGlow } from "@/components/effects/AmbientMotion";
 import { cx } from "@/utils/cx";
@@ -312,19 +311,18 @@ export default function SolutionPageLayout({
             >
               <GridPattern size="lg" className="shrink-0 text-primary_on-brand" />
             </div>
-            {/* Ambient brand blooms — slow continuous pulse */}
-            <motion.div
+            {/* Film-grain matte finish over the brand band */}
+            <div
               aria-hidden="true"
-              className="pointer-events-none absolute -top-24 -right-16 -z-10 size-72 rounded-full bg-brand-400/40 blur-3xl"
-              animate={reduceMotion ? undefined : { opacity: [0.5, 0.95, 0.5] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+              className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.12]"
             />
-            <motion.div
+            {/* Oversized consultation glyph bleeding past the card edge */}
+            <MessageChatCircle
               aria-hidden="true"
-              className="pointer-events-none absolute -bottom-28 -left-20 -z-10 size-72 rounded-full bg-brand-600/50 blur-3xl"
-              animate={reduceMotion ? undefined : { opacity: [0.9, 0.5, 0.9] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+              className="pointer-events-none absolute -right-8 -bottom-12 -z-10 size-56 -rotate-12 text-brand-400/15 md:size-72 dark:text-brand-500/15"
             />
+            {/* Ambient brand orbs — slow continuous drift */}
+            <BrandOrbs variant="onBrand" />
 
             <div className="flex flex-col gap-x-8 gap-y-8 lg:flex-row lg:items-center">
               <div className="flex max-w-3xl flex-1 flex-col">
@@ -362,13 +360,16 @@ export default function SolutionPageLayout({
   return (
     <main className="bg-primary">
       {/* ── Hero (split: text + solution visualization) ───────────────── */}
-      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
-        {/* Subtle techy grid backdrop — visible in both themes */}
-        <BackgroundPattern
-          pattern="grid"
-          size="lg"
+      <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
+        {/* Engineering-grid texture, fading out from the top of the band */}
+        <div
           aria-hidden="true"
-          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3"
+          className="texture-grid pointer-events-none absolute inset-0 -z-10 opacity-[0.5] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]"
+        />
+        {/* Film-grain finish so the band never reads as flat paper */}
+        <div
+          aria-hidden="true"
+          className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.04] dark:opacity-[0.06]"
         />
         {/* Ambient brand orbs — slow continuous drift behind the hero band */}
         <BrandOrbs />
@@ -405,7 +406,8 @@ export default function SolutionPageLayout({
               </Badge>
 
               {heroEyebrow && (
-                <span className="mt-4 font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+                <span className="mt-4 flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+                  <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
                   {heroEyebrow}
                 </span>
               )}
@@ -453,6 +455,15 @@ export default function SolutionPageLayout({
                 transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
                 className="relative hidden justify-center lg:flex"
               >
+                {/* Soft brand glow disc anchoring the visualization — both themes */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 left-1/2 -z-10 size-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(4_155_251/0.14),transparent_72%)] dark:bg-[radial-gradient(closest-side,rgb(4_155_251/0.22),transparent_72%)]"
+                />
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 left-1/2 -z-10 size-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-brand-500/15 dark:border-brand-400/20"
+                />
                 {/* Ambient brand glow behind the visualization — both themes */}
                 <PulseGlow
                   className="inset-x-10 inset-y-6 -z-10 rounded-full bg-brand-500/10 blur-3xl dark:bg-brand-500/15"
@@ -469,8 +480,6 @@ export default function SolutionPageLayout({
           </div>
         </div>
       </section>
-
-      <BrandHairline />
 
       {useOrderedFlow ? (
         <>

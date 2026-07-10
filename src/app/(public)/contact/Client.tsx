@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   AlertCircle,
   CheckCircle,
+  ChevronRight,
   Clock,
   Mail01,
   MarkerPin02,
@@ -21,7 +22,7 @@ import { PhoneField, ServiceSelect, groupServiceOptions } from "@/components/ui/
 import { pushEvent } from "@/lib/analytics";
 import { resolveIcon } from "@/lib/iconMap";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
-import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
+import { BrandOrbs } from "@/components/effects/AmbientMotion";
 
 type IconComponent = FC<{ className?: string }>;
 
@@ -161,33 +162,79 @@ export default function ContactPage({
 
   return (
     <main className="min-h-screen bg-primary">
-      {/* ── Header + Contact content ─────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
-        {/* Techy grid backdrop + brand glow so the hero pops */}
-        <BackgroundPattern
-          pattern="grid"
-          size="lg"
-          aria-hidden="true"
-          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3"
-        />
+      {/* ── Hero band ────────────────────────────────────────────────────── */}
+      <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
+        {/* Engineering-grid texture, fading out from the top of the band */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[46rem] max-w-full -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(4_155_251/0.16),transparent)] blur-2xl"
+          className="texture-grid pointer-events-none absolute inset-0 -z-10 opacity-[0.5] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]"
         />
+        {/* Film-grain finish over the band */}
+        <div
+          aria-hidden="true"
+          className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.04] dark:opacity-[0.06]"
+        />
+        {/* Top-center brand bloom so the hero pops */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-72 w-[46rem] max-w-full -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(4_155_251/0.16),transparent)] blur-2xl"
+        />
+        {/* Ambient brand orbs — slow continuous drift */}
+        <BrandOrbs />
 
         <div className="relative container mx-auto max-w-container px-4 md:px-8">
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="mb-8 flex items-center gap-1.5 text-sm">
+            <Link
+              href="/"
+              className="rounded-xs font-medium text-tertiary outline-focus-ring transition-colors hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              Home
+            </Link>
+            <ChevronRight className="size-4 text-fg-quaternary" aria-hidden="true" />
+            <span className="font-medium text-secondary">Contact</span>
+          </nav>
+
           {/* Heading */}
-          <div className="flex w-full max-w-3xl flex-col">
-            <span className="text-sm font-semibold text-brand-secondary md:text-md">Contact us</span>
-            <h1 className="mt-3 text-display-md font-semibold text-primary md:text-display-lg">
+          <div className="flex w-full max-w-3xl flex-col items-start">
+            <span className="inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+              <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
+              Contact us
+            </span>
+            <h1 className="mt-3 text-display-md font-semibold tracking-tight text-primary md:text-display-lg">
               {hero.headline ?? "Contact Us"}
             </h1>
             {hero.subheadline && (
               <p className="mt-4 text-lg text-tertiary md:mt-6 md:text-xl">{hero.subheadline}</p>
             )}
-          </div>
 
-          <div className="mx-auto mt-12 grid max-w-xl grid-cols-1 items-start gap-12 md:mt-16 md:gap-16 lg:mx-0 lg:max-w-none lg:grid-cols-2">
+            {/* Quiet mono proof row */}
+            <ul className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 md:mt-10">
+              {["IBM Business Partner since 1990", "Boca Raton, Florida"].map((label, index) => (
+                <li key={label} className="flex items-center gap-3">
+                  {index > 0 && (
+                    <span aria-hidden="true" className="size-1 rounded-full bg-fg-brand-secondary/60" />
+                  )}
+                  <span className="font-mono text-xs font-medium tracking-wide text-quaternary uppercase">
+                    {label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Contact content — textured band with elevated form card ─────── */}
+      <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
+        {/* Dot-matrix texture, fading toward the edges */}
+        <div
+          aria-hidden="true"
+          className="texture-dots pointer-events-none absolute inset-0 -z-10 opacity-50 [mask-image:radial-gradient(ellipse_at_top_left,black_10%,transparent_65%)]"
+        />
+
+        <div className="relative container mx-auto max-w-container px-4 md:px-8">
+          <div className="mx-auto grid max-w-xl grid-cols-1 items-start gap-12 md:gap-16 lg:mx-0 lg:max-w-none lg:grid-cols-2">
             {/* Left: Contact info */}
             <div className="flex w-full flex-col">
               <div>
@@ -217,7 +264,7 @@ export default function ContactPage({
               </ul>
 
               {/* Response time */}
-              <div className="mt-10 flex items-start gap-4 rounded-xl bg-secondary p-5 md:mt-12">
+              <div className="mt-10 flex items-start gap-4 rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset md:mt-12">
                 <FeaturedIcon icon={Zap} size="md" color="success" theme="light" />
                 <div>
                   <p className="text-sm font-semibold text-primary">Typical Response Time</p>
@@ -226,8 +273,8 @@ export default function ContactPage({
               </div>
             </div>
 
-            {/* Right: Contact form */}
-            <div className="flex flex-col gap-6 rounded-2xl sm:bg-secondary sm:px-8 sm:py-10">
+            {/* Right: Contact form — elevated card over the textured band */}
+            <div className="flex flex-col gap-6 rounded-2xl bg-primary p-6 shadow-lg ring-1 ring-secondary ring-inset sm:p-8 md:p-10 dark:shadow-[0_0_60px_rgb(4_155_251/0.08)]">
               <h2 className="text-display-xs font-semibold text-primary">Send Us a Message</h2>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-8">

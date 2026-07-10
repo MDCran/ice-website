@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { motion, useInView, useReducedMotion } from "motion/react";
-import { ArrowRight, CheckCircle, Minus, Plus } from "@untitledui/icons";
+import { ArrowRight, CheckCircle, Minus, Plus, Zap } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -382,6 +382,8 @@ function renderBanner(section: CMSRenderableSection) {
   const description = text(content.description ?? content.subheadline);
   const cta = content.cta ?? content.cta_primary ?? content.ctaPrimary;
   const hasCta = Boolean(text(cta?.label) && text(cta?.href));
+  const watermarkIconName = text(content.icon);
+  const WatermarkIcon = watermarkIconName ? resolveIcon(watermarkIconName) : Zap;
 
   return (
     <section className="relative isolate overflow-hidden bg-brand-section py-16 md:py-24">
@@ -400,6 +402,12 @@ function renderBanner(section: CMSRenderableSection) {
       </div>
       <AmbientOrb className="-top-20 left-[15%] size-72 bg-brand-solid/30" />
       <AmbientOrb className="-bottom-24 right-[10%] size-80 bg-brand-solid/25" duration={9.5} delay={1.6} />
+      {/* Matte film grain + rotated icon watermark bleeding past the band edge */}
+      <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.05]" />
+      <WatermarkIcon
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-4 -bottom-8 size-40 -rotate-12 text-white/[0.07] md:size-48"
+      />
       <div
         aria-hidden="true"
         className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
@@ -437,8 +445,14 @@ function renderUseCases(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="bg-primary py-16 md:py-24">
-      <div className="mx-auto w-full max-w-container px-4 md:px-8">
+    <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+      {/* Soft dot-matrix backdrop fading from the top so cards sit on a surface */}
+      <div
+        aria-hidden="true"
+        className="texture-dots pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(ellipse_at_top,black_10%,transparent_65%)]"
+      />
+      <AmbientOrb className="-top-24 right-[12%] size-80 bg-brand-solid/10" duration={11} />
+      <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
           heading={text(content.heading, titleFromKey(section.section_key))}
@@ -474,8 +488,14 @@ function renderRelated(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="bg-primary py-16 md:py-24">
-      <div className="mx-auto w-full max-w-container px-4 md:px-8">
+    <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+      {/* Engineering grid rising from the bottom edge — reads as a distinct band */}
+      <div
+        aria-hidden="true"
+        className="texture-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_at_bottom,black_15%,transparent_70%)]"
+      />
+      <AmbientOrb className="-bottom-28 left-[10%] size-80 bg-brand-solid/10" duration={12} delay={1.5} />
+      <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
           heading={text(content.heading, "Related Services")}
@@ -556,8 +576,13 @@ function renderFeatureGrid(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="bg-primary py-16 md:py-24">
-      <div className="mx-auto w-full max-w-container px-4 md:px-8">
+    <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+      {/* Faint centered dot field so the icon columns float on a textured surface */}
+      <div
+        aria-hidden="true"
+        className="texture-dots pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]"
+      />
+      <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
           heading={text(content.heading, titleFromKey(section.section_key))}
@@ -605,7 +630,21 @@ function renderStats(section: CMSRenderableSection) {
           heading={text(content.heading, titleFromKey(section.section_key))}
           description={text(content.description)}
         />
-        <dl className="mt-12 grid grid-cols-2 gap-8 rounded-2xl bg-secondary px-6 py-10 ring-1 ring-secondary ring-inset md:mt-16 md:grid-cols-4 md:p-16">
+        <div className="relative mt-12 overflow-hidden rounded-3xl bg-secondary ring-1 ring-secondary ring-inset md:mt-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]">
+          {/* Panel depth: brand hairline, masked grid, film grain */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent"
+          />
+          <div
+            aria-hidden="true"
+            className="texture-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_75%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.07]"
+          />
+          <dl className="relative grid grid-cols-2 gap-8 px-6 py-10 md:grid-cols-4 md:p-16">
           {items.map((item, index) => {
             const sourceNote = text(item.source_note ?? item.sourceNote);
             return (
@@ -622,7 +661,8 @@ function renderStats(section: CMSRenderableSection) {
               </Reveal>
             );
           })}
-        </dl>
+          </dl>
+        </div>
       </div>
     </section>
   );
@@ -955,12 +995,28 @@ function renderContentBlock(section: CMSRenderableSection) {
 function renderCta(section: CMSRenderableSection) {
   const content = section.content ?? {};
   const illustrationId = text(content.illustration ?? content.graphic);
+  const watermarkIconName = text(content.icon);
+  const WatermarkIcon = watermarkIconName ? resolveIcon(watermarkIconName) : Zap;
 
   return (
     <section className="bg-primary py-16 md:py-24">
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <Reveal>
-          <div className="relative isolate flex flex-col gap-x-8 gap-y-8 overflow-hidden rounded-2xl bg-secondary px-6 py-10 ring-1 ring-secondary ring-inset lg:flex-row lg:items-center lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]">
+          <div className="relative isolate flex flex-col gap-x-8 gap-y-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--color-bg-secondary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary)] px-6 py-10 ring-1 ring-secondary ring-inset lg:flex-row lg:items-center lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]">
+            {/* Depth layers: engineering grid fading from the top-left, film grain,
+                and a large rotated icon watermark bleeding past the card corner. */}
+            <div
+              aria-hidden="true"
+              className="texture-grid pointer-events-none absolute inset-0 -z-10 opacity-50 [mask-image:radial-gradient(ellipse_at_top_left,black_25%,transparent_75%)]"
+            />
+            <div
+              aria-hidden="true"
+              className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.04] dark:opacity-[0.07]"
+            />
+            <WatermarkIcon
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-6 -bottom-10 -z-10 size-56 -rotate-12 text-brand-500/10 md:size-64 dark:text-brand-500/15"
+            />
             <BrandOrbs />
             {illustrationId && (
               <FloatWrap className="relative w-40 shrink-0 self-center lg:self-auto">

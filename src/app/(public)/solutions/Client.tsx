@@ -20,10 +20,12 @@ import {
   ShieldTick,
   ShieldZap,
   Target04,
+  Zap,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
+import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import { resolveIcon } from "@/lib/iconMap";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 import { cx } from "@/utils/cx";
@@ -115,17 +117,32 @@ export default function SolutionsPage({
   const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 };
   const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
 
+  const totalServices = categories.reduce(
+    (sum: number, cat: any) => sum + (cat.services?.length ?? 0),
+    0
+  );
+  const heroProofLabels = [
+    totalServices > 0 ? `${totalServices} managed solutions` : null,
+    categories.length > 0 ? `${categories.length} practice areas` : null,
+    "IBM Business Partner since 1990",
+  ].filter((label): label is string => Boolean(label));
+
   return (
     <main className="bg-primary">
-      {/* Page header */}
-      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
-        {/* Subtle techy grid backdrop */}
-        <BackgroundPattern
-          pattern="grid"
-          size="lg"
+      {/* Page header — distinct hero band, not flat paper */}
+      <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
+        {/* Engineering-grid texture, fading out from the top of the band */}
+        <div
           aria-hidden="true"
-          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3"
+          className="texture-grid pointer-events-none absolute inset-0 -z-10 opacity-[0.5] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]"
         />
+        {/* Film-grain finish over the band */}
+        <div
+          aria-hidden="true"
+          className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.04] dark:opacity-[0.06]"
+        />
+        {/* Ambient brand orbs — slow continuous drift */}
+        <BrandOrbs />
 
         <div className="relative mx-auto max-w-container px-4 md:px-8">
           <motion.div
@@ -134,7 +151,8 @@ export default function SolutionsPage({
             transition={{ duration: 0.6, ease: EASE }}
             className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
-            <span className="font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+            <span className="inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+              <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
               {hero.eyebrow ?? hero.badge ?? "Our Solutions"}
             </span>
             <h1 className="mt-3 text-display-md font-semibold tracking-tight text-primary md:text-display-lg">
@@ -144,15 +162,46 @@ export default function SolutionsPage({
               {hero.subheadline ??
                 "From cloud infrastructure to cybersecurity, we deliver end-to-end solutions engineered for reliability, performance, and scale."}
             </p>
+
+            {/* Quiet mono proof row */}
+            <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 md:mt-10">
+              {heroProofLabels.map((label, index) => (
+                <li key={label} className="flex items-center gap-3">
+                  {index > 0 && (
+                    <span aria-hidden="true" className="size-1 rounded-full bg-fg-brand-secondary/60" />
+                  )}
+                  <span className="font-mono text-xs font-medium tracking-wide text-quaternary uppercase">
+                    {label}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </motion.div>
         </div>
       </section>
 
-      <BrandHairline />
-
-      {/* Solution categories */}
+      {/* Solution categories — alternating surfaces give the page rhythm */}
       {categories.map((cat: any, catIdx: number) => (
-        <section key={cat.title} className={cx("py-16 md:py-24", catIdx % 2 === 1 ? "bg-secondary" : "bg-primary")}>
+        <section
+          key={cat.title}
+          className={cx(
+            "relative isolate overflow-hidden py-16 md:py-24",
+            catIdx % 2 === 1 ? "border-y border-secondary bg-secondary" : "bg-primary"
+          )}
+        >
+          {/* Subtle texture layer — dots on raised bands, grid corners on base bands */}
+          {catIdx % 2 === 1 ? (
+            <div
+              aria-hidden="true"
+              className="texture-dots pointer-events-none absolute inset-0 -z-10 opacity-50 [mask-image:radial-gradient(ellipse_at_top_left,black_10%,transparent_65%)]"
+            />
+          ) : (
+            <div
+              aria-hidden="true"
+              className="texture-grid pointer-events-none absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_at_bottom_right,black_5%,transparent_55%)]"
+            />
+          )}
+
           <div className="mx-auto max-w-container px-4 md:px-8">
             <motion.div
               initial={hidden}
@@ -225,19 +274,18 @@ export default function SolutionsPage({
             >
               <BackgroundPattern pattern="grid" size="lg" className="shrink-0 text-primary_on-brand" />
             </div>
-            {/* Ambient brand blooms — slow continuous pulse */}
-            <motion.div
+            {/* Film-grain matte finish over the brand band */}
+            <div
               aria-hidden="true"
-              className="pointer-events-none absolute -top-24 -right-16 -z-10 size-72 rounded-full bg-brand-400/40 blur-3xl"
-              animate={reduceMotion ? undefined : { opacity: [0.5, 0.95, 0.5] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+              className="texture-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.12]"
             />
-            <motion.div
+            {/* Oversized solution glyph bleeding past the card edge */}
+            <Zap
               aria-hidden="true"
-              className="pointer-events-none absolute -bottom-28 -left-20 -z-10 size-72 rounded-full bg-brand-600/50 blur-3xl"
-              animate={reduceMotion ? undefined : { opacity: [0.9, 0.5, 0.9] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+              className="pointer-events-none absolute -right-8 -bottom-12 -z-10 size-56 -rotate-12 text-brand-400/15 md:size-72 dark:text-brand-500/15"
             />
+            {/* Ambient brand orbs — slow continuous drift */}
+            <BrandOrbs variant="onBrand" />
 
             <div className="flex flex-col gap-x-8 gap-y-8 lg:flex-row lg:items-center">
               <div className="flex max-w-3xl flex-1 flex-col">

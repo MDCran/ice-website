@@ -98,7 +98,13 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
   const navbarTopItems = navItems?.filter((i: any) => (i.location === "navbar_top" || i.location === "navbar") && i.is_visible)
     .sort((a: any, b: any) => a.sort_order - b.sort_order) ?? [];
   const navLinks = navbarTopItems.length > 0
-    ? navbarTopItems.map((i: any) => ({ label: i.label, href: i.href, hasMega: i.has_mega_menu ?? false }))
+    ? navbarTopItems.map((i: any) => ({
+        label: i.label,
+        href: i.href,
+        // Fall back to href detection so the Solutions mega menu survives
+        // environments where the has_mega_menu column doesn't exist yet.
+        hasMega: i.has_mega_menu ?? i.href === "/solutions",
+      }))
     : NAV_LINKS;
 
   const megaItems = navItems?.filter((i: any) => i.location === "navbar_mega" && i.is_visible)
@@ -282,12 +288,14 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                     if (e.key === "Escape") setMegaOpen(false);
                   }}
                 >
-                  <Link
-                    href={link.href}
+                  {/* Dropdown trigger — a button, not a page link. The index
+                      page stays reachable via "View All Solutions" in the panel. */}
+                  <button
+                    type="button"
                     aria-expanded={megaOpen}
                     aria-haspopup="true"
                     onFocus={openMega}
-                    onClick={openMega}
+                    onClick={() => setMegaOpen((prev) => !prev)}
                     className={cx(
                       "inline-flex cursor-pointer items-center gap-0.5 rounded-lg px-3 py-2 text-sm font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
                       isActive(link.href)
@@ -302,7 +310,7 @@ export default function Navbar({ navItems }: { navItems?: any[] }) {
                         megaOpen && "-rotate-180"
                       )}
                     />
-                  </Link>
+                  </button>
 
                   {/* ── Mega Dropdown ── */}
                   <AnimatePresence>
