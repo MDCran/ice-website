@@ -39,7 +39,7 @@ function SectionIntroBlock({
   return (
     <>
       {eyebrow && (
-        <span className="font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+        <span className="text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
           {eyebrow}
         </span>
       )}
@@ -179,7 +179,7 @@ export default function SolutionPageLayout({
                 <h3 className="mt-4 text-lg font-semibold text-primary">{feature.title}</h3>
                 <p className="mt-1 text-md text-tertiary">{feature.description}</p>
                 {feature.proof && (
-                  <p className="mt-3 font-mono text-xs font-medium tracking-wide text-brand-secondary">
+                  <p className="mt-3 text-xs font-medium tracking-wide text-brand-secondary">
                     {feature.proof}
                   </p>
                 )}
@@ -225,7 +225,7 @@ export default function SolutionPageLayout({
                     className="absolute top-6 left-[calc(50%+2.5rem)] hidden h-px w-[calc(100%-5rem)] bg-gradient-to-r from-brand-500/40 to-border-secondary lg:block"
                   />
                 )}
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-secondary font-mono text-lg font-semibold text-fg-brand-primary dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-secondary text-lg font-semibold text-fg-brand-primary dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]">
                   {step.step}
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-primary">{step.title}</h3>
@@ -406,7 +406,7 @@ export default function SolutionPageLayout({
               </Badge>
 
               {heroEyebrow && (
-                <span className="mt-4 flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+                <span className="mt-4 flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
                   <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
                   {heroEyebrow}
                 </span>
@@ -439,7 +439,7 @@ export default function SolutionPageLayout({
                       {index > 0 && (
                         <span aria-hidden="true" className="size-1 rounded-full bg-fg-brand-secondary/60" />
                       )}
-                      <span className="font-mono text-xs font-medium tracking-wide text-quaternary uppercase">
+                      <span className="text-xs font-medium tracking-wide text-quaternary uppercase">
                         {label}
                       </span>
                     </li>

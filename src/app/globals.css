@@ -91,6 +91,14 @@ body.menu-open [data-contact-widget] {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+/* Homepage partner marquee — dedicated keyframe (the generic `marquee` name
+   is defined twice elsewhere with conflicting end values). Track holds two
+   identical logo sets, so -50% is one full set = seamless loop. */
+@keyframes ice-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 /* Interactive elements always read as clickable. */
 button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]),

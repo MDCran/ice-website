@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
-import { BrandOrbs, PulseAccent, PulseGlow } from "@/components/effects/AmbientMotion";
+import { BrandOrbs, PulseGlow } from "@/components/effects/AmbientMotion";
 import { resolveIcon } from "@/lib/iconMap";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 
@@ -92,7 +92,8 @@ const DEFAULT_TIMELINE = [
   { year: "2000", title: "Cloud Pioneer", description: "Early adoption of cloud infrastructure and managed hosting solutions." },
   { year: "2010", title: "Security Focus", description: "Expanded into managed security, threat detection, and data protection." },
   { year: "2020", title: "Hybrid Cloud Era", description: "Full-suite hybrid cloud, disaster recovery, and automation services." },
-  { year: "2025", title: "35 Years Strong", description: "Serving 500+ enterprises across manufacturing, finance, healthcare, and more." },
+  { year: "2025", title: "35+ Years Strong", description: "Serving 500+ enterprises across manufacturing, finance, healthcare, and more." },
+  { year: "2026", title: "Enterprise AI Innovation", description: "Delivering advanced AI receptionists, intelligent workflows, and next-generation analytics to our partners." },
 ];
 
 const DEFAULT_INDUSTRIES = [
@@ -149,7 +150,7 @@ function SectionHeader({
       className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
     >
       {eyebrow && (
-        <span className="font-mono text-sm font-semibold tracking-wider text-brand-secondary uppercase">
+        <span className="text-sm font-semibold tracking-wider text-brand-secondary uppercase">
           {eyebrow}
         </span>
       )}
@@ -233,7 +234,7 @@ function StatItem({ value, suffix, label, inView }: {
   return (
     <div className="flex flex-1 flex-col-reverse gap-3 text-center">
       <dt className="text-md font-semibold text-primary md:text-lg">{label}</dt>
-      <dd className="font-mono text-display-lg font-semibold tracking-tight text-brand-tertiary_alt md:text-display-xl">
+      <dd className="text-display-lg font-semibold tracking-tight text-brand-tertiary_alt md:text-display-xl">
         {count.toFixed(decimals)}
         {suffix}
       </dd>
@@ -404,7 +405,7 @@ export default function Home({
                 )}
                 <span className="relative size-1.5 rounded-full bg-brand-400 shadow-[0_0_8px_rgb(4_155_251/0.8)]" />
               </span>
-              <span className="font-mono text-xs font-medium tracking-[0.2em] text-white/70 uppercase">
+              <span className="text-xs font-medium tracking-[0.2em] text-white/70 uppercase">
                 {hero.badge ?? "IBM Business Partner Since 1990"}
               </span>
             </motion.p>
@@ -458,7 +459,7 @@ export default function Home({
                   {i > 0 && <span aria-hidden="true" className="hidden h-3 w-px bg-white/20 sm:block" />}
                   <AnimatedValue
                     value={item}
-                    className="font-mono text-xs tracking-wide text-white/60 uppercase"
+                    className="text-xs tracking-wide text-white/60 uppercase"
                   />
                 </li>
               ))}
@@ -490,24 +491,29 @@ export default function Home({
             }
           />
 
-          <ul className="mt-12 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 md:mt-16 lg:grid-cols-4">
+          <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-16 lg:grid-cols-4">
             {services.map((s, i) => (
               <motion.li
                 key={s.title}
                 {...reveal(i * 0.06)}
-                whileHover={reduceMotion ? undefined : { y: -4 }}
+                whileHover={reduceMotion ? undefined : { y: -6 }}
+                className="h-full"
               >
                 <Link
                   href={s.href}
-                  className="group flex h-full flex-col items-start gap-4 rounded-xl outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-4"
+                  className="group relative flex h-full flex-col items-start gap-5 overflow-hidden rounded-2xl bg-primary p-6 ring-1 ring-secondary ring-inset outline-focus-ring transition duration-200 hover:ring-brand hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 dark:hover:shadow-[0_0_30px_rgb(4_155_251/0.12)]"
                 >
+                  {/* Subtle brand wash that fades in on hover */}
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/[0.04] to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                  />
                   <FeaturedIcon icon={s.icon} size="lg" color="brand" theme="modern" />
-                  <div className="flex flex-1 flex-col gap-1">
+                  <div className="relative flex flex-1 flex-col gap-1.5">
                     <h3 className="text-lg font-semibold text-primary">{s.title}</h3>
                     <p className="text-md text-tertiary">{s.description}</p>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 group-hover:gap-2.5 group-hover:text-brand-secondary_hover">
-                    <PulseAccent delay={i * 0.5} />
+                  <span className="relative inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition-all duration-200 group-hover:gap-2.5 group-hover:text-brand-secondary_hover">
                     Learn more
                     <ArrowRight className="size-4" />
                   </span>
@@ -564,7 +570,7 @@ export default function Home({
               />
               {/* Floating certification badge */}
               <div className="absolute -bottom-4 right-4 rounded-xl bg-primary px-5 py-3 shadow-lg ring-1 ring-secondary ring-inset lg:bottom-6 lg:-right-6">
-                <p className="font-mono text-xs font-medium tracking-wider text-tertiary uppercase">{dataCentersSection?.badge_label ?? "Certified"}</p>
+                <p className="text-xs font-medium tracking-wider text-tertiary uppercase">{dataCentersSection?.badge_label ?? "Certified"}</p>
                 <p className="text-sm font-semibold text-primary">{dataCentersSection?.badge_value ?? "SOC 2 Type II"}</p>
               </div>
             </motion.div>
@@ -575,7 +581,7 @@ export default function Home({
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.7, ease: EASE }}
             >
-              <span className="font-mono text-sm font-semibold tracking-wider text-brand-secondary uppercase">
+              <span className="text-sm font-semibold tracking-wider text-brand-secondary uppercase">
                 {dataCentersSection?.eyebrow ?? "Infrastructure"}
               </span>
               <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">
@@ -648,6 +654,11 @@ export default function Home({
           />
 
           <div className="relative mx-auto mt-12 max-w-4xl md:mt-16">
+            {/* Pipeline rail — a subtle brand-tinted track the beam runs along */}
+            <div
+              aria-hidden="true"
+              className="absolute top-0 bottom-0 left-4 w-[3px] -translate-x-px rounded-full bg-gradient-to-b from-brand-500/20 via-brand-500/25 to-brand-500/10 md:left-1/2"
+            />
             {/* Vertical line — draws in from the top as the section scrolls into view */}
             <motion.div
               aria-hidden="true"
@@ -656,23 +667,21 @@ export default function Home({
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 1.4, ease: EASE }}
               style={{ transformOrigin: "top" }}
-              className="absolute top-0 bottom-0 left-4 w-px bg-border-secondary md:left-1/2 md:-translate-x-px"
+              className="absolute top-0 bottom-0 left-4 w-[3px] -translate-x-px rounded-full bg-border-brand md:left-1/2"
             />
 
-            {/* Constant flowing beam — a brand-blue pulse that continuously travels
-                down the center line to signal an always-on pipeline. */}
-            {!reduceMotion && (
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute left-4 z-[1] h-[18%] w-px md:left-1/2 md:-translate-x-px"
-                style={{
-                  animation: "timeline-flow 3.6s ease-in-out infinite",
-                  background:
-                    "linear-gradient(to bottom, transparent, var(--color-brand-solid), transparent)",
-                  boxShadow: "0 0 12px 1px var(--color-brand-solid)",
-                }}
-              />
-            )}
+            {/* Constant flowing beam — a bright brand pulse that continuously
+                travels down the rail to signal an always-on pipeline. */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute left-4 z-[1] h-[22%] w-[3px] -translate-x-px rounded-full motion-reduce:hidden md:left-1/2"
+              style={{
+                animation: "timeline-flow 3.2s linear infinite",
+                background:
+                  "linear-gradient(to bottom, transparent, var(--color-brand-solid) 50%, transparent)",
+                boxShadow: "0 0 16px 2px var(--color-brand-solid)",
+              }}
+            />
 
             {timeline.map((item, i) => {
               const isLast = i === timeline.length - 1;
@@ -718,7 +727,7 @@ export default function Home({
                       i % 2 === 0 ? "md:pr-8 md:text-right" : "md:ml-auto md:pl-8 md:text-left"
                     }`}
                   >
-                    <span className="font-mono text-sm font-semibold tracking-wider text-brand-secondary">{item.year}</span>
+                    <span className="text-sm font-semibold tracking-wider text-brand-secondary">{item.year}</span>
                     <h3 className="mt-1 text-lg font-semibold text-primary">{item.title}</h3>
                     <p className="mt-1 text-md text-tertiary">{item.description}</p>
                   </motion.div>
@@ -752,7 +761,9 @@ export default function Home({
           <div
             className="flex w-max items-center"
             style={{
-              animation: reduceMotion ? "none" : "marquee 35s linear infinite",
+              // Dedicated keyframe (see globals.css). Always animates; the
+              // reduced-motion media query clamps it for users who opt out.
+              animation: "ice-marquee 35s linear infinite",
               animationPlayState: marqueePaused ? "paused" : "running",
             }}
           >
@@ -791,7 +802,7 @@ export default function Home({
             <BrandOrbs />
             <div className="relative grid gap-12 lg:grid-cols-2 lg:gap-16">
               <div>
-                <span className="font-mono text-sm font-semibold tracking-wider text-brand-secondary uppercase">
+                <span className="text-sm font-semibold tracking-wider text-brand-secondary uppercase">
                   {industriesSection?.eyebrow ?? "Why Choose ICE"}
                 </span>
                 <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">
@@ -813,7 +824,7 @@ export default function Home({
               </div>
 
               <div>
-                <h3 className="font-mono text-sm font-semibold tracking-wider text-brand-secondary uppercase">Industries We Serve</h3>
+                <h3 className="text-sm font-semibold tracking-wider text-brand-secondary uppercase">Industries We Serve</h3>
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {industries.map((ind, i) => (
                     <motion.div
@@ -917,7 +928,7 @@ export default function Home({
                 {PERFORMANCE_METRICS.map((metric) => (
                   <div key={metric.label} className="flex flex-col-reverse gap-3 text-center">
                     <dt className="text-md font-semibold text-primary md:text-lg">{metric.label}</dt>
-                    <dd className="font-mono text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
+                    <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
                       <AnimatedValue value={metric.value} />
                     </dd>
                   </div>

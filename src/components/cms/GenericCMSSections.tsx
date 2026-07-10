@@ -300,7 +300,7 @@ function SectionHeading({
   return (
     <Reveal className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
       {eyebrow && (
-        <span className="font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+        <span className="text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
           {eyebrow}
         </span>
       )}
@@ -338,7 +338,7 @@ function renderHero(section: CMSRenderableSection) {
       <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
         <Reveal className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
           {eyebrow && (
-            <span className="font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+            <span className="text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
               {eyebrow}
             </span>
           )}
@@ -360,7 +360,7 @@ function renderHero(section: CMSRenderableSection) {
                 {proofLabels.map((label, index) => (
                   <li key={`${label}-${index}`} className="flex items-center gap-3">
                     {index > 0 && <span aria-hidden="true" className="size-1 rounded-full bg-fg-brand-secondary/60" />}
-                    <span className="font-mono text-xs font-medium tracking-wide text-quaternary uppercase">
+                    <span className="text-xs font-medium tracking-wide text-quaternary uppercase">
                       {label}
                     </span>
                   </li>
@@ -419,7 +419,7 @@ function renderBanner(section: CMSRenderableSection) {
       <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
         <Reveal className="mx-auto flex w-full max-w-4xl flex-col items-center text-center">
           {eyebrow && (
-            <span className="mb-3 font-mono text-xs font-semibold tracking-widest text-secondary_on-brand uppercase md:text-sm">
+            <span className="mb-3 text-xs font-semibold tracking-widest text-secondary_on-brand uppercase md:text-sm">
               {eyebrow}
             </span>
           )}
@@ -553,7 +553,7 @@ function renderProcess(section: CMSRenderableSection) {
             <li key={`${item.step ?? item.title ?? section.section_key}-${index}`}>
               <Reveal delay={index * 0.06} className="flex h-full flex-col">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-display-xs font-semibold tracking-tight text-brand-tertiary_alt">
+                  <span className="text-display-xs font-semibold tracking-tight text-brand-tertiary_alt">
                     {text(String(item.step ?? ""), String(index + 1).padStart(2, "0"))}
                   </span>
                   <PulseDot delay={index * 0.9} />
@@ -604,7 +604,7 @@ function renderFeatureGrid(section: CMSRenderableSection) {
                       {text(item.description ?? item.desc)}
                     </p>
                     {proof && (
-                      <p className="mt-3 font-mono text-xs font-medium text-brand-secondary">{proof}</p>
+                      <p className="mt-3 text-xs font-medium text-brand-secondary">{proof}</p>
                     )}
                   </div>
                 </Reveal>
@@ -653,9 +653,9 @@ function renderStats(section: CMSRenderableSection) {
                 delay={index * 0.06}
                 className="flex flex-1 flex-col-reverse gap-3 text-center"
               >
-                {sourceNote && <p className="font-mono text-xs text-quaternary">{sourceNote}</p>}
+                {sourceNote && <p className="text-xs text-quaternary">{sourceNote}</p>}
                 <dt className="text-md font-semibold text-primary md:text-lg">{text(item.label)}</dt>
-                <dd className="font-mono text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
+                <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
                   <StatValue value={item.value} suffix={text(item.suffix)} />
                 </dd>
               </Reveal>
@@ -756,7 +756,7 @@ function renderRoi(section: CMSRenderableSection) {
       <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
         <Reveal className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
           {text(content.eyebrow ?? content.label) && (
-            <span className="font-mono text-xs font-semibold tracking-widest text-secondary_on-brand uppercase md:text-sm">
+            <span className="text-xs font-semibold tracking-widest text-secondary_on-brand uppercase md:text-sm">
               {text(content.eyebrow ?? content.label)}
             </span>
           )}
@@ -778,9 +778,9 @@ function renderRoi(section: CMSRenderableSection) {
                   delay={index * 0.08}
                   className="flex flex-col-reverse gap-2 text-center"
                 >
-                  {note && <p className="font-mono text-xs text-quaternary_on-brand">{note}</p>}
+                  {note && <p className="text-xs text-quaternary_on-brand">{note}</p>}
                   <dt className="text-md font-semibold text-secondary_on-brand">{text(metric.label)}</dt>
-                  <dd className="font-mono text-display-md font-semibold tracking-tight text-primary_on-brand md:text-display-lg">
+                  <dd className="text-display-md font-semibold tracking-tight text-primary_on-brand md:text-display-lg">
                     <StatValue value={metric.value} suffix={text(metric.suffix)} />
                   </dd>
                 </Reveal>
@@ -794,10 +794,10 @@ function renderRoi(section: CMSRenderableSection) {
             <div className="overflow-hidden rounded-2xl bg-primary/10 ring-1 ring-white/15 ring-inset backdrop-blur-sm">
               <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 border-b border-white/15 px-5 py-4 md:gap-x-8 md:px-8">
                 <span className="text-sm font-semibold text-secondary_on-brand" />
-                <span className="text-right font-mono text-xs font-semibold tracking-wide text-quaternary_on-brand uppercase md:text-sm">
+                <span className="text-right text-xs font-semibold tracking-wide text-quaternary_on-brand uppercase md:text-sm">
                   {text(comparison?.before_label ?? comparison?.beforeLabel, "Before")}
                 </span>
-                <span className="text-right font-mono text-xs font-semibold tracking-wide text-primary_on-brand uppercase md:text-sm">
+                <span className="text-right text-xs font-semibold tracking-wide text-primary_on-brand uppercase md:text-sm">
                   {text(comparison?.after_label ?? comparison?.afterLabel, "With ICE")}
                 </span>
               </div>
@@ -856,14 +856,14 @@ function renderTimeline(section: CMSRenderableSection) {
               className="relative flex gap-4 md:gap-6"
             >
               <div className="flex flex-col items-center">
-                <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-secondary font-mono text-md font-semibold text-brand-secondary">
+                <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-secondary text-md font-semibold text-brand-secondary">
                   <AmbientHalo className="bg-brand-solid/20 blur-sm" delay={index * 0.8} />
                   <span className="relative">{index + 1}</span>
                 </div>
                 {index < items.length - 1 && <div className="my-1 w-px flex-1 border-l border-secondary" />}
               </div>
               <div className={cx("min-w-0 flex-1", index < items.length - 1 && "pb-8 md:pb-10")}>
-                <p className="pt-0.5 font-mono text-sm font-semibold text-brand-secondary">
+                <p className="pt-0.5 text-sm font-semibold text-brand-secondary">
                   {text(item.year ?? item.step, `Step ${index + 1}`)}
                 </p>
                 <h3 className="mt-1 text-lg font-semibold text-primary">{text(item.title)}</h3>
@@ -1091,7 +1091,7 @@ function renderContentBlock(section: CMSRenderableSection) {
   const textBlock = (
     <div className="flex flex-col items-start">
       {(content.eyebrow || content.label) && (
-        <span className="mb-3 font-mono text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
+        <span className="mb-3 text-xs font-semibold tracking-widest text-brand-secondary uppercase md:text-sm">
           {text(content.eyebrow ?? content.label)}
         </span>
       )}

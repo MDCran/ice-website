@@ -129,7 +129,7 @@ export function ServiceSelect({
             id={group.label}
             className={cx("pb-0.5", index > 0 && "mt-1 border-t border-secondary pt-1")}
           >
-            <AriaHeader className="px-3.5 pt-1.5 pb-0.5 font-mono text-xs font-semibold tracking-widest text-quaternary uppercase">
+            <AriaHeader className="px-3.5 pt-1.5 pb-0.5 text-xs font-semibold tracking-widest text-quaternary uppercase">
               {group.label}
             </AriaHeader>
             {group.options.map((option) => (
