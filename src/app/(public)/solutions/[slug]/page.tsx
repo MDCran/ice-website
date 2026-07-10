@@ -1,5 +1,4 @@
 import { getPageContent } from "@/lib/cms";
-import { getSolutionFallback } from "@/lib/solutionFallbacks";
 import { getSeoConfig } from "@/lib/seo/config";
 import {
   JsonLd,
@@ -11,6 +10,10 @@ import {
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import DynamicSolutionPage from "./DynamicSolutionPage";
+
+/** Always read live CMS — never serve a statically baked incomplete page. */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -65,7 +68,7 @@ function serviceName(page: PageLike): string {
   return plain(hero?.headline) || plain(page.title) || "Managed IT Service";
 }
 
-/** Service description from CMS/fallback content. */
+/** Service description from CMS content. */
 function serviceDescription(page: PageLike): string {
   const hero = page.sections?.hero as Record<string, any> | undefined;
   return (
@@ -76,19 +79,12 @@ function serviceDescription(page: PageLike): string {
   );
 }
 
+/**
+ * Live CMS only — never merge or replace with hardcoded solutionFallbacks.
+ * Missing/unpublished pages 404 so incomplete fallback content cannot mask DB.
+ */
 async function resolvePage(slug: string): Promise<PageLike | null> {
-  // Always prefer live CMS content. Hardcoded fallbacks are only a last resort
-  // when the page is missing/unpublished in the database entirely.
-  const cms = await getPageContent(slug);
-  if (cms && (cms.orderedSections?.length ?? 0) > 0) {
-    return cms;
-  }
-  // If CMS returned a published page with zero sections, still use it (don't
-  // mask empty CMS with fallbacks — admins need to see what's actually stored).
-  if (cms) {
-    return cms;
-  }
-  return getSolutionFallback(slug);
+  return getPageContent(slug);
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -114,7 +110,6 @@ export default async function SolutionPage({ params }: PageProps) {
   const { slug } = await params;
   const [page, seo] = await Promise.all([resolvePage(slug), getSeoConfig()]);
 
-  // Unknown slugs still 404; known solution slugs always render (CMS or fallback).
   if (!page) {
     notFound();
   }

@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { createPublicClient } from "@/lib/supabase/public";
 
 export interface PageSection {
@@ -31,9 +32,13 @@ export interface PageWithSections extends PageData {
  *
  * Uses the cookie-less anon client so published CMS content is always readable
  * on the public site, even when an admin session cookie is present.
+ *
+ * Always dynamic: `connection()` opts the caller out of static rendering so
+ * CMS edits (new FAQ/ROI/etc. sections) appear without a redeploy.
  */
 export async function getPageContent(slug: string): Promise<PageWithSections | null> {
   try {
+    await connection();
     const supabase = createPublicClient();
     const { data: page, error } = await supabase
       .from("pages")

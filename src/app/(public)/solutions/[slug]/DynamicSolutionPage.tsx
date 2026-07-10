@@ -224,19 +224,35 @@ export default function DynamicSolutionPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
-  // Every visible seeded section, in sort_order — nothing gets dropped.
-  const visibleOrdered = (orderedSections ?? [])
-    .filter((section) => section.is_visible !== false)
-    .slice()
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  // Prefer CMS orderedSections (sort_order). If only the keyed map is present,
+  // synthesize an order so value_props/banner/roi/faq/etc. still render.
+  const visibleOrdered: CMSRenderableSection[] =
+    (orderedSections ?? []).filter((section) => section.is_visible !== false).length > 0
+      ? (orderedSections ?? [])
+          .filter((section) => section.is_visible !== false)
+          .slice()
+          .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      : Object.entries(sections as Record<string, Record<string, unknown>>)
+          .filter(([, content]) => content && typeof content === "object")
+          .map(([key, content], index) => ({
+            section_key: key,
+            section_type: key,
+            content,
+            sort_order: index,
+            is_visible: true,
+          }));
+
   const sectionOrder = visibleOrdered.map((section) => section.section_key);
   const orderedExtras: Record<string, React.ReactNode> = {};
   for (const section of visibleOrdered) {
+    // Hero/features/process/benefits/cta use bespoke layout chrome; everything
+    // else (value_props, banner, roi, stats, use_cases, faq, related, …) goes
+    // through GenericCMSSections so comparison tables and FAQs always appear.
     if (!KNOWN_KEYS.includes(section.section_key)) {
       orderedExtras[section.section_key] = <GenericCMSSections sections={[section]} />;
     }
   }
-  // Legacy fallback path (no ordered data): render extras as one block.
+  // Legacy path (no ordered data): render extras as one block.
   const extraSections = visibleOrdered.filter((section) => !KNOWN_KEYS.includes(section.section_key));
 
   const category = CATEGORY_MAP[slug] ?? { label: "Solutions", icon: "Globe" };

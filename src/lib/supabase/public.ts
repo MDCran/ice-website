@@ -7,6 +7,9 @@ import { createClient } from "@supabase/supabase-js";
  * "published" RLS policies are scoped to `anon`, so an authenticated session
  * (e.g. admin browsing the marketing site) can fail those policies and return
  * empty/null CMS data — which then triggers hardcoded solution fallbacks.
+ *
+ * Custom fetch uses `cache: 'no-store'` so Next.js Data Cache / Full Route
+ * Cache never serves stale `pages` / `page_sections` after CMS edits.
  */
 export function createPublicClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,6 +23,14 @@ export function createPublicClient() {
       persistSession: false,
       autoRefreshToken: false,
       detectSessionInUrl: false,
+    },
+    global: {
+      fetch: (input, init) =>
+        fetch(input, {
+          ...init,
+          cache: "no-store",
+          next: { revalidate: 0 },
+        } as RequestInit),
     },
   });
 }

@@ -516,6 +516,24 @@ export default function SolutionPageLayout({
             const node = orderedExtras?.[key];
             return node ? <Fragment key={key}>{node}</Fragment> : null;
           })}
+          {/*
+            Safety net: any CMS extras not listed in sectionOrder still render
+            (except faq/related which are pinned below). Nothing from the CMS
+            should be silently dropped.
+          */}
+          {Object.entries(orderedExtras ?? {})
+            .filter(
+              ([key]) =>
+                !orderedKeys.includes(key) &&
+                key !== "faq" &&
+                key !== "faqs" &&
+                key !== "related" &&
+                key !== "cta" &&
+                key !== "hero",
+            )
+            .map(([key, node]) => (
+              <Fragment key={`extra-${key}`}>{node}</Fragment>
+            ))}
           {/* Bottom stack: metrics → FAQ → related services → CTA */}
           {metricsBlock}
           {orderedExtras?.faq ?? orderedExtras?.faqs ?? null}
