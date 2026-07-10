@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { motion, useInView, useReducedMotion } from "motion/react";
-import { ArrowRight, CheckCircle, Minus, Plus, Zap } from "@untitledui/icons";
+import { ArrowRight, Check, CheckCircle, Minus, Plus, XClose, Zap } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -668,6 +668,173 @@ function renderStats(section: CMSRenderableSection) {
   );
 }
 
+/** Scannable outcome band — 3-4 payoff pillars on a textured brand-tinted surface. */
+function renderValueProps(section: CMSRenderableSection) {
+  const content = section.content ?? {};
+  const items = list(content.items);
+  if (items.length === 0) return renderContentBlock(section);
+
+  return (
+    <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
+      <BrandOrbs />
+      {/* Engineering grid rising from the center, masked so the pillars float on a surface */}
+      <div
+        aria-hidden="true"
+        className="texture-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_at_center,black_15%,transparent_70%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent"
+      />
+      <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
+        <SectionHeading
+          eyebrow={text(content.eyebrow ?? content.label)}
+          heading={text(content.heading, titleFromKey(section.section_key))}
+          description={text(content.description)}
+        />
+        <ul className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-16 lg:grid-cols-4">
+          {items.map((item, index) => {
+            const Icon = resolveIcon(item.icon);
+            const outcome = text(item.outcome ?? item.description ?? item.desc ?? item.text);
+            return (
+              <li key={`${item.title ?? section.section_key}-${index}`}>
+                <Reveal delay={index * 0.08} className="h-full">
+                  <div className="flex h-full flex-col items-start rounded-2xl bg-primary p-6 ring-1 ring-secondary ring-inset transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:ring-brand md:p-8">
+                    <AmbientIcon icon={Icon} size="lg" delay={(index % 4) * 1.1} />
+                    <h3 className="mt-5 text-lg font-semibold text-primary md:text-xl">
+                      {text(item.title, `Value ${index + 1}`)}
+                    </h3>
+                    {outcome && <p className="mt-2 text-md text-tertiary">{outcome}</p>}
+                  </div>
+                </Reveal>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+/** The conversion money-band — count-up ROI metrics, before/after proof, and a decisive CTA. */
+function renderRoi(section: CMSRenderableSection) {
+  const content = section.content ?? {};
+  const metrics = list(content.metrics);
+  const comparison =
+    content.comparison && typeof content.comparison === "object" ? content.comparison : null;
+  const comparisonRows = comparison ? list(comparison.rows) : [];
+  const hasComparison = comparisonRows.length > 0;
+  const cta = content.cta ?? content.cta_primary ?? content.ctaPrimary;
+  const ctaLabel = text(cta?.label);
+  const ctaHref = text(cta?.href, "/contact");
+  const hasCta = Boolean(ctaLabel);
+
+  if (metrics.length === 0 && !hasComparison && !hasCta) {
+    return renderContentBlock(section);
+  }
+
+  return (
+    <section className="relative isolate overflow-hidden bg-brand-section py-16 md:py-24">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-solid/25 via-transparent to-brand-solid/10"
+      />
+      <BrandOrbs variant="onBrand" />
+      {/* Engineering grid + film grain for depth on the brand band */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 flex justify-center opacity-[0.08]">
+        <GridPattern size="lg" className="-translate-y-1/2 text-primary_on-brand" />
+      </div>
+      <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.05]" />
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
+      />
+      <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
+        <Reveal className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+          {text(content.eyebrow ?? content.label) && (
+            <span className="font-mono text-xs font-semibold tracking-widest text-secondary_on-brand uppercase md:text-sm">
+              {text(content.eyebrow ?? content.label)}
+            </span>
+          )}
+          <h2 className={cx("text-display-sm font-semibold tracking-tight text-primary_on-brand md:text-display-md", (content.eyebrow || content.label) && "mt-3")}>
+            {text(content.heading, titleFromKey(section.section_key))}
+          </h2>
+          {text(content.description) && (
+            <p className="mt-4 max-w-2xl text-lg text-tertiary_on-brand md:mt-5">{text(content.description)}</p>
+          )}
+        </Reveal>
+
+        {metrics.length > 0 && (
+          <dl className="mx-auto mt-12 grid max-w-4xl grid-cols-2 gap-8 md:mt-16 md:grid-cols-4">
+            {metrics.map((metric, index) => {
+              const note = text(metric.note ?? metric.source_note ?? metric.sourceNote);
+              return (
+                <Reveal
+                  key={`${metric.label ?? section.section_key}-${index}`}
+                  delay={index * 0.08}
+                  className="flex flex-col-reverse gap-2 text-center"
+                >
+                  {note && <p className="font-mono text-xs text-quaternary_on-brand">{note}</p>}
+                  <dt className="text-md font-semibold text-secondary_on-brand">{text(metric.label)}</dt>
+                  <dd className="font-mono text-display-md font-semibold tracking-tight text-primary_on-brand md:text-display-lg">
+                    <StatValue value={metric.value} suffix={text(metric.suffix)} />
+                  </dd>
+                </Reveal>
+              );
+            })}
+          </dl>
+        )}
+
+        {hasComparison && (
+          <Reveal delay={0.12} className="mx-auto mt-12 w-full max-w-2xl md:mt-16">
+            <div className="overflow-hidden rounded-2xl bg-primary/10 ring-1 ring-white/15 ring-inset backdrop-blur-sm">
+              <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 border-b border-white/15 px-5 py-4 md:gap-x-8 md:px-8">
+                <span className="text-sm font-semibold text-secondary_on-brand" />
+                <span className="text-right font-mono text-xs font-semibold tracking-wide text-quaternary_on-brand uppercase md:text-sm">
+                  {text(comparison?.before_label ?? comparison?.beforeLabel, "Before")}
+                </span>
+                <span className="text-right font-mono text-xs font-semibold tracking-wide text-primary_on-brand uppercase md:text-sm">
+                  {text(comparison?.after_label ?? comparison?.afterLabel, "With ICE")}
+                </span>
+              </div>
+              <ul>
+                {comparisonRows.map((row, index) => (
+                  <li
+                    key={`${row.label ?? index}`}
+                    className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 not-first:border-t not-first:border-white/10 px-5 py-4 md:gap-x-8 md:px-8"
+                  >
+                    <span className="text-md font-medium text-primary_on-brand">{text(row.label)}</span>
+                    <span className="flex items-center justify-end gap-2 text-right text-md text-quaternary_on-brand">
+                      <XClose aria-hidden="true" className="size-4 shrink-0 text-quaternary_on-brand" />
+                      <span>{text(row.before)}</span>
+                    </span>
+                    <span className="flex items-center justify-end gap-2 text-right text-md font-semibold text-primary_on-brand">
+                      <Check aria-hidden="true" className="size-4 shrink-0 text-primary_on-brand" />
+                      <span>{text(row.after)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+        )}
+
+        {hasCta && (
+          <Reveal delay={0.16} className="mt-10 flex justify-center md:mt-12">
+            <Button color="secondary" size="xl" href={ctaHref} iconTrailing={ArrowRight}>
+              {ctaLabel}
+            </Button>
+          </Reveal>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function renderTimeline(section: CMSRenderableSection) {
   const content = section.content ?? {};
   const items = list(content.items);
@@ -1068,6 +1235,8 @@ function renderSection(section: CMSRenderableSection) {
 
   if (type === "hero") return renderHero(section);
   if (type === "banner") return renderBanner(section);
+  if (type === "value_props") return renderValueProps(section);
+  if (type === "roi") return renderRoi(section);
   if (type === "use_cases") return renderUseCases(section);
   if (type === "related") return renderRelated(section);
   if (type === "process") return renderProcess(section);

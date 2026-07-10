@@ -80,6 +80,8 @@ const SECTION_TYPES = [
   { value: "hero", label: "Hero Banner" },
   { value: "content", label: "Content Block" },
   { value: "features", label: "Features Grid" },
+  { value: "value_props", label: "Value Props" },
+  { value: "roi", label: "ROI / Payoff" },
   { value: "banner", label: "Statement Banner" },
   { value: "process", label: "Process / Steps" },
   { value: "benefits", label: "Benefits List" },
@@ -103,6 +105,8 @@ const TYPE_COLORS: Record<string, BadgeColor<"pill-color">> = {
   hero: "brand",
   content: "success",
   features: "purple",
+  value_props: "brand",
+  roi: "success",
   banner: "warning",
   process: "blue",
   benefits: "sky",
@@ -410,6 +414,53 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     },
   },
   {
+    id: "value-props",
+    label: "Value Props",
+    description: "Scannable outcome band — 3-4 payoff pillars with icons for the message that sells.",
+    key: "value_props",
+    type: "value_props",
+    content: {
+      eyebrow: "Why It Pays Off",
+      heading: "Enterprise Power, Without the Headaches",
+      description: "Offload the infrastructure burden and get back time, money, and peace of mind.",
+      items: [
+        { icon: "Clock", title: "Save Time", outcome: "Free your IT team from firefighting to focus on the business." },
+        { icon: "BarChart3", title: "Save Money", outcome: "Predictable costs and no capital sunk into aging hardware." },
+        { icon: "Zap", title: "Enterprise Performance", outcome: "Power and speed that scale with demand, engineered for reliability." },
+        { icon: "Shield", title: "Always On", outcome: "Contractual uptime SLAs keep your business running around the clock." },
+      ],
+    },
+  },
+  {
+    id: "roi",
+    label: "ROI / Payoff",
+    description: "The conversion money-band — count-up ROI metrics, a before/after comparison, and a decisive CTA.",
+    key: "roi",
+    type: "roi",
+    content: {
+      eyebrow: "The Payoff",
+      heading: "Clear, Provable ROI",
+      description: "The measurable difference of moving to managed infrastructure.",
+      metrics: [
+        { value: 40, suffix: "%", label: "Lower IT Costs", note: "vs. in-house infrastructure" },
+        { value: 100, suffix: "%", label: "Uptime SLA", note: "Contractual target" },
+        { value: 15, suffix: " min", label: "Incident Response", note: "Average first response" },
+        { value: 60, suffix: "%", label: "Less Time on Ops", note: "IT team hours reclaimed" },
+      ],
+      comparison: {
+        before_label: "In-House",
+        after_label: "With ICE",
+        rows: [
+          { label: "Hardware refresh cycles", before: "Every 3-5 years", after: "Never — we handle it" },
+          { label: "After-hours support", before: "On-call staff", after: "24/7/365 US-based" },
+          { label: "Uptime accountability", before: "Your team", after: "Contractual SLA" },
+          { label: "Time to scale", before: "Weeks of procurement", after: "On demand" },
+        ],
+      },
+      cta: { label: "Get Your Free Assessment", href: "/contact" },
+    },
+  },
+  {
     id: "solution-banner",
     label: "Statement Banner",
     description: "Full-width brand statement band with an optional call to action.",
@@ -639,6 +690,40 @@ function defaultContentForType(type: string): Record<string, any> {
       text: "Short display-quality statement.",
       description: "Supporting sentence for the statement band.",
       cta: { label: "Contact Us", href: "/contact" },
+    };
+  }
+  if (type === "value_props") {
+    return {
+      eyebrow: "Why It Pays Off",
+      heading: "Enterprise Power, Without the Headaches",
+      description: "Offload the infrastructure burden and get back time, money, and peace of mind.",
+      items: [
+        { icon: "Clock", title: "Save Time", outcome: "Free your team to focus on the business." },
+        { icon: "BarChart3", title: "Save Money", outcome: "Predictable costs, no sunk hardware spend." },
+        { icon: "Zap", title: "Enterprise Performance", outcome: "Power and speed engineered for reliability." },
+        { icon: "Shield", title: "Always On", outcome: "Uptime SLAs keep your business running." },
+      ],
+    };
+  }
+  if (type === "roi") {
+    return {
+      eyebrow: "The Payoff",
+      heading: "Clear, Provable ROI",
+      description: "The measurable difference of moving to managed infrastructure.",
+      metrics: [
+        { value: 40, suffix: "%", label: "Lower IT Costs", note: "" },
+        { value: 100, suffix: "%", label: "Uptime SLA", note: "Contractual target" },
+        { value: 60, suffix: "%", label: "Less Time on Ops", note: "" },
+      ],
+      comparison: {
+        before_label: "In-House",
+        after_label: "With ICE",
+        rows: [
+          { label: "Hardware refresh cycles", before: "Every 3-5 years", after: "Never — we handle it" },
+          { label: "After-hours support", before: "On-call staff", after: "24/7/365 US-based" },
+        ],
+      },
+      cta: { label: "Get Your Free Assessment", href: "/contact" },
     };
   }
   if (type === "process") {
@@ -1628,6 +1713,18 @@ function SubFieldInput({ fieldKey, value, onChange }: {
   const iconField = isIconKey(fieldKey) && !mediaField;
   const stringValue = String(value ?? "");
   const label = prettifyKey(fieldKey);
+
+  // Nested arrays and objects (e.g. comparison.rows): delegate to the full
+  // field editor so every level stays editable via structured controls.
+  // Structural removal is handled by the containing object/array editor, so the
+  // nested editor's own delete is a no-op here.
+  if (Array.isArray(value) || (typeof value === "object" && value !== null)) {
+    return (
+      <div className="sm:col-span-2">
+        <FieldEditor fieldKey={fieldKey} value={value} onChange={onChange} onDelete={() => {}} />
+      </div>
+    );
+  }
 
   if (typeof value === "number") {
     return (
