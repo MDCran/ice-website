@@ -82,7 +82,7 @@ export function CountUpStat({
   className?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const selfInView = useInView(ref, { once: true, amount: 0.4 });
+  const selfInView = useInView(ref, { once: true, amount: 0.35 });
   const inView = inViewProp ?? selfInView;
   const parsed = parseStatValue(value);
 
@@ -129,7 +129,7 @@ export function CountUpText({
   className?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const selfInView = useInView(ref, { once: true, amount: 0.5 });
+  const selfInView = useInView(ref, { once: true, amount: 0.35 });
   const inView = inViewProp ?? selfInView;
 
   const tokens = value.match(NUMBER_TOKEN_RE);

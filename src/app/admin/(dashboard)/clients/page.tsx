@@ -74,7 +74,7 @@ export default async function ClientsListPage({
               <Table.Head id="company" label="Company Name" isRowHeader className="w-full" />
               <Table.Head id="status" label="Status" />
               <Table.Head id="created" label="Created" />
-              <Table.Head id="actions" />
+              <Table.Head id="actions" aria-label="Actions" />
             </Table.Header>
             <Table.Body>
               {clients.map((client) => (

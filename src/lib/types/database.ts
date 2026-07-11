@@ -3,11 +3,26 @@
 export interface AdminProfile {
   id: string; // uuid, references auth.users
   email: string;
-  full_name: string;
-  role: string; // e.g. "super_admin" | "editor"
+  display_name: string;
+  role: "super_admin" | "admin" | "editor" | string;
   avatar_url: string | null;
+  totp_enabled?: boolean;
+  totp_enabled_at?: string | null;
+  /** Never select from the browser — service-role only. */
+  totp_secret?: string | null;
   created_at: string; // timestamptz
   updated_at: string; // timestamptz
+}
+
+export interface PageView {
+  id: number;
+  path: string;
+  title: string | null;
+  referrer: string | null;
+  lcp_ms: number | null;
+  user_agent: string | null;
+  session_id: string | null;
+  created_at: string;
 }
 
 // ─── CMS: Pages & Sections ───────────────────────────────────────────────────
@@ -151,19 +166,19 @@ export interface ClientContactChange {
 }
 
 export interface ClientResource {
-  id: string; // uuid
-  account_id: string; // uuid → client_accounts.id
+  id: string;
+  client_account_id: string;
   title: string;
   description: string | null;
   author: string | null;
   file_url: string;
-  file_type: string | null;
-  file_size_bytes: number | null;
-  category: string | null;
-  visibility: string; // e.g. "draft" | "published" | "archived"
+  storage_path: string;
+  mime_type: string;
+  size_bytes: number | null;
   allow_download: boolean;
+  visibility: string; // "draft" | "published"
   share_token: string | null;
-  uploaded_by: string | null; // uuid → admin_profiles.id
+  uploaded_by: string | null;
   created_at: string;
   updated_at: string;
 }

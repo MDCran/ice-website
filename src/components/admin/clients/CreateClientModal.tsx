@@ -85,7 +85,7 @@ export default function CreateClientModal() {
 
       <ModalOverlay isDismissable isOpen={open} onOpenChange={setOpen}>
         <Modal className="w-full max-w-3xl">
-          <Dialog>
+          <Dialog aria-label="Create Client">
             <div className="flex items-start justify-between gap-4 px-6 pt-6">
               <div>
                 <h2 className="text-lg font-semibold text-primary">Create Client</h2>

@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useId, useState } from "react";
+import { type FormEvent, type HTMLAttributes, useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, CheckCircle, MessageChatCircle, Send01, XClose } from "@untitledui/icons";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -237,10 +237,24 @@ export const COUNTRIES: Country[] = [
   { code: "VN", name: "Vietnam", dial: "+84", flag: "🇻🇳" },
 ];
 
-/** Dropdown items for the dial-code selector, e.g. "🇺🇸 +1" (keyed by country code). */
+/** Flag image URL (Untitled UI CDN) — emoji flags render as "US"/"CA" text on Windows. */
+function countryFlagSrc(code: string) {
+  return `https://www.untitledui.com/images/flags/${code}.svg`;
+}
+
+/** Dropdown items: flag image + dial code (keyed by country code). */
 const COUNTRY_ITEMS: SelectItemType[] = COUNTRIES.map((country) => ({
   id: country.code,
-  label: `${country.flag} ${country.dial}`,
+  label: country.dial,
+  icon: (props: HTMLAttributes<HTMLImageElement>) => (
+    <img
+      {...props}
+      src={countryFlagSrc(country.code)}
+      alt=""
+      aria-hidden="true"
+      className="size-5 max-w-none rounded-full object-cover"
+    />
+  ),
 }));
 
 /** Resolve the visitor's country from browser locale; falls back to US. */
@@ -280,7 +294,7 @@ interface PhoneFieldProps {
 }
 
 /**
- * Phone input: a compact Untitled UI Select with country dial codes ("🇺🇸 +1")
+ * Phone input: a compact Untitled UI Select with country flag + dial code
  * next to a full-width tel input. Defaults the country from the visitor's
  * locale and submits the full number with dial code (e.g. "+1 (561) 555-0100").
  */
@@ -324,8 +338,8 @@ export function PhoneField({
         <Select
           aria-label="Country dial code"
           size={size}
-          className="w-[6.75rem] shrink-0 sm:w-28"
-          popoverClassName="w-max min-w-(--trigger-width)"
+          className="w-[7.5rem] shrink-0 sm:w-32"
+          popoverClassName="w-max min-w-[16rem]"
           selectedKey={country.code}
           onSelectionChange={(key) => {
             const next = COUNTRIES.find((c) => c.code === key) ?? COUNTRIES[0];
@@ -336,7 +350,20 @@ export function PhoneField({
           }}
           items={COUNTRY_ITEMS}
         >
-          {(item) => <Select.Item id={item.id} label={item.label} />}
+          {(item) => {
+            const meta = COUNTRIES.find((c) => c.code === item.id);
+            return (
+              <Select.Item
+                id={item.id}
+                label={item.label}
+                supportingText={meta?.name}
+                icon={item.icon}
+                // Keep trigger compact (flag + dial only); name still shows in the list.
+                value={{ id: item.id, label: item.label, icon: item.icon }}
+                textValue={`${meta?.name ?? item.id} ${item.label}`}
+              />
+            );
+          }}
         </Select>
 
         {/* National number */}

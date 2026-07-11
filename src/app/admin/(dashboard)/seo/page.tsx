@@ -105,5 +105,8 @@ function toFormValues(seo: Record<string, any>): SeoFormValues {
       typeof seo.block_training_scrapers === "boolean"
         ? seo.block_training_scrapers
         : d.blockTrainingScrapers,
+
+    favicon_url: pickNullable(seo.favicon_url, d.faviconUrl),
+    default_og_image: pickNullable(seo.default_og_image, d.defaultOgImage),
   };
 }

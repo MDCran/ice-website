@@ -261,7 +261,7 @@ export default function InvoicesManager({
               <Table.Head id="extended" label="Extended" />
               <Table.Head id="hidden" label="Hidden" />
               <Table.Head id="date" label="Date" />
-              <Table.Head id="actions" />
+              <Table.Head id="actions" aria-label="Actions" />
             </Table.Header>
             <Table.Body>
               {loadedInvoices.map((invoice) => (

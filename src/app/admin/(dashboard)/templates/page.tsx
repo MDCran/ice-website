@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import {
@@ -108,10 +109,10 @@ function HeroPreview({ data }: { data?: Record<string, any> }) {
   return (
     <div className="rounded-lg bg-secondary p-6 text-center ring-1 ring-secondary">
       <div className="mb-1 text-sm font-bold text-primary">{heading}</div>
-      <div className="mx-auto mb-3 line-clamp-2 max-w-62 text-[9px] text-tertiary">{sub}</div>
+      <div className="mx-auto mb-3 line-clamp-2 max-w-62 text-xs text-tertiary">{sub}</div>
       <div className="flex justify-center gap-2">
-        <div className="rounded-md bg-brand-solid px-2.5 py-1 text-[8px] font-medium text-white">{cta}</div>
-        <div className="rounded-md bg-primary px-2.5 py-1 text-[8px] font-medium text-secondary ring-1 ring-primary ring-inset">Learn More</div>
+        <div className="rounded-md bg-brand-solid px-2.5 py-1 text-xs font-medium text-white">{cta}</div>
+        <div className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-secondary ring-1 ring-primary ring-inset">Learn More</div>
       </div>
     </div>
   );
@@ -127,7 +128,7 @@ function ContentPreview({ data }: { data?: Record<string, any> }) {
         <div className="flex-1 space-y-1.5">
           <div className="text-xs font-bold text-primary">{heading}</div>
           {body ? (
-            <div className="line-clamp-3 text-[9px] leading-relaxed text-tertiary">{String(body).slice(0, 150)}</div>
+            <div className="line-clamp-3 text-xs leading-relaxed text-tertiary">{String(body).slice(0, 150)}</div>
           ) : (
             <>
               <div className="h-1.5 w-full rounded bg-tertiary" />
@@ -154,8 +155,8 @@ function FeaturesPreview({ data }: { data?: Record<string, any> }) {
             </div>
             {typeof item === "object" && item?.title ? (
               <>
-                <div className="truncate text-[9px] font-semibold text-primary">{item.title}</div>
-                {item.description && <div className="mt-0.5 line-clamp-2 text-[7px] text-tertiary">{item.description}</div>}
+                <div className="truncate text-xs font-semibold text-primary">{item.title}</div>
+                {item.description && <div className="mt-0.5 line-clamp-2 text-xs text-tertiary">{item.description}</div>}
               </>
             ) : (
               <>
@@ -180,7 +181,7 @@ function StatsPreview({ data }: { data?: Record<string, any> }) {
         {display.map((item: any, i: number) => (
           <div key={i} className="rounded-lg bg-primary p-2 text-center ring-1 ring-secondary">
             <div className="text-sm font-bold text-brand-secondary">{item.value ?? item.suffix ? `${item.value}${item.suffix ?? ""}` : item.value}</div>
-            <div className="mt-0.5 truncate text-[8px] text-tertiary">{item.label ?? ""}</div>
+            <div className="mt-0.5 truncate text-xs text-tertiary">{item.label ?? ""}</div>
           </div>
         ))}
       </div>
@@ -198,7 +199,7 @@ function FaqPreview({ data }: { data?: Record<string, any> }) {
       {(items.length > 0 ? items.slice(0, 3) : [1, 2, 3]).map((item: any, i: number) => (
         <div key={i} className="flex items-center justify-between rounded-lg bg-primary px-3 py-2 ring-1 ring-secondary">
           {typeof item === "object" && item?.question ? (
-            <span className="truncate pr-2 text-[9px] text-secondary">{item.question}</span>
+            <span className="truncate pr-2 text-xs text-secondary">{item.question}</span>
           ) : (
             <div className="h-1.5 w-3/5 rounded bg-tertiary" />
           )}
@@ -217,12 +218,12 @@ function CtaPreview({ data }: { data?: Record<string, any> }) {
     <div className="rounded-lg bg-brand-section p-5 text-center">
       <div className="mb-1 text-xs font-bold text-white">{heading}</div>
       {desc ? (
-        <div className="mx-auto mb-3 line-clamp-2 max-w-50 text-[8px] text-white/70">{desc}</div>
+        <div className="mx-auto mb-3 line-clamp-2 max-w-50 text-xs text-white/70">{desc}</div>
       ) : (
         <div className="mx-auto mb-3 h-1.5 w-3/5 rounded bg-white/20" />
       )}
       <div className="flex justify-center gap-2">
-        <div className="flex items-center gap-1 rounded-md bg-white px-3 py-1 text-[8px] font-medium text-secondary">
+        <div className="flex items-center gap-1 rounded-md bg-white px-3 py-1 text-xs font-medium text-secondary">
           {cta} <ArrowRight className="size-2" />
         </div>
       </div>
@@ -236,7 +237,7 @@ function ProcessPreview({ data }: { data?: Record<string, any> }) {
       <div className="flex items-start gap-3">
         {[1, 2, 3, 4].map((step) => (
           <div key={step} className="flex-1 text-center">
-            <div className="mx-auto mb-1.5 flex size-6 items-center justify-center rounded-full bg-brand-secondary text-[8px] font-bold text-fg-brand-primary ring-1 ring-utility-brand-200">{step}</div>
+            <div className="mx-auto mb-1.5 flex size-6 items-center justify-center rounded-full bg-brand-secondary text-xs font-bold text-fg-brand-primary ring-1 ring-utility-brand-200">{step}</div>
             <div className="mx-auto mb-0.5 h-1.5 w-4/5 rounded bg-tertiary" />
             <div className="h-1 w-full rounded bg-secondary_alt" />
           </div>
@@ -266,7 +267,7 @@ function MetricsPreview({ data }: { data?: Record<string, any> }) {
         {["99.9%", "< 4hr", "24/7"].map((val) => (
           <div key={val} className="text-center">
             <div className="mx-auto mb-1.5 flex size-12 items-center justify-center rounded-full border-2 border-utility-brand-200">
-              <span className="text-[9px] font-bold text-brand-secondary">{val}</span>
+              <span className="text-xs font-bold text-brand-secondary">{val}</span>
             </div>
             <div className="mx-auto h-1 w-4/5 rounded bg-tertiary" />
           </div>
@@ -362,7 +363,7 @@ function ContactPreview({ data }: { data?: Record<string, any> }) {
               <Icon className="size-2 text-fg-brand-primary" />
             </div>
             <div className="flex-1">
-              <div className="text-[7px] text-quaternary uppercase">{label}</div>
+              <div className="text-xs text-quaternary uppercase">{label}</div>
               <div className="mt-0.5 h-1.5 w-4/5 rounded bg-tertiary" />
             </div>
           </div>
@@ -382,13 +383,13 @@ function FormPreview({ data }: { data?: Record<string, any> }) {
       <div className="h-6 rounded-md bg-primary ring-1 ring-secondary" />
       <div className="h-12 rounded-md bg-primary ring-1 ring-secondary" />
       <div className="flex h-6 items-center justify-center rounded-md bg-brand-solid">
-        <div className="text-[8px] font-medium text-white">Send Message</div>
+        <div className="text-xs font-medium text-white">Send Message</div>
       </div>
     </div>
   );
 }
 
-const PREVIEW_COMPONENTS: Record<string, (props: { data?: Record<string, any> }) => React.ReactElement> = {
+const PREVIEW_COMPONENTS: Record<string, (props: { data?: Record<string, any> }) => ReactElement> = {
   hero: HeroPreview,
   content: ContentPreview,
   features: FeaturesPreview,
@@ -413,15 +414,18 @@ export default async function TemplatesPage() {
 
   return (
     <div className="space-y-10">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-display-xs font-semibold text-primary">Section Templates</h1>
-          <p className="mt-1 text-sm text-tertiary">
-            Visual previews of every section type. See how each renders on the site.
-          </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <FeaturedIcon icon={LayersThree01} color="brand" theme="modern" size="lg" />
+          <div>
+            <h1 className="text-xl font-semibold text-primary">Section Templates</h1>
+            <p className="mt-1 text-sm text-tertiary">
+              Visual previews of every section type used across the CMS.
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-quaternary">
-          <LayoutGrid01 className="size-3.5" />
+        <div className="flex items-center gap-2 text-sm text-tertiary">
+          <LayoutGrid01 className="size-4" />
           {Array.from(grouped.values()).reduce((sum, entries) => sum + entries.length, 0)} sections across {grouped.size} types
         </div>
       </div>
@@ -455,7 +459,7 @@ export default async function TemplatesPage() {
                       <div className="size-2 rounded-full bg-utility-yellow-400" />
                       <div className="size-2 rounded-full bg-utility-green-400" />
                     </div>
-                    <span className="ml-2 font-mono text-[9px] text-quaternary">icesales.com — {prettify(sectionType)} Section</span>
+                    <span className="ml-2 text-xs text-quaternary">icesales.com — {prettify(sectionType)} Section</span>
                   </div>
                   <div className="p-4">
                     <PreviewComponent data={entries[0]?.contentSample} />
@@ -480,7 +484,7 @@ export default async function TemplatesPage() {
                     <div className="flex items-start justify-between gap-2 border-b border-secondary px-5 py-3.5">
                       <div>
                         <h3 className="text-sm font-semibold text-primary">{prettify(entry.section_key)}</h3>
-                        <p className="mt-0.5 font-mono text-[10px] text-quaternary">section_key: {entry.section_key}</p>
+                        <p className="mt-0.5 text-xs text-quaternary">Key: {entry.section_key}</p>
                       </div>
                       <Badge size="sm" color={color} className="whitespace-nowrap">
                         {prettify(entry.section_type)}
@@ -490,7 +494,7 @@ export default async function TemplatesPage() {
                     {/* Fields */}
                     {entry.contentKeys.length > 0 && (
                       <div className="border-b border-secondary px-5 py-3">
-                        <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-quaternary uppercase">
+                        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium tracking-wider text-quaternary uppercase">
                           <Settings01 className="size-2.5" />
                           Fields ({entry.contentKeys.length})
                         </p>
@@ -501,7 +505,7 @@ export default async function TemplatesPage() {
                             return (
                               <span
                                 key={k}
-                                className={`rounded px-1.5 py-0.5 font-mono text-[10px] ring-1 ring-inset ${
+                                className={`rounded px-1.5 py-0.5 text-xs ring-1 ring-inset ${
                                   isArray
                                     ? "bg-utility-brand-50 text-utility-brand-700 ring-utility-brand-200"
                                     : "bg-secondary text-tertiary ring-secondary"
@@ -518,7 +522,7 @@ export default async function TemplatesPage() {
                     {/* Array item structure */}
                     {entry.contentKeys.some((k) => Array.isArray(entry.contentSample[k]) && entry.contentSample[k].length > 0) && (
                       <div className="border-b border-secondary px-5 py-3">
-                        <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-quaternary uppercase">
+                        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium tracking-wider text-quaternary uppercase">
                           <File02 className="size-2.5" />
                           Item Structure
                         </p>
@@ -531,7 +535,7 @@ export default async function TemplatesPage() {
                             return (
                               <div key={k} className="flex flex-wrap gap-1">
                                 {itemKeys.map((ik) => (
-                                  <span key={ik} className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] text-tertiary ring-1 ring-secondary ring-inset">
+                                  <span key={ik} className="rounded bg-secondary px-1.5 py-0.5 text-xs text-tertiary ring-1 ring-secondary ring-inset">
                                     {ik}
                                   </span>
                                 ))}
@@ -548,7 +552,7 @@ export default async function TemplatesPage() {
                           <Link
                             key={page.slug}
                             href={`/admin/cms/${page.slug}`}
-                            className="inline-flex items-center gap-1 rounded-full bg-utility-brand-50 px-2.5 py-0.5 text-[10px] font-medium text-utility-brand-700 ring-1 ring-utility-brand-200 transition-colors ring-inset hover:bg-utility-brand-100"
+                            className="inline-flex items-center gap-1 rounded-full bg-utility-brand-50 px-2.5 py-0.5 text-xs font-medium text-utility-brand-700 ring-1 ring-utility-brand-200 transition-colors ring-inset hover:bg-utility-brand-100"
                           >
                             {page.title}
                             <LinkExternal01 className="size-2" />

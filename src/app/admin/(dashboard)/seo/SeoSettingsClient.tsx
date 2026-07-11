@@ -61,6 +61,9 @@ export interface SeoFormValues {
   bing_verification: string;
   // AI crawlers
   block_training_scrapers: boolean;
+  // Branding / share defaults
+  favicon_url: string;
+  default_og_image: string;
 }
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -159,6 +162,8 @@ export default function SeoSettingsClient({
       google_verification: values.google_verification.trim() || null,
       bing_verification: values.bing_verification.trim() || null,
       block_training_scrapers: values.block_training_scrapers,
+      favicon_url: values.favicon_url.trim() || null,
+      default_og_image: values.default_og_image.trim() || null,
     };
   };
 
@@ -307,8 +312,21 @@ export default function SeoSettingsClient({
           label="Title Template"
           value={values.title_template}
           onChange={(v) => set("title_template", v)}
-          inputClassName="font-mono text-sm"
           hint="%s is replaced by each page's title, e.g. %s | International Computer Exchange"
+        />
+        <Input
+          label="Default favicon URL"
+          value={values.favicon_url}
+          onChange={(v) => set("favicon_url", v)}
+          placeholder="/icon.svg or https://..."
+          hint="Site-wide favicon. Individual pages can override this in the CMS page editor."
+        />
+        <Input
+          label="Default Open Graph / share image"
+          value={values.default_og_image}
+          onChange={(v) => set("default_og_image", v)}
+          placeholder="https://... or /images/..."
+          hint="Used for Twitter, Discord, and Open Graph embeds when a page has no share image."
         />
         <div>
           <TextArea

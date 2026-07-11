@@ -42,28 +42,37 @@ export default function ResourcesPage() {
 
   useEffect(() => {
     async function fetchResources() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          setResources([]);
+          return;
+        }
 
-      const { data: clientUser } = await supabase
-        .from("client_users")
-        .select("client_account_id")
-        .eq("id", user.id)
-        .single();
-      if (!clientUser) return;
+        const { data: clientUser } = await supabase
+          .from("client_users")
+          .select("client_account_id")
+          .eq("id", user.id)
+          .single();
+        if (!clientUser) {
+          setResources([]);
+          return;
+        }
 
-      const { data } = await supabase
-        .from("client_resources")
-        .select("*")
-        .eq("client_account_id", clientUser.client_account_id)
-        .eq("visibility", "published")
-        .order("created_at", { ascending: false });
+        const { data } = await supabase
+          .from("client_resources")
+          .select("*")
+          .eq("client_account_id", clientUser.client_account_id)
+          .eq("visibility", "published")
+          .order("created_at", { ascending: false });
 
-      setResources(data ?? []);
-      setLoading(false);
+        setResources(data ?? []);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchResources();
   }, []);
@@ -90,9 +99,9 @@ export default function ResourcesPage() {
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-display-xs font-semibold text-primary">Resources</h1>
+          <h1 className="text-display-xs font-semibold text-primary">Documents</h1>
           <p className="mt-1 text-md text-tertiary">
-            {resources.length} resource{resources.length !== 1 ? "s" : ""}{" "}
+            {resources.length} document{resources.length !== 1 ? "s" : ""}{" "}
             available
           </p>
         </div>
@@ -129,9 +138,9 @@ export default function ResourcesPage() {
               <EmptyState.FeaturedIcon color="gray" icon={Folder} />
             </EmptyState.Header>
             <EmptyState.Content>
-              <EmptyState.Title>No resources available</EmptyState.Title>
+              <EmptyState.Title>No documents available</EmptyState.Title>
               <EmptyState.Description>
-                Documents shared with your account will appear here.
+                Documents shared with your account will appear here after your ICE team publishes them.
               </EmptyState.Description>
             </EmptyState.Content>
           </EmptyState>
@@ -290,7 +299,7 @@ export default function ResourcesPage() {
                       : undefined
                   }
                 >
-                  {previewResource.file_type === "application/pdf" ||
+                  {previewResource.mime_type === "application/pdf" ||
                   previewResource.file_url.endsWith(".pdf") ? (
                     <object
                       data={previewResource.file_url}

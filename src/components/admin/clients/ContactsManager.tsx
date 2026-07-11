@@ -333,7 +333,7 @@ export default function ContactsManager({
               <Table.Head id="name" label="Name" isRowHeader className="w-full" />
               <Table.Head id="email" label="Primary Email" />
               <Table.Head id="phone" label="Primary Phone" />
-              <Table.Head id="actions" />
+              <Table.Head id="actions" aria-label="Actions" />
             </Table.Header>
             <Table.Body>
               {contacts.map((contact) => (

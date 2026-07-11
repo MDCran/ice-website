@@ -62,10 +62,10 @@ function HybridCloud({ className }: SvgProps) {
       <line x1="97" y1="98" x2="103" y2="98" stroke="#3b82f6" strokeWidth="1.5" opacity="0.8"/>
       <polyline points="99,95 96,98 99,101" stroke="#3b82f6" strokeWidth="1.5" fill="none"/>
       {/* Label */}
-      <rect x="75" y="130" width="50" height="16" rx="8" fill="#38bdf8" opacity="0.12" stroke="#38bdf8" strokeWidth="0.8"/>
       <rect x="54" y="130" width="44" height="16" rx="8" fill="#3b82f6" opacity="0.12" stroke="#3b82f6" strokeWidth="0.8"/>
-      <text x="77" y="141" fontSize="7" fill="#38bdf8" fontFamily="monospace" opacity="0.9">CLOUD</text>
-      <text x="57" y="141" fontSize="7" fill="#64748b" fontFamily="monospace" opacity="0.9">ON-PREM</text>
+      <rect x="102" y="130" width="44" height="16" rx="8" fill="#38bdf8" opacity="0.12" stroke="#38bdf8" strokeWidth="0.8"/>
+      <text x="76" y="141" fontSize="7" fill="#64748b" fontFamily="system-ui,sans-serif" textAnchor="middle" opacity="0.9">ON-PREM</text>
+      <text x="124" y="141" fontSize="7" fill="#38bdf8" fontFamily="system-ui,sans-serif" textAnchor="middle" opacity="0.9">CLOUD</text>
     </svg>
   );
 }
@@ -146,8 +146,6 @@ function ShieldProtect({ className }: SvgProps) {
       <path d="M92 98 L92 91 C92 85 108 85 108 91 L108 98" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" fill="none"/>
       <circle cx="100" cy="109" r="4" fill="#38bdf8" opacity="0.8"/>
       <line x1="100" y1="113" x2="100" y2="117" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" opacity="0.8"/>
-      {/* Glow */}
-      <circle cx="100" cy="100" r="20" fill="#38bdf8" opacity="0.04" filter="blur(2)"/>
     </svg>
   );
 }
@@ -314,8 +312,8 @@ function DisasterRecovery({ className }: SvgProps) {
         </g>
       ))}
       {/* Labels */}
-      <text x="50" y="158" fontSize="7" fill="#ef4444" fontFamily="monospace" textAnchor="middle" opacity="0.8">FAILED</text>
-      <text x="150" y="158" fontSize="7" fill="#10b981" fontFamily="monospace" textAnchor="middle" opacity="0.8">RESTORED</text>
+      <text x="50" y="158" fontSize="7" fill="#ef4444" fontFamily="system-ui,sans-serif" textAnchor="middle" opacity="0.8">FAILED</text>
+      <text x="150" y="158" fontSize="7" fill="#10b981" fontFamily="system-ui,sans-serif" textAnchor="middle" opacity="0.8">RESTORED</text>
     </svg>
   );
 }
@@ -350,8 +348,8 @@ function HighAvailability({ className }: SvgProps) {
         strokeLinejoin="round"
       />
       {/* Labels */}
-      <text x="44" y="155" fontSize="7" fill="#38bdf8" fontFamily="monospace" textAnchor="middle">PRIMARY</text>
-      <text x="156" y="155" fontSize="7" fill="#3b82f6" fontFamily="monospace" textAnchor="middle">STANDBY</text>
+      <text x="44" y="155" fontSize="7" fill="#38bdf8" fontFamily="system-ui,sans-serif" textAnchor="middle">PRIMARY</text>
+      <text x="156" y="155" fontSize="7" fill="#3b82f6" fontFamily="system-ui,sans-serif" textAnchor="middle">STANDBY</text>
     </svg>
   );
 }

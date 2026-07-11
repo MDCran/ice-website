@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type FC, type ReactNode } from "react";
+import { useState, useRef, type FC, type ReactNode } from "react";
 import { motion, useInView, useReducedMotion } from "motion/react";
 import { CountUpNumber, CountUpText } from "@/components/ui/CountUpValue";
 import Link from "next/link";
@@ -387,20 +387,11 @@ export default function Home({
   const metricsRef = useRef<HTMLDListElement>(null);
   const heroProofRef = useRef<HTMLUListElement>(null);
   const timelineRailRef = useRef<HTMLDivElement>(null);
-  const statsInView = useInView(statsRef, { once: true, amount: 0.4 });
-  const metricsInView = useInView(metricsRef, { once: true, amount: 0.4 });
-  const heroProofInView = useInView(heroProofRef, { once: true, amount: 0.6 });
+  const statsInView = useInView(statsRef, { once: true, amount: 0.25 });
+  const metricsInView = useInView(metricsRef, { once: true, amount: 0.25 });
+  const heroProofInView = useInView(heroProofRef, { once: true, amount: 0.35 });
   const timelineRailInView = useInView(timelineRailRef, { once: true, margin: "-80px" });
   const [marqueePaused, setMarqueePaused] = useState(false);
-  // Hero proof fades in via motion; only start count-up after that reveal finishes.
-  const [heroProofReady, setHeroProofReady] = useState(false);
-
-  // Fallback if onAnimationComplete doesn't fire (e.g. reduced-motion edge cases).
-  useEffect(() => {
-    if (!heroProofInView || heroProofReady) return;
-    const t = window.setTimeout(() => setHeroProofReady(true), 1600);
-    return () => window.clearTimeout(t);
-  }, [heroProofInView, heroProofReady]);
 
   return (
     <main className="bg-primary">
@@ -438,25 +429,12 @@ export default function Home({
         <div className="relative flex flex-1 flex-col justify-center px-4 py-20 md:px-8 md:py-24">
           <div className="mx-auto flex w-full max-w-container flex-col items-center">
             <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-              {/* Quiet eyebrow — brand dot + mono caps, no pill */}
+              {/* Quiet eyebrow — mono caps, no pill / no bullet */}
               <motion.p
                 {...heroReveal(0.1)}
-                className="flex items-center gap-2.5"
+                className="text-xs font-medium tracking-[0.2em] text-white/70 uppercase"
               >
-                <span aria-hidden="true" className="relative flex size-1.5 items-center justify-center">
-                  {!reduceMotion && (
-                    <motion.span
-                      className="absolute inset-0 rounded-full bg-brand-400"
-                      style={{ willChange: "transform, opacity" }}
-                      animate={{ scale: [1, 3], opacity: [0.7, 0] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "easeOut" }}
-                    />
-                  )}
-                  <span className="relative size-1.5 rounded-full bg-brand-400 shadow-[0_0_8px_rgb(4_155_251/0.8)]" />
-                </span>
-                <span className="text-xs font-medium tracking-[0.2em] text-white/70 uppercase">
-                  {hero.badge}
-                </span>
+                {hero.badge}
               </motion.p>
 
               {/* Hardcoded white is intentional here — text sits over the video in both themes */}
@@ -497,11 +475,12 @@ export default function Home({
                 </Button>
               </motion.div>
 
-              {/* Proof row — fade in with hero, then count once fully visible. */}
+              {/* Proof row — opaque (y-only reveal) so count-up is visible from frame 0. */}
               <motion.ul
-                {...heroReveal(0.65)}
+                initial={{ y: reduceMotion ? 0 : 16 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.6, delay: 0.65, ease: EASE }}
                 ref={heroProofRef}
-                onAnimationComplete={() => setHeroProofReady(true)}
                 className="mt-12 flex max-w-full flex-nowrap items-center justify-center gap-x-2 overflow-x-auto scrollbar-hide md:mt-16 md:gap-x-3"
               >
                 {HERO_PROOF.map((item, i) => (
@@ -509,7 +488,7 @@ export default function Home({
                     {i > 0 && <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/20" />}
                     <CountUpText
                       value={item}
-                      inView={heroProofInView && (reduceMotion || heroProofReady)}
+                      inView={heroProofInView}
                       duration={1400}
                       className="whitespace-nowrap text-[10px] tracking-wide text-white/60 uppercase tabular-nums sm:text-xs"
                     />

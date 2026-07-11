@@ -281,40 +281,19 @@ export default function Navbar({
         )}
       >
         <div className="mx-auto flex h-16 max-w-container items-center justify-between px-4 md:px-8 lg:h-18">
-          {/* Logo */}
+          {/* Logo — same asset on mobile and desktop (white plate for JPG contrast). */}
           <Link
             href="/"
             aria-label="ICE Home"
             className="shrink-0 rounded-lg outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
           >
-            {/* Desktop: full logo (with tagline) on a white plate. */}
-            <span className="hidden items-center rounded-lg bg-white px-3 py-2 lg:flex">
+            <span className="flex items-center rounded-lg bg-white px-2.5 py-1.5 lg:px-3 lg:py-2">
               <Image
                 src={logoSrc}
                 alt="International Computer Exchange"
                 width={220}
                 height={66}
-                className="h-10 w-auto lg:h-12"
-                priority
-              />
-            </span>
-            {/* Mobile: clean transparent, theme-aware ICE mark — no white plate. */}
-            <span className="flex items-center lg:hidden">
-              <Image
-                src="/images/logo/logo-dark.svg"
-                alt="International Computer Exchange"
-                width={200}
-                height={83}
-                className="h-8 w-auto dark:hidden"
-                priority
-              />
-              <Image
-                src="/images/logo/logo-white.svg"
-                alt=""
-                aria-hidden="true"
-                width={200}
-                height={83}
-                className="hidden h-8 w-auto dark:block"
+                className="h-8 w-auto lg:h-12"
                 priority
               />
             </span>
@@ -516,21 +495,13 @@ export default function Navbar({
                   aria-label="ICE Home"
                   className="rounded-lg outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  <span className="flex items-center">
+                  <span className="flex items-center rounded-lg bg-white px-2.5 py-1.5">
                     <Image
-                      src="/images/logo/logo-dark.svg"
+                      src={logoSrc}
                       alt="International Computer Exchange"
-                      width={200}
-                      height={83}
-                      className="h-8 w-auto dark:hidden"
-                    />
-                    <Image
-                      src="/images/logo/logo-white.svg"
-                      alt=""
-                      aria-hidden="true"
-                      width={200}
-                      height={83}
-                      className="hidden h-8 w-auto dark:block"
+                      width={220}
+                      height={66}
+                      className="h-8 w-auto"
                     />
                   </span>
                 </Link>

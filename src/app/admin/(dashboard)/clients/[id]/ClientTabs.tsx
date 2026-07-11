@@ -19,7 +19,7 @@ import ChangeActions from "@/app/admin/(dashboard)/contact-changes/ChangeActions
 const tabs = [
   { id: "home", label: "Home", icon: Home01 },
   { id: "contacts", label: "Contacts", icon: Users01 },
-  { id: "resources", label: "Resources", icon: File02 },
+  { id: "resources", label: "Documents", icon: File02 },
   { id: "invoices", label: "Invoices", icon: Receipt },
   { id: "surveys", label: "Surveys", icon: ClipboardCheck },
   { id: "contact-changes", label: "Contact Changes", icon: GitPullRequest },

@@ -1,17 +1,19 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, Lock01, Mail01 } from "@untitledui/icons";
 import { LoginErrorAlert } from "@/components/auth/LoginErrorAlert";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
   const [email, setEmail] = useState("");
@@ -46,7 +48,6 @@ function LoginForm() {
         return;
       }
 
-      // Verify user exists in client_users
       const { data: clientUser } = await supabase
         .from("client_users")
         .select("id")
@@ -70,21 +71,37 @@ function LoginForm() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-secondary px-4 py-12 md:px-8">
-      {/* Theme toggle in corner */}
+      <Link
+        href="/"
+        className="fixed top-4 left-4 z-10 flex items-center rounded-lg outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
+        aria-label="International Computer Exchange home"
+      >
+        <Image
+          src="/images/logo/logo-dark.svg"
+          alt="International Computer Exchange"
+          width={120}
+          height={32}
+          className="h-8 w-auto dark:hidden"
+          priority
+        />
+        <Image
+          src="/images/logo/logo-white.svg"
+          alt=""
+          width={120}
+          height={32}
+          className="hidden h-8 w-auto dark:block"
+          priority
+          aria-hidden
+        />
+      </Link>
+
       <div className="fixed top-4 right-4 z-10">
         <ThemeToggle />
       </div>
 
       <div className="flex w-full max-w-md flex-col gap-8">
-        <div className="flex flex-col items-center gap-5 text-center">
-          <div className="flex items-center justify-center rounded-xl bg-white px-3 py-2 shadow-xs ring-1 ring-primary ring-inset">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/logo/ice-logo.jpg"
-              alt="International Computer Exchange"
-              className="h-8 w-auto"
-            />
-          </div>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <FeaturedIcon icon={Lock01} color="brand" theme="modern" size="xl" />
           <div>
             <h1 className="text-display-xs font-semibold text-primary">Client Portal</h1>
             <p className="mt-2 text-md text-tertiary">
@@ -130,7 +147,7 @@ function LoginForm() {
 
         <div className="flex justify-center">
           <Button color="link-gray" size="md" href="/" iconLeading={ArrowLeft}>
-            Back to site
+            Back to home
           </Button>
         </div>
       </div>

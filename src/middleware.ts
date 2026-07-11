@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { ADMIN_2FA_COOKIE } from "@/lib/admin/mfa-cookie";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -35,6 +36,7 @@ export async function middleware(request: NextRequest) {
   function redirectTo(path: string, params?: Record<string, string>) {
     const url = request.nextUrl.clone();
     url.pathname = path;
+    url.search = "";
     if (params) {
       Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
     }
@@ -61,13 +63,27 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       return redirectTo("/admin/login");
     }
-    const { data: adminProfile } = await supabase
+    const { data: adminProfile, error: profileError } = await supabase
       .from("admin_profiles")
-      .select("id")
+      .select("id, totp_enabled")
       .eq("id", user.id)
       .single();
-    if (!adminProfile) {
-      return redirectTo("/admin/login");
+
+    // Pre-migration DBs may not have totp_enabled — fall back to id-only check
+    if (profileError || !adminProfile) {
+      const { data: fallback } = await supabase
+        .from("admin_profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+      if (!fallback) {
+        return redirectTo("/admin/login");
+      }
+    } else if (adminProfile.totp_enabled) {
+      const mfaCookie = request.cookies.get(ADMIN_2FA_COOKIE)?.value;
+      if (mfaCookie !== user.id) {
+        return redirectTo("/admin/login", { step: "2fa" });
+      }
     }
   }
 

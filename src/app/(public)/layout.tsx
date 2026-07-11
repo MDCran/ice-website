@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PageTransition from "@/components/effects/PageTransition";
 import SearchModal from "@/components/ui/SearchModal";
 import ContactWidget from "@/components/ui/ContactWidget";
 import Analytics from "@/components/analytics/Analytics";
+import PageViewTracker from "@/components/analytics/PageViewTracker";
 import { getSiteSettings, getNavigation, getSearchIndex } from "@/lib/cms";
 import { getSeoConfig } from "@/lib/seo/config";
 import { JsonLd, organization, webSite } from "@/lib/seo/jsonld";
@@ -89,6 +91,9 @@ export default async function PublicLayout({
       <JsonLd data={organization(seo)} />
       <JsonLd data={webSite(seo)} />
       <Analytics gtmId={seo.analytics.gtmId} ga4Id={seo.analytics.ga4Id} />
+      <Suspense fallback={null}>
+        <PageViewTracker />
+      </Suspense>
       <SearchModal items={searchItems} />
       <Navbar navItems={navItems} companyInfo={settings?.company_info} />
       <PageTransition>{children}</PageTransition>

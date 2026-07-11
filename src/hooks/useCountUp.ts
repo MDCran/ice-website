@@ -26,7 +26,8 @@ function isEffectivelyOpaque(el: Element | null): boolean {
 
 /**
  * Count from 0 → target once `inView` is true AND the observed node is opaque.
- * Double-rAF paints "0" before the first eased frame. Reduced motion → final value.
+ * Strict Mode safe: cleanup cancels the rAF loop and allows a remount to restart.
+ * Reduced motion → final value immediately.
  */
 export function useCountUp(
   target: number,
@@ -40,22 +41,27 @@ export function useCountUp(
 ) {
   const { duration = 1400, decimals = 0, elementRef } = options;
   const [count, setCount] = useState(0);
-  const startedRef = useRef(false);
+  /** Target we have finished animating to while still in view (null = not done). */
+  const finishedTargetRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!inView) {
-      startedRef.current = false;
+      finishedTargetRef.current = null;
       setCount(0);
       return;
     }
 
     if (prefersReducedMotion() || target === 0) {
+      finishedTargetRef.current = target;
       setCount(target);
-      startedRef.current = true;
       return;
     }
 
-    if (startedRef.current) return;
+    // Already finished this target while remaining in view — keep final value.
+    if (finishedTargetRef.current === target) {
+      setCount(target);
+      return;
+    }
 
     let cancelled = false;
     let raf = 0;
@@ -63,20 +69,26 @@ export function useCountUp(
     const factor = 10 ** decimals;
 
     const startTween = () => {
-      if (cancelled || startedRef.current) return;
-      startedRef.current = true;
+      if (cancelled) return;
       setCount(0);
 
       // Paint 0, then start the tween on the following frame.
       raf = requestAnimationFrame(() => {
+        if (cancelled) return;
         raf = requestAnimationFrame((start) => {
+          if (cancelled) return;
+
           const tick = (now: number) => {
             if (cancelled) return;
             const t = Math.min(1, (now - start) / duration);
             const eased = easeOutCubic(t);
             const next = Math.floor(target * eased * factor) / factor;
             setCount(t >= 1 ? target : next);
-            if (t < 1) raf = requestAnimationFrame(tick);
+            if (t >= 1) {
+              finishedTargetRef.current = target;
+              return;
+            }
+            raf = requestAnimationFrame(tick);
           };
           tick(start);
         });
@@ -99,6 +111,8 @@ export function useCountUp(
       cancelled = true;
       cancelAnimationFrame(raf);
       window.clearTimeout(poll);
+      // Do NOT set finishedTargetRef here — a cancelled mid-tween remount must retry.
+      // If we already finished, finishedTargetRef stays set and the remount short-circuits.
     };
   }, [inView, target, duration, decimals, elementRef]);
 

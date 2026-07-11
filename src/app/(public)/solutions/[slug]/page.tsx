@@ -1,4 +1,4 @@
-import { getPageContent } from "@/lib/cms";
+import { getPageContent, type PageWithSections } from "@/lib/cms";
 import { getSeoConfig } from "@/lib/seo/config";
 import {
   JsonLd,
@@ -54,13 +54,7 @@ function clampDescription(value: string, max = 155): string {
   return `${(cut || slice).trimEnd()}…`;
 }
 
-type PageLike = {
-  title?: string | null;
-  meta_title?: string | null;
-  meta_description?: string | null;
-  sections?: Record<string, any>;
-  orderedSections?: any[];
-};
+type PageLike = PageWithSections;
 
 /** Human-readable service name for schema/metadata — prefer CMS page title. */
 function serviceName(page: PageLike): string {
@@ -91,18 +85,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const page = await resolvePage(slug);
   if (!page) return {};
 
+  const { buildPageMetadata } = await import("@/lib/seo/pageMetadata");
   const description = clampDescription(serviceDescription(page) || serviceName(page));
-
   const rawTitle = (page.meta_title ?? page.title ?? "").trim();
   const cleanTitle = rawTitle
     .replace(/\s*[|\-–]\s*International Computer Exchange\s*$/i, "")
     .trim();
 
-  return {
-    title: cleanTitle || rawTitle,
-    description,
-    alternates: { canonical: `/solutions/${slug}` },
-  };
+  return buildPageMetadata(page, {
+    fallbackTitle: cleanTitle || rawTitle || serviceName(page),
+    fallbackDescription: description,
+    defaultPath: `/solutions/${slug}`,
+  });
 }
 
 export default async function SolutionPage({ params }: PageProps) {

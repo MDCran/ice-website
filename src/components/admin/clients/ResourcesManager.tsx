@@ -114,10 +114,17 @@ export default function ResourcesManager({
       return;
     }
 
+    if (!editingResource && !file) {
+      setError("Please choose a file to upload.");
+      return;
+    }
+
     const supabase = createClient();
     let fileUrl = editingResource?.file_url ?? null;
+    let storagePath: string | null = null;
+    let mimeType: string | null = null;
+    let sizeBytes: number | null = null;
 
-    // Upload file if selected
     if (file) {
       setUploading(true);
       const filename = `${Date.now()}-${file.name}`;
@@ -138,10 +145,18 @@ export default function ResourcesManager({
       } = supabase.storage.from("client-files").getPublicUrl(path);
 
       fileUrl = publicUrl;
+      storagePath = path;
+      mimeType = file.type || "application/pdf";
+      sizeBytes = file.size;
       setUploading(false);
     }
 
-    const payload = {
+    if (!fileUrl) {
+      setError("A file is required.");
+      return;
+    }
+
+    const payload: Record<string, unknown> = {
       title: title.trim(),
       description: description || null,
       author: author || null,
@@ -150,28 +165,47 @@ export default function ResourcesManager({
       visibility,
     };
 
+    if (storagePath) {
+      payload.storage_path = storagePath;
+      payload.mime_type = mimeType;
+      payload.size_bytes = sizeBytes;
+    }
+
     if (editingResource) {
-      const { error: updateError } = await supabase
+      const { data: updated, error: updateError } = await supabase
         .from("client_resources")
         .update(payload)
-        .eq("id", editingResource.id);
+        .eq("id", editingResource.id)
+        .select("*")
+        .single();
 
       if (updateError) {
         setError(updateError.message);
         return;
       }
+
+      setLoadedResources((prev) =>
+        prev.map((r) => (r.id === editingResource.id ? (updated as Resource) : r))
+      );
     } else {
-      const { error: insertError } = await supabase
+      const { data: inserted, error: insertError } = await supabase
         .from("client_resources")
         .insert({
           ...payload,
           client_account_id: clientId,
-        });
+          storage_path: storagePath,
+          mime_type: mimeType ?? "application/pdf",
+          size_bytes: sizeBytes,
+        })
+        .select("*")
+        .single();
 
       if (insertError) {
         setError(insertError.message);
         return;
       }
+
+      setLoadedResources((prev) => [inserted as Resource, ...prev]);
     }
 
     setShowForm(false);
@@ -182,11 +216,20 @@ export default function ResourcesManager({
   };
 
   const handleDelete = async (resource: Resource) => {
-    if (!confirm("Are you sure you want to delete this resource?")) return;
+    if (!confirm("Are you sure you want to delete this document?")) return;
 
     const supabase = createClient();
-    await supabase.from("client_resources").delete().eq("id", resource.id);
+    const { error: deleteError } = await supabase
+      .from("client_resources")
+      .delete()
+      .eq("id", resource.id);
 
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+
+    setLoadedResources((prev) => prev.filter((r) => r.id !== resource.id));
     startTransition(() => {
       router.refresh();
     });
@@ -211,24 +254,25 @@ export default function ResourcesManager({
     <div>
       <TableCard.Root size="sm">
         <TableCard.Header
-          title="Resources"
+          title="Client Documents"
           badge={`${loadedResources.length}`}
+          description="Documents are only visible to logged-in portal users for this client."
           contentTrailing={
             <Button color="primary" size="sm" iconLeading={UploadCloud02} onClick={openCreate}>
-              Upload Resource
+              Upload Document
             </Button>
           }
         />
 
         {loadedResources.length > 0 ? (
-          <Table aria-label="Resources" size="sm">
+          <Table aria-label="Client documents" size="sm">
             <Table.Header>
               <Table.Head id="title" label="Title" isRowHeader className="w-full" />
               <Table.Head id="author" label="Author" />
               <Table.Head id="visibility" label="Visibility" />
               <Table.Head id="download" label="Download" />
               <Table.Head id="date" label="Date" />
-              <Table.Head id="actions" />
+              <Table.Head id="actions" aria-label="Actions" />
             </Table.Header>
             <Table.Body>
               {loadedResources.map((resource) => (
@@ -281,8 +325,10 @@ export default function ResourcesManager({
                 <EmptyState.FeaturedIcon icon={File02} color="gray" />
               </EmptyState.Header>
               <EmptyState.Content>
-                <EmptyState.Title>No resources found</EmptyState.Title>
-                <EmptyState.Description>Upload one to get started.</EmptyState.Description>
+                <EmptyState.Title>No documents yet</EmptyState.Title>
+                <EmptyState.Description>
+                  Upload a document so this client can view it in the portal after login.
+                </EmptyState.Description>
               </EmptyState.Content>
             </EmptyState>
           </div>
@@ -298,10 +344,10 @@ export default function ResourcesManager({
         }}
       >
         <Modal className="w-full max-w-lg">
-          <Dialog>
+          <Dialog aria-label={editingResource ? "Edit document" : "Upload document"}>
             <div className="flex items-start justify-between gap-4 px-6 pt-6">
               <h2 className="text-lg font-semibold text-primary">
-                {editingResource ? "Edit Resource" : "Upload Resource"}
+                {editingResource ? "Edit Document" : "Upload Document"}
               </h2>
               <CloseButton size="sm" onClick={closeForm} />
             </div>

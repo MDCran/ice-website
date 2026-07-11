@@ -50,6 +50,10 @@ export interface SeoConfig {
   };
   /** When true, robots.ts blocks AI model-training scrapers (keeps live-retrieval search bots). */
   blockTrainingScrapers: boolean;
+  /** Site-wide default favicon URL (pages may override). */
+  faviconUrl: string | null;
+  /** Default Open Graph / social share image. */
+  defaultOgImage: string | null;
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://icesales.com";
@@ -102,6 +106,8 @@ export const DEFAULT_SEO_CONFIG: SeoConfig = {
     bing: process.env.BING_SITE_VERIFICATION ?? null,
   },
   blockTrainingScrapers: true,
+  faviconUrl: null,
+  defaultOgImage: null,
 };
 
 function str(v: unknown, fallback: string): string {
@@ -176,5 +182,10 @@ export async function getSeoConfig(): Promise<SeoConfig> {
         : typeof seo.blockTrainingScrapers === "boolean"
           ? seo.blockTrainingScrapers
           : d.blockTrainingScrapers,
+    faviconUrl: strOrNull(seo.favicon_url ?? seo.faviconUrl, d.faviconUrl),
+    defaultOgImage: strOrNull(
+      seo.default_og_image ?? seo.defaultOgImage ?? seo.og_image_url,
+      d.defaultOgImage
+    ),
   };
 }

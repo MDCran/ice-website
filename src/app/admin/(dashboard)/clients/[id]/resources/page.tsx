@@ -5,7 +5,7 @@ import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import ResourcesManager from "@/components/admin/clients/ResourcesManager";
 
-export const metadata = { title: "Client Resources | ICE Admin" };
+export const metadata = { title: "Client Documents | ICE Admin" };
 
 export default async function ClientResourcesPage({
   params,
@@ -40,7 +40,7 @@ export default async function ClientResourcesPage({
       <div className="mb-8 flex items-center gap-3">
         <FeaturedIcon icon={File02} color="success" theme="modern" size="lg" />
         <div>
-          <h1 className="text-xl font-semibold text-primary">Resources</h1>
+          <h1 className="text-xl font-semibold text-primary">Documents</h1>
           <p className="text-sm text-tertiary">{client.company_name}</p>
         </div>
       </div>

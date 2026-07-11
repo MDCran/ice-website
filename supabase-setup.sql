@@ -600,4 +600,6 @@ create index if not exists idx_survey_questions_survey on survey_questions(surve
 --      INSERT INTO admin_profiles (id, display_name, email, role)
 --      SELECT id, 'Admin', 'admin@icesales.com', 'super_admin'
 --      FROM auth.users WHERE email = 'admin@icesales.com';
+--   3. For analytics + 2FA columns/tables, also run:
+--      supabase/migrations/20260711_admin_analytics_and_2fa.sql
 -- =============================================================================

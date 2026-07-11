@@ -102,7 +102,7 @@ export default async function ClientSurveysPage({
               <Table.Head id="status" label="Status" />
               <Table.Head id="responded-by" label="Responded By" />
               <Table.Head id="date" label="Date" />
-              <Table.Head id="actions" />
+              <Table.Head id="actions" aria-label="Actions" />
             </Table.Header>
             <Table.Body>
               {surveys.map((survey) => {

@@ -4,12 +4,16 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
+  Clock,
+  CursorClick01,
   Globe01,
   LayersTwo01,
   Mail01,
+  TrendUp01,
   Users01,
 } from "@untitledui/icons";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { getAnalyticsInsights } from "@/lib/admin/analytics-insights";
 
 interface StatCard {
   label: string;
@@ -19,19 +23,33 @@ interface StatCard {
   href: string;
 }
 
+function formatMs(ms: number | null): string {
+  if (ms == null) return "—";
+  if (ms >= 1000) return `${(ms / 1000).toFixed(2)}s`;
+  return `${Math.round(ms)}ms`;
+}
+
 async function getDashboardData() {
   const supabase = await createClient();
 
-  const [contacts, clients, pendingChanges, pages, sections, recentContacts] = await Promise.all([
-    supabase.from("contacts").select("id", { count: "exact", head: true }),
-    supabase.from("client_accounts").select("id", { count: "exact", head: true }),
-    supabase.from("client_contact_changes").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("pages").select("id", { count: "exact", head: true }),
-    supabase.from("page_sections").select("id", { count: "exact", head: true }),
-    supabase.from("contacts").select("id, name, email, service, created_at, is_read").order("created_at", { ascending: false }).limit(5),
-  ]);
+  const [contacts, clients, pendingChanges, pages, sections, recentContacts, analytics] =
+    await Promise.all([
+      supabase.from("contacts").select("id", { count: "exact", head: true }),
+      supabase.from("client_accounts").select("id", { count: "exact", head: true }),
+      supabase
+        .from("client_contact_changes")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabase.from("pages").select("id", { count: "exact", head: true }),
+      supabase.from("page_sections").select("id", { count: "exact", head: true }),
+      supabase
+        .from("contacts")
+        .select("id, name, email, service, created_at, is_read")
+        .order("created_at", { ascending: false })
+        .limit(5),
+      getAnalyticsInsights(),
+    ]);
 
-  // Get submissions per day for last 7 days
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const { data: recentAll } = await supabase
@@ -58,6 +76,7 @@ async function getDashboardData() {
     sections: sections.count ?? 0,
     recentContacts: recentContacts.data ?? [],
     dailyCounts,
+    analytics,
   };
 }
 
@@ -71,6 +90,8 @@ const quickActions: { label: string; href: string; external?: boolean }[] = [
 export default async function AdminDashboard() {
   const data = await getDashboardData();
   const maxCount = Math.max(...data.dailyCounts.map((d) => d.count), 1);
+  const maxViews = Math.max(...(data.analytics.dailyViews.map((d) => d.count) || [0]), 1);
+  const a = data.analytics;
 
   const cards: StatCard[] = [
     { label: "Form Submissions", value: data.contacts, icon: Mail01, color: "brand", href: "/admin/contacts" },
@@ -103,6 +124,99 @@ export default async function AdminDashboard() {
           );
         })}
       </div>
+
+      {/* Site analytics insights */}
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold text-primary">Site analytics</h2>
+            <p className="text-sm text-tertiary">
+              First-party pageviews and LCP from the public site (independent of GA4/GTM).
+            </p>
+          </div>
+        </div>
+
+        {!a.available ? (
+          <div className="rounded-xl bg-primary px-6 py-10 text-center shadow-xs ring-1 ring-secondary">
+            <FeaturedIcon icon={CursorClick01} color="gray" theme="light" size="lg" className="mx-auto" />
+            <p className="mt-4 text-sm font-semibold text-primary">No analytics data yet</p>
+            <p className="mx-auto mt-1 max-w-lg text-sm text-tertiary">{a.setupHint}</p>
+            <p className="mx-auto mt-3 max-w-lg text-xs text-quaternary">
+              Migration file:{" "}
+              <code className="rounded bg-secondary px-1.5 py-0.5">
+                supabase/migrations/20260711_admin_analytics_and_2fa.sql
+              </code>
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary">
+                <FeaturedIcon icon={CursorClick01} color="brand" theme="light" size="md" />
+                <div className="mt-4 text-display-xs font-semibold text-primary">{a.totalViews}</div>
+                <div className="mt-0.5 text-sm font-medium text-tertiary">Total page views</div>
+              </div>
+              <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary">
+                <FeaturedIcon icon={TrendUp01} color="success" theme="light" size="md" />
+                <div className="mt-4 text-display-xs font-semibold text-primary">{a.viewsLast7Days}</div>
+                <div className="mt-0.5 text-sm font-medium text-tertiary">Views (7 days)</div>
+              </div>
+              <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary">
+                <FeaturedIcon icon={Globe01} color="gray" theme="light" size="md" />
+                <div className="mt-4 text-display-xs font-semibold text-primary">{a.viewsLast30Days}</div>
+                <div className="mt-0.5 text-sm font-medium text-tertiary">Views (30 days)</div>
+              </div>
+              <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary">
+                <FeaturedIcon icon={Clock} color="warning" theme="light" size="md" />
+                <div className="mt-4 text-display-xs font-semibold text-primary">{formatMs(a.avgLcpMs)}</div>
+                <div className="mt-0.5 text-sm font-medium text-tertiary">Avg LCP (30 days)</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary lg:col-span-2">
+                <h3 className="text-md font-semibold text-primary">Page views (Last 7 Days)</h3>
+                <div className="mt-4 flex h-32 items-end gap-3">
+                  {a.dailyViews.map((d, i) => (
+                    <div key={`${d.day}-${i}`} className="flex flex-1 flex-col items-center gap-1">
+                      <span className="text-xs font-medium text-tertiary">{d.count}</span>
+                      <div
+                        className="w-full rounded-t-md bg-brand-solid transition-all duration-500"
+                        style={{ height: `${Math.max((d.count / maxViews) * 100, 4)}%` }}
+                      />
+                      <span className="text-xs text-quaternary">{d.day}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
+                <div className="border-b border-secondary px-6 py-4">
+                  <h3 className="text-md font-semibold text-primary">Most popular pages</h3>
+                  <p className="text-xs text-tertiary">Last 30 days</p>
+                </div>
+                {a.popularPages.length === 0 ? (
+                  <div className="px-6 py-8 text-center text-sm text-tertiary">No pages yet</div>
+                ) : (
+                  <ul className="divide-y divide-secondary">
+                    {a.popularPages.map((p) => (
+                      <li key={p.path} className="flex items-center justify-between gap-3 px-6 py-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-primary">{p.path}</p>
+                          <p className="text-xs text-quaternary">
+                            Avg LCP {formatMs(p.avgLcpMs)}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-sm font-semibold text-secondary">{p.views}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Submissions Chart */}
@@ -182,7 +296,14 @@ export default async function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {data.recentContacts.map((c: any) => (
+                {data.recentContacts.map((c: {
+                  id: string;
+                  name: string;
+                  email: string;
+                  service: string | null;
+                  created_at: string | null;
+                  is_read: boolean | null;
+                }) => (
                   <tr
                     key={c.id}
                     className="border-b border-secondary transition duration-100 ease-linear last:border-0 hover:bg-primary_hover"
@@ -196,7 +317,9 @@ export default async function AdminDashboard() {
                     <td className="hidden px-6 py-3.5 text-tertiary sm:table-cell">{c.email}</td>
                     <td className="hidden px-6 py-3.5 text-tertiary md:table-cell">{c.service || "—"}</td>
                     <td className="px-6 py-3.5 text-xs text-quaternary">
-                      {c.created_at ? new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                      {c.created_at
+                        ? new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                        : "—"}
                     </td>
                   </tr>
                 ))}

@@ -35,8 +35,11 @@ import { cx } from "@/utils/cx";
 import MediaBrowserModal from "@/components/admin/MediaBrowserModal";
 import IllustrationPickerModal from "@/components/admin/IllustrationPickerModal";
 import { IllustrationRenderer } from "@/components/illustrations/IllustrationRenderer";
+import GenericCMSSections from "@/components/cms/GenericCMSSections";
 import { getIllustration } from "@/lib/illustrations";
 import { getIconNames } from "@/lib/iconMap";
+
+const PAGE_SEO_KEY = "page_seo";
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 
@@ -48,6 +51,10 @@ interface PageMeta {
   meta_description: string | null;
   page_type: string;
   is_published: boolean;
+  og_image_url?: string | null;
+  twitter_image_url?: string | null;
+  canonical_url?: string | null;
+  favicon_url?: string | null;
 }
 
 interface Section {
@@ -1004,14 +1011,32 @@ export default function CMSPageEditor({
   const supabase = createClient();
 
   // Page meta
+  const seoSeed = initialSections.find((s) => s.section_key === PAGE_SEO_KEY)?.content ?? {};
   const [title, setTitle] = useState(page.title);
   const [slug, setSlug] = useState(page.slug);
   const [metaTitle, setMetaTitle] = useState(page.meta_title ?? "");
   const [metaDesc, setMetaDesc] = useState(page.meta_description ?? "");
   const [isPublished, setIsPublished] = useState(page.is_published);
+  const [canonicalUrl, setCanonicalUrl] = useState(
+    page.canonical_url ?? (typeof seoSeed.canonical_url === "string" ? seoSeed.canonical_url : "")
+  );
+  const [ogImage, setOgImage] = useState(
+    page.og_image_url ?? (typeof seoSeed.og_image_url === "string" ? seoSeed.og_image_url : "")
+  );
+  const [twitterImage, setTwitterImage] = useState(
+    page.twitter_image_url ?? (typeof seoSeed.twitter_image_url === "string" ? seoSeed.twitter_image_url : "")
+  );
+  const [faviconUrl, setFaviconUrl] = useState(
+    page.favicon_url ?? (typeof seoSeed.favicon_url === "string" ? seoSeed.favicon_url : "")
+  );
+  const [ogMediaOpen, setOgMediaOpen] = useState(false);
+  const [twitterMediaOpen, setTwitterMediaOpen] = useState(false);
+  const [faviconMediaOpen, setFaviconMediaOpen] = useState(false);
 
-  // Sections
-  const [sections, setSections] = useState<Section[]>(initialSections);
+  // Sections — hide the reserved page_seo row from the section list UI
+  const [sections, setSections] = useState<Section[]>(
+    initialSections.filter((s) => s.section_key !== PAGE_SEO_KEY)
+  );
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -1022,8 +1047,8 @@ export default function CMSPageEditor({
   const [newType, setNewType] = useState("content");
   const [newTemplateId, setNewTemplateId] = useState("");
 
-  // Preview
-  const [showPreview, setShowPreview] = useState(false);
+  // Preview — side-by-side live preview of current editor state
+  const [showPreview, setShowPreview] = useState(true);
 
   const active = sections.filter((s) => !s._deleted).sort((a, b) => a.sort_order - b.sort_order);
   const activeKeys = active.map((section) => section.section_key);
@@ -1146,31 +1171,94 @@ export default function CMSPageEditor({
     setErrorMsg("");
     try {
       const { error: pageErr } = await supabase.from("pages").update({
-        title: title.trim(), slug: slug.trim(),
+        title: title.trim(),
+        slug: slug.trim(),
         meta_title: metaTitle.trim() || null,
-        meta_description: metaDesc.trim() || null, is_published: isPublished,
+        meta_description: metaDesc.trim() || null,
+        is_published: isPublished,
         updated_at: new Date().toISOString(),
       }).eq("id", page.id);
       if (pageErr) throw pageErr;
+
+      // Per-page SEO extras live in a reserved page_sections row (no schema migration required).
+      const seoContent = {
+        canonical_url: canonicalUrl.trim() || null,
+        og_image_url: ogImage.trim() || null,
+        twitter_image_url: twitterImage.trim() || null,
+        favicon_url: faviconUrl.trim() || null,
+      };
+      const { data: existingSeo } = await supabase
+        .from("page_sections")
+        .select("id")
+        .eq("page_id", page.id)
+        .eq("section_key", PAGE_SEO_KEY)
+        .maybeSingle();
+
+      if (existingSeo?.id) {
+        const { error } = await supabase
+          .from("page_sections")
+          .update({
+            content: seoContent,
+            section_type: "seo",
+            is_visible: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingSeo.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("page_sections").insert({
+          page_id: page.id,
+          section_key: PAGE_SEO_KEY,
+          section_type: "seo",
+          content: seoContent,
+          sort_order: 9999,
+          is_visible: false,
+        });
+        if (error) throw error;
+      }
 
       for (const s of sections.filter((s) => s._deleted && !s._isNew)) {
         const { error } = await supabase.from("page_sections").delete().eq("id", s.id);
         if (error) throw error;
       }
+
+      const insertedIdMap = new Map<string, string>();
       for (const s of sections.filter((s) => s._isNew && !s._deleted)) {
-        const { error } = await supabase.from("page_sections").insert({
-          page_id: page.id, section_key: s.section_key, section_type: s.section_type,
-          content: s.content, sort_order: s.sort_order, is_visible: s.is_visible,
-        });
+        const { data: inserted, error } = await supabase.from("page_sections").insert({
+          page_id: page.id,
+          section_key: s.section_key,
+          section_type: s.section_type,
+          content: s.content,
+          sort_order: s.sort_order,
+          is_visible: s.is_visible,
+        }).select("id").single();
         if (error) throw error;
+        if (inserted?.id) insertedIdMap.set(s.id, inserted.id);
       }
+
       for (const s of sections.filter((s) => !s._isNew && !s._deleted)) {
         const { error } = await supabase.from("page_sections").update({
-          section_key: s.section_key, section_type: s.section_type, content: s.content,
-          sort_order: s.sort_order, is_visible: s.is_visible, updated_at: new Date().toISOString(),
+          section_key: s.section_key,
+          section_type: s.section_type,
+          content: s.content,
+          sort_order: s.sort_order,
+          is_visible: s.is_visible,
+          updated_at: new Date().toISOString(),
         }).eq("id", s.id);
         if (error) throw error;
       }
+
+      // Clear dirty flags / temp IDs so re-save doesn't re-insert
+      setSections((prev) =>
+        prev
+          .filter((s) => !s._deleted)
+          .map((s) => ({
+            ...s,
+            id: insertedIdMap.get(s.id) ?? s.id,
+            _isNew: false,
+            _deleted: false,
+          }))
+      );
 
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2500);
@@ -1200,7 +1288,7 @@ export default function CMSPageEditor({
             <FeaturedIcon icon={File02} color="brand" theme="light" size="md" className="shrink-0" />
             <div className="min-w-0">
               <h1 className="truncate text-xl font-semibold text-primary">{title}</h1>
-              <p className="font-mono text-xs text-quaternary">/{slug}</p>
+              <p className="text-xs text-quaternary">/{slug}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -1251,7 +1339,6 @@ export default function CMSPageEditor({
                 label="Slug"
                 value={slug}
                 onChange={(value) => { setSlug(value.toLowerCase().replace(/[^\w-]/g, "")); dirty(); }}
-                inputClassName="font-mono text-sm"
               />
               <Input
                 label="Meta Title"
@@ -1262,16 +1349,99 @@ export default function CMSPageEditor({
             </div>
             <TextArea
               label="Meta Description"
-              placeholder="SEO description"
+              placeholder="SEO description (under 155 characters)"
               rows={2}
               value={metaDesc}
               onChange={(value) => { setMetaDesc(value); dirty(); }}
             />
+            <Input
+              label="Canonical URL"
+              placeholder="https://icesales.com/page or /page"
+              value={canonicalUrl}
+              onChange={(value) => { setCanonicalUrl(value); dirty(); }}
+              hint="Leave blank to use the default path for this page."
+            />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <span className="text-sm font-medium text-secondary">Open Graph image</span>
+                </div>
+                {ogImage ? (
+                  <div className="mb-2 overflow-hidden rounded-lg ring-1 ring-secondary">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={ogImage} alt="" className="h-24 w-full object-cover" />
+                  </div>
+                ) : null}
+                <Button size="sm" color="secondary" iconLeading={Image01} onClick={() => setOgMediaOpen(true)}>
+                  {ogImage ? "Change" : "Choose"} OG image
+                </Button>
+                {ogImage && (
+                  <Button size="sm" color="link-color" className="ml-2" onClick={() => { setOgImage(""); dirty(); }}>
+                    Clear
+                  </Button>
+                )}
+              </div>
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <span className="text-sm font-medium text-secondary">Twitter / Discord image</span>
+                </div>
+                {twitterImage ? (
+                  <div className="mb-2 overflow-hidden rounded-lg ring-1 ring-secondary">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={twitterImage} alt="" className="h-24 w-full object-cover" />
+                  </div>
+                ) : null}
+                <Button size="sm" color="secondary" iconLeading={Image01} onClick={() => setTwitterMediaOpen(true)}>
+                  {twitterImage ? "Change" : "Choose"} share image
+                </Button>
+                {twitterImage && (
+                  <Button size="sm" color="link-color" className="ml-2" onClick={() => { setTwitterImage(""); dirty(); }}>
+                    Clear
+                  </Button>
+                )}
+              </div>
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <span className="text-sm font-medium text-secondary">Page favicon override</span>
+                </div>
+                {faviconUrl ? (
+                  <div className="mb-2 flex size-12 items-center justify-center overflow-hidden rounded-lg bg-secondary ring-1 ring-secondary">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={faviconUrl} alt="" className="size-8 object-contain" />
+                  </div>
+                ) : (
+                  <p className="mb-2 text-xs text-tertiary">Uses site default unless set.</p>
+                )}
+                <Button size="sm" color="secondary" iconLeading={Image01} onClick={() => setFaviconMediaOpen(true)}>
+                  {faviconUrl ? "Change" : "Choose"} favicon
+                </Button>
+                {faviconUrl && (
+                  <Button size="sm" color="link-color" className="ml-2" onClick={() => { setFaviconUrl(""); dirty(); }}>
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
             <Toggle
               size="sm"
               label={isPublished ? "Published" : "Draft"}
               isSelected={isPublished}
               onChange={(value) => { setIsPublished(value); dirty(); }}
+            />
+            <MediaBrowserModal
+              open={ogMediaOpen}
+              onClose={() => setOgMediaOpen(false)}
+              onSelect={(url) => { setOgImage(url); dirty(); setOgMediaOpen(false); }}
+            />
+            <MediaBrowserModal
+              open={twitterMediaOpen}
+              onClose={() => setTwitterMediaOpen(false)}
+              onSelect={(url) => { setTwitterImage(url); dirty(); setTwitterMediaOpen(false); }}
+            />
+            <MediaBrowserModal
+              open={faviconMediaOpen}
+              onClose={() => setFaviconMediaOpen(false)}
+              onSelect={(url) => { setFaviconUrl(url); dirty(); setFaviconMediaOpen(false); }}
             />
           </div>
         </details>
@@ -1376,7 +1546,7 @@ export default function CMSPageEditor({
                           {getTypeLabel(section.section_type)}
                         </Badge>
                       </div>
-                      <span className="font-mono text-xs text-quaternary">{section.section_key}</span>
+                      <span className="text-xs text-quaternary">{section.section_key}</span>
                     </div>
 
                     {/* Actions */}
@@ -1402,8 +1572,11 @@ export default function CMSPageEditor({
                         tooltip="Delete section"
                         onClick={() => deleteSection(section.id)}
                       />
-                      <ChevronDown className={cx("size-4 text-fg-quaternary transition-transform", isExpanded && "rotate-180")} />
                     </div>
+                    <ChevronDown
+                      className={cx("size-4 shrink-0 text-fg-quaternary transition-transform", isExpanded && "rotate-180")}
+                      aria-hidden
+                    />
                   </div>
 
                   {/* Expanded content */}
@@ -1415,7 +1588,6 @@ export default function CMSPageEditor({
                           size="sm"
                           value={section.section_key}
                           onChange={(value) => updateSection(section.id, "section_key", value)}
-                          inputClassName="font-mono"
                         />
                         <NativeSelect
                           label="Type"
@@ -1472,7 +1644,7 @@ export default function CMSPageEditor({
                     onChange={setNewKey}
                     placeholder="e.g. Hero Banner, Features, Call to Action"
                     hint={newKey ? (
-                      <span className="font-mono">
+                      <span>
                         Key: {newKey.toLowerCase().replace(/\s+/g, "_").replace(/[^\w]/g, "")}
                       </span>
                     ) : undefined}
@@ -1502,7 +1674,7 @@ export default function CMSPageEditor({
         </ModalOverlay>
       </div>
 
-      {/* ── Preview Panel ── */}
+      {/* ── Live Preview Panel (updates as you edit) ── */}
       {showPreview && (
         <div className="sticky top-0 h-[calc(100vh-8rem)] w-1/2 shrink-0">
           <div className="flex h-full flex-col overflow-hidden rounded-xl bg-primary ring-1 ring-secondary">
@@ -1510,6 +1682,7 @@ export default function CMSPageEditor({
               <div className="flex items-center gap-2">
                 <Monitor01 className="size-4 text-fg-quaternary" />
                 <span className="text-xs font-medium text-tertiary">Live Preview</span>
+                <Badge size="sm" color="gray">Draft</Badge>
               </div>
               <a
                 href={previewUrl}
@@ -1517,15 +1690,21 @@ export default function CMSPageEditor({
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-xs font-medium text-brand-secondary hover:text-brand-secondary_hover"
               >
-                Open in new tab <LinkExternal01 className="size-3" />
+                Open published <LinkExternal01 className="size-3" />
               </a>
             </div>
-            <div className="flex-1 bg-primary">
-              <iframe
-                src={previewUrl}
-                className="h-full w-full border-0"
-                title="Page Preview"
-              />
+            <div className="flex-1 overflow-y-auto bg-secondary">
+              <div className="origin-top scale-[0.85] transform bg-primary" style={{ width: "117.6%" }}>
+                <GenericCMSSections
+                  sections={active.filter((s) => s.is_visible)}
+                  excludeKeys={[PAGE_SEO_KEY, "seo", "company_info", "footer"]}
+                />
+                {active.filter((s) => s.is_visible).length === 0 && (
+                  <div className="px-6 py-16 text-center text-sm text-tertiary">
+                    Add or show sections to preview this page.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1645,7 +1824,7 @@ function FieldEditor({ fieldKey, value, onChange, onDelete }: {
             <div className="min-w-0 flex-1">
               {meta && <p className="truncate text-xs font-medium text-primary">{meta.name}</p>}
               {meta && <p className="truncate text-xs text-tertiary">{meta.category}</p>}
-              <p className="mt-0.5 truncate font-mono text-xs text-quaternary">{value || "none selected"}</p>
+              <p className="mt-0.5 truncate text-xs text-quaternary">{value || "none selected"}</p>
               <Button
                 size="sm"
                 color="secondary"
@@ -2041,7 +2220,7 @@ function AddFieldButton({ onAdd, existingKeys }: { onAdd: (k: string, v: unknown
           onChange={(e) => setKey(e.target.value)}
           placeholder="e.g. Headline"
         />
-        {key && <p className="mt-0.5 font-mono text-xs text-quaternary">{key.toLowerCase().replace(/\s+/g, "_").replace(/[^\w]/g, "")}</p>}
+        {key && <p className="mt-0.5 text-xs text-quaternary">{key.toLowerCase().replace(/\s+/g, "_").replace(/[^\w]/g, "")}</p>}
       </div>
       <div className="w-32">
         <span className="mb-0.5 block text-xs text-tertiary">Type</span>

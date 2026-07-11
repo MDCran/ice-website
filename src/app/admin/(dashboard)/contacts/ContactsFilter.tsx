@@ -1,11 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CalendarDate, parseDate } from "@internationalized/date";
+import type { DateValue } from "react-aria-components";
 import { SearchLg, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { NativeSelect } from "@/components/base/select/select-native";
+import { DateRangePicker } from "@/components/application/date-picker/date-range-picker";
+import { Label } from "@/components/base/input/label";
+
+function toYmd(value: DateValue | null | undefined): string {
+  if (!value) return "";
+  const y = value.year;
+  const m = String(value.month).padStart(2, "0");
+  const d = String(value.day).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function fromYmd(value: string): CalendarDate | null {
+  if (!value) return null;
+  try {
+    return parseDate(value);
+  } catch {
+    return null;
+  }
+}
 
 export default function ContactsFilter({
   initialQuery,
@@ -22,7 +43,20 @@ export default function ContactsFilter({
   const [fromDate, setFromDate] = useState(initialFrom);
   const [toDate, setToDate] = useState(initialTo);
   const [sort, setSort] = useState(initialSort || "newest");
+  const [rangeDraft, setRangeDraft] = useState<{ start: DateValue; end: DateValue } | null>(() => {
+    const start = fromYmd(initialFrom);
+    const end = fromYmd(initialTo);
+    if (start && end) return { start, end };
+    return null;
+  });
   const router = useRouter();
+
+  const rangeValue = useMemo(() => {
+    const start = fromYmd(fromDate);
+    const end = fromYmd(toDate);
+    if (start && end) return { start, end };
+    return rangeDraft;
+  }, [fromDate, toDate, rangeDraft]);
 
   const applyFilters = (overrides?: { q?: string; from?: string; to?: string; sort?: string }) => {
     const params = new URLSearchParams();
@@ -46,13 +80,13 @@ export default function ContactsFilter({
     setQuery("");
     setFromDate("");
     setToDate("");
+    setRangeDraft(null);
     setSort("newest");
     router.push("/admin/contacts");
   };
 
   return (
     <form onSubmit={handleSearch} className="mb-6 flex flex-wrap items-end gap-3">
-      {/* Search */}
       <div className="relative min-w-55 flex-1">
         <Input
           size="sm"
@@ -78,33 +112,40 @@ export default function ContactsFilter({
         )}
       </div>
 
-      {/* Date from */}
-      <Input
-        size="sm"
-        type="date"
-        label="From"
-        value={fromDate}
-        onChange={(value) => {
-          setFromDate(value);
-          applyFilters({ from: value });
-        }}
-        className="w-max min-w-36"
-      />
+      <div className="flex flex-col gap-1.5">
+        <Label>Date range</Label>
+        <DateRangePicker
+          size="sm"
+          aria-label="Filter submissions by date range"
+          value={rangeValue}
+          onChange={(next) => {
+            setRangeDraft(next);
+            if (next?.start && next?.end) {
+              const from = toYmd(next.start);
+              const to = toYmd(next.end);
+              setFromDate(from);
+              setToDate(to);
+            }
+          }}
+          onApply={() => {
+            if (rangeDraft?.start && rangeDraft?.end) {
+              const from = toYmd(rangeDraft.start);
+              const to = toYmd(rangeDraft.end);
+              setFromDate(from);
+              setToDate(to);
+              applyFilters({ from, to });
+            } else if (fromDate && toDate) {
+              applyFilters({ from: fromDate, to: toDate });
+            }
+          }}
+          onCancel={() => {
+            const start = fromYmd(fromDate);
+            const end = fromYmd(toDate);
+            setRangeDraft(start && end ? { start, end } : null);
+          }}
+        />
+      </div>
 
-      {/* Date to */}
-      <Input
-        size="sm"
-        type="date"
-        label="To"
-        value={toDate}
-        onChange={(value) => {
-          setToDate(value);
-          applyFilters({ to: value });
-        }}
-        className="w-max min-w-36"
-      />
-
-      {/* Sort */}
       <NativeSelect
         size="sm"
         aria-label="Sort order"
@@ -121,7 +162,6 @@ export default function ContactsFilter({
         selectClassName="pr-8"
       />
 
-      {/* Clear all */}
       {(query || fromDate || toDate || sort !== "newest") && (
         <Button type="button" size="sm" color="secondary" onClick={handleClear}>
           Clear

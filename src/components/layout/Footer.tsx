@@ -48,8 +48,9 @@ function MdcranRedirectModal({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
+      className="items-center justify-center"
     >
-      <Modal className="w-full max-w-md">
+      <Modal className="mx-auto w-full max-w-md">
         <Dialog className="p-6 md:p-8">
           <h2 slot="title" className="text-display-xs font-semibold text-primary">
             Leaving ICE

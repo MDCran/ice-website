@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -69,12 +70,48 @@ export default function AdminHeader() {
   const pathname = usePathname();
   const { collapsed, toggle } = useSidebar();
   const { theme, toggleTheme } = useTheme();
+  const [displayName, setDisplayName] = useState<string>("Admin");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [email, setEmail] = useState<string>("");
 
   const pageName = getPageName(pathname);
   const breadcrumbs = getBreadcrumbs(pathname);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProfile() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+
+      const { data: profile } = await supabase
+        .from("admin_profiles")
+        .select("display_name, email, avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      if (cancelled) return;
+
+      const name =
+        profile?.display_name?.trim() ||
+        profile?.email?.trim() ||
+        user.email ||
+        "Admin";
+      setDisplayName(name);
+      setEmail(profile?.email || user.email || "");
+      setAvatarUrl(profile?.avatar_url || null);
+    }
+    loadProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
   const handleLogout = async () => {
     const supabase = createClient();
+    await fetch("/api/admin/2fa/logout", { method: "POST" }).catch(() => {});
     await supabase.auth.signOut();
     router.push("/admin/login");
   };
@@ -82,7 +119,6 @@ export default function AdminHeader() {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-secondary bg-primary px-4 md:px-6">
       <div className="flex min-w-0 items-center gap-3">
-        {/* Sidebar toggle */}
         <ButtonUtility
           color="tertiary"
           size="sm"
@@ -91,7 +127,6 @@ export default function AdminHeader() {
           onClick={toggle}
         />
 
-        {/* Page name + breadcrumb */}
         <div className="flex min-w-0 flex-col justify-center">
           <h2 className="truncate text-sm font-semibold text-primary">
             {pageName}
@@ -127,7 +162,6 @@ export default function AdminHeader() {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Theme toggle */}
         <ButtonUtility
           color="tertiary"
           size="sm"
@@ -136,7 +170,6 @@ export default function AdminHeader() {
           onClick={toggleTheme}
         />
 
-        {/* Account dropdown */}
         <Dropdown.Root>
           <AriaButton
             className={({ isPressed, isHovered, isFocusVisible }) => {
@@ -147,8 +180,15 @@ export default function AdminHeader() {
               return base + hovered + focused;
             }}
           >
-            <Avatar size="xs" alt="Admin" placeholderIcon={User01} />
-            <span className="text-sm font-semibold text-secondary">Admin</span>
+            <Avatar
+              size="xs"
+              alt={displayName}
+              src={avatarUrl || undefined}
+              placeholderIcon={User01}
+            />
+            <span className="hidden max-w-40 truncate text-sm font-semibold text-secondary sm:inline">
+              {displayName}
+            </span>
             <ChevronDown
               aria-hidden="true"
               className="size-4 shrink-0 stroke-[2.5px] text-fg-quaternary"
@@ -161,6 +201,15 @@ export default function AdminHeader() {
                 if (key === "signout") handleLogout();
               }}
             >
+              {(email || displayName) && (
+                <Dropdown.Item
+                  id="profile-label"
+                  label={displayName}
+                  addon={email || undefined}
+                  icon={User01}
+                  isDisabled
+                />
+              )}
               <Dropdown.Item id="settings" label="Settings" icon={Settings01} />
               <Dropdown.Separator />
               <Dropdown.Item id="signout" label="Sign out" icon={LogOut01} />

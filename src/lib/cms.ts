@@ -19,6 +19,10 @@ export interface PageData {
   page_type: string;
   is_published: boolean;
   updated_at: string | null;
+  canonical_url?: string | null;
+  og_image_url?: string | null;
+  twitter_image_url?: string | null;
+  favicon_url?: string | null;
 }
 
 export interface PageWithSections extends PageData {
@@ -58,13 +62,19 @@ export async function getPageContent(slug: string): Promise<PageWithSections | n
     if (sectionsError) return null;
 
     const visibleSections = (pageSections || [])
-      .filter((s: any) => s.is_visible !== false)
+      .filter((s: any) => s.is_visible !== false && s.section_key !== "page_seo" && s.section_type !== "seo")
       .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
     const sections: Record<string, any> = {};
     for (const section of visibleSections) {
       sections[section.section_key] = section.content;
     }
+
+    const pageRow = page as Record<string, any>;
+    const seoSection = (pageSections || []).find(
+      (s: any) => s.section_key === "page_seo" || s.section_type === "seo"
+    );
+    const seo = (seoSection?.content ?? {}) as Record<string, unknown>;
 
     return {
       id: page.id,
@@ -75,6 +85,22 @@ export async function getPageContent(slug: string): Promise<PageWithSections | n
       page_type: page.page_type,
       is_published: page.is_published,
       updated_at: page.updated_at,
+      canonical_url:
+        (typeof seo.canonical_url === "string" ? seo.canonical_url : null) ??
+        pageRow.canonical_url ??
+        null,
+      og_image_url:
+        (typeof seo.og_image_url === "string" ? seo.og_image_url : null) ??
+        pageRow.og_image_url ??
+        null,
+      twitter_image_url:
+        (typeof seo.twitter_image_url === "string" ? seo.twitter_image_url : null) ??
+        pageRow.twitter_image_url ??
+        null,
+      favicon_url:
+        (typeof seo.favicon_url === "string" ? seo.favicon_url : null) ??
+        pageRow.favicon_url ??
+        null,
       sections,
       orderedSections: visibleSections,
     };
