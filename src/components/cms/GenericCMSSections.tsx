@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import Link from "next/link";
 import { motion, useInView, useReducedMotion } from "motion/react";
 import { ArrowRight, Check, CheckCircle, Minus, Plus, XClose, Zap } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
@@ -9,8 +10,13 @@ import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-ic
 import { Grid as GridPattern } from "@/components/shared-assets/background-patterns/grid";
 import { IllustrationRenderer } from "@/components/illustrations/IllustrationRenderer";
 import { BrandOrbs } from "@/components/effects/AmbientMotion";
+import { CountUpStat } from "@/components/ui/CountUpValue";
 import { resolveIcon } from "@/lib/iconMap";
+import { serviceImageFor } from "@/lib/solutionHeroImages";
 import { cx } from "@/utils/cx";
+
+/** Shared vertical rhythm for CMS section bands on solution (and other) pages. */
+const SECTION_Y = "py-16 md:py-24";
 
 export interface CMSRenderableSection {
   id?: string;
@@ -187,84 +193,114 @@ function AmbientIcon({
   );
 }
 
-/* ── Stat count-up ─────────────────────────────────────────────────────── */
+/* ── Stat count-up (shared CountUpStat — never wrap in opacity:0 Reveal) ── */
 
-interface ParsedStat {
-  prefix: string;
-  target: number;
-  decimals: number;
-  grouped: boolean;
-  rest: string;
-}
+const DEFAULT_PROCESS_ICONS = ["Radar", "Cloud", "Monitor", "RefreshCw"];
 
-/** Extracts the first numeric run from a stat value, keeping surrounding text intact. */
-function parseStatValue(raw: unknown): ParsedStat | null {
-  if (typeof raw === "number" && Number.isFinite(raw)) {
-    const decimals = String(raw).split(".")[1]?.length ?? 0;
-    return { prefix: "", target: raw, decimals, grouped: false, rest: "" };
-  }
-  if (typeof raw !== "string") return null;
-  const match = raw.trim().match(/^([^0-9]*?)(\d[\d,]*(?:\.\d+)?)([\s\S]*)$/);
-  if (!match) return null;
-  const [, prefix = "", num = "", rest = ""] = match;
-  const target = Number.parseFloat(num.replace(/,/g, ""));
-  if (!Number.isFinite(target)) return null;
-  const decimals = num.includes(".") ? (num.split(".")[1]?.length ?? 0) : 0;
-  return { prefix, target, decimals, grouped: num.includes(","), rest };
-}
-
-function formatStat(value: number, parsed: ParsedStat): string {
-  if (parsed.grouped) {
-    return value.toLocaleString("en-US", {
-      minimumFractionDigits: parsed.decimals,
-      maximumFractionDigits: parsed.decimals,
-    });
-  }
-  return value.toFixed(parsed.decimals);
-}
-
-/** Stat display value that counts up the first time it scrolls into view. */
-function StatValue({ value, suffix }: { value: any; suffix: string }) {
-  const reduceMotion = useReducedMotion();
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
-  const parsed = useMemo(() => parseStatValue(value), [value]);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    if (!parsed || !inView) return;
-    if (reduceMotion) {
-      setProgress(1);
-      return;
-    }
-    let frame = 0;
-    const duration = 1800;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min((now - start) / duration, 1);
-      setProgress(1 - Math.pow(1 - t, 3));
-      if (t < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [inView, parsed, reduceMotion]);
-
-  if (!parsed) {
-    return (
-      <span>
-        {value}
-        {suffix}
-      </span>
-    );
-  }
+function RoiMetricsGrid({ sectionKey, metrics }: { sectionKey: string; metrics: any[] }) {
+  const gridRef = useRef<HTMLDListElement>(null);
+  const inView = useInView(gridRef, { once: true, amount: 0.35 });
 
   return (
-    <span ref={ref} className="tabular-nums">
-      {parsed.prefix}
-      {formatStat(parsed.target * progress, parsed)}
-      {parsed.rest}
-      {suffix}
-    </span>
+    <dl
+      ref={gridRef}
+      className={cx(
+        "mt-12 grid w-full grid-cols-2 gap-px overflow-hidden rounded-2xl bg-secondary ring-1 ring-secondary md:mt-16",
+        metrics.length === 3
+          ? "md:grid-cols-3"
+          : metrics.length === 2
+            ? "md:grid-cols-2"
+            : metrics.length === 1
+              ? "md:grid-cols-1"
+              : "md:grid-cols-4",
+      )}
+    >
+      {metrics.map((metric, index) => {
+        const note = text(metric.note ?? metric.source_note ?? metric.sourceNote);
+        return (
+          <div
+            key={`${metric.label ?? sectionKey}-${index}`}
+            className="flex flex-col items-center justify-center gap-2 bg-primary px-5 py-8 text-center md:px-6 md:py-10"
+          >
+            <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
+              <CountUpStat value={metric.value} suffix={text(metric.suffix)} inView={inView} duration={1400} />
+            </dd>
+            <dt className="text-sm font-semibold text-primary">{text(metric.label)}</dt>
+            {note && <p className="text-xs text-quaternary">{note}</p>}
+          </div>
+        );
+      })}
+    </dl>
+  );
+}
+
+function renderStats(section: CMSRenderableSection) {
+  const content = section.content ?? {};
+  const items = list(content.items);
+  if (items.length === 0) return renderContentBlock(section);
+
+  return (
+    <StatsSection section={section} items={items} content={content} />
+  );
+}
+
+function StatsSection({
+  section,
+  items,
+  content,
+}: {
+  section: CMSRenderableSection;
+  items: any[];
+  content: Record<string, any>;
+}) {
+  const gridRef = useRef<HTMLDListElement>(null);
+  const inView = useInView(gridRef, { once: true, amount: 0.35 });
+
+  return (
+    <section className={cx("bg-primary", SECTION_Y)}>
+      <div className="mx-auto w-full max-w-container px-4 md:px-8">
+        <SectionHeading
+          eyebrow={text(content.eyebrow ?? content.label)}
+          heading={text(content.heading, titleFromKey(section.section_key))}
+          description={text(content.description)}
+        />
+        <div className="relative mt-12 overflow-hidden rounded-2xl bg-secondary ring-1 ring-secondary ring-inset md:mt-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent"
+          />
+          <dl
+            ref={gridRef}
+            className={cx(
+              "relative grid grid-cols-2 divide-y divide-secondary sm:divide-y-0 md:divide-x",
+              items.length === 3
+                ? "md:grid-cols-3"
+                : items.length === 2
+                  ? "md:grid-cols-2"
+                  : items.length === 1
+                    ? "md:grid-cols-1"
+                    : "md:grid-cols-4",
+            )}
+          >
+            {items.map((item, index) => {
+              const sourceNote = text(item.source_note ?? item.sourceNote);
+              return (
+                <div
+                  key={`${item.label ?? section.section_key}-${index}`}
+                  className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center md:px-8 md:py-14"
+                >
+                  <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
+                    <CountUpStat value={item.value} suffix={text(item.suffix)} inView={inView} duration={1400} />
+                  </dd>
+                  <dt className="text-sm font-semibold text-primary md:text-md">{text(item.label)}</dt>
+                  {sourceNote && <p className="text-xs text-quaternary">{sourceNote}</p>}
+                </div>
+              );
+            })}
+          </dl>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -330,7 +366,7 @@ function renderHero(section: CMSRenderableSection) {
   );
 
   return (
-    <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+    <section className={cx("relative overflow-hidden bg-primary", SECTION_Y)}>
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 flex justify-center opacity-60">
         <GridPattern size="lg" className="-translate-y-1/2" />
       </div>
@@ -382,7 +418,7 @@ function renderBanner(section: CMSRenderableSection) {
   const hasCta = Boolean(text(cta?.label) && text(cta?.href));
 
   return (
-    <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
+    <section className={cx("relative isolate overflow-hidden bg-secondary", SECTION_Y)}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/[0.06] via-transparent to-brand-600/[0.04]"
@@ -429,7 +465,7 @@ function renderUseCases(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+    <section className={cx("relative overflow-hidden bg-primary", SECTION_Y)}>
       {/* Soft dot-matrix backdrop fading from the top so cards sit on a surface */}
       <div
         aria-hidden="true"
@@ -474,14 +510,14 @@ function renderUseCases(section: CMSRenderableSection) {
   );
 }
 
-/** Link cards pointing at related services. */
+/** Link cards pointing at related services — matches /solutions + home popular cards. */
 function renderRelated(section: CMSRenderableSection) {
   const content = section.content ?? {};
   const items = list(content.items);
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+    <section className={cx("relative overflow-hidden bg-primary", SECTION_Y)}>
       {/* Engineering grid rising from the bottom edge — reads as a distinct band */}
       <div
         aria-hidden="true"
@@ -494,29 +530,49 @@ function renderRelated(section: CMSRenderableSection) {
           heading={text(content.heading, "Related Services")}
           description={text(content.description)}
         />
-        <ul className="mt-12 grid grid-cols-1 gap-5 md:mt-16 md:grid-cols-3">
+        <ul className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-16 md:gap-6 lg:grid-cols-3">
           {items.map((item, index) => {
             const Icon = resolveIcon(item.icon);
             const href = text(item.href, "/solutions");
+            const serviceImage = serviceImageFor(item);
+            const desc = text(item.description ?? item.desc);
+
             return (
               <li key={`${item.title ?? section.section_key}-${index}`}>
                 <Reveal delay={index * 0.06} className="h-full">
-                  <a
+                  <Link
                     href={href}
-                    className="group flex h-full cursor-pointer flex-col rounded-2xl bg-secondary p-6 ring-1 ring-secondary ring-inset outline-focus-ring transition duration-300 hover:-translate-y-1 hover:shadow-md hover:ring-brand focus-visible:outline-2 focus-visible:outline-offset-2 md:p-8"
+                    className="group relative isolate flex h-full min-h-56 overflow-hidden rounded-2xl border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <AmbientIcon icon={Icon} size="md" delay={(index % 3) * 1.2} />
-                      <ArrowRight
+                    {serviceImage && (
+                      <div
                         aria-hidden="true"
-                        className="mt-1 size-5 text-fg-quaternary transition duration-300 group-hover:translate-x-1 group-hover:text-fg-brand-primary"
-                      />
+                        className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[58%] overflow-hidden sm:w-[62%]"
+                      >
+                        <img
+                          src={serviceImage}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full translate-x-[12%] object-cover object-center opacity-[0.18] transition-opacity duration-500 ease-out group-hover:opacity-[0.55] dark:opacity-[0.22] dark:group-hover:opacity-[0.62]"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg-primary)] from-0% via-[var(--color-bg-primary)]/90 via-35% to-transparent to-85%" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-bg-primary)]/40 via-transparent to-[var(--color-bg-primary)]/50 dark:from-[var(--color-bg-primary)]/20 dark:to-[var(--color-bg-primary)]/30" />
+                      </div>
+                    )}
+
+                    <div className="relative z-10 flex h-full max-w-[70%] flex-col items-start sm:max-w-[74%]">
+                      <FeaturedIcon icon={Icon} size="lg" color="brand" theme="light" />
+                      <h3 className="mt-4 text-lg font-semibold text-primary">
+                        {text(item.title, `Service ${index + 1}`)}
+                      </h3>
+                      {desc && <p className="mt-1 flex-1 text-md text-tertiary">{desc}</p>}
+                      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
+                        Learn more
+                        <ArrowRight aria-hidden="true" className="size-4" />
+                      </span>
                     </div>
-                    <h3 className="mt-5 text-lg font-semibold text-primary">
-                      {text(item.title, `Service ${index + 1}`)}
-                    </h3>
-                    <p className="mt-1 text-md text-tertiary">{text(item.description ?? item.desc)}</p>
-                  </a>
+                  </Link>
                 </Reveal>
               </li>
             );
@@ -527,14 +583,14 @@ function renderRelated(section: CMSRenderableSection) {
   );
 }
 
-/** Numbered operating-model steps with staggered entrance. */
+/** Numbered operating-model steps — FeaturedIcon per step (CMS icon or defaults). */
 function renderProcess(section: CMSRenderableSection) {
   const content = section.content ?? {};
   const items = list(content.items);
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="bg-primary py-16 md:py-24">
+    <section className={cx("bg-secondary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
@@ -542,21 +598,34 @@ function renderProcess(section: CMSRenderableSection) {
           description={text(content.description)}
         />
         <ol className="mt-12 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 md:mt-16 lg:grid-cols-4">
-          {items.map((item, index) => (
-            <li key={`${item.step ?? item.title ?? section.section_key}-${index}`}>
-              <Reveal delay={index * 0.1} className="flex h-full flex-col">
-                <div className="flex items-center gap-3">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-solid text-sm font-semibold text-white ring-4 ring-brand-solid/10">
-                    {text(String(item.step ?? ""), String(index + 1).padStart(2, "0"))}
-                  </span>
-                  <PulseDot delay={index * 0.9} />
-                  <div aria-hidden="true" className="h-px flex-1 bg-gradient-to-r from-brand-500/40 to-transparent" />
-                </div>
-                <h3 className="mt-4 text-lg font-semibold text-primary">{text(item.title, `Step ${index + 1}`)}</h3>
-                <p className="mt-1 text-md text-tertiary">{text(item.description ?? item.desc)}</p>
-              </Reveal>
-            </li>
-          ))}
+          {items.map((item, index) => {
+            const stepLabel = text(String(item.step ?? ""), String(index + 1).padStart(2, "0"));
+            const iconName = text(item.icon, DEFAULT_PROCESS_ICONS[index % DEFAULT_PROCESS_ICONS.length]);
+            const Icon = resolveIcon(iconName);
+
+            return (
+              <li key={`${item.step ?? item.title ?? section.section_key}-${index}`}>
+                <Reveal delay={index * 0.1} className="relative flex h-full flex-col items-center text-center">
+                  {index < items.length - 1 && (
+                    <div
+                      aria-hidden="true"
+                      className="absolute top-6 left-[calc(50%+2.5rem)] hidden h-px w-[calc(100%-5rem)] bg-gradient-to-r from-brand-500/50 to-border-secondary lg:block"
+                    />
+                  )}
+                  <div className="relative">
+                    <FeaturedIcon icon={Icon} size="lg" color="brand" theme="light" />
+                    <span className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full bg-brand-solid text-[10px] font-bold text-white ring-2 ring-secondary">
+                      {stepLabel.replace(/^0/, "")}
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-primary">
+                    {text(item.title, `Step ${index + 1}`)}
+                  </h3>
+                  <p className="mt-1 text-md text-tertiary">{text(item.description ?? item.desc)}</p>
+                </Reveal>
+              </li>
+            );
+          })}
         </ol>
       </div>
     </section>
@@ -569,7 +638,7 @@ function renderFeatureGrid(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+    <section className={cx("relative overflow-hidden bg-primary", SECTION_Y)}>
       {/* Faint centered dot field so the icon columns float on a textured surface */}
       <div
         aria-hidden="true"
@@ -583,7 +652,7 @@ function renderFeatureGrid(section: CMSRenderableSection) {
         />
         <ul
           className={cx(
-            "mt-12 grid w-full justify-items-center gap-x-8 gap-y-10 md:mt-16 md:gap-y-16",
+            "mt-12 grid w-full justify-items-center gap-x-8 gap-y-10 md:mt-16 md:gap-y-12",
             items.length === 4
               ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
               : items.length === 3
@@ -606,8 +675,8 @@ function renderFeatureGrid(section: CMSRenderableSection) {
                   )}
                 >
                   <AmbientIcon icon={Icon} size="lg" delay={(index % 3) * 1.1} />
-                  <div>
-                    <h3 className="text-lg font-semibold text-primary">
+                  <div className="w-full min-w-0">
+                    <h3 className="truncate text-lg font-semibold whitespace-nowrap text-primary">
                       {text(item.title, `Item ${index + 1}`)}
                     </h3>
                     <p className="mt-1 text-md text-tertiary">
@@ -627,59 +696,6 @@ function renderFeatureGrid(section: CMSRenderableSection) {
   );
 }
 
-function renderStats(section: CMSRenderableSection) {
-  const content = section.content ?? {};
-  const items = list(content.items);
-  if (items.length === 0) return renderContentBlock(section);
-
-  return (
-    <section className="bg-primary py-16 md:py-24">
-      <div className="mx-auto w-full max-w-container px-4 md:px-8">
-        <SectionHeading
-          eyebrow={text(content.eyebrow ?? content.label)}
-          heading={text(content.heading, titleFromKey(section.section_key))}
-          description={text(content.description)}
-        />
-        <div className="relative mt-12 overflow-hidden rounded-2xl bg-secondary ring-1 ring-secondary ring-inset md:mt-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent"
-          />
-          <dl
-            className={cx(
-              "relative grid grid-cols-2 divide-y divide-secondary sm:divide-y-0 md:divide-x",
-              items.length === 3
-                ? "md:grid-cols-3"
-                : items.length === 2
-                  ? "md:grid-cols-2"
-                  : items.length === 1
-                    ? "md:grid-cols-1"
-                    : "md:grid-cols-4",
-            )}
-          >
-            {items.map((item, index) => {
-              const sourceNote = text(item.source_note ?? item.sourceNote);
-              return (
-                <Reveal
-                  key={`${item.label ?? section.section_key}-${index}`}
-                  delay={index * 0.08}
-                  className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center md:px-8 md:py-14"
-                >
-                  <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
-                    <StatValue value={item.value} suffix={text(item.suffix)} />
-                  </dd>
-                  <dt className="text-sm font-semibold text-primary md:text-md">{text(item.label)}</dt>
-                  {sourceNote && <p className="text-xs text-quaternary">{sourceNote}</p>}
-                </Reveal>
-              );
-            })}
-          </dl>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /** Scannable outcome band — 3-4 payoff pillars on a textured brand-tinted surface. */
 function renderValueProps(section: CMSRenderableSection) {
   const content = section.content ?? {};
@@ -687,7 +703,7 @@ function renderValueProps(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
+    <section className={cx("relative isolate overflow-hidden bg-secondary", SECTION_Y)}>
       <BrandOrbs />
       {/* Engineering grid rising from the center, masked so the pillars float on a surface */}
       <div
@@ -759,7 +775,7 @@ function renderRoi(section: CMSRenderableSection) {
   }
 
   return (
-    <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
+    <section className={cx("relative isolate overflow-hidden bg-secondary", SECTION_Y)}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/[0.05] via-transparent to-transparent"
@@ -790,39 +806,11 @@ function renderRoi(section: CMSRenderableSection) {
         </Reveal>
 
         {metrics.length > 0 && (
-          <dl
-            className={cx(
-              "mx-auto mt-12 grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl bg-secondary ring-1 ring-secondary md:mt-16",
-              metrics.length === 3
-                ? "md:grid-cols-3"
-                : metrics.length === 2
-                  ? "md:grid-cols-2"
-                  : metrics.length === 1
-                    ? "md:grid-cols-1"
-                    : "md:grid-cols-4",
-            )}
-          >
-            {metrics.map((metric, index) => {
-              const note = text(metric.note ?? metric.source_note ?? metric.sourceNote);
-              return (
-                <Reveal
-                  key={`${metric.label ?? section.section_key}-${index}`}
-                  delay={index * 0.08}
-                  className="flex flex-col items-center justify-center gap-2 bg-primary px-5 py-8 text-center md:px-6 md:py-10"
-                >
-                  <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
-                    <StatValue value={metric.value} suffix={text(metric.suffix)} />
-                  </dd>
-                  <dt className="text-sm font-semibold text-primary">{text(metric.label)}</dt>
-                  {note && <p className="text-xs text-quaternary">{note}</p>}
-                </Reveal>
-              );
-            })}
-          </dl>
+          <RoiMetricsGrid sectionKey={section.section_key} metrics={metrics} />
         )}
 
         {hasComparison && (
-          <Reveal delay={0.12} className="mx-auto mt-12 w-full max-w-3xl md:mt-16">
+          <div className="mt-12 w-full md:mt-16">
             <div className="overflow-hidden rounded-2xl bg-primary ring-1 ring-secondary ring-inset">
               <table className="w-full border-collapse text-left">
                 <thead>
@@ -864,7 +852,7 @@ function renderRoi(section: CMSRenderableSection) {
                 </tbody>
               </table>
             </div>
-          </Reveal>
+          </div>
         )}
 
         {hasCta && (
@@ -885,7 +873,7 @@ function renderTimeline(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="bg-primary py-16 md:py-24">
+    <section className={cx("bg-primary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
@@ -927,7 +915,7 @@ function renderBenefits(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="bg-primary py-16 md:py-24">
+    <section className={cx("bg-primary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
@@ -978,7 +966,7 @@ function renderFaq(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="bg-primary py-16 md:py-24">
+    <section className={cx("bg-primary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
@@ -1018,7 +1006,7 @@ function renderPartners(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="bg-primary py-16 md:py-24">
+    <section className={cx("bg-primary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
@@ -1075,7 +1063,7 @@ function renderContact(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="bg-primary py-16 md:py-24">
+    <section className={cx("bg-primary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
@@ -1172,7 +1160,7 @@ function renderContentBlock(section: CMSRenderableSection) {
   );
 
   return (
-    <section className="bg-primary py-16 md:py-24">
+    <section className={cx("bg-primary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <Reveal>
           {illustrationId ? (
@@ -1210,7 +1198,7 @@ function renderCta(section: CMSRenderableSection) {
   const WatermarkIcon = watermarkIconName ? resolveIcon(watermarkIconName) : Zap;
 
   return (
-    <section className="bg-primary py-16 md:py-24">
+    <section className={cx("bg-primary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <Reveal>
           <div className="relative isolate flex flex-col gap-x-8 gap-y-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--color-bg-secondary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary)] px-6 py-10 ring-1 ring-secondary ring-inset lg:flex-row lg:items-center lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]">
@@ -1259,7 +1247,7 @@ function renderIllustration(section: CMSRenderableSection) {
   if (!illustrationId) return null;
 
   return (
-    <section className="bg-primary py-16 md:py-24">
+    <section className={cx("bg-primary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <Reveal className="mx-auto max-w-md">
           <FloatWrap>

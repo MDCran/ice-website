@@ -26,31 +26,12 @@ import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import { resolveIcon } from "@/lib/iconMap";
+import { serviceImageFor } from "@/lib/solutionHeroImages";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { cx } from "@/utils/cx";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-
-const SOLUTION_HERO_IMAGE_BY_SLUG: Record<string, string> = {
-  "managed-cloud-hosting": "/images/solutions/heroes/managed-cloud-hosting.webp",
-  "managed-private-cloud": "/images/solutions/heroes/managed-private-cloud.webp",
-  "managed-hybrid-cloud": "/images/solutions/heroes/managed-hybrid-cloud.webp",
-  "cloud-migration": "/images/solutions/heroes/cloud-migration.webp",
-  "backup-as-a-service": "/images/solutions/heroes/backup-as-a-service.webp",
-  "disaster-recovery": "/images/solutions/heroes/disaster-recovery.webp",
-  "high-availability": "/images/solutions/heroes/high-availability.webp",
-  "ransomware-recovery": "/images/solutions/heroes/ransomware-recovery.webp",
-  "ibm-i-security": "/images/solutions/heroes/ibm-i-security.webp",
-  "protection-suite": "/images/solutions/heroes/protection-suite.webp",
-  "security-monitoring": "/images/solutions/heroes/security-monitoring.webp",
-  "threat-detection": "/images/solutions/heroes/threat-detection.webp",
-  "endpoint-security": "/images/solutions/heroes/endpoint-security.webp",
-  "managed-microsoft": "/images/solutions/heroes/managed-microsoft.webp",
-  "automation-suite": "/images/solutions/heroes/automation-suite.webp",
-  "systems-management": "/images/solutions/heroes/systems-management.webp",
-  "ibm-power-vs": "/images/solutions/heroes/ibm-power-vs.webp",
-};
 
 const DEFAULT_CATEGORIES = [
   {
@@ -108,24 +89,6 @@ function BrandHairline() {
       className="h-px w-full bg-gradient-to-r from-transparent via-brand-500/40 to-transparent"
     />
   );
-}
-
-function serviceImageFor(svc: any): string | undefined {
-  const directImage =
-    svc.hero_image ??
-    svc.heroImage ??
-    svc.background_image ??
-    svc.backgroundImage ??
-    svc.image ??
-    svc.image_src ??
-    svc.imageSrc;
-
-  if (typeof directImage === "string" && directImage.trim()) {
-    return directImage.trim();
-  }
-
-  const slug = typeof svc.href === "string" ? svc.href.split("/").filter(Boolean).pop() : undefined;
-  return slug ? SOLUTION_HERO_IMAGE_BY_SLUG[slug] : undefined;
 }
 
 export default function SolutionsPage({

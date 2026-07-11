@@ -3,7 +3,8 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { AlertCircle, ArrowLeft, Lock01, Mail01 } from "@untitledui/icons";
+import { ArrowLeft, Lock01, Mail01 } from "@untitledui/icons";
+import { LoginErrorAlert } from "@/components/auth/LoginErrorAlert";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
@@ -96,15 +97,7 @@ function LoginForm() {
           onSubmit={handleLogin}
           className="flex flex-col gap-5 rounded-2xl bg-primary px-6 py-8 shadow-sm ring-1 ring-secondary sm:px-8"
         >
-          {error && (
-            <div
-              role="alert"
-              className="flex items-start gap-2 rounded-lg bg-error-primary p-3 ring-1 ring-error_subtle ring-inset"
-            >
-              <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-fg-error-primary" />
-              <p className="text-sm text-error-primary">{error}</p>
-            </div>
-          )}
+          {error && <LoginErrorAlert message={error} />}
 
           <Input
             label="Email"

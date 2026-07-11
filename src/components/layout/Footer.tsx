@@ -1,11 +1,77 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Clock, Mail01, MarkerPin02, Phone01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
+import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import { Grid } from "@/components/shared-assets/background-patterns/grid";
 import { cx } from "@/utils/cx";
+
+const MDCRAN_URL = "https://mdcran.com";
+
+function MdcranRedirectModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const [seconds, setSeconds] = useState(5);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSeconds(5);
+      return;
+    }
+
+    setSeconds(5);
+    const interval = window.setInterval(() => {
+      setSeconds((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(interval);
+          window.location.assign(MDCRAN_URL);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [isOpen]);
+
+  return (
+    <ModalOverlay
+      isDismissable
+      isOpen={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <Modal className="w-full max-w-md">
+        <Dialog className="p-6 md:p-8">
+          <h2 slot="title" className="text-display-xs font-semibold text-primary">
+            Leaving ICE
+          </h2>
+          <p className="mt-3 text-md text-tertiary">
+            You are being redirected off this page to MDCran in{" "}
+            <span className="font-semibold text-brand-secondary tabular-nums">{seconds}</span>{" "}
+            {seconds === 1 ? "second" : "seconds"}.
+          </p>
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button color="secondary" size="md" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button size="md" onClick={() => window.location.assign(MDCRAN_URL)}>
+              Go now
+            </Button>
+          </div>
+        </Dialog>
+      </Modal>
+    </ModalOverlay>
+  );
+}
 
 /* ── Default data (used when CMS data not available) ── */
 
@@ -94,6 +160,7 @@ const footerLinkClass =
   "rounded-xs text-sm font-semibold text-tertiary outline-brand transition duration-100 ease-linear hover:text-tertiary_hover focus-visible:outline-2 focus-visible:outline-offset-2";
 
 export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
+  const [mdcranOpen, setMdcranOpen] = useState(false);
   const quickLinks = cmsData?.quickLinks ?? DEFAULT_QUICK_LINKS;
   const solutionCategories = cmsData?.solutionCategories ?? DEFAULT_SOLUTION_CATEGORIES;
   const legalLinks = cmsData?.legalLinks ?? DEFAULT_LEGAL_LINKS;
@@ -249,17 +316,18 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
                 {link.label}
               </Link>
             ))}
-            <a
-              href="https://mdcran.com"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => setMdcranOpen(true)}
               className="rounded-xs text-sm text-quaternary outline-brand transition duration-100 ease-linear hover:text-tertiary focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               by MDCran
-            </a>
+            </button>
           </div>
         </div>
       </div>
+
+      <MdcranRedirectModal isOpen={mdcranOpen} onClose={() => setMdcranOpen(false)} />
     </footer>
   );
 }

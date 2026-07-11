@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, Lock01, Mail01, Moon01, Sun } from "@untitledui/icons";
+import { Lock01, Mail01, Moon01, Sun } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/lib/themeProvider";
+import { LoginErrorAlert } from "@/components/auth/LoginErrorAlert";
 import { Button } from "@/components/base/buttons/button";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Input } from "@/components/base/input/input";
@@ -90,15 +91,7 @@ export default function AdminLoginPage() {
           onSubmit={handleLogin}
           className="mt-8 flex flex-col gap-5 rounded-xl bg-primary p-6 shadow-sm ring-1 ring-secondary sm:p-8"
         >
-          {error && (
-            <div
-              role="alert"
-              className="flex items-center gap-2 rounded-lg bg-error-secondary p-3 text-sm font-medium text-error-primary"
-            >
-              <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
-              {error}
-            </div>
-          )}
+          {error && <LoginErrorAlert message={error} />}
 
           <Input
             label="Email"

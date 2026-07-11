@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, type FC, type ReactNode } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { ArrowRight, Check, ChevronRight, MessageChatCircle } from "@untitledui/icons";
@@ -9,10 +9,14 @@ import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { BrandOrbs, FloatY, PulseGlow } from "@/components/effects/AmbientMotion";
 import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
+import { resolveIcon } from "@/lib/iconMap";
 import { cx } from "@/utils/cx";
 import SolutionMetrics, { type MetricPreset } from "./SolutionMetrics";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+/** Shared vertical rhythm for solution detail section bands. */
+const SECTION_Y = "py-16 md:py-24";
 
 /** Thin brand hairline separating major sections. */
 function BrandHairline() {
@@ -75,13 +79,18 @@ interface CtaLink {
 interface SolutionPageLayoutProps {
   title: string;
   subtitle: string;
-  categoryBadge: { label: string; icon: React.ReactNode };
-  heroVisualization?: React.ReactNode;
-  features: Array<{ icon: React.ReactNode; title: string; description: string; proof?: string }>;
-  process: Array<{ step: string; title: string; description: string }>;
+  categoryBadge: { label: string; icon: ReactNode };
+  heroVisualization?: ReactNode;
+  features: Array<{
+    icon: FC<{ className?: string }> | ReactNode;
+    title: string;
+    description: string;
+    proof?: string;
+  }>;
+  process: Array<{ step?: string; title: string; description: string; icon?: string }>;
   benefits: string[];
   metricsPreset?: MetricPreset;
-  extraSections?: React.ReactNode;
+  extraSections?: ReactNode;
   ctaTitle: string;
   ctaSubtitle: string;
   ctaButtonLabel?: string;
@@ -104,7 +113,7 @@ interface SolutionPageLayoutProps {
    */
   sectionOrder?: string[];
   /** Pre-rendered generic CMS sections keyed by section_key. */
-  orderedExtras?: Record<string, React.ReactNode>;
+  orderedExtras?: Record<string, ReactNode>;
 }
 
 const KNOWN_SECTION_KEYS = new Set(["hero", "features", "process", "benefits", "cta"]);
@@ -146,7 +155,7 @@ export default function SolutionPageLayout({
   /* ── Features Grid ─────────────────────────────────────────────────── */
   const featuresBlock =
     features.length > 0 ? (
-      <section className="bg-primary py-16 md:py-24">
+      <section className={cx("bg-primary", SECTION_Y)}>
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <motion.div
             initial={hidden}
@@ -188,7 +197,7 @@ export default function SolutionPageLayout({
                 )}
               >
                 <FeaturedIcon icon={feature.icon} size="lg" color="brand" theme="light" />
-                <h3 className="mt-4 text-lg font-semibold text-primary">{feature.title}</h3>
+                <h3 className="mt-4 truncate text-lg font-semibold whitespace-nowrap text-primary">{feature.title}</h3>
                 <p className="mt-1 text-md text-tertiary">{feature.description}</p>
                 {feature.proof && (
                   <p className="mt-3 text-xs font-medium tracking-wide text-brand-secondary">
@@ -205,7 +214,7 @@ export default function SolutionPageLayout({
   /* ── How It Works (process steps) ──────────────────────────────────── */
   const processBlock =
     process.length > 0 ? (
-      <section className="bg-secondary py-16 md:py-24">
+      <section className={cx("bg-secondary", SECTION_Y)}>
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <motion.div
             initial={hidden}
@@ -222,38 +231,40 @@ export default function SolutionPageLayout({
           </motion.div>
 
           <ol className="mt-12 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 md:mt-16 lg:grid-cols-4">
-            {process.map((step, i) => (
-              <motion.li
-                key={step.step}
-                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.96 }}
-                whileInView={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-                viewport={viewportOnce}
-                transition={{ duration: 0.55, delay: i * 0.1, ease: EASE }}
-                className="relative flex flex-col items-center text-center"
-              >
-                {i < process.length - 1 && (
-                  <motion.div
-                    aria-hidden="true"
-                    initial={reduceMotion ? undefined : { scaleX: 0, opacity: 0 }}
-                    whileInView={reduceMotion ? undefined : { scaleX: 1, opacity: 1 }}
-                    viewport={viewportOnce}
-                    transition={{ duration: 0.7, delay: 0.25 + i * 0.1, ease: EASE }}
-                    className="absolute top-6 left-[calc(50%+2.5rem)] hidden h-px w-[calc(100%-5rem)] origin-left bg-gradient-to-r from-brand-500/50 to-border-secondary lg:block"
-                  />
-                )}
-                <motion.div
-                  initial={reduceMotion ? undefined : { scale: 0.8, opacity: 0 }}
-                  whileInView={reduceMotion ? undefined : { scale: 1, opacity: 1 }}
+            {process.map((step, i) => {
+              const stepLabel =
+                typeof step.step === "string" && step.step.trim()
+                  ? step.step.trim()
+                  : String(i + 1).padStart(2, "0");
+              const defaultIcons = ["Radar", "Cloud", "Monitor", "RefreshCw"];
+              const StepIcon = resolveIcon(step.icon || defaultIcons[i % defaultIcons.length]);
+
+              return (
+                <motion.li
+                  key={`${stepLabel}-${step.title}`}
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 28 }}
+                  whileInView={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
                   viewport={viewportOnce}
-                  transition={{ duration: 0.45, delay: i * 0.1, ease: EASE }}
-                  className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-solid text-lg font-semibold text-white ring-4 ring-brand-solid/10 dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
+                  transition={{ duration: 0.55, delay: i * 0.1, ease: EASE }}
+                  className="relative flex flex-col items-center text-center"
                 >
-                  {step.step}
-                </motion.div>
-                <h3 className="mt-4 text-lg font-semibold text-primary">{step.title}</h3>
-                <p className="mt-1 text-md text-tertiary">{step.description}</p>
-              </motion.li>
-            ))}
+                  {i < process.length - 1 && (
+                    <div
+                      aria-hidden="true"
+                      className="absolute top-6 left-[calc(50%+2.5rem)] hidden h-px w-[calc(100%-5rem)] bg-gradient-to-r from-brand-500/50 to-border-secondary lg:block"
+                    />
+                  )}
+                  <div className="relative">
+                    <FeaturedIcon icon={StepIcon} size="lg" color="brand" theme="light" />
+                    <span className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full bg-brand-solid text-[10px] font-bold text-white ring-2 ring-secondary">
+                      {stepLabel.replace(/^0/, "")}
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-primary">{step.title}</h3>
+                  <p className="mt-1 text-md text-tertiary">{step.description}</p>
+                </motion.li>
+              );
+            })}
           </ol>
         </div>
       </section>
@@ -262,7 +273,7 @@ export default function SolutionPageLayout({
   /* ── Benefits Checklist ────────────────────────────────────────────── */
   const benefitsBlock =
     benefits.length > 0 ? (
-      <section className="bg-primary py-16 md:py-24">
+      <section className={cx("bg-primary", SECTION_Y)}>
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
             <motion.div
@@ -306,7 +317,7 @@ export default function SolutionPageLayout({
 
   /* ── Metrics Dashboard ─────────────────────────────────────────────── */
   const metricsBlock = metricsPreset ? (
-    <section className="bg-primary py-16 md:py-24">
+    <section className={cx("bg-primary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <SolutionMetrics preset={metricsPreset} />
       </div>
@@ -317,7 +328,7 @@ export default function SolutionPageLayout({
   const ctaBlock = (
     <>
       <BrandHairline />
-      <section className="relative bg-primary py-16 md:py-24">
+      <section className={cx("relative bg-primary", SECTION_Y)}>
         <div className="mx-auto max-w-container px-4 md:px-8">
           <motion.div
             initial={hidden}
@@ -366,7 +377,7 @@ export default function SolutionPageLayout({
   );
 
   /* Blocks for known CMS section keys, interleaved via `sectionOrder`. */
-  const knownBlocks: Record<string, React.ReactNode> = {
+  const knownBlocks: Record<string, ReactNode> = {
     features: featuresBlock,
     process: processBlock,
     benefits: benefitsBlock,

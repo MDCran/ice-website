@@ -151,3 +151,48 @@ label:has(> input[type="radio"]),
 summary {
   cursor: pointer;
 }
+
+/* Site-wide smooth scrolling (CSS-first; no trackpad hijacking). */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Legal / print: force light readable output regardless of site theme. */
+@media print {
+  :root,
+  html,
+  body,
+  .dark-mode,
+  [data-theme="dark"],
+  [data-theme="light"] {
+    color-scheme: light !important;
+    --color-bg-primary: #ffffff !important;
+    --color-bg-primary_alt: #ffffff !important;
+    --color-bg-secondary: #f8fafc !important;
+    --color-bg-tertiary: #f1f5f9 !important;
+    --color-text-primary: #0f172a !important;
+    --color-text-secondary: #334155 !important;
+    --color-text-tertiary: #475569 !important;
+    --color-text-quaternary: #64748b !important;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  header,
+  footer,
+  nav[aria-label="Main"],
+  .print\:hidden,
+  [data-print-hide] {
+    display: none !important;
+  }
+}

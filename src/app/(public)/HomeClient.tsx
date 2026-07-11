@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, type FC, type ReactNode } from "react";
 import { motion, useInView, useReducedMotion } from "motion/react";
+import { CountUpNumber, CountUpText } from "@/components/ui/CountUpValue";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -50,7 +51,11 @@ export interface HomePageData {
     cta_secondary?: { label: string; href: string };
     badge_note?: string;
   };
-  partners_marquee?: { eyebrow?: string; heading?: string; partners: string[] };
+  partners_marquee?: {
+    eyebrow?: string;
+    heading?: string;
+    partners: Array<string | { name?: string; logo_src?: string; logoSrc?: string }>;
+  };
   hero?: {
     badge?: string;
     headline: string;
@@ -109,7 +114,38 @@ const DEFAULT_INDUSTRIES = [
   { name: "Legal", icon: "Scale" },
 ];
 
-const DEFAULT_PARTNERS = ["IBM", "Lenovo", "Cisco", "Dell", "Printronix", "CloudSafe", "Acronix", "DASCOM"];
+const DEFAULT_PARTNERS: { name: string; logo_src: string }[] = [
+  { name: "IBM", logo_src: "/images/v3/b_1.png" },
+  { name: "Lenovo", logo_src: "/images/v3/b_2.png" },
+  { name: "Cisco", logo_src: "/images/v3/b_3.png" },
+  { name: "Dell", logo_src: "/images/v3/b_4.png" },
+  { name: "Printronix", logo_src: "/images/v3/b_5.png" },
+  { name: "Acronis", logo_src: "/images/v3/b_6.png" },
+  { name: "Cybernetics", logo_src: "/images/v3/b_7.png" },
+  { name: "DASCOM", logo_src: "/images/v3/b_8.png" },
+];
+
+function normalizeMarqueePartners(
+  partners: Array<string | { name?: string; logo_src?: string; logoSrc?: string }> | undefined,
+): { name: string; logo_src: string }[] {
+  if (!partners?.length) return DEFAULT_PARTNERS;
+  return partners.map((p, i) => {
+    if (typeof p === "string") {
+      return {
+        name: p,
+        logo_src: DEFAULT_PARTNERS[i]?.logo_src ?? `/images/v3/b_${(i % 8) + 1}.png`,
+      };
+    }
+    return {
+      name: p.name?.trim() || DEFAULT_PARTNERS[i]?.name || `Partner ${i + 1}`,
+      logo_src:
+        p.logo_src ||
+        p.logoSrc ||
+        DEFAULT_PARTNERS[i]?.logo_src ||
+        `/images/v3/b_${(i % 8) + 1}.png`,
+    };
+  });
+}
 
 /** Static proof points shown under the hero CTAs. */
 const HERO_PROOF = ["35+ Years Enterprise IT", "SOC 2 Type II Certified", "99.99% Uptime SLA", "24/7/365 NOC + SOC"];
@@ -211,142 +247,8 @@ function SectionHeader({
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   ANIMATED COUNTER
+   ANIMATED COUNTER — @/components/ui/CountUpValue + @/hooks/useCountUp
    ══════════════════════════════════════════════════════════════════════════ */
-
-/** Ease-out cubic — fast start, settles on the final value. */
-function easeOutCubic(t: number) {
-  return 1 - (1 - t) ** 3;
-}
-
-function useCountUp(target: number, inView: boolean, duration = 2000, decimals = 0) {
-  const reduceMotion = useReducedMotion();
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    if (!inView) {
-      setCount(0);
-      return;
-    }
-
-    if (reduceMotion) {
-      setCount(target);
-      return;
-    }
-
-    // Scramble briefly, then ease 0 → target. No startedRef latch so Strict Mode remounts still animate.
-    let cancelled = false;
-    let raf = 0;
-    const start = performance.now();
-    const scrambleMs = Math.min(520, duration * 0.28);
-    const factor = 10 ** decimals;
-    const scrambleCeiling = Math.max(target, 1) * (target >= 10 ? 1.15 : 4);
-
-    const tick = (now: number) => {
-      if (cancelled) return;
-      const elapsed = now - start;
-
-      if (elapsed < scrambleMs) {
-        const raw = Math.random() * scrambleCeiling;
-        setCount(Math.floor(raw * factor) / factor);
-        raf = requestAnimationFrame(tick);
-        return;
-      }
-
-      const t = Math.min(1, (elapsed - scrambleMs) / Math.max(1, duration - scrambleMs));
-      const eased = easeOutCubic(t);
-      const next = Math.floor(target * eased * factor) / factor;
-      setCount(t >= 1 ? target : next);
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-
-    setCount(0);
-    raf = requestAnimationFrame(tick);
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-    };
-  }, [inView, target, duration, decimals, reduceMotion]);
-
-  return count;
-}
-
-const NUMBER_TOKEN_RE = /\d[\d,]*(?:\.\d+)?/g;
-
-function formatCount(count: number, decimals: number, grouped: boolean) {
-  if (grouped) return Math.round(count).toLocaleString("en-US");
-  return count.toFixed(decimals);
-}
-
-/** Single numeric token that counts from 0 → target. */
-function AnimatedNumber({
-  raw,
-  inView,
-  duration = 2000,
-}: {
-  raw: string;
-  inView: boolean;
-  duration?: number;
-}) {
-  const target = parseFloat(raw.replace(/,/g, "")) || 0;
-  const decimals = raw.includes(".") ? (raw.split(".")[1]?.length ?? 0) : 0;
-  const grouped = raw.includes(",");
-  const count = useCountUp(target, inView, duration, decimals);
-  return <>{formatCount(count, decimals, grouped)}</>;
-}
-
-/**
- * Renders any string and counts every numeric token up from 0 when in view
- * ("35+", "99.99%", "14,723", "24/7/365").
- */
-function AnimatedValue({
-  value,
-  suffix = "",
-  className,
-  inView: inViewProp,
-  duration = 2000,
-}: {
-  value: string;
-  suffix?: string;
-  className?: string;
-  inView?: boolean;
-  duration?: number;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const selfInView = useInView(ref, { once: true, amount: 0.25, margin: "0px 0px -10% 0px" });
-  const inView = inViewProp ?? selfInView;
-
-  const tokens = value.match(NUMBER_TOKEN_RE);
-  if (!tokens) {
-    return (
-      <span ref={ref} className={className}>
-        {value}
-        {suffix}
-      </span>
-    );
-  }
-
-  const parts: ReactNode[] = [];
-  let last = 0;
-  let key = 0;
-  for (const match of value.matchAll(NUMBER_TOKEN_RE)) {
-    const idx = match.index ?? 0;
-    if (idx > last) parts.push(value.slice(last, idx));
-    parts.push(
-      <AnimatedNumber key={`n-${key++}`} raw={match[0]} inView={inView} duration={duration} />,
-    );
-    last = idx + match[0].length;
-  }
-  if (last < value.length) parts.push(value.slice(last));
-
-  return (
-    <span ref={ref} className={className}>
-      {parts}
-      {suffix}
-    </span>
-  );
-}
 
 function StatItem({
   value,
@@ -359,15 +261,11 @@ function StatItem({
   label: string;
   inView: boolean;
 }) {
-  const numeric = typeof value === "number" ? value : parseFloat(String(value).replace(/,/g, "")) || 0;
-  const decimals = Number.isInteger(numeric) ? 0 : (String(numeric).split(".")[1]?.length ?? 0);
-  const count = useCountUp(numeric, inView, 2400, decimals);
   return (
     <div className="flex flex-1 flex-col-reverse gap-3 text-center">
       <dt className="text-md font-semibold text-primary md:text-lg">{label}</dt>
       <dd className="text-display-lg font-semibold tracking-tight text-brand-tertiary_alt tabular-nums md:text-display-xl">
-        {decimals > 0 ? count.toFixed(decimals) : Math.round(count).toLocaleString("en-US")}
-        {suffix}
+        <CountUpNumber target={value} suffix={suffix} inView={inView} duration={1400} />
       </dd>
     </div>
   );
@@ -454,7 +352,7 @@ export default function Home({
     name: ind.name,
     icon: resolveIcon(ind.icon) as IconComponent,
   }));
-  const partnerNames = data?.partners_marquee?.partners ?? DEFAULT_PARTNERS;
+  const partnerLogos = normalizeMarqueePartners(data?.partners_marquee?.partners);
   const dataCenterFeatures = dataCentersSection?.features ?? [
     "Tier-3 data centers with guaranteed uptime",
     "PCI, HIPAA, SOX, and GDPR compliant",
@@ -484,16 +382,25 @@ export default function Home({
       ].includes(section.section_key)
   );
 
-  const statsRef = useRef<HTMLDivElement>(null);
-  const metricsRef = useRef<HTMLDivElement>(null);
+  // Plain elements (not opacity-animated motion nodes) so count-up is visible.
+  const statsRef = useRef<HTMLDListElement>(null);
+  const metricsRef = useRef<HTMLDListElement>(null);
   const heroProofRef = useRef<HTMLUListElement>(null);
   const timelineRailRef = useRef<HTMLDivElement>(null);
-  const statsInView = useInView(statsRef, { once: true, amount: 0.2, margin: "0px 0px -80px 0px" });
-  const metricsInView = useInView(metricsRef, { once: true, amount: 0.2, margin: "0px 0px -80px 0px" });
-  // Delay hero proof count-up until the proof row has entered (after CTA reveal).
+  const statsInView = useInView(statsRef, { once: true, amount: 0.4 });
+  const metricsInView = useInView(metricsRef, { once: true, amount: 0.4 });
   const heroProofInView = useInView(heroProofRef, { once: true, amount: 0.6 });
   const timelineRailInView = useInView(timelineRailRef, { once: true, margin: "-80px" });
   const [marqueePaused, setMarqueePaused] = useState(false);
+  // Hero proof fades in via motion; only start count-up after that reveal finishes.
+  const [heroProofReady, setHeroProofReady] = useState(false);
+
+  // Fallback if onAnimationComplete doesn't fire (e.g. reduced-motion edge cases).
+  useEffect(() => {
+    if (!heroProofInView || heroProofReady) return;
+    const t = window.setTimeout(() => setHeroProofReady(true), 1600);
+    return () => window.clearTimeout(t);
+  }, [heroProofInView, heroProofReady]);
 
   return (
     <main className="bg-primary">
@@ -590,19 +497,20 @@ export default function Home({
                 </Button>
               </motion.div>
 
-              {/* Proof row — single line under the CTAs */}
+              {/* Proof row — fade in with hero, then count once fully visible. */}
               <motion.ul
                 {...heroReveal(0.65)}
                 ref={heroProofRef}
+                onAnimationComplete={() => setHeroProofReady(true)}
                 className="mt-12 flex max-w-full flex-nowrap items-center justify-center gap-x-2 overflow-x-auto scrollbar-hide md:mt-16 md:gap-x-3"
               >
                 {HERO_PROOF.map((item, i) => (
                   <li key={item} className="flex shrink-0 items-center gap-x-2 md:gap-x-3">
                     {i > 0 && <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/20" />}
-                    <AnimatedValue
+                    <CountUpText
                       value={item}
-                      inView={heroProofInView}
-                      duration={2200}
+                      inView={heroProofInView && (reduceMotion || heroProofReady)}
+                      duration={1400}
                       className="whitespace-nowrap text-[10px] tracking-wide text-white/60 uppercase tabular-nums sm:text-xs"
                     />
                   </li>
@@ -779,7 +687,7 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           STATS
           ═══════════════════════════════════════════════════════════════════ */}
-      <section ref={statsRef} className="bg-primary py-16 md:py-24">
+      <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <div className="flex flex-col gap-8 md:gap-16">
             <SectionHeader
@@ -788,14 +696,15 @@ export default function Home({
               description={statsSection?.description}
             />
 
-            <motion.dl
-              {...reveal(0.1)}
+            {/* No opacity reveal on the number grid — count-up must be visible from frame 0. */}
+            <dl
+              ref={statsRef}
               className="grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-4"
             >
               {stats.map((s) => (
                 <StatItem key={s.label} {...s} inView={statsInView} />
               ))}
-            </motion.dl>
+            </dl>
           </div>
         </div>
       </section>
@@ -1042,11 +951,11 @@ export default function Home({
                 aria-hidden={setIdx === 1 ? true : undefined}
                 className="flex shrink-0 items-center"
               >
-                {Array.from({ length: 8 }, (_, i) => (
-                  <div key={i} className="mx-8 flex shrink-0 items-center justify-center md:mx-10">
+                {partnerLogos.map((partner, i) => (
+                  <div key={`${partner.name}-${i}`} className="mx-8 flex shrink-0 items-center justify-center md:mx-10">
                     <Image
-                      src={`/images/v3/b_${i + 1}.png`}
-                      alt={partnerNames[i] || `Partner ${i + 1}`}
+                      src={partner.logo_src}
+                      alt={partner.name}
                       width={160}
                       height={60}
                       className="h-10 w-auto object-contain opacity-70 brightness-[0.6] transition duration-300 hover:opacity-100 hover:brightness-[0.35] md:h-12 dark:opacity-60 dark:brightness-100 dark:hover:opacity-100 dark:hover:brightness-100"
@@ -1140,14 +1049,18 @@ export default function Home({
             {trustBadges.map((item, i) => (
               <motion.li
                 key={item.title}
-                {...reveal(i * 0.06)}
+                // Y-only reveal — opacity:0 would hide CountUpText count-up.
+                initial={{ y: reduceMotion ? 0 : 24 }}
+                whileInView={{ y: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.6, delay: i * 0.06, ease: EASE }}
                 whileHover={reduceMotion ? undefined : { y: -4 }}
               >
                 <div className="flex max-w-sm flex-col items-center gap-4 text-center">
                   <FeaturedIcon icon={item.icon} size="lg" color="brand" theme="light" />
                   <div>
                     <h3 className="text-lg font-semibold text-primary">
-                      <AnimatedValue value={item.title} className="tabular-nums" />
+                      <CountUpText value={item.title} className="tabular-nums" />
                     </h3>
                     <p className="mt-1 text-md text-tertiary">{item.description}</p>
                   </div>
@@ -1161,7 +1074,7 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           PERFORMANCE METRICS
           ═══════════════════════════════════════════════════════════════════ */}
-      <section ref={metricsRef} className="relative overflow-hidden bg-primary py-16 md:py-24">
+      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
         {/* Depth: faint centered dot field behind the metrics panel */}
         <div
           aria-hidden="true"
@@ -1178,10 +1091,8 @@ export default function Home({
               }
             />
 
-            <motion.div
-              {...reveal(0.1)}
-              className="relative overflow-hidden rounded-3xl bg-secondary ring-1 ring-secondary ring-inset dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]"
-            >
+            {/* Panel stays fully opaque — opacity reveals hide count-up. */}
+            <div className="relative overflow-hidden rounded-3xl bg-secondary ring-1 ring-secondary ring-inset dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]">
               {/* Panel depth: brand hairline, masked grid, film grain */}
               <div
                 aria-hidden="true"
@@ -1195,22 +1106,25 @@ export default function Home({
                 aria-hidden="true"
                 className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.07]"
               />
-              <dl className="relative grid grid-cols-2 gap-x-4 gap-y-8 px-6 py-10 md:grid-cols-4 md:p-16">
+              <dl
+                ref={metricsRef}
+                className="relative grid grid-cols-2 gap-x-4 gap-y-8 px-6 py-10 md:grid-cols-4 md:p-16"
+              >
                 {PERFORMANCE_METRICS.map((metric) => (
                   <div key={metric.label} className="flex flex-col-reverse gap-3 text-center">
                     <dt className="text-md font-semibold text-primary md:text-lg">{metric.label}</dt>
                     <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt tabular-nums md:text-display-lg">
-                      <AnimatedValue
+                      <CountUpText
                         value={metric.value}
                         suffix={"suffix" in metric ? metric.suffix : ""}
                         inView={metricsInView}
-                        duration={2400}
+                        duration={1400}
                       />
                     </dd>
                   </div>
                 ))}
               </dl>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

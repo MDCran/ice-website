@@ -140,6 +140,28 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     excludeSlugs: ["site-settings"],
     required: true,
     content: {
+      category: "Managed Cloud Services",
+      category_icon: "Cloud",
+      eyebrow: "Managed Cloud Services",
+      headline: "Managed Cloud Hosting",
+      subheadline:
+        "Enterprise cloud hosting with 24/7 management, monitoring, and support for mission-critical workloads.",
+      cta_primary: { label: "Speak to an Expert", href: "/contact" },
+      proof_labels: ["35+ Years in Business", "SOC 2 Type II", "24/7/365 US-Based Support"],
+      hero_image: "/images/solutions/heroes/managed-cloud-hosting.webp",
+      image_alt: "Enterprise technology solution illustration",
+    },
+  },
+  {
+    id: "hero-generic",
+    label: "Hero (generic)",
+    description: "Top page headline for non-solution pages.",
+    key: "hero",
+    type: "hero",
+    excludePageTypes: ["legal", "settings", "solution"],
+    excludeSlugs: ["site-settings"],
+    required: true,
+    content: {
       eyebrow: "Trusted IBM Business Partner for over 35 years",
       headline: "You Know Your Business.",
       headline_highlight: "We Know Technology.",
@@ -148,8 +170,6 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       cta_primary: { label: "Call 1-800-786-9188", href: "tel:18007869188" },
       cta_secondary: { label: "Explore Solutions", href: "/solutions" },
       proof_labels: ["35+ Years in Business", "SOC 2 Type II", "24/7/365 US-Based Support"],
-      hero_image: "/images/solutions/heroes/managed-cloud-hosting.webp",
-      image_alt: "Enterprise technology solution illustration",
     },
   },
   {

@@ -205,15 +205,6 @@ export default function ContactPage({
                   "Talk with our enterprise architects about cloud, security, data protection, and managed services."}
               </p>
 
-              <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-secondary pt-5 md:mt-8">
-                <li className="flex items-center gap-2">
-                  <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
-                  <span className="text-xs font-medium tracking-[0.15em] text-quaternary uppercase">
-                    Trusted IBM Business Partner for over 35 years
-                  </span>
-                </li>
-              </ul>
-
               <ul className="mt-8 hidden grid-cols-1 gap-6 sm:grid-cols-2 lg:mt-10 lg:grid">
                 {contactItems.map((item: any) => (
                   <li key={item.label} className="flex flex-col items-start">

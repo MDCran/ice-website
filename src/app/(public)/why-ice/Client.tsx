@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, type FC } from "react";
 import Link from "next/link";
 import { motion, useInView, useReducedMotion } from "motion/react";
+import { CountUpNumber } from "@/components/ui/CountUpValue";
 import {
   ChevronRight,
   ArrowRight,
@@ -41,7 +42,7 @@ const DEFAULT_STATS: Stat[] = [
   { value: 35, suffix: "+", label: "Years of Experience" },
   { value: 1200, suffix: "+", label: "Projects Delivered" },
   { value: 500, suffix: "+", label: "Clients Served" },
-  { value: 100, suffix: "%", label: "Uptime SLA" },
+  { value: 99.99, suffix: "%", label: "Uptime SLA" },
 ];
 
 /** Quiet mono proof chips shown under the hero lead. */
@@ -183,39 +184,8 @@ function AnimatedCounter({
   suffix: string;
   inView: boolean;
 }) {
-  const [count, setCount] = useState(0);
-  const reduceMotion = useReducedMotion();
-
-  useEffect(() => {
-    if (!inView) return;
-
-    if (reduceMotion) {
-      setCount(target);
-      return;
-    }
-
-    let start = 0;
-    const duration = 2000;
-    const increment = target / (duration / 16);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= target) {
-        setCount(target);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start));
-      }
-    }, 16);
-
-    return () => clearInterval(timer);
-  }, [inView, target, reduceMotion]);
-
-  return (
-    <span>
-      {count}
-      {suffix}
-    </span>
-  );
+  const numeric = typeof target === "number" ? target : parseFloat(String(target)) || 0;
+  return <CountUpNumber target={numeric} suffix={suffix} inView={inView} duration={1400} />;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -468,14 +438,8 @@ export default function WhyICEPage({
               ) : null}
             </motion.div>
 
-            {/* Dark navy band — pops out of the white page in light mode,
-                reads as an elevated surface in dark mode. */}
-            <motion.div
-              initial={hidden}
-              animate={statsInView ? visible : undefined}
-              transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
-              className="relative isolate overflow-hidden rounded-3xl bg-brand-section shadow-xl ring-1 ring-white/10 ring-inset dark:shadow-[0_0_60px_rgb(4_155_251/0.1)]"
-            >
+            {/* Dark navy band — opaque from first paint so count-up is visible. */}
+            <div className="relative isolate overflow-hidden rounded-3xl bg-brand-section shadow-xl ring-1 ring-white/10 ring-inset dark:shadow-[0_0_60px_rgb(4_155_251/0.1)]">
               <div
                 aria-hidden="true"
                 className="texture-grid pointer-events-none absolute inset-0 opacity-70 [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_85%)]"
@@ -484,16 +448,26 @@ export default function WhyICEPage({
               <BrandOrbs variant="onBrand" />
 
               <dl className="relative grid grid-cols-1 gap-x-8 gap-y-10 px-6 py-12 sm:grid-cols-2 md:grid-cols-4 md:p-16">
-                {stats.map((stat: any) => (
+                {stats.map((stat: any) => {
+                  const rawValue = typeof stat.value === "number"
+                    ? stat.value
+                    : parseFloat(String(stat.value).replace(/,/g, "").replace(/[^\d.-]/g, "")) || 0;
+                  // Force uptime SLA to 99.99 when CMS still has 100.
+                  const value =
+                    /uptime/i.test(String(stat.label ?? "")) && rawValue >= 100
+                      ? 99.99
+                      : rawValue;
+                  return (
                   <div key={stat.label} className="flex flex-col-reverse gap-3 text-center">
                     <dt className="text-md font-medium text-secondary_on-brand">{stat.label}</dt>
                     <dd className="text-display-lg font-semibold tracking-tight text-primary_on-brand tabular-nums md:text-display-xl">
-                      <AnimatedCounter target={stat.value} suffix={stat.suffix} inView={statsInView} />
+                      <AnimatedCounter target={value} suffix={stat.suffix} inView={statsInView} />
                     </dd>
                   </div>
-                ))}
+                  );
+                })}
               </dl>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

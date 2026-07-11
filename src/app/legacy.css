@@ -871,6 +871,15 @@ select:focus {
    PRINT STYLES
    ═══════════════════════════════════════════════════════════════════════════ */
 @media print {
+  :root,
+  html,
+  body,
+  .dark-mode,
+  [data-theme="dark"],
+  [data-theme="light"] {
+    color-scheme: light !important;
+  }
+
   /* Hide non-content elements */
   .scan-line::after,
   .ambient-orb,
@@ -887,7 +896,8 @@ select:focus {
   .hero-overlay,
   video,
   .btn-outline,
-  .print\:hidden {
+  .print\:hidden,
+  [data-print-hide] {
     display: none !important;
   }
 
@@ -896,9 +906,18 @@ select:focus {
     print-color-adjust: exact !important;
   }
 
+  html,
   body {
-    background: white !important;
-    color: #1a1a1a !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  main,
+  .terms-page,
+  .sms-consent-page,
+  .legal-page {
+    background: #ffffff !important;
+    color: #0f172a !important;
   }
 
   main {

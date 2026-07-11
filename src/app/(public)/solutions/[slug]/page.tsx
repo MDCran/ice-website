@@ -19,21 +19,21 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-/** serviceType per solution pillar (mirrors the on-page category badge). */
+/** serviceType / category badge — matches navbar mega-menu groupings. */
 const SERVICE_TYPE: Record<string, string> = {
-  "managed-cloud-hosting": "Cloud Services",
-  "managed-private-cloud": "Cloud Services",
-  "managed-hybrid-cloud": "Cloud Services",
-  "cloud-migration": "Cloud Services",
-  "backup-as-a-service": "Data Protection",
-  "disaster-recovery": "Data Protection",
-  "high-availability": "Data Protection",
-  "ransomware-recovery": "Data Protection",
-  "ibm-i-security": "Security",
-  "protection-suite": "Security",
-  "security-monitoring": "Security",
-  "threat-detection": "Security",
-  "endpoint-security": "Security",
+  "managed-cloud-hosting": "Managed Cloud Services",
+  "managed-private-cloud": "Managed Cloud Services",
+  "managed-hybrid-cloud": "Managed Cloud Services",
+  "cloud-migration": "Managed Cloud Services",
+  "backup-as-a-service": "Managed Data Protection",
+  "disaster-recovery": "Managed Data Protection",
+  "high-availability": "Managed Data Protection",
+  "ransomware-recovery": "Managed Data Protection",
+  "ibm-i-security": "Managed Security",
+  "protection-suite": "Managed Security",
+  "security-monitoring": "Managed Security",
+  "threat-detection": "Managed Security",
+  "endpoint-security": "Managed Security",
   "managed-microsoft": "Managed Services",
   "automation-suite": "Managed Services",
   "systems-management": "Managed Services",
@@ -62,10 +62,9 @@ type PageLike = {
   orderedSections?: any[];
 };
 
-/** Human-readable service name for schema/metadata. */
+/** Human-readable service name for schema/metadata — prefer CMS page title. */
 function serviceName(page: PageLike): string {
-  const hero = page.sections?.hero as Record<string, any> | undefined;
-  return plain(hero?.headline) || plain(page.title) || "Managed IT Service";
+  return plain(page.title) || plain((page.sections?.hero as any)?.headline) || "Managed IT Service";
 }
 
 /** Service description from CMS content. */
@@ -146,6 +145,7 @@ export default async function SolutionPage({ params }: PageProps) {
       {faqItems.length > 0 && <JsonLd data={faqPage(faqItems)} />}
       <DynamicSolutionPage
         slug={slug}
+        pageTitle={plain(page.title) || name}
         sections={page.sections ?? {}}
         orderedSections={page.orderedSections}
       />

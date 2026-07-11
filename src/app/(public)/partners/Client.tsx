@@ -304,17 +304,7 @@ export default function PartnersPage({
                         </Button>
                     </motion.div>
 
-                    {/* Quiet proof row */}
-                    <motion.div
-                        {...enter(0.55)}
-                        className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium tracking-[0.15em] text-quaternary uppercase md:mt-12"
-                    >
-                        <span>Trusted IBM Business Partner for over 35 years</span>
-                        <span aria-hidden="true" className="size-1 rounded-full bg-brand-solid/60" />
-                        <span>{partners.length} strategic technology alliances</span>
-                        <span aria-hidden="true" className="hidden size-1 rounded-full bg-brand-solid/60 sm:inline-flex" />
-                        <span className="hidden sm:inline">Boca Raton, FL</span>
-                    </motion.div>
+                    {/* Quiet proof row removed — keep hero focused on headline + CTAs */}
                 </div>
             </section>
 

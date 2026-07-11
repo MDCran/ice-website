@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { resolveIcon } from "@/lib/iconMap";
+import { SOLUTION_HERO_IMAGE_BY_SLUG } from "@/lib/solutionHeroImages";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
 import SolutionHeroImage from "@/components/solutions/SolutionHeroImage";
 import type { MetricPreset } from "@/components/solutions/SolutionMetrics";
@@ -34,92 +35,41 @@ import { pushEvent } from "@/lib/analytics";
  * };
  */
 
-const SOLUTION_HERO_IMAGES: Record<string, { src: string; alt: string }> = {
-  "managed-cloud-hosting": {
-    src: "/images/solutions/heroes/managed-cloud-hosting.webp",
-    alt: "Generated illustration of managed cloud hosting infrastructure",
-  },
-  "managed-private-cloud": {
-    src: "/images/solutions/heroes/managed-private-cloud.webp",
-    alt: "Generated illustration of a secure private cloud environment",
-  },
-  "managed-hybrid-cloud": {
-    src: "/images/solutions/heroes/managed-hybrid-cloud.webp",
-    alt: "Generated illustration of hybrid cloud infrastructure",
-  },
-  "cloud-migration": {
-    src: "/images/solutions/heroes/cloud-migration.webp",
-    alt: "Generated illustration of workloads migrating to cloud infrastructure",
-  },
-  "backup-as-a-service": {
-    src: "/images/solutions/heroes/backup-as-a-service.webp",
-    alt: "Generated illustration of secure backup storage",
-  },
-  "disaster-recovery": {
-    src: "/images/solutions/heroes/disaster-recovery.webp",
-    alt: "Generated illustration of disaster recovery replication",
-  },
-  "high-availability": {
-    src: "/images/solutions/heroes/high-availability.webp",
-    alt: "Generated illustration of mirrored high availability systems",
-  },
-  "ransomware-recovery": {
-    src: "/images/solutions/heroes/ransomware-recovery.webp",
-    alt: "Generated illustration of ransomware recovery from protected backups",
-  },
-  "ibm-i-security": {
-    src: "/images/solutions/heroes/ibm-i-security.webp",
-    alt: "Generated illustration of enterprise server security",
-  },
-  "protection-suite": {
-    src: "/images/solutions/heroes/protection-suite.webp",
-    alt: "Generated illustration of layered security protection",
-  },
-  "security-monitoring": {
-    src: "/images/solutions/heroes/security-monitoring.webp",
-    alt: "Generated illustration of security monitoring operations",
-  },
-  "threat-detection": {
-    src: "/images/solutions/heroes/threat-detection.webp",
-    alt: "Generated illustration of threat detection and response",
-  },
-  "endpoint-security": {
-    src: "/images/solutions/heroes/endpoint-security.webp",
-    alt: "Generated illustration of endpoint security protection",
-  },
-  "managed-microsoft": {
-    src: "/images/solutions/heroes/managed-microsoft.webp",
-    alt: "Generated illustration of managed cloud productivity services",
-  },
-  "automation-suite": {
-    src: "/images/solutions/heroes/automation-suite.webp",
-    alt: "Generated illustration of IT automation workflows",
-  },
-  "systems-management": {
-    src: "/images/solutions/heroes/systems-management.webp",
-    alt: "Generated illustration of systems management operations",
-  },
-  "ibm-power-vs": {
-    src: "/images/solutions/heroes/ibm-power-vs.webp",
-    alt: "Generated illustration of enterprise power virtualization",
-  },
+const SOLUTION_HERO_ALTS: Record<string, string> = {
+  "managed-cloud-hosting": "Generated illustration of managed cloud hosting infrastructure",
+  "managed-private-cloud": "Generated illustration of a secure private cloud environment",
+  "managed-hybrid-cloud": "Generated illustration of hybrid cloud infrastructure",
+  "cloud-migration": "Generated illustration of workloads migrating to cloud infrastructure",
+  "backup-as-a-service": "Generated illustration of secure backup storage",
+  "disaster-recovery": "Generated illustration of disaster recovery replication",
+  "high-availability": "Generated illustration of mirrored high availability systems",
+  "ransomware-recovery": "Generated illustration of ransomware recovery from protected backups",
+  "ibm-i-security": "Generated illustration of enterprise server security",
+  "protection-suite": "Generated illustration of layered security protection",
+  "security-monitoring": "Generated illustration of security monitoring operations",
+  "threat-detection": "Generated illustration of threat detection and response",
+  "endpoint-security": "Generated illustration of endpoint security protection",
+  "managed-microsoft": "Generated illustration of managed cloud productivity services",
+  "automation-suite": "Generated illustration of IT automation workflows",
+  "systems-management": "Generated illustration of systems management operations",
+  "ibm-power-vs": "Generated illustration of enterprise power virtualization",
 };
 
-// Category badge config per solution
+// Category badge config per solution — matches navbar mega-menu groupings.
 const CATEGORY_MAP: Record<string, { label: string; icon: string }> = {
-  "managed-cloud-hosting": { label: "Cloud Services", icon: "Cloud" },
-  "managed-private-cloud": { label: "Cloud Services", icon: "Cloud" },
-  "managed-hybrid-cloud": { label: "Cloud Services", icon: "Cloud" },
-  "cloud-migration": { label: "Cloud Services", icon: "Cloud" },
-  "backup-as-a-service": { label: "Data Protection", icon: "Shield" },
-  "disaster-recovery": { label: "Data Protection", icon: "Shield" },
-  "high-availability": { label: "Data Protection", icon: "Shield" },
-  "ransomware-recovery": { label: "Data Protection", icon: "Shield" },
-  "ibm-i-security": { label: "Security", icon: "Lock" },
-  "protection-suite": { label: "Security", icon: "Lock" },
-  "security-monitoring": { label: "Security", icon: "Lock" },
-  "threat-detection": { label: "Security", icon: "Lock" },
-  "endpoint-security": { label: "Security", icon: "Lock" },
+  "managed-cloud-hosting": { label: "Managed Cloud Services", icon: "Cloud" },
+  "managed-private-cloud": { label: "Managed Cloud Services", icon: "Cloud" },
+  "managed-hybrid-cloud": { label: "Managed Cloud Services", icon: "Cloud" },
+  "cloud-migration": { label: "Managed Cloud Services", icon: "Cloud" },
+  "backup-as-a-service": { label: "Managed Data Protection", icon: "Shield" },
+  "disaster-recovery": { label: "Managed Data Protection", icon: "Shield" },
+  "high-availability": { label: "Managed Data Protection", icon: "Shield" },
+  "ransomware-recovery": { label: "Managed Data Protection", icon: "Shield" },
+  "ibm-i-security": { label: "Managed Security", icon: "Lock" },
+  "protection-suite": { label: "Managed Security", icon: "Lock" },
+  "security-monitoring": { label: "Managed Security", icon: "Lock" },
+  "threat-detection": { label: "Managed Security", icon: "Lock" },
+  "endpoint-security": { label: "Managed Security", icon: "Lock" },
   "managed-microsoft": { label: "Managed Services", icon: "Server" },
   "automation-suite": { label: "Managed Services", icon: "Server" },
   "systems-management": { label: "Managed Services", icon: "Server" },
@@ -136,6 +86,11 @@ interface SectionData {
     headline: string;
     subheadline: string;
     eyebrow?: string;
+    category?: string;
+    category_label?: string;
+    categoryLabel?: string;
+    category_icon?: string;
+    categoryIcon?: string;
     proof_labels?: string[];
     proofLabels?: string[];
     cta_primary?: CtaLink;
@@ -162,7 +117,7 @@ interface SectionData {
     eyebrow?: string;
     heading?: string;
     description?: string;
-    items: { step: string; title: string; description: string }[];
+    items: { step?: string; title: string; description: string; icon?: string }[];
   };
   benefits?: {
     eyebrow?: string;
@@ -191,16 +146,18 @@ function firstText(...values: Array<string | undefined>): string | undefined {
 
 export default function DynamicSolutionPage({
   slug,
+  pageTitle,
   sections,
   orderedSections,
 }: {
   slug: string;
+  pageTitle?: string;
   sections: SectionData;
   orderedSections?: CMSRenderableSection[];
 }) {
   const hero = sections.hero;
   const features = (sections.features?.items ?? []).map((f) => ({
-    icon: (() => { const Icon = resolveIcon(f.icon); return <Icon className="size-6" aria-hidden="true" />; })(),
+    icon: resolveIcon(f.icon),
     title: f.title,
     description: f.description,
     proof: f.proof,
@@ -211,9 +168,10 @@ export default function DynamicSolutionPage({
     .filter(Boolean);
   const cta = sections.cta;
 
-  // Prefer a clean page name for the breadcrumb (strip HTML from CMS headlines).
+  // Prefer CMS page title for H1 + breadcrumb (not marketing headline fluff).
   const solutionTitle =
-    (hero?.headline?.replace(/<[^>]*>/g, "").trim() ||
+    (pageTitle?.trim() ||
+      hero?.headline?.replace(/<[^>]*>/g, "").trim() ||
       slug
         .split("-")
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -255,39 +213,42 @@ export default function DynamicSolutionPage({
   // Legacy path (no ordered data): render extras as one block.
   const extraSections = visibleOrdered.filter((section) => !KNOWN_KEYS.includes(section.section_key));
 
-  const category = CATEGORY_MAP[slug] ?? { label: "Solutions", icon: "Globe" };
-  const CategoryIcon = resolveIcon(category.icon);
-  const defaultHeroImage = SOLUTION_HERO_IMAGES[slug];
+  const categoryFallback = CATEGORY_MAP[slug] ?? { label: "Solutions", icon: "Globe" };
+  const categoryLabel =
+    firstText(hero?.category, hero?.category_label, hero?.categoryLabel) ?? categoryFallback.label;
+  const categoryIconName = firstText(hero?.category_icon, hero?.categoryIcon) ?? categoryFallback.icon;
+  const CategoryIcon = resolveIcon(categoryIconName);
+  const defaultHeroSrc = SOLUTION_HERO_IMAGE_BY_SLUG[slug];
   const heroImageSrc = firstText(
     hero?.hero_image,
     hero?.heroImage,
     hero?.image,
     hero?.visual_image,
     hero?.visualImage,
-    defaultHeroImage?.src,
+    defaultHeroSrc,
   );
   const heroImageAlt = firstText(
     hero?.image_alt,
     hero?.imageAlt,
     hero?.hero_image_alt,
     hero?.heroImageAlt,
-    defaultHeroImage?.alt,
+    SOLUTION_HERO_ALTS[slug],
     `${solutionTitle} illustration`,
   );
 
   return (
     <SolutionPageLayout
       metricsPreset={slug as MetricPreset}
-      title={hero?.headline ?? ""}
+      title={solutionTitle}
       subtitle={hero?.subheadline ?? ""}
       categoryBadge={{
-        label: category.label,
+        label: categoryLabel,
         icon: <CategoryIcon className="size-4" aria-hidden="true" />,
       }}
       heroVisualization={
         heroImageSrc ? <SolutionHeroImage src={heroImageSrc} alt={heroImageAlt ?? ""} /> : undefined
       }
-      heroEyebrow={hero?.eyebrow}
+      heroEyebrow={undefined}
       heroProofLabels={hero?.proof_labels ?? hero?.proofLabels}
       heroCtaPrimary={{
         label: "Speak to an Expert",
