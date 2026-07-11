@@ -50,13 +50,14 @@ export function LoginErrorAlert({
     <div
       role="alert"
       className={cx(
-        "flex gap-3 rounded-xl bg-primary_alt p-4 ring-1 ring-error_subtle ring-inset",
+        // error-primary stays a soft wash in light + dark; error-secondary is solid red-600 in dark and washes out.
+        "flex gap-3 rounded-xl bg-error-primary p-4 ring-1 ring-error_subtle ring-inset",
         className,
       )}
     >
-      <FeaturedIcon icon={AlertCircle} color="error" theme="light" size="md" className="shrink-0" />
+      <FeaturedIcon icon={AlertCircle} color="error" theme="modern" size="md" className="shrink-0" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-secondary">{title}</p>
+        <p className="text-sm font-semibold text-error-primary">{title}</p>
         <p className="mt-0.5 text-sm text-tertiary">{description}</p>
       </div>
     </div>
