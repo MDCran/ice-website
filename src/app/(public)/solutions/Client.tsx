@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import {
@@ -28,8 +29,11 @@ import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import { resolveIcon } from "@/lib/iconMap";
 import { serviceImageFor } from "@/lib/solutionHeroImages";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import { SolutionFinderPromo } from "@/components/marketing/SolutionFinder";
 import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { cx } from "@/utils/cx";
+import { experienceFor } from "@/lib/solutionExperience";
+import SolutionComparisonMatrix from "@/components/solutions/SolutionComparisonMatrix";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -99,6 +103,18 @@ export default function SolutionsPage({
   orderedSections?: CMSRenderableSection[];
 }) {
   const reduceMotion = useHydratedReducedMotion();
+  const [industryFilter, setIndustryFilter] = useState("All");
+  const [platformFilter, setPlatformFilter] = useState("All");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const platform = params.get("platform");
+    const initialPlatform =
+      platform === "ibm-i" ? "IBM i" : platform === "azure" ? "Azure" : platform === "hybrid" ? "Hybrid" : null;
+    if (!initialPlatform) return;
+    const timer = window.setTimeout(() => setPlatformFilter(initialPlatform), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const hero = cmsData?.hero ?? {};
   const categories = (cmsData?.categories?.items ?? DEFAULT_CATEGORIES).map((cat: any) => ({
@@ -117,6 +133,23 @@ export default function SolutionsPage({
 
   const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 };
   const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
+  const filteredCategories = categories
+    .map((category: any) => ({
+      ...category,
+      services: category.services.filter((service: any) => {
+        const slug = String(service.href ?? "").split("/").filter(Boolean).at(-1) ?? "";
+        const experience = experienceFor(slug);
+        return (
+          (industryFilter === "All" || experience.industries.includes(industryFilter)) &&
+          (platformFilter === "All" || experience.platforms.includes(platformFilter))
+        );
+      }),
+    }))
+    .filter((category: any) => category.services.length > 0);
+  const visibleCount = filteredCategories.reduce(
+    (total: number, category: any) => total + category.services.length,
+    0,
+  );
 
   return (
     <main className="bg-primary">
@@ -157,8 +190,74 @@ export default function SolutionsPage({
         </div>
       </section>
 
+      <section className="border-b border-secondary bg-primary py-10 md:py-12">
+        <div className="mx-auto max-w-container px-4 md:px-8">
+          <SolutionFinderPromo />
+        </div>
+      </section>
+
+      <SolutionComparisonMatrix />
+
+      <section className="border-b border-secondary bg-primary py-10 md:py-12">
+        <div className="mx-auto max-w-container px-4 md:px-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Who this is for</p>
+              <h2 className="mt-2 text-display-xs font-semibold text-primary">Narrow the catalog live</h2>
+              <p className="mt-2 text-sm text-tertiary" aria-live="polite">
+                Showing {visibleCount} solution{visibleCount === 1 ? "" : "s"} for this environment.
+              </p>
+            </div>
+            <div className="flex flex-col gap-4">
+              <fieldset>
+                <legend className="mb-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Industry</legend>
+                <div className="flex flex-wrap gap-2">
+                  {["All", "Manufacturing", "Finance", "Healthcare"].map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      aria-pressed={industryFilter === filter}
+                      onClick={() => setIndustryFilter(filter)}
+                      className={cx(
+                        "rounded-full px-3 py-1.5 text-sm font-semibold ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                        industryFilter === filter
+                          ? "bg-brand-solid text-white ring-brand"
+                          : "bg-secondary text-secondary ring-secondary hover:ring-brand",
+                      )}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend className="mb-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Platform</legend>
+                <div className="flex flex-wrap gap-2">
+                  {["All", "IBM i", "Azure", "Hybrid"].map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      aria-pressed={platformFilter === filter}
+                      onClick={() => setPlatformFilter(filter)}
+                      className={cx(
+                        "rounded-full px-3 py-1.5 text-sm font-semibold ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                        platformFilter === filter
+                          ? "bg-brand-solid text-white ring-brand"
+                          : "bg-secondary text-secondary ring-secondary hover:ring-brand",
+                      )}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Solution categories — alternating surfaces give the page rhythm */}
-      {categories.map((cat: any, catIdx: number) => (
+      {filteredCategories.map((cat: any, catIdx: number) => (
         <section
           key={cat.title}
           className={cx(

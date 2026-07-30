@@ -57,6 +57,7 @@ export function CountUpNumber({
     duration,
     decimals: resolvedDecimals,
     elementRef: ref,
+    delayMs: 100,
   });
 
   return (

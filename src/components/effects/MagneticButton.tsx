@@ -8,15 +8,12 @@ interface MagneticButtonProps {
 }
 
 export default function MagneticButton({ children, className = "" }: MagneticButtonProps) {
-  const { ref, style, onMouseMove, onMouseLeave } = useMagneticButton();
+  const { ref } = useMagneticButton();
 
   return (
     <div
       ref={ref}
-      onMouseMove={onMouseMove}
-      onMouseLeave={onMouseLeave}
-      style={style}
-      className={`inline-block ${className}`}
+      className={`ice-interactive ice-magnetic inline-block ${className}`}
     >
       {children}
     </div>

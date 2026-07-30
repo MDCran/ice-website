@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { AlertCircle, Pencil01, Plus, Trash01, XClose } from "@untitledui/icons";
+import { AlertCircle, Copy01, Download01, Pencil01, Plus, Trash01, Upload01, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Input } from "@/components/base/input/input";
@@ -11,6 +11,8 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { NativeSelect } from "@/components/base/select/select-native";
 import { Toggle } from "@/components/base/toggle/toggle";
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { writeAuditLog } from "@/lib/auditLog";
+import { can } from "@/lib/admin/permissions";
 
 interface PageData {
   id: string;
@@ -146,6 +148,7 @@ export default function CMSPageActions({
   page?: PageData;
 }) {
   const router = useRouter();
+  const importInputRef = useRef<HTMLInputElement>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit" | "delete">("create");
   const [error, setError] = useState("");
@@ -257,6 +260,16 @@ export default function CMSPageActions({
     if (!page) return;
     setError("");
     const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data: profile } = user
+      ? await supabase.from("admin_profiles").select("role").eq("id", user.id).single()
+      : { data: null };
+    if (!can(profile?.role, "cms.delete")) {
+      setError("Your role cannot delete CMS pages.");
+      return;
+    }
 
     const { error: deleteError } = await supabase
       .from("pages")
@@ -268,17 +281,214 @@ export default function CMSPageActions({
       return;
     }
 
+    await writeAuditLog(supabase, {
+      action: "cms.page_deleted",
+      entityType: "page",
+      entityId: page.id,
+      summary: `Deleted ${page.title}`,
+    });
+
     setModalOpen(false);
     startTransition(() => router.refresh());
+  };
+
+  const handleClone = async () => {
+    if (!page) return;
+    setError("");
+    const supabase = createClient();
+    const cloneSlug = `${page.slug}-copy-${Date.now().toString(36).slice(-4)}`;
+
+    const { data: created, error: createError } = await supabase
+      .from("pages")
+      .insert({
+        title: `${page.title} (Copy)`,
+        slug: cloneSlug,
+        page_type: page.page_type,
+        meta_title: page.meta_title,
+        meta_description: page.meta_description,
+        is_published: false,
+        sort_order: page.sort_order + 1,
+      })
+      .select("id")
+      .single();
+
+    if (createError || !created) {
+      setError(createError?.message || "Clone failed");
+      return;
+    }
+
+    const { data: sections } = await supabase
+      .from("page_sections")
+      .select("section_key, section_type, content, sort_order, is_visible")
+      .eq("page_id", page.id);
+
+    if (sections?.length) {
+      const { error: secError } = await supabase.from("page_sections").insert(
+        sections.map((s) => ({
+          ...s,
+          page_id: created.id,
+        })),
+      );
+      if (secError) {
+        setError(secError.message);
+        return;
+      }
+    }
+
+    await writeAuditLog(supabase, {
+      action: "cms.page_cloned",
+      entityType: "page",
+      entityId: created.id,
+      summary: `Cloned ${page.title} → ${cloneSlug}`,
+      metadata: { source_id: page.id },
+    });
+
+    startTransition(() => router.push(`/admin/cms/${cloneSlug}`));
+  };
+
+  const handleExport = async () => {
+    if (!page) return;
+    const supabase = createClient();
+    const { data: sections } = await supabase
+      .from("page_sections")
+      .select("section_key, section_type, content, sort_order, is_visible")
+      .eq("page_id", page.id)
+      .order("sort_order", { ascending: true });
+
+    const payload = {
+      exported_at: new Date().toISOString(),
+      page: {
+        title: page.title,
+        slug: page.slug,
+        page_type: page.page_type,
+        meta_title: page.meta_title,
+        meta_description: page.meta_description,
+        is_published: page.is_published,
+      },
+      sections: sections ?? [],
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${page.slug}.ice-page.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    await writeAuditLog(supabase, {
+      action: "cms.page_exported",
+      entityType: "page",
+      entityId: page.id,
+      summary: `Exported ${page.slug}`,
+    });
+  };
+
+  const handleImportFile = async (file: File) => {
+    setError("");
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text) as {
+        page?: {
+          title?: string;
+          slug?: string;
+          page_type?: string;
+          meta_title?: string | null;
+          meta_description?: string | null;
+        };
+        sections?: Array<{
+          section_key: string;
+          section_type: string;
+          content: Record<string, unknown>;
+          sort_order?: number;
+          is_visible?: boolean;
+        }>;
+      };
+      if (!payload.page?.title) {
+        setError("Invalid ICE page JSON (missing page.title).");
+        return;
+      }
+
+      const supabase = createClient();
+      const importSlug =
+        (payload.page.slug ? slugify(payload.page.slug) : slugify(payload.page.title)) +
+        `-import-${Date.now().toString(36).slice(-4)}`;
+
+      const { data: created, error: createError } = await supabase
+        .from("pages")
+        .insert({
+          title: payload.page.title,
+          slug: importSlug,
+          page_type: payload.page.page_type || "static",
+          meta_title: payload.page.meta_title ?? null,
+          meta_description: payload.page.meta_description ?? null,
+          is_published: false,
+        })
+        .select("id")
+        .single();
+
+      if (createError || !created) {
+        setError(createError?.message || "Import failed");
+        return;
+      }
+
+      if (payload.sections?.length) {
+        await supabase.from("page_sections").insert(
+          payload.sections.map((s, i) => ({
+            page_id: created.id,
+            section_key: s.section_key,
+            section_type: s.section_type,
+            content: s.content ?? {},
+            sort_order: s.sort_order ?? i,
+            is_visible: s.is_visible !== false,
+          })),
+        );
+      }
+
+      await writeAuditLog(supabase, {
+        action: "cms.page_created",
+        entityType: "page",
+        entityId: created.id,
+        summary: `Imported ${payload.page.title}`,
+      });
+
+      startTransition(() => router.push(`/admin/cms/${importSlug}`));
+    } catch {
+      setError("Could not parse import file.");
+    }
   };
 
   // Render trigger
   if (mode === "create") {
     return (
       <>
-        <Button size="md" iconLeading={Plus} onClick={openCreate}>
-          Create Page
-        </Button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleImportFile(file);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              size="md"
+              color="secondary"
+              iconLeading={Upload01}
+              onClick={() => importInputRef.current?.click()}
+            >
+              Import JSON
+            </Button>
+            <Button size="md" iconLeading={Plus} onClick={openCreate}>
+              Create Page
+            </Button>
+          </div>
+          {error && <p className="text-sm text-error-primary">{error}</p>}
+        </div>
         {modalOpen && renderModal()}
       </>
     );
@@ -294,6 +504,20 @@ export default function CMSPageActions({
           icon={Pencil01}
           tooltip="Edit page"
           href={`/admin/cms/${page?.slug}`}
+        />
+        <ButtonUtility
+          size="xs"
+          color="tertiary"
+          icon={Copy01}
+          tooltip="Clone page"
+          onClick={() => void handleClone()}
+        />
+        <ButtonUtility
+          size="xs"
+          color="tertiary"
+          icon={Download01}
+          tooltip="Export JSON"
+          onClick={() => void handleExport()}
         />
         <ButtonUtility
           size="xs"

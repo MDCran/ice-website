@@ -1,9 +1,10 @@
 "use client";
 
-import type { FC, ReactElement, ReactNode } from "react";
+import type { FC, ReactElement, ReactNode, Ref } from "react";
 import React, { isValidElement } from "react";
 import type { ButtonProps as AriaButtonProps, LinkProps as AriaLinkProps } from "react-aria-components";
 import { Button as AriaButton, Link as AriaLink } from "react-aria-components";
+import { useMagneticButton } from "@/hooks/useMagneticButton";
 import { cx, sortCx } from "@/utils/cx";
 import { isReactComponent } from "@/utils/is-react-component";
 
@@ -150,6 +151,8 @@ export interface CommonProps {
     noTextPadding?: boolean;
     /** When true, keeps the text visible during loading state */
     showTextWhileLoading?: boolean;
+    /** Enables the restrained pointer-follow treatment. Defaults to primary CTAs. */
+    magnetic?: boolean;
 
     children?: ReactNode;
     className?: string;
@@ -183,12 +186,18 @@ export const Button: {
     isDisabled: disabled,
     isLoading: loading,
     showTextWhileLoading,
+    magnetic,
     ...props
 }) => {
     const href = "href" in props ? props.href : undefined;
 
     const isIcon = (IconLeading || IconTrailing) && !children;
     const isLinkType = ["link-gray", "link-color", "link-destructive"].includes(color);
+    const magneticEnabled = (magnetic ?? color === "primary") && !disabled && !loading;
+    const { ref: magneticRef } = useMagneticButton<HTMLAnchorElement | HTMLButtonElement>(
+        3,
+        magneticEnabled,
+    );
 
     noTextPadding = isLinkType || noTextPadding;
 
@@ -242,6 +251,7 @@ export const Button: {
             styles.common.root,
             styles.sizes[size].root,
             styles.colors[color].root,
+            magneticEnabled && "ice-interactive ice-magnetic",
             isLinkType && styles.sizes[size].linkRoot,
             (loading || (href && (disabled || loading))) && "pointer-events-none",
             // If in `loading` state, hide everything except the loading icon (and text if `showTextWhileLoading` is true).
@@ -252,8 +262,21 @@ export const Button: {
     };
 
     if ("href" in commonProps) {
-        return <AriaLink {...commonProps} href={disabled ? undefined : href} />;
+        return (
+            <AriaLink
+                {...commonProps}
+                ref={magneticRef as Ref<HTMLAnchorElement>}
+                href={disabled ? undefined : href}
+            />
+        );
     }
 
-    return <AriaButton {...commonProps} type={commonProps.type || "button"} isPending={loading} />;
+    return (
+        <AriaButton
+            {...commonProps}
+            ref={magneticRef as Ref<HTMLButtonElement>}
+            type={commonProps.type || "button"}
+            isPending={loading}
+        />
+    );
 };

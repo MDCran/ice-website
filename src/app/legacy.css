@@ -51,7 +51,7 @@
   --card-border: rgba(255, 255, 255, 0.06);
 }
 
-html {
+html:not(.lenis) {
   scroll-behavior: smooth;
 }
 
@@ -834,23 +834,17 @@ select:focus {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* Keep the partners marquee moving (slowly) — the blanket rule above
-     was freezing it entirely for anyone with OS "reduce motion" on. */
   .animate-ice-marquee {
-    animation: ice-marquee 90s linear infinite !important;
-    animation-duration: 90s !important;
-    animation-iteration-count: infinite !important;
+    animation: none !important;
+    transform: translateX(0) !important;
   }
-  /* Keep the journey pipeline beam flowing (slowly) under reduced motion. */
+
   .ice-timeline-beam {
-    animation: timeline-flow 8s linear infinite !important;
-    animation-duration: 8s !important;
-    animation-iteration-count: infinite !important;
+    animation: none !important;
   }
+
   .ice-gradient-text {
-    animation: ice-gradient-shift 12s linear infinite !important;
-    animation-duration: 12s !important;
-    animation-iteration-count: infinite !important;
+    animation: none !important;
   }
   .scan-line::after,
   .animate-marquee,

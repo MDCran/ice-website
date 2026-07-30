@@ -17,7 +17,7 @@ export default function ManagedServicesHero() {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.8, delay: 0.2 }}
-      className="relative w-72 h-72"
+      className="relative mx-auto h-72 w-72"
     >
       <div className="glass-card-static rounded-2xl p-6 w-full h-full border border-sky-500/10">
         {/* Dashboard header */}

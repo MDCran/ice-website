@@ -33,16 +33,19 @@ export default function ContactsFilter({
   initialFrom,
   initialTo,
   initialSort,
+  initialStage = "",
 }: {
   initialQuery: string;
   initialFrom: string;
   initialTo: string;
   initialSort: string;
+  initialStage?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [fromDate, setFromDate] = useState(initialFrom);
   const [toDate, setToDate] = useState(initialTo);
   const [sort, setSort] = useState(initialSort || "newest");
+  const [stage, setStage] = useState(initialStage);
   const [rangeDraft, setRangeDraft] = useState<{ start: DateValue; end: DateValue } | null>(() => {
     const start = fromYmd(initialFrom);
     const end = fromYmd(initialTo);
@@ -58,16 +61,24 @@ export default function ContactsFilter({
     return rangeDraft;
   }, [fromDate, toDate, rangeDraft]);
 
-  const applyFilters = (overrides?: { q?: string; from?: string; to?: string; sort?: string }) => {
+  const applyFilters = (overrides?: {
+    q?: string;
+    from?: string;
+    to?: string;
+    sort?: string;
+    stage?: string;
+  }) => {
     const params = new URLSearchParams();
     const q = overrides?.q ?? query;
     const f = overrides?.from ?? fromDate;
     const t = overrides?.to ?? toDate;
     const s = overrides?.sort ?? sort;
+    const st = overrides?.stage ?? stage;
     if (q.trim()) params.set("q", q.trim());
     if (f) params.set("from", f);
     if (t) params.set("to", t);
     if (s && s !== "newest") params.set("sort", s);
+    if (st) params.set("stage", st);
     router.push(`/admin/contacts${params.toString() ? `?${params}` : ""}`);
   };
 
@@ -82,6 +93,7 @@ export default function ContactsFilter({
     setToDate("");
     setRangeDraft(null);
     setSort("newest");
+    setStage("");
     router.push("/admin/contacts");
   };
 
@@ -148,6 +160,27 @@ export default function ContactsFilter({
 
       <NativeSelect
         size="sm"
+        aria-label="Pipeline stage"
+        value={stage || "all"}
+        onChange={(e) => {
+          const next = e.target.value === "all" ? "" : e.target.value;
+          setStage(next);
+          applyFilters({ stage: next });
+        }}
+        options={[
+          { label: "All stages", value: "all" },
+          { label: "New", value: "new" },
+          { label: "Contacted", value: "contacted" },
+          { label: "Qualified", value: "qualified" },
+          { label: "Won", value: "won" },
+          { label: "Lost", value: "lost" },
+        ]}
+        className="w-max"
+        selectClassName="pr-8"
+      />
+
+      <NativeSelect
+        size="sm"
         aria-label="Sort order"
         value={sort}
         onChange={(e) => {
@@ -162,7 +195,7 @@ export default function ContactsFilter({
         selectClassName="pr-8"
       />
 
-      {(query || fromDate || toDate || sort !== "newest") && (
+      {(query || fromDate || toDate || sort !== "newest" || stage) && (
         <Button type="button" size="sm" color="secondary" onClick={handleClear}>
           Clear
         </Button>

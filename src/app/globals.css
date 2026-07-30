@@ -99,8 +99,108 @@ body.menu-open [data-contact-widget] {
 }
 
 .animate-ice-marquee {
-  animation: ice-marquee 30s linear infinite;
+  animation: ice-marquee 28s linear infinite;
   will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Architecture pipeline — flowing current along the energized rail */
+@keyframes ice-arch-pipeline-sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.ice-arch-pipeline-sheen {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.15) 35%,
+    rgb(186 230 254 / 0.85) 50%,
+    rgb(255 255 255 / 0.15) 65%,
+    transparent 100%
+  );
+  animation: ice-arch-pipeline-sheen 1.5s linear infinite;
+  will-change: transform;
+}
+
+/* Architecture rail: independent light packets keep data moving across the
+   complete system while the highlighted layer advances. */
+@keyframes ice-arch-rail-flow {
+  0% {
+    left: 0;
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  12%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+
+.ice-arch-rail-flow {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(125 211 252 / 0.25) 25%,
+    rgb(255 255 255 / 0.95) 68%,
+    rgb(4 155 251 / 0.75) 82%,
+    transparent
+  );
+  box-shadow: 0 0 12px rgb(4 155 251 / 0.65);
+  animation: ice-arch-rail-flow 3.2s linear infinite;
+  will-change: left, transform, opacity;
+}
+
+.ice-arch-rail-flow-delayed {
+  animation-delay: -1.6s;
+}
+
+@keyframes ice-arch-node-breathe {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgb(4 155 251 / 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgb(4 155 251 / 0.24));
+  }
+}
+
+.ice-arch-node-breathe {
+  animation: ice-arch-node-breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes ice-arch-node-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+.ice-arch-node-pulse {
+  animation: ice-arch-node-pulse 2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ice-arch-pipeline-sheen,
+  .ice-arch-rail-flow,
+  .ice-arch-node-breathe,
+  .ice-arch-node-pulse {
+    animation: none !important;
+  }
 }
 
 /* Animated blue gradient for hero highlight text — a bright white sheen sweeps
@@ -138,7 +238,84 @@ body.menu-open [data-contact-widget] {
     animation: none;
     background-position: 44% center;
   }
+
+  .animate-ice-marquee {
+    animation: none !important;
+    transform: translateX(0) !important;
+    will-change: auto;
+  }
+
+  .ice-interactive,
+  .ice-magnetic,
+  .ice-lift {
+    transition: none !important;
+    transform: none !important;
+    will-change: auto;
+  }
 }
+
+/* ── Micro-interactions (#14) ───────────────────────────────────────────
+   Subtle press / lift affordances for interactive marketing surfaces.
+   Prefer these over one-off hover styles when adding new CTAs/cards. */
+.ice-interactive {
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 100ms ease;
+}
+
+.ice-interactive:active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
+
+.ice-magnetic {
+  --ice-magnetic-x: 0px;
+  --ice-magnetic-y: 0px;
+  transform: translate3d(var(--ice-magnetic-x), var(--ice-magnetic-y), 0);
+  transition:
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 100ms ease;
+  will-change: transform;
+}
+
+.ice-magnetic[data-magnetic-active="true"] {
+  transition-duration: 120ms, 160ms, 160ms, 160ms, 100ms;
+}
+
+.ice-magnetic:active:not(:disabled) {
+  transform:
+    translate3d(var(--ice-magnetic-x), calc(var(--ice-magnetic-y) + 1px), 0)
+    scale(0.99);
+}
+
+.ice-lift {
+  transition:
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ice-lift:hover {
+  transform: translateY(-4px);
+}
+
+.ice-underline-grow {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1.5px;
+  transition: background-size 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ice-underline-grow:hover,
+.ice-underline-grow:focus-visible {
+  background-size: 100% 1.5px;
+}
+
 
 /* Interactive elements always read as clickable. */
 button:not(:disabled),
@@ -152,8 +329,8 @@ summary {
   cursor: pointer;
 }
 
-/* Site-wide smooth scrolling (CSS-first; no trackpad hijacking). */
-html {
+/* Native fallback for pages without Lenis; Lenis owns public-site smoothing. */
+html:not(.lenis) {
   scroll-behavior: smooth;
 }
 

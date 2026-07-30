@@ -30,6 +30,7 @@ type ViewMode = "grid" | "list";
 export default function ResourcesPage() {
   const [resources, setResources] = useState<ClientResource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [category, setCategory] = useState<string>("all");
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== "undefined") {
       return (localStorage.getItem("portal_resources_view") as ViewMode) || "grid";
@@ -87,6 +88,19 @@ export default function ResourcesPage() {
     window.open(resource.file_url, "_blank");
   };
 
+  const categories = Array.from(
+    new Set(
+      resources
+        .map((r) => r.category?.trim())
+        .filter((c): c is string => Boolean(c)),
+    ),
+  ).sort();
+
+  const visibleResources =
+    category === "all"
+      ? resources
+      : resources.filter((r) => (r.category?.trim() || "Uncategorized") === category);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -101,10 +115,42 @@ export default function ResourcesPage() {
         <div>
           <h1 className="text-display-xs font-semibold text-primary">Documents</h1>
           <p className="mt-1 text-md text-tertiary">
-            {resources.length} document{resources.length !== 1 ? "s" : ""}{" "}
+            {visibleResources.length} document{visibleResources.length !== 1 ? "s" : ""}{" "}
             available
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {(categories.length > 0 || resources.some((r) => r.version_label)) && (
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCategory("all")}
+                className={cx(
+                  "rounded-full px-3 py-1 text-xs font-semibold ring-1 transition",
+                  category === "all"
+                    ? "bg-brand-solid text-white ring-brand-solid"
+                    : "bg-primary text-tertiary ring-secondary hover:text-primary",
+                )}
+              >
+                All
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(c)}
+                  className={cx(
+                    "rounded-full px-3 py-1 text-xs font-semibold ring-1 transition",
+                    category === c
+                      ? "bg-brand-solid text-white ring-brand-solid"
+                      : "bg-primary text-tertiary ring-secondary hover:text-primary",
+                  )}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          )}
         <div
           role="group"
           aria-label="View mode"
@@ -129,9 +175,10 @@ export default function ResourcesPage() {
             onClick={() => toggleView("list")}
           />
         </div>
+        </div>
       </div>
 
-      {resources.length === 0 ? (
+      {visibleResources.length === 0 ? (
         <div className="rounded-xl bg-primary py-12 shadow-xs ring-1 ring-secondary">
           <EmptyState size="sm">
             <EmptyState.Header>
@@ -147,7 +194,7 @@ export default function ResourcesPage() {
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {resources.map((resource) => (
+          {visibleResources.map((resource) => (
             <button
               key={resource.id}
               type="button"
@@ -165,6 +212,20 @@ export default function ResourcesPage() {
               <h3 className="mb-1 line-clamp-2 text-sm font-semibold text-primary">
                 {resource.title}
               </h3>
+              {(resource.category || resource.version_label) && (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {resource.category && (
+                    <Badge size="sm" color="gray">
+                      {resource.category}
+                    </Badge>
+                  )}
+                  {resource.version_label && (
+                    <Badge size="sm" color="brand">
+                      {resource.version_label}
+                    </Badge>
+                  )}
+                </div>
+              )}
               {resource.description && (
                 <p className="mb-3 line-clamp-2 text-sm text-tertiary">
                   {resource.description}
@@ -190,12 +251,13 @@ export default function ResourcesPage() {
           <Table aria-label="Resources">
             <Table.Header>
               <Table.Head id="title" isRowHeader label="Title" className="w-full" />
+              <Table.Head id="category" label="Category" />
               <Table.Head id="author" label="Author" />
               <Table.Head id="date" label="Date" />
               <Table.Head id="access" label="Access" />
               <Table.Head id="actions" aria-label="Actions" />
             </Table.Header>
-            <Table.Body items={resources}>
+            <Table.Body items={visibleResources}>
               {(resource) => (
                 <Table.Row
                   id={resource.id}
@@ -209,6 +271,9 @@ export default function ResourcesPage() {
                         <span className="text-sm font-medium text-primary">
                           {resource.title}
                         </span>
+                        {resource.version_label && (
+                          <p className="text-xs text-brand-secondary">{resource.version_label}</p>
+                        )}
                         {resource.description && (
                           <p className="line-clamp-1 text-xs text-quaternary">
                             {resource.description}
@@ -216,6 +281,15 @@ export default function ResourcesPage() {
                         )}
                       </div>
                     </div>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {resource.category ? (
+                      <Badge size="sm" color="gray">
+                        {resource.category}
+                      </Badge>
+                    ) : (
+                      "-"
+                    )}
                   </Table.Cell>
                   <Table.Cell>{resource.author || "-"}</Table.Cell>
                   <Table.Cell>

@@ -17,7 +17,7 @@ export default function SystemsManagementHero() {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.8, delay: 0.2 }}
-      className="relative w-72 h-72"
+      className="relative mx-auto h-72 w-72"
     >
       <svg viewBox="0 0 300 300" className="w-full h-full">
         {/* Outer frame */}

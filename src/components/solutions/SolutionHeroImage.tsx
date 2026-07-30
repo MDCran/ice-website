@@ -1,20 +1,39 @@
 "use client";
 
+import Image from "next/image";
+import { cx } from "@/utils/cx";
+
 interface SolutionHeroImageProps {
   src: string;
   alt: string;
+  priority?: boolean;
+  className?: string;
 }
 
-export default function SolutionHeroImage({ src, alt }: SolutionHeroImageProps) {
+/**
+ * LCP-friendly solution hero media — uses next/image with priority + sizes.
+ */
+export default function SolutionHeroImage({
+  src,
+  alt,
+  priority = true,
+  className,
+}: SolutionHeroImageProps) {
   return (
-    <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-secondary bg-secondary shadow-2xl dark:shadow-[0_24px_90px_rgb(4_155_251/0.18)]">
+    <div
+      className={cx(
+        "relative mx-auto w-full max-w-xl overflow-hidden rounded-3xl border border-secondary bg-secondary shadow-2xl dark:shadow-[0_24px_90px_rgb(4_155_251/0.18)]",
+        className,
+      )}
+    >
       <div className="relative aspect-[16/10]">
-        <img
+        <Image
           src={src}
           alt={alt}
-          loading="eager"
-          decoding="async"
-          className="h-full w-full object-cover"
+          fill
+          priority={priority}
+          sizes="(max-width: 1024px) 100vw, 560px"
+          className="object-cover"
         />
       </div>
       <div

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyNewLead } from "@/lib/notifyLead";
 
 /** Max lengths to keep submissions sane (DB columns are unbounded text). */
 const MAX_LENGTHS = {
@@ -47,17 +48,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const cleanCompany = cleanString(company, MAX_LENGTHS.company);
+    const cleanPhone = cleanString(phone, MAX_LENGTHS.phone);
+    const cleanService = cleanString(service, MAX_LENGTHS.service);
+
     // Anonymous inserts are allowed by RLS ("contacts: anon can insert").
     const supabase = await createClient();
-    const { error } = await supabase.from("contacts").insert({
+    const row: Record<string, unknown> = {
       name: cleanName,
       email: cleanEmail,
-      company: cleanString(company, MAX_LENGTHS.company),
-      phone: cleanString(phone, MAX_LENGTHS.phone),
-      service: cleanString(service, MAX_LENGTHS.service),
+      company: cleanCompany,
+      phone: cleanPhone,
+      service: cleanService,
       message: cleanMessage,
       sms_consent: smsConsent === true,
-    });
+      pipeline_stage: "new",
+    };
+
+    let { error } = await supabase.from("contacts").insert(row);
+    if (error && /pipeline_stage/i.test(error.message)) {
+      delete row.pipeline_stage;
+      ({ error } = await supabase.from("contacts").insert(row));
+    }
 
     if (error) {
       console.error("Supabase insert error:", error);
@@ -66,6 +78,17 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Fire-and-forget notifications (Slack / email when env configured).
+    void notifyNewLead({
+      name: cleanName,
+      email: cleanEmail,
+      company: cleanCompany,
+      phone: cleanPhone,
+      service: cleanService,
+      message: cleanMessage,
+      source: typeof body.source === "string" ? body.source : "contact_form",
+    });
 
     return NextResponse.json(
       { message: "Contact form submitted successfully." },

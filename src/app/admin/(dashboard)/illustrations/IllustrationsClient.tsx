@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Copy01, SearchLg } from "@untitledui/icons";
 import { IllustrationRenderer } from "@/components/illustrations/IllustrationRenderer";
 import type { IllustrationMeta } from "@/lib/illustrations";
+import { ILLUSTRATION_SIZE_PRESETS } from "@/lib/illustrations";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
@@ -88,13 +89,16 @@ export default function IllustrationsClient({
                 <p className="mt-0.5 text-xs text-tertiary">{ill.category}</p>
                 <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-tertiary">{ill.description}</p>
               </div>
-              {/* Tags */}
+              {/* Tags + size preset */}
               <div className="flex flex-wrap gap-1">
                 {ill.tags.slice(0, 3).map((tag) => (
                   <Badge key={tag} size="sm" color="gray">
                     {tag}
                   </Badge>
                 ))}
+                <Badge size="sm" color="brand">
+                  {ILLUSTRATION_SIZE_PRESETS[ill.defaultSize ?? "card"].label}
+                </Badge>
               </div>
               {/* Copy ID button */}
               <Button

@@ -31,6 +31,11 @@ This file is a machine-readable directory of ICE's services and company informat
 - [Systems Management](https://icesales.com/solutions/systems-management): Proactive management, patching, and performance tuning of IBM Power, IBM i, and enterprise server infrastructure.
 - [IBM Power VS](https://icesales.com/solutions/ibm-power-vs): Managed IBM Power Virtual Server (Power VS) deployments delivering scalable IBM i and AIX capacity on IBM Cloud.
 
+## Optional discovery
+- [Solution Finder](https://icesales.com/solutions/find): Three-question quiz that recommends ICE services.
+- [Resources](https://icesales.com/resources): Guides and primers for enterprise infrastructure teams.
+- [For AI](https://icesales.com/for-ai): Human-readable companion to this file for answer engines.
+
 ## Company
 - [Why ICE](https://icesales.com/why-ice): Over 35 years as an IBM Business Partner (since 1990), delivering enterprise-grade managed infrastructure, data protection, and security.
 - [Partners](https://icesales.com/partners): Authorized technology partnerships including IBM, plus alliances across leading enterprise hardware and software vendors.

@@ -38,6 +38,9 @@ import { IllustrationRenderer } from "@/components/illustrations/IllustrationRen
 import GenericCMSSections from "@/components/cms/GenericCMSSections";
 import { getIllustration } from "@/lib/illustrations";
 import { getIconNames } from "@/lib/iconMap";
+import { presetsForPageType, type CompositionPreset } from "@/lib/cms/compositionPresets";
+import { writeAuditLog } from "@/lib/auditLog";
+import SectionCanvasBuilder from "@/components/admin/SectionCanvasBuilder";
 
 const PAGE_SEO_KEY = "page_seo";
 
@@ -51,6 +54,9 @@ interface PageMeta {
   meta_description: string | null;
   page_type: string;
   is_published: boolean;
+  publish_status?: string | null;
+  scheduled_publish_at?: string | null;
+  published_at?: string | null;
   og_image_url?: string | null;
   twitter_image_url?: string | null;
   canonical_url?: string | null;
@@ -106,6 +112,11 @@ const SECTION_TYPES = [
   { value: "contact", label: "Contact Info" },
   { value: "form", label: "Form / Options" },
   { value: "illustration", label: "Illustration / Graphic" },
+  { value: "quote", label: "Quote / Testimonial" },
+  { value: "split_media", label: "Split Media" },
+  { value: "sla_table", label: "SLA / Spec Table" },
+  { value: "comparison", label: "Comparison" },
+  { value: "case_study", label: "Case Study / Outcome" },
   { value: "custom", label: "Custom" },
 ];
 
@@ -131,6 +142,11 @@ const TYPE_COLORS: Record<string, BadgeColor<"pill-color">> = {
   contact: "brand",
   form: "gray",
   illustration: "purple",
+  quote: "indigo",
+  split_media: "sky",
+  sla_table: "blue",
+  comparison: "warning",
+  case_study: "success",
   custom: "gray",
 };
 
@@ -157,6 +173,11 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       proof_labels: ["35+ Years in Business", "SOC 2 Type II", "24/7/365 US-Based Support"],
       hero_image: "/images/solutions/heroes/managed-cloud-hosting.webp",
       image_alt: "Enterprise technology solution illustration",
+      demo_video_url: "",
+      demo_poster: "",
+      demo_caption: "Product walkthrough (muted)",
+      experiment_id: "",
+      headline_b: "",
     },
   },
   {
@@ -177,6 +198,11 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       cta_primary: { label: "Call 1-800-786-9188", href: "tel:18007869188" },
       cta_secondary: { label: "Explore Solutions", href: "/solutions" },
       proof_labels: ["35+ Years in Business", "SOC 2 Type II", "24/7/365 US-Based Support"],
+      experiment_id: "",
+      headline_b: "",
+      headline_highlight_b: "",
+      subheadline_b: "",
+      cta_primary_b: { label: "", href: "" },
     },
   },
   {
@@ -656,6 +682,112 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     },
   },
   {
+    id: "quote",
+    label: "Quote / Testimonial",
+    description: "Large pull-quote with attribution.",
+    key: "quote",
+    type: "quote",
+    excludePageTypes: ["legal", "settings"],
+    excludeSlugs: ["site-settings"],
+    content: {
+      quote:
+        "ICE keeps our IBM Power workloads available and secure so our team can focus on the business.",
+      attribution: "IT Director",
+      role: "Mid-market manufacturer",
+    },
+  },
+  {
+    id: "split-media",
+    label: "Split Media",
+    description: "Image + copy split band for storytelling without another card grid.",
+    key: "split_media",
+    type: "split_media",
+    excludePageTypes: ["legal", "settings"],
+    excludeSlugs: ["site-settings"],
+    content: {
+      eyebrow: "Infrastructure",
+      heading: "Built for mission-critical workloads",
+      description:
+        "Tier-3 data centers with geographic separation, redundant power, and SOC 2 Type II controls.",
+      image: "/images/service/data_center.jpg",
+      image_alt: "ICE data center",
+      media_position: "right",
+      features: ["SOC 2 Type II", "99.99% uptime target", "24/7 US-based NOC"],
+      cta: { label: "Learn more", href: "/solutions/managed-cloud-hosting" },
+    },
+  },
+  {
+    id: "sla-table",
+    label: "SLA / Spec Table",
+    description: "Enumerable service-level metrics table.",
+    key: "sla_table",
+    type: "sla_table",
+    pageTypes: ["solution"],
+    content: {
+      eyebrow: "Commitments",
+      heading: "Service levels",
+      description: "Contractual targets for availability and response.",
+      rows: [
+        { metric: "Uptime SLA", target: "99.99%", notes: "Contractual target" },
+        { metric: "Incident response", target: "15 minutes", notes: "Mean response" },
+        { metric: "Support coverage", target: "24/7/365", notes: "US-based NOC + SOC" },
+      ],
+    },
+  },
+  {
+    id: "comparison",
+    label: "Comparison",
+    description: "Status quo vs ICE comparison table.",
+    key: "comparison",
+    type: "comparison",
+    excludePageTypes: ["legal", "settings"],
+    excludeSlugs: ["site-settings"],
+    content: {
+      eyebrow: "The difference",
+      heading: "ICE managed vs status quo",
+      description:
+        "Direct comparison for teams evaluating DIY operations or a generalist MSP against ICE managed services.",
+      before_label: "In-house / generic MSP",
+      after_label: "With ICE",
+      footnote: "SLAs and coverage vary by contract; figures reflect typical ICE managed offerings.",
+      rows: [
+        { label: "IBM Power expertise", before: "Generalist coverage", after: "Specialists since 1990" },
+        { label: "Uptime accountability", before: "Best effort", after: "Contractual SLA" },
+        { label: "Security operations", before: "Business hours", after: "24/7 US-based SOC" },
+        { label: "DR testing", before: "Ad hoc / untested", after: "Scheduled restore tests" },
+        { label: "Escalation path", before: "Ticket queue", after: "Named architects + NOC" },
+      ],
+    },
+  },
+  {
+    id: "case-study",
+    label: "Case Study / Outcome",
+    description: "Anonymized outcome module with metrics.",
+    key: "case_study",
+    type: "case_study",
+    excludePageTypes: ["legal", "settings"],
+    excludeSlugs: ["site-settings"],
+    content: {
+      industry: "Manufacturing",
+      anonymized: true,
+      heading: "Cut recovery time without a capital refresh",
+      summary:
+        "A mid-market manufacturer moved IBM i workloads to ICE-managed infrastructure and established a tested DR runbook.",
+      challenge:
+        "Aging on-prem Power hardware and an untested DR plan left recovery timelines measured in days.",
+      solution:
+        "ICE hosted the IBM i estate with replication, runbooks, and quarterly restore tests under a managed SLA.",
+      outcome:
+        "Documented RTO of 4 hours and RPO of 15 minutes, with operations load down roughly 40%.",
+      metrics: [
+        { value: "4", suffix: " hr", label: "RTO target" },
+        { value: "15", suffix: " min", label: "RPO target" },
+        { value: "40", suffix: "%", label: "Lower ops load" },
+      ],
+      cta: { label: "Talk to an expert", href: "/contact" },
+    },
+  },
+  {
     id: "home-infrastructure",
     label: "Home Infrastructure",
     description: "Architecture / infrastructure intro copy on the home page.",
@@ -781,14 +913,46 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       ibm_partner_label: "IBM Business Partner",
       ibm_partner_sublabel: "Since 1990",
       copyright: "International Computer Exchange, Inc.",
-      get_in_touch_heading: "Get in touch",
-      get_in_touch_description: "Ready to modernize your IT infrastructure? Our experts are here to help.",
-      get_in_touch_cta_label: "Contact Us",
+      get_in_touch_heading: "Ready to modernize your infrastructure?",
+      get_in_touch_description:
+        "Speak with an ICE specialist about managed cloud, data protection, security, and IBM Power environments.",
+      get_in_touch_cta_label: "Speak to an Expert",
       get_in_touch_cta_href: "/contact",
-      show_get_in_touch: false,
+      show_get_in_touch: true,
       show_contact_bar: true,
       show_solutions_accordion: true,
       social_links: [],
+    },
+  },
+  {
+    id: "site-announcement",
+    label: "Announcement Banner",
+    description: "Optional top-of-site promo strip with schedule and dismiss.",
+    key: "announcement_banner",
+    type: "content",
+    slugs: ["site-settings"],
+    content: {
+      enabled: false,
+      id: "default",
+      message: "IBM Business Partner since 1990 — talk with an ICE specialist today.",
+      href: "/contact",
+      cta_label: "Book a consultation",
+      dismissible: true,
+      starts_at: null,
+      ends_at: null,
+    },
+  },
+  {
+    id: "site-booking",
+    label: "Booking / Calendar",
+    description: "Calendly (or similar) URL for contact booking CTAs.",
+    key: "booking",
+    type: "content",
+    slugs: ["site-settings"],
+    content: {
+      calendly_url: "",
+      title: "Book a 30-minute assessment",
+      description: "Pick a time that works — talk with an ICE specialist.",
     },
   },
 ];
@@ -1017,6 +1181,11 @@ export default function CMSPageEditor({
   const [metaTitle, setMetaTitle] = useState(page.meta_title ?? "");
   const [metaDesc, setMetaDesc] = useState(page.meta_description ?? "");
   const [isPublished, setIsPublished] = useState(page.is_published);
+  const [scheduledPublishAt, setScheduledPublishAt] = useState(
+    page.scheduled_publish_at
+      ? page.scheduled_publish_at.slice(0, 16)
+      : ""
+  );
   const [canonicalUrl, setCanonicalUrl] = useState(
     page.canonical_url ?? (typeof seoSeed.canonical_url === "string" ? seoSeed.canonical_url : "")
   );
@@ -1049,6 +1218,7 @@ export default function CMSPageEditor({
 
   // Preview — side-by-side live preview of current editor state
   const [showPreview, setShowPreview] = useState(true);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
 
   const active = sections.filter((s) => !s._deleted).sort((a, b) => a.sort_order - b.sort_order);
   const activeKeys = active.map((section) => section.section_key);
@@ -1107,6 +1277,38 @@ export default function CMSPageEditor({
     appendSection(template.key, template.type, cloneContent(template.content));
   };
 
+  const applyCompositionPreset = (preset: CompositionPreset) => {
+    setSections((prev) => {
+      const current = prev.filter((s) => !s._deleted);
+      const existing = new Set(current.map((s) => s.section_key));
+      let maxOrder = current.reduce((max, s) => Math.max(max, s.sort_order), -1);
+      const additions: Section[] = [];
+
+      for (const templateId of preset.templateIds) {
+        const template = SECTION_TEMPLATES.find((t) => t.id === templateId);
+        if (!template) continue;
+        if (!templateAppliesToPage(template, page)) continue;
+        if (existing.has(template.key)) continue;
+        const key = uniqueSectionKey(template.key, [...existing]);
+        existing.add(key);
+        maxOrder += 1;
+        additions.push({
+          id: `new_${Date.now()}_${template.id}_${maxOrder}`,
+          section_key: key,
+          section_type: template.type,
+          content: cloneContent(template.content),
+          sort_order: maxOrder,
+          is_visible: true,
+          _isNew: true,
+        });
+      }
+
+      if (additions.length === 0) return prev;
+      return [...prev, ...additions];
+    });
+    dirty();
+  };
+
   const duplicateSection = (section: Section) => {
     appendSection(`${section.section_key}_copy`, section.section_type, cloneContent(section.content));
   };
@@ -1152,6 +1354,17 @@ export default function CMSPageEditor({
     dirty();
   };
 
+  const reorderSections = (orderedIds: string[]) => {
+    setSections((prev) =>
+      prev.map((s) => {
+        const nextOrder = orderedIds.indexOf(s.id);
+        if (nextOrder < 0) return s;
+        return { ...s, sort_order: nextOrder };
+      }),
+    );
+    dirty();
+  };
+
   const addSection = () => {
     const sectionKey = cleanSectionKey(newKey || selectedTemplate?.key || "");
     if (!sectionKey) return;
@@ -1170,15 +1383,45 @@ export default function CMSPageEditor({
     setSaveStatus("saving");
     setErrorMsg("");
     try {
-      const { error: pageErr } = await supabase.from("pages").update({
+      const nowIso = new Date().toISOString();
+      const scheduleIso = scheduledPublishAt
+        ? new Date(scheduledPublishAt).toISOString()
+        : null;
+      const publishStatus = isPublished
+        ? "published"
+        : scheduleIso
+          ? "scheduled"
+          : "draft";
+
+      const pageUpdate: Record<string, unknown> = {
         title: title.trim(),
         slug: slug.trim(),
         meta_title: metaTitle.trim() || null,
         meta_description: metaDesc.trim() || null,
-        is_published: isPublished,
-        updated_at: new Date().toISOString(),
-      }).eq("id", page.id);
-      if (pageErr) throw pageErr;
+        is_published: isPublished || (scheduleIso != null && Date.parse(scheduleIso) <= Date.now()),
+        updated_at: nowIso,
+      };
+
+      // Optional columns from 20260729_cms_publish_schedule.sql — ignore if missing.
+      pageUpdate.publish_status = pageUpdate.is_published ? "published" : publishStatus;
+      pageUpdate.scheduled_publish_at = pageUpdate.is_published ? null : scheduleIso;
+      if (pageUpdate.is_published) pageUpdate.published_at = nowIso;
+
+      let { error: pageErr } = await supabase.from("pages").update(pageUpdate).eq("id", page.id);
+      if (pageErr && /publish_status|scheduled_publish_at|published_at/i.test(pageErr.message)) {
+        // Migration not applied yet — fall back to classic is_published only.
+        const { error: fallbackErr } = await supabase.from("pages").update({
+          title: title.trim(),
+          slug: slug.trim(),
+          meta_title: metaTitle.trim() || null,
+          meta_description: metaDesc.trim() || null,
+          is_published: Boolean(pageUpdate.is_published),
+          updated_at: nowIso,
+        }).eq("id", page.id);
+        if (fallbackErr) throw fallbackErr;
+      } else if (pageErr) {
+        throw pageErr;
+      }
 
       // Per-page SEO extras live in a reserved page_sections row (no schema migration required).
       const seoContent = {
@@ -1259,6 +1502,21 @@ export default function CMSPageEditor({
             _deleted: false,
           }))
       );
+
+      await writeAuditLog(supabase, {
+        action: "cms.page_saved",
+        entityType: "page",
+        entityId: page.id,
+        summary: `Saved ${title.trim() || page.title}`,
+        metadata: { slug: slug.trim(), section_count: sections.filter((s) => !s._deleted).length },
+      });
+
+      // Invalidate tagged CMS cache (#31)
+      void fetch("/api/admin/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: slug.trim() || page.slug }),
+      }).catch(() => undefined);
 
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2500);
@@ -1422,12 +1680,23 @@ export default function CMSPageEditor({
                 )}
               </div>
             </div>
-            <Toggle
-              size="sm"
-              label={isPublished ? "Published" : "Draft"}
-              isSelected={isPublished}
-              onChange={(value) => { setIsPublished(value); dirty(); }}
-            />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+              <Toggle
+                size="sm"
+                label={isPublished ? "Published" : scheduledPublishAt ? "Scheduled" : "Draft"}
+                isSelected={isPublished}
+                onChange={(value) => { setIsPublished(value); dirty(); }}
+              />
+              {!isPublished && (
+                <Input
+                  label="Schedule publish"
+                  type="datetime-local"
+                  value={scheduledPublishAt}
+                  onChange={(value) => { setScheduledPublishAt(value); dirty(); }}
+                  hint="Requires DB migration. Leave blank for draft-only."
+                />
+              )}
+            </div>
             <MediaBrowserModal
               open={ogMediaOpen}
               onClose={() => setOgMediaOpen(false)}
@@ -1474,6 +1743,28 @@ export default function CMSPageEditor({
           </div>
         )}
 
+        {presetsForPageType(page.page_type).length > 0 && (
+          <div className="rounded-xl bg-secondary p-5 ring-1 ring-secondary ring-inset">
+            <h2 className="text-sm font-semibold text-primary">Composition presets</h2>
+            <p className="mt-1 text-xs text-tertiary">
+              Add a curated section stack. Existing keys are skipped so nothing is duplicated.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {presetsForPageType(page.page_type).map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => applyCompositionPreset(preset)}
+                  className="rounded-xl bg-primary p-4 text-left ring-1 ring-secondary transition hover:ring-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                >
+                  <span className="text-sm font-semibold text-primary">{preset.label}</span>
+                  <span className="mt-1 block text-xs text-tertiary">{preset.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Sections */}
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-primary">
@@ -1498,116 +1789,57 @@ export default function CMSPageEditor({
             </EmptyState>
           </div>
         ) : (
-          <div className="space-y-2">
-            {active.map((section, idx) => {
-              const isExpanded = expandedIds.has(section.id);
-              const badgeColor = TYPE_COLORS[section.section_type] ?? TYPE_COLORS.custom;
-
+          <SectionCanvasBuilder
+            sections={active.map((s) => ({
+              id: s.id,
+              section_key: s.section_key,
+              section_type: s.section_type,
+              is_visible: s.is_visible,
+              sort_order: s.sort_order,
+            }))}
+            expandedIds={expandedIds}
+            typeColors={TYPE_COLORS}
+            getTypeLabel={getTypeLabel}
+            prettifyKey={prettifyKey}
+            onReorder={reorderSections}
+            onToggleExpand={toggleExpand}
+            onToggleVisible={(id) => {
+              const section = active.find((s) => s.id === id);
+              if (section) updateSection(id, "is_visible", !section.is_visible);
+            }}
+            onDuplicate={(id) => {
+              const section = active.find((s) => s.id === id);
+              if (section) duplicateSection(section);
+            }}
+            onDelete={deleteSection}
+            renderExpanded={(id) => {
+              const section = active.find((s) => s.id === id);
+              if (!section) return null;
               return (
-                <div
-                  key={section.id}
-                  className={cx(
-                    "overflow-hidden rounded-xl bg-primary ring-1 ring-secondary transition-colors",
-                    !section.is_visible && "opacity-60"
-                  )}
-                >
-                  {/* Section header */}
-                  <div
-                    className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary"
-                    onClick={() => toggleExpand(section.id)}
-                  >
-                    {/* Reorder (stop propagation so clicking arrows doesn't toggle) */}
-                    <div className="flex shrink-0 flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        aria-label="Move section up"
-                        onClick={() => moveSection(idx, "up")}
-                        disabled={idx === 0}
-                        className="cursor-pointer rounded p-0.5 text-fg-quaternary transition-colors hover:text-fg-quaternary_hover disabled:cursor-not-allowed disabled:opacity-25"
-                      >
-                        <ArrowUp className="size-3" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Move section down"
-                        onClick={() => moveSection(idx, "down")}
-                        disabled={idx === active.length - 1}
-                        className="cursor-pointer rounded p-0.5 text-fg-quaternary transition-colors hover:text-fg-quaternary_hover disabled:cursor-not-allowed disabled:opacity-25"
-                      >
-                        <ArrowDown className="size-3" />
-                      </button>
-                    </div>
-
-                    {/* Name + type */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium text-primary">{prettifyKey(section.section_key)}</span>
-                        <Badge size="sm" color={badgeColor}>
-                          {getTypeLabel(section.section_type)}
-                        </Badge>
-                      </div>
-                      <span className="text-xs text-quaternary">{section.section_key}</span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                      <ButtonUtility
-                        size="xs"
-                        color="tertiary"
-                        icon={section.is_visible ? Eye : EyeOff}
-                        tooltip={section.is_visible ? "Hide section" : "Show section"}
-                        onClick={() => updateSection(section.id, "is_visible", !section.is_visible)}
-                      />
-                      <ButtonUtility
-                        size="xs"
-                        color="tertiary"
-                        icon={Copy01}
-                        tooltip="Duplicate section"
-                        onClick={() => duplicateSection(section)}
-                      />
-                      <ButtonUtility
-                        size="xs"
-                        color="tertiary"
-                        icon={Trash01}
-                        tooltip="Delete section"
-                        onClick={() => deleteSection(section.id)}
-                      />
-                    </div>
-                    <ChevronDown
-                      className={cx("size-4 shrink-0 text-fg-quaternary transition-transform", isExpanded && "rotate-180")}
-                      aria-hidden
+                <div className="space-y-4 border-t border-secondary p-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      label="Section Key"
+                      size="sm"
+                      value={section.section_key}
+                      onChange={(value) => updateSection(section.id, "section_key", value)}
+                    />
+                    <NativeSelect
+                      label="Type"
+                      size="sm"
+                      value={section.section_type}
+                      onChange={(e) => updateSection(section.id, "section_type", e.target.value)}
+                      options={SECTION_TYPES}
                     />
                   </div>
-
-                  {/* Expanded content */}
-                  {isExpanded && (
-                    <div className="space-y-4 border-t border-secondary p-5">
-                      <div className="grid grid-cols-2 gap-3">
-                        <Input
-                          label="Section Key"
-                          size="sm"
-                          value={section.section_key}
-                          onChange={(value) => updateSection(section.id, "section_key", value)}
-                        />
-                        <NativeSelect
-                          label="Type"
-                          size="sm"
-                          value={section.section_type}
-                          onChange={(e) => updateSection(section.id, "section_type", e.target.value)}
-                          options={SECTION_TYPES}
-                        />
-                      </div>
-
-                      <ContentEditor
-                        content={section.content}
-                        onChange={(c) => updateContent(section.id, c)}
-                      />
-                    </div>
-                  )}
+                  <ContentEditor
+                    content={section.content}
+                    onChange={(c) => updateContent(section.id, c)}
+                  />
                 </div>
               );
-            })}
-          </div>
+            }}
+          />
         )}
 
         {/* Add Section Modal */}
@@ -1684,26 +1916,67 @@ export default function CMSPageEditor({
                 <span className="text-xs font-medium text-tertiary">Live Preview</span>
                 <Badge size="sm" color="gray">Draft</Badge>
               </div>
-              <a
-                href={previewUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs font-medium text-brand-secondary hover:text-brand-secondary_hover"
-              >
-                Open published <LinkExternal01 className="size-3" />
-              </a>
+              <div className="flex items-center gap-2">
+                <div className="flex rounded-lg bg-secondary p-0.5 ring-1 ring-secondary">
+                  <button
+                    type="button"
+                    className={cx(
+                      "rounded-md px-2 py-1 text-xs font-semibold transition",
+                      previewDevice === "desktop"
+                        ? "bg-primary text-primary shadow-xs"
+                        : "text-tertiary hover:text-secondary",
+                    )}
+                    onClick={() => setPreviewDevice("desktop")}
+                  >
+                    Desktop
+                  </button>
+                  <button
+                    type="button"
+                    className={cx(
+                      "rounded-md px-2 py-1 text-xs font-semibold transition",
+                      previewDevice === "mobile"
+                        ? "bg-primary text-primary shadow-xs"
+                        : "text-tertiary hover:text-secondary",
+                    )}
+                    onClick={() => setPreviewDevice("mobile")}
+                  >
+                    Mobile
+                  </button>
+                </div>
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs font-medium text-brand-secondary hover:text-brand-secondary_hover"
+                >
+                  Open published <LinkExternal01 className="size-3" />
+                </a>
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto bg-secondary">
-              <div className="origin-top scale-[0.85] transform bg-primary" style={{ width: "117.6%" }}>
-                <GenericCMSSections
-                  sections={active.filter((s) => s.is_visible)}
-                  excludeKeys={[PAGE_SEO_KEY, "seo", "company_info", "footer"]}
-                />
-                {active.filter((s) => s.is_visible).length === 0 && (
-                  <div className="px-6 py-16 text-center text-sm text-tertiary">
-                    Add or show sections to preview this page.
-                  </div>
+            <div className="flex flex-1 justify-center overflow-y-auto bg-secondary p-4">
+              <div
+                className={cx(
+                  "origin-top overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary transition-all",
+                  previewDevice === "mobile" ? "w-[390px]" : "w-full",
                 )}
+              >
+                <div
+                  className={cx(
+                    "origin-top transform bg-primary",
+                    previewDevice === "desktop" && "scale-[0.85]",
+                  )}
+                  style={previewDevice === "desktop" ? { width: "117.6%" } : undefined}
+                >
+                  <GenericCMSSections
+                    sections={active.filter((s) => s.is_visible)}
+                    excludeKeys={[PAGE_SEO_KEY, "seo", "company_info", "footer"]}
+                  />
+                  {active.filter((s) => s.is_visible).length === 0 && (
+                    <div className="px-6 py-16 text-center text-sm text-tertiary">
+                      Add or show sections to preview this page.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

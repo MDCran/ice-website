@@ -1,15 +1,21 @@
 import { Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import SkipToContent from "@/components/layout/SkipToContent";
 import PageTransition from "@/components/effects/PageTransition";
+import SmoothScroll from "@/components/effects/SmoothScroll";
 import SearchModal from "@/components/ui/SearchModal";
 import ContactWidget from "@/components/ui/ContactWidget";
+import AnnouncementBanner from "@/components/marketing/AnnouncementBanner";
+import SoftLeadCapture from "@/components/marketing/SoftLeadCapture";
 import Analytics from "@/components/analytics/Analytics";
 import PageViewTracker from "@/components/analytics/PageViewTracker";
+import WebVitalsReporter from "@/components/analytics/WebVitalsReporter";
 import { getSiteSettings, getNavigation, getSearchIndex } from "@/lib/cms";
 import { getSeoConfig } from "@/lib/seo/config";
 import { JsonLd, organization, webSite } from "@/lib/seo/jsonld";
 import type { FooterCMSData } from "@/components/layout/Footer";
+import type { AnnouncementBannerContent } from "@/components/marketing/AnnouncementBanner";
 
 export default async function PublicLayout({
   children,
@@ -86,6 +92,8 @@ export default async function PublicLayout({
     );
   }
 
+  const announcement = (settings?.announcement_banner ?? null) as AnnouncementBannerContent | null;
+
   return (
     <>
       <JsonLd data={organization(seo)} />
@@ -94,11 +102,18 @@ export default async function PublicLayout({
       <Suspense fallback={null}>
         <PageViewTracker />
       </Suspense>
+      <WebVitalsReporter />
+      <SmoothScroll />
+      <SkipToContent />
+      <AnnouncementBanner content={announcement} />
       <SearchModal items={searchItems} />
       <Navbar navItems={navItems} companyInfo={settings?.company_info} />
-      <PageTransition>{children}</PageTransition>
+      <PageTransition>
+        <div id="main-content">{children}</div>
+      </PageTransition>
       <Footer cmsData={footerData} />
       <ContactWidget />
+      <SoftLeadCapture />
     </>
   );
 }

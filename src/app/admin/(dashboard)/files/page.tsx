@@ -57,6 +57,9 @@ export default function MediaPage() {
   const [deleting, setDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [missingAltOnly, setMissingAltOnly] = useState(false);
+  const [whereUsed, setWhereUsed] = useState<string[]>([]);
+  const [whereUsedLoading, setWhereUsedLoading] = useState(false);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [creatingFolder, setCreatingFolder] = useState(false);
@@ -108,10 +111,25 @@ export default function MediaPage() {
       });
   }, [files]);
 
-  // Filtered files
-  const filteredFiles = searchQuery
-    ? files.filter((f) => f.file_name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : files;
+  // Filtered files (#37 — missing alt enforcement + search)
+  const filteredFiles = files.filter((f) => {
+    if (f.file_name === ".folder") return false;
+    if (missingAltOnly) {
+      const isImage = (f.file_type || "").startsWith("image/");
+      if (!isImage || (f.alt_text && f.alt_text.trim())) return false;
+    }
+    if (searchQuery && !f.file_name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+
+  const missingAltCount = files.filter(
+    (f) =>
+      f.file_name !== ".folder" &&
+      (f.file_type || "").startsWith("image/") &&
+      !(f.alt_text && f.alt_text.trim()),
+  ).length;
 
   const handleUpload = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
@@ -243,6 +261,34 @@ export default function MediaPage() {
     if (selectedFile) {
       setAltText(selectedFile.alt_text ?? "");
     }
+  }, [selectedFile]);
+
+  useEffect(() => {
+    async function findWhereUsed() {
+      if (!selectedFile?.public_url) {
+        setWhereUsed([]);
+        return;
+      }
+      setWhereUsedLoading(true);
+      const supabase = createClient();
+      const needle = selectedFile.public_url;
+      const { data } = await supabase
+        .from("page_sections")
+        .select("section_key, content, pages(slug, title)")
+        .limit(800);
+
+      const labels = (data ?? [])
+        .filter((row) => JSON.stringify(row.content ?? {}).includes(needle))
+        .map((row) => {
+          const page = Array.isArray(row.pages) ? row.pages[0] : row.pages;
+          const title = (page as { title?: string } | null)?.title || "Page";
+          return `${title} · ${row.section_key}`;
+        });
+
+      setWhereUsed([...new Set(labels)].slice(0, 20));
+      setWhereUsedLoading(false);
+    }
+    void findWhereUsed();
   }, [selectedFile]);
 
   const formatFileSize = (bytes: number | null) => {
@@ -406,6 +452,14 @@ export default function MediaPage() {
                 onChange={(value) => setSearchQuery(value)}
               />
             </div>
+
+            <Button
+              size="sm"
+              color={missingAltOnly ? "primary" : "secondary"}
+              onClick={() => setMissingAltOnly((v) => !v)}
+            >
+              Missing alt{missingAltCount ? ` (${missingAltCount})` : ""}
+            </Button>
 
             {/* View toggle */}
             <div className="flex items-center gap-0.5 rounded-lg bg-primary p-0.5 ring-1 ring-secondary">
@@ -632,6 +686,11 @@ export default function MediaPage() {
                   value={altText}
                   onChange={(value) => setAltText(value)}
                   textAreaClassName="resize-none"
+                  hint={
+                    isImage(selectedFile.file_type) && !altText.trim()
+                      ? "Required for accessibility — images without alt are flagged."
+                      : undefined
+                  }
                 />
                 <Button
                   size="sm"
@@ -643,6 +702,27 @@ export default function MediaPage() {
                 >
                   {savingAlt ? "Saving..." : "Save Alt Text"}
                 </Button>
+              </div>
+
+              {/* Where used (#37) */}
+              <div>
+                <p className="mb-1.5 text-xs font-semibold text-quaternary uppercase">Where used</p>
+                {whereUsedLoading ? (
+                  <p className="text-xs text-tertiary">Scanning CMS sections…</p>
+                ) : whereUsed.length === 0 ? (
+                  <p className="text-xs text-tertiary">Not found in page section content.</p>
+                ) : (
+                  <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-secondary">
+                    {whereUsed.map((label) => (
+                      <li key={label} className="rounded-md bg-secondary px-2 py-1.5 ring-1 ring-secondary">
+                        {label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="mt-2 text-[11px] text-quaternary">
+                  Crop presets: use hero (16:9), card (4:3), or square (1:1) assets when uploading.
+                </p>
               </div>
 
               {/* Actions */}
