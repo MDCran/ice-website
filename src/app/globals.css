@@ -90,6 +90,36 @@ body.menu-open [data-contact-widget] {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+/* React Aria mounts select popovers in a global overlay layer (z-index 100000).
+   Keep the sticky site header above contact-form dropdowns only; other modal
+   overlays retain their intended full-screen stacking behavior. */
+body:has(.contact-form-popover) [data-site-navbar] {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 100001;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto;
+}
+
+body:has(.contact-form-popover) {
+  --ice-contact-popover-nav-offset: 4.5625rem;
+  padding-top: var(--ice-contact-popover-nav-offset);
+}
+
+.contact-form-popover {
+  overscroll-behavior: contain;
+  isolation: isolate;
+}
+
+@media (max-width: 1023px) {
+  body:has(.contact-form-popover) {
+    --ice-contact-popover-nav-offset: 4rem;
+  }
+}
+
 /* Homepage partner marquee — dedicated keyframe (the generic `marquee` name
    is defined twice elsewhere with conflicting end values). Track holds two
    identical logo sets, so -50% is one full set = seamless loop. */
@@ -99,9 +129,114 @@ body.menu-open [data-contact-widget] {
 }
 
 .animate-ice-marquee {
-  animation: ice-marquee 28s linear infinite;
+  animation: ice-marquee var(--ice-marquee-duration, 28s) linear infinite;
   will-change: transform;
   backface-visibility: hidden;
+}
+
+@keyframes ice-hero-scroll-cue {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+@keyframes ice-hero-scroll-wheel {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.15rem);
+  }
+  22%,
+  58% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(1.55rem);
+  }
+}
+
+@keyframes ice-hero-scroll-chevron {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: translateY(-2px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(4px);
+  }
+}
+
+.ice-hero-scroll-cue {
+  animation: ice-hero-scroll-cue 1.85s ease-in-out infinite;
+  will-change: transform;
+}
+
+.ice-hero-scroll-wheel {
+  animation: ice-hero-scroll-wheel 1.85s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.ice-hero-scroll-chevron {
+  animation: ice-hero-scroll-chevron 1.85s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.ice-hero-scroll-cue:hover {
+  animation-duration: 1.35s;
+}
+
+@keyframes ice-timeline-auto-beam {
+  0% {
+    opacity: 0;
+    top: -24%;
+  }
+  10%,
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    top: 100%;
+  }
+}
+
+@keyframes ice-timeline-auto-tip {
+  0% {
+    opacity: 0;
+    top: 0%;
+  }
+  8%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    top: 100%;
+  }
+}
+
+.ice-timeline-auto-beam {
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(4 155 251 / 0.92) 34%,
+    rgb(186 230 254 / 0.98) 52%,
+    rgb(4 155 251 / 0.72) 68%,
+    transparent
+  );
+  box-shadow: 0 0 22px 4px rgb(4 155 251 / 0.58);
+  animation: ice-timeline-auto-beam 4.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  will-change: top, opacity;
+}
+
+.ice-timeline-auto-tip {
+  animation: ice-timeline-auto-tip 4.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  will-change: top, opacity;
 }
 
 /* Architecture pipeline — flowing current along the energized rail */
@@ -125,6 +260,99 @@ body.menu-open [data-contact-widget] {
   );
   animation: ice-arch-pipeline-sheen 1.5s linear infinite;
   will-change: transform;
+}
+
+.ice-arch-pipeline-sheen-delayed {
+  animation-delay: -0.75s;
+  animation-duration: 2.2s;
+  opacity: 0.72;
+}
+
+@keyframes ice-arch-ambient-flow {
+  0% {
+    background-position: 0% 50%, 100% 0%;
+    opacity: 0.42;
+    transform: translateX(-4%);
+  }
+  50% {
+    background-position: 100% 50%, 0% 100%;
+    opacity: 0.78;
+    transform: translateX(4%);
+  }
+  100% {
+    background-position: 0% 50%, 100% 0%;
+    opacity: 0.42;
+    transform: translateX(-4%);
+  }
+}
+
+.ice-arch-ambient-flow {
+  background:
+    linear-gradient(105deg, transparent 0%, rgb(4 155 251 / 0.11) 36%, rgb(125 211 252 / 0.08) 48%, transparent 62%),
+    linear-gradient(250deg, transparent 8%, rgb(16 185 129 / 0.08) 42%, transparent 70%);
+  background-size: 180% 100%, 160% 140%;
+  mix-blend-mode: screen;
+  animation: ice-arch-ambient-flow 8s ease-in-out infinite;
+  will-change: background-position, opacity, transform;
+}
+
+@keyframes ice-arch-scanner {
+  0% {
+    opacity: 0;
+    transform: translateX(-150%) skewX(-14deg);
+  }
+  14%,
+  70% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(420%) skewX(-14deg);
+  }
+}
+
+.ice-arch-scanner {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(186 230 254 / 0.08),
+    rgb(4 155 251 / 0.18),
+    transparent
+  );
+  animation: ice-arch-scanner 5.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  will-change: opacity, transform;
+}
+
+@keyframes ice-arch-progress-stream {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 200% 50%;
+  }
+}
+
+.ice-arch-progress-stream {
+  background-size: 200% 100%;
+  animation: ice-arch-progress-stream 1.8s linear infinite;
+}
+
+@keyframes ice-arch-rail-base {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 rgb(4 155 251 / 0),
+      inset 0 0 0 rgb(255 255 255 / 0);
+  }
+  50% {
+    box-shadow:
+      0 0 24px rgb(4 155 251 / 0.34),
+      inset 0 0 10px rgb(186 230 254 / 0.18);
+  }
+}
+
+.ice-arch-rail-base {
+  animation: ice-arch-rail-base 2.4s ease-in-out infinite;
 }
 
 /* Architecture rail: independent light packets keep data moving across the
@@ -164,6 +392,12 @@ body.menu-open [data-contact-widget] {
   animation-delay: -1.6s;
 }
 
+.ice-arch-rail-flow-fast {
+  animation-duration: 2.35s;
+  animation-delay: -0.65s;
+  opacity: 0.74;
+}
+
 @keyframes ice-arch-node-breathe {
   0%,
   100% {
@@ -176,6 +410,59 @@ body.menu-open [data-contact-widget] {
 
 .ice-arch-node-breathe {
   animation: ice-arch-node-breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes ice-arch-node-live {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgb(4 155 251 / 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgb(4 155 251 / 0.28));
+  }
+}
+
+.ice-arch-node-live {
+  animation: ice-arch-node-live 3.4s ease-in-out infinite;
+}
+
+@keyframes ice-arch-node-meter {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%) scaleX(0.45);
+  }
+  18%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(140%) scaleX(0.9);
+  }
+}
+
+.ice-arch-node-meter {
+  animation: ice-arch-node-meter 1.7s ease-in-out infinite;
+  box-shadow: 0 0 12px rgb(125 211 252 / 0.7);
+  transform-origin: left center;
+  width: 62%;
+}
+
+@keyframes ice-solution-architecture-grid {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 32px 32px;
+  }
+}
+
+.ice-solution-architecture-grid {
+  background-image:
+    linear-gradient(rgb(125 211 252 / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(125 211 252 / 0.07) 1px, transparent 1px);
+  background-size: 32px 32px;
+  animation: ice-solution-architecture-grid 9s linear infinite;
 }
 
 @keyframes ice-arch-node-pulse {
@@ -198,8 +485,21 @@ body.menu-open [data-contact-widget] {
   .ice-arch-pipeline-sheen,
   .ice-arch-rail-flow,
   .ice-arch-node-breathe,
-  .ice-arch-node-pulse {
-    animation: none !important;
+  .ice-solution-architecture-grid,
+  .ice-arch-node-pulse,
+  .ice-arch-ambient-flow,
+  .ice-arch-scanner,
+  .ice-arch-progress-stream,
+  .ice-arch-rail-base,
+  .ice-arch-node-live,
+  .ice-arch-node-meter,
+  .ice-hero-scroll-cue,
+  .ice-hero-scroll-wheel,
+  .ice-hero-scroll-chevron,
+  .ice-timeline-auto-beam,
+  .ice-timeline-auto-tip {
+    animation-duration: 8s !important;
+    animation-timing-function: linear !important;
   }
 }
 
@@ -240,9 +540,9 @@ body.menu-open [data-contact-widget] {
   }
 
   .animate-ice-marquee {
-    animation: none !important;
-    transform: translateX(0) !important;
-    will-change: auto;
+    animation-duration: var(--ice-marquee-duration, 28s) !important;
+    animation-iteration-count: infinite !important;
+    animation-timing-function: linear !important;
   }
 
   .ice-interactive,
@@ -332,12 +632,6 @@ summary {
 /* Native fallback for pages without Lenis; Lenis owns public-site smoothing. */
 html:not(.lenis) {
   scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
 }
 
 /* Legal / print: force light readable output regardless of site theme. */

@@ -4,12 +4,12 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Building07, CheckCircle, ChevronRight, Settings01, ShieldTick } from "@untitledui/icons";
+import { ArrowRight, Building07, CheckCircle, Settings01, ShieldTick } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
-import { BrandOrbs, PulseAccent } from "@/components/effects/AmbientMotion";
+import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 import { cx } from "@/utils/cx";
 
@@ -196,17 +196,17 @@ export default function PartnersPage({
 
     /** Scroll-triggered entrance reveal (skips transforms when reduced motion). */
     const reveal = (delay = 0) => ({
-        initial: { opacity: 0, y: reduceMotion ? 0 : 24 },
+        initial: reduceMotion ? false as const : { opacity: 0, y: 24 },
         whileInView: { opacity: 1, y: 0 },
         viewport: { once: true, margin: "-80px" },
-        transition: { duration: 0.6, ease: EASE, delay },
+        transition: { duration: reduceMotion ? 0 : 0.6, ease: EASE, delay: reduceMotion ? 0 : delay },
     });
 
     /** Above-the-fold entrance (plays on mount, not on scroll). */
     const enter = (delay = 0) => ({
-        initial: { opacity: 0, y: reduceMotion ? 0 : 24 },
+        initial: reduceMotion ? false as const : { opacity: 0, y: 24 },
         animate: { opacity: 1, y: 0 },
-        transition: { duration: 0.6, ease: EASE, delay },
+        transition: { duration: reduceMotion ? 0 : 0.6, ease: EASE, delay: reduceMotion ? 0 : delay },
     });
 
     const hero = cmsData?.hero ?? {};
@@ -251,51 +251,20 @@ export default function PartnersPage({
                 <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.06]" />
 
                 <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center px-4 text-center md:px-8">
-                    <motion.nav
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.4 }}
-                        aria-label="Breadcrumb"
-                    >
-                        <ol className="flex items-center gap-1.5 text-sm font-medium">
-                            <li>
-                                <Link
-                                    href="/"
-                                    className="text-tertiary transition duration-100 ease-linear hover:text-brand-secondary"
-                                >
-                                    Home
-                                </Link>
-                            </li>
-                            <li aria-hidden="true">
-                                <ChevronRight className="size-4 text-fg-quaternary" />
-                            </li>
-                            <li>
-                                <span aria-current="page" className="text-brand-secondary">
-                                    Partners
-                                </span>
-                            </li>
-                        </ol>
-                    </motion.nav>
-
-                    <motion.div {...enter(0.1)} className="mt-6 flex items-center gap-2.5">
-                        <PulseAccent />
-                        <Eyebrow>Partner Ecosystem</Eyebrow>
-                    </motion.div>
-
                     <motion.h1
-                        {...enter(0.2)}
-                        className="mt-3 text-display-md font-semibold tracking-tight text-primary md:text-display-lg"
+                        {...enter(0.1)}
+                        className="text-display-md font-semibold tracking-tight text-primary md:text-display-lg"
                     >
                         {hero.headline ?? "Technology Partners"}
                     </motion.h1>
 
-                    <motion.p {...enter(0.35)} className="mt-4 max-w-2xl text-lg text-tertiary md:mt-6 md:text-xl">
+                    <motion.p {...enter(0.25)} className="mt-4 max-w-2xl text-lg text-tertiary md:mt-6 md:text-xl">
                         {hero.subheadline ??
                             "We partner with the world's leading technology companies to deliver best-in-class enterprise solutions."}
                     </motion.p>
 
                     <motion.div
-                        {...enter(0.45)}
+                        {...enter(0.35)}
                         className="mt-8 flex w-full flex-col-reverse gap-3 sm:w-auto sm:flex-row sm:justify-center md:mt-10"
                     >
                         <Button

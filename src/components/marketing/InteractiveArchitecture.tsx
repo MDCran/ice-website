@@ -1,13 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type FC } from "react";
-import {
-  motion,
-  useMotionValue,
-  useMotionValueEvent,
-  useScroll,
-  useTransform,
-} from "motion/react";
+import { useEffect, useState, type FC } from "react";
+import { motion } from "motion/react";
 import {
   Cloud01,
   Database01,
@@ -77,8 +71,8 @@ const DEFAULT_NODES: ArchitectureNode[] = [
 ];
 
 /**
- * Interactive architecture flow. The energized path follows reading progress,
- * while click/focus still lets a visitor inspect any layer directly.
+ * Read-only architecture flow. The active layer advances automatically while
+ * light packets continuously travel through the complete pipeline.
  */
 export default function InteractiveArchitecture({
   nodes = DEFAULT_NODES,
@@ -87,51 +81,27 @@ export default function InteractiveArchitecture({
   nodes?: ArchitectureNode[];
   className?: string;
 }) {
-  const rootRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useHydratedReducedMotion();
-  const [activeId, setActiveId] = useState(nodes[0]?.id ?? "");
-  const [announceSelection, setAnnounceSelection] = useState(false);
-  const active = nodes.find((n) => n.id === activeId) ?? nodes[0];
-  const activeIndex = Math.max(
-    0,
-    nodes.findIndex((n) => n.id === activeId),
-  );
+  const [cycleIndex, setCycleIndex] = useState(0);
+  const activeIndex = Math.min(cycleIndex, Math.max(0, nodes.length - 1));
+  const active = nodes[activeIndex];
   const lastIndex = Math.max(1, nodes.length - 1);
-  const scrubProgress = useMotionValue(reduceMotion ? 1 : 0);
-  const { scrollYProgress } = useScroll({
-    target: rootRef,
-    offset: ["start 82%", "end 32%"],
-  });
-  const tipLeft = useTransform(
-    scrubProgress,
-    (latest) => `${Math.max(0, Math.min(1, latest)) * 100}%`,
-  );
-
-  const selectNode = (id: string) => {
-    setActiveId(id);
-    setAnnounceSelection(true);
-    const index = nodes.findIndex((node) => node.id === id);
-    if (!reduceMotion && index >= 0) scrubProgress.set(index / lastIndex);
-  };
+  const progress = activeIndex / lastIndex;
 
   useEffect(() => {
-    scrubProgress.set(reduceMotion ? 1 : scrollYProgress.get());
-  }, [reduceMotion, scrubProgress, scrollYProgress]);
+    if (reduceMotion || nodes.length <= 1) return;
 
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    if (reduceMotion || nodes.length === 0) return;
+    const timer = window.setInterval(() => {
+      setCycleIndex((current) => (current + 1) % nodes.length);
+    }, 2200);
 
-    scrubProgress.set(latest);
-    const nextIndex = Math.min(nodes.length - 1, Math.round(latest * lastIndex));
-    const nextId = nodes[nextIndex]?.id;
-    if (nextId && nextId !== activeId) {
-      setAnnounceSelection(false);
-      setActiveId(nextId);
-    }
-  });
+    return () => window.clearInterval(timer);
+  }, [nodes.length, reduceMotion]);
+
+  if (nodes.length === 0 || !active) return null;
 
   return (
-    <div ref={rootRef} className={cx("w-full", className)}>
+    <div className={cx("w-full", className)}>
       {/* Desktop: horizontal glowing pipeline */}
       <div className="relative hidden md:block">
         {/* Soft section glow under the rail */}
@@ -140,7 +110,11 @@ export default function InteractiveArchitecture({
           className="pointer-events-none absolute top-6 right-[8%] left-[8%] h-16 rounded-full bg-[radial-gradient(ellipse_at_center,rgb(4_155_251/0.14),transparent_70%)] blur-2xl"
         />
 
-        <ol className="relative mx-auto grid max-w-5xl grid-cols-6 gap-3">
+        <ol
+          className="relative mx-auto grid max-w-5xl gap-3"
+          style={{ gridTemplateColumns: `repeat(${nodes.length}, minmax(0, 1fr))` }}
+          aria-label="Enterprise data flow"
+        >
           {/* Base rail */}
           <div
             aria-hidden="true"
@@ -155,8 +129,13 @@ export default function InteractiveArchitecture({
             {/* Energized path — grows to the active node */}
             <motion.div
               className="relative h-full w-full origin-left overflow-hidden rounded-full bg-gradient-to-r from-brand-500/50 via-brand-solid to-brand-400"
+              initial={false}
+              animate={{ scaleX: reduceMotion ? 1 : Math.max(0.015, progress) }}
+              transition={{
+                duration: reduceMotion ? 0 : activeIndex === 0 ? 0.22 : 0.85,
+                ease: MOTION_EASE,
+              }}
               style={{
-                scaleX: reduceMotion ? 1 : scrubProgress,
                 boxShadow:
                   "0 0 12px rgb(4 155 251 / 0.55), 0 0 28px rgb(4 155 251 / 0.25)",
               }}
@@ -171,8 +150,13 @@ export default function InteractiveArchitecture({
             <motion.span
               aria-hidden="true"
               className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-solid"
+              initial={false}
+              animate={{ left: reduceMotion ? "100%" : `${progress * 100}%` }}
+              transition={{
+                duration: reduceMotion ? 0 : activeIndex === 0 ? 0.22 : 0.85,
+                ease: MOTION_EASE,
+              }}
               style={{
-                left: reduceMotion ? "100%" : tipLeft,
                 boxShadow:
                   "0 0 10px 2px rgb(4 155 251 / 0.9), 0 0 24px 6px rgb(4 155 251 / 0.45)",
               }}
@@ -185,15 +169,15 @@ export default function InteractiveArchitecture({
             const Icon = node.icon;
 
             return (
-              <li key={node.id} className="relative flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => selectNode(node.id)}
-                  onFocus={() => selectNode(node.id)}
-                  aria-pressed={selected}
+              <li
+                key={node.id}
+                aria-current={selected ? "step" : undefined}
+                className="relative flex justify-center"
+              >
+                <div
                   className={cx(
-                    "group relative z-[1] flex w-full flex-col items-center gap-3 rounded-xl px-2 py-3 text-center outline-focus-ring transition duration-300 focus-visible:outline-2 focus-visible:outline-offset-2",
-                    selected ? "bg-brand-primary_alt/80" : "hover:bg-secondary/80",
+                    "relative z-[1] flex w-full flex-col items-center gap-3 rounded-xl px-2 py-3 text-center transition duration-500",
+                    selected && "bg-brand-primary_alt/80",
                   )}
                 >
                   {/* Node glow disc */}
@@ -253,7 +237,7 @@ export default function InteractiveArchitecture({
                   >
                     {node.label}
                   </span>
-                </button>
+                </div>
               </li>
             );
           })}
@@ -265,38 +249,41 @@ export default function InteractiveArchitecture({
         <div className="mb-4 h-1 overflow-hidden rounded-full bg-secondary">
           <motion.div
             className="h-full w-full origin-left rounded-full bg-brand-solid"
+            initial={false}
+            animate={{ scaleX: reduceMotion ? 1 : Math.max(0.015, progress) }}
+            transition={{
+              duration: reduceMotion ? 0 : activeIndex === 0 ? 0.22 : 0.85,
+              ease: MOTION_EASE,
+            }}
             style={{
-              scaleX: reduceMotion ? 1 : scrubProgress,
               boxShadow: "0 0 10px rgb(4 155 251 / 0.5)",
             }}
           />
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
+        <ol className="flex flex-wrap justify-center gap-2" aria-label="Enterprise data flow">
           {nodes.map((node, i) => {
             const selected = node.id === active?.id;
             const reached = i <= activeIndex;
             const Icon = node.icon;
             return (
-              <button
+              <li
                 key={node.id}
-                type="button"
-                onClick={() => selectNode(node.id)}
-                aria-pressed={selected}
+                aria-current={selected ? "step" : undefined}
                 className={cx(
-                  "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium outline-focus-ring transition focus-visible:outline-2 focus-visible:outline-offset-2",
+                  "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition duration-500",
                   selected
                     ? "bg-brand-solid text-white shadow-[0_0_18px_rgb(4_155_251/0.4)]"
                     : reached
                       ? "bg-brand-primary_alt text-brand-secondary ring-1 ring-brand/30"
-                      : "bg-secondary text-secondary ring-1 ring-secondary hover:text-primary",
+                      : "bg-secondary text-secondary ring-1 ring-secondary",
                 )}
               >
                 <Icon className="size-4 shrink-0" />
                 {node.label}
-              </button>
+              </li>
             );
           })}
-        </div>
+        </ol>
       </div>
 
       {active && (
@@ -304,10 +291,10 @@ export default function InteractiveArchitecture({
           key={active.id}
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: MOTION_EASE }}
-          className="relative mx-auto mt-8 max-w-3xl border-t border-secondary pt-8 md:mt-10"
+          transition={{ duration: reduceMotion ? 0 : 0.45, ease: MOTION_EASE }}
+          className="relative mx-auto mt-8 min-h-44 max-w-3xl border-t border-secondary pt-8 md:mt-10"
           role="region"
-          aria-live={announceSelection ? "polite" : "off"}
+          aria-live="off"
           aria-label={`${active.label} details`}
         >
           <div

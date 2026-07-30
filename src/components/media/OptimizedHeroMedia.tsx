@@ -8,65 +8,64 @@ import { cx } from "@/utils/cx";
 /**
  * LCP-optimized cinematic hero media.
  *
- * - Poster `next/image` with `priority` paints first (LCP candidate).
- * - Video mounts after idle / load and only when motion is allowed.
- * - Reduced motion → static poster only (no autoplay).
+ * - Poster `next/image` with `priority` paints first.
+ * - Muted inline video mounts shortly after first paint and retries autoplay.
+ * - `respectReducedMotion` can opt specific placements into poster-only mode.
  */
 export default function OptimizedHeroMedia({
   videoSrc = "/videos/data_center.mp4",
   posterSrc = "/videos/data_center_cover.jpg",
   posterAlt = "",
   className,
+  respectReducedMotion = false,
+  startDelayMs = 250,
 }: {
   videoSrc?: string;
   posterSrc?: string;
   posterAlt?: string;
   className?: string;
+  respectReducedMotion?: boolean;
+  startDelayMs?: number;
 }) {
   const reduceMotion = useHydratedReducedMotion();
+  const posterOnly = respectReducedMotion && reduceMotion;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [canPlayVideo, setCanPlayVideo] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
 
   useEffect(() => {
-    if (reduceMotion) {
+    if (posterOnly) {
       setCanPlayVideo(false);
+      setIsVideoReady(false);
       return;
     }
 
     let cancelled = false;
-    const enable = () => {
+    const timeoutId = window.setTimeout(() => {
       if (!cancelled) setCanPlayVideo(true);
-    };
-
-    // Defer video decode until after first paint / LCP.
-    let idleId: number | undefined;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      idleId = window.requestIdleCallback(enable, { timeout: 1800 });
-    } else {
-      timeoutId = setTimeout(enable, 600);
-    }
+    }, startDelayMs);
 
     return () => {
       cancelled = true;
-      if (idleId != null && typeof window !== "undefined" && "cancelIdleCallback" in window) {
-        window.cancelIdleCallback(idleId);
-      }
-      if (timeoutId != null) clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
     };
-  }, [reduceMotion]);
+  }, [posterOnly, startDelayMs]);
 
   useEffect(() => {
     const el = videoRef.current;
-    if (!el || !canPlayVideo || reduceMotion) return;
+    if (!el || !canPlayVideo || posterOnly) return;
+
+    el.muted = true;
+    el.playsInline = true;
+    el.load();
+
     const play = el.play();
     if (play && typeof play.catch === "function") {
       play.catch(() => {
-        /* Autoplay blocked — poster remains visible. */
+        /* Autoplay blocked; the poster remains visible. */
       });
     }
-  }, [canPlayVideo, reduceMotion]);
+  }, [canPlayVideo, posterOnly]);
 
   return (
     <div aria-hidden={posterAlt ? undefined : true} className={cx("absolute inset-0", className)}>
@@ -78,16 +77,21 @@ export default function OptimizedHeroMedia({
         sizes="100vw"
         className="object-cover"
       />
-      {canPlayVideo && !reduceMotion && (
+      {canPlayVideo && !posterOnly && (
         <video
           ref={videoRef}
           autoPlay
           loop
           muted
           playsInline
-          preload="none"
+          preload="auto"
           poster={posterSrc}
-          className="absolute inset-0 size-full object-cover"
+          onCanPlay={() => setIsVideoReady(true)}
+          onPlaying={() => setIsVideoReady(true)}
+          className={cx(
+            "absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-700",
+            isVideoReady && "opacity-100",
+          )}
         >
           <source src={videoSrc} type="video/mp4" />
         </video>

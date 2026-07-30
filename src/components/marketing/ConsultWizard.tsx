@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -26,6 +26,21 @@ const STEPS: { id: Step; label: string }[] = [
   { id: 3, label: "Details" },
 ];
 
+const STEP_META: Record<Step, { title: string; description: string }> = {
+  1: {
+    title: "Scope the request",
+    description: "Confirm the service area, platform, and timing so the right ICE specialist can follow up.",
+  },
+  2: {
+    title: "Who should we contact?",
+    description: "Add the best person for discovery, budget, or technical fit questions.",
+  },
+  3: {
+    title: "Add useful context",
+    description: "Share environment details, deadlines, compliance needs, or anything the team should review first.",
+  },
+};
+
 const URGENCY_OPTIONS = [
   { id: "exploring", label: "Exploring options", hint: "No immediate deadline" },
   { id: "planning", label: "Planning this quarter", hint: "Budget / design in progress" },
@@ -44,10 +59,81 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
-/**
- * Multi-step consult wizard — auto-advances when a step is complete;
- * fixed step panel height avoids layout jump; Back/Continue still available.
- */
+type PrefillIntent = {
+  requestedService?: string;
+  service?: string;
+  source?: string;
+  sourceLabel: string;
+  summary?: string;
+};
+
+const SERVICE_ALIASES = [
+  ["Cloud Migration Services", "Cloud Migration"],
+  ["Disaster Recovery as a Service", "Disaster Recovery"],
+  ["High Availability as a Service", "High Availability"],
+  ["IBM Power Virtual Server", "IBM Power VS"],
+  ["IBM Power Virtual Servers", "IBM Power VS"],
+  ["Managed Microsoft Services", "Managed Microsoft"],
+  ["Threat Detection", "Threat Detection & Response"],
+] as const;
+
+function normalizeServiceName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/\bas a service\b/g, "")
+    .replace(/\bservices?\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function serviceOptions(groups: ServiceGroup[]) {
+  return groups.flatMap((group) => group.options);
+}
+
+function findServiceOption(raw: string, groups: ServiceGroup[]) {
+  const requested = raw.trim();
+  if (!requested) return "";
+
+  const options = serviceOptions(groups);
+  const exact = options.find((option) => option.toLowerCase() === requested.toLowerCase());
+  if (exact) return exact;
+
+  const alias = SERVICE_ALIASES.find(([from]) => normalizeServiceName(from) === normalizeServiceName(requested));
+  if (alias) {
+    const aliasMatch = options.find((option) => option.toLowerCase() === alias[1].toLowerCase());
+    if (aliasMatch) return aliasMatch;
+  }
+
+  const normalized = normalizeServiceName(requested);
+  const fuzzy = options.find((option) => {
+    const normalizedOption = normalizeServiceName(option);
+    return normalized === normalizedOption || normalized.startsWith(normalizedOption) || normalizedOption.startsWith(normalized);
+  });
+  return fuzzy ?? requested;
+}
+
+function ensureServiceOption(groups: ServiceGroup[], service?: string) {
+  if (!service) return groups;
+  const exists = serviceOptions(groups).some((option) => option.toLowerCase() === service.toLowerCase());
+  if (exists) return groups;
+  return [{ label: "From your visit", options: [service] }, ...groups];
+}
+
+function labelForSource(source?: string) {
+  switch (source) {
+    case "solution_detail":
+      return "Prefilled from the solution page";
+    case "solution_finder":
+      return "Prefilled from the solution finder";
+    case "solutions_index":
+      return "Prefilled from the solutions catalog";
+    default:
+      return "Prefilled from your previous page";
+  }
+}
+
+/** Multi-step consult wizard with manual Back/Continue navigation. */
 export default function ConsultWizard({
   serviceGroups,
   bookingUrl,
@@ -67,24 +153,16 @@ export default function ConsultWizard({
     message: "",
     smsConsent: false,
   });
+  const [prefillIntent, setPrefillIntent] = useState<PrefillIntent | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [statusMessage, setStatusMessage] = useState("");
-  /** Prevents immediate re-advance after the user clicks Back. */
-  const suppressAutoRef = useRef(false);
-  const autoTimerRef = useRef<number | null>(null);
-
-  const clearAutoTimer = () => {
-    if (autoTimerRef.current) {
-      window.clearTimeout(autoTimerRef.current);
-      autoTimerRef.current = null;
-    }
-  };
-
-  useEffect(() => () => clearAutoTimer(), []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("source") !== "solution_finder") return;
+    const source = params.get("source") ?? undefined;
+    const requestedService = params.get("service") ?? "";
+    const resolvedService = requestedService ? findServiceOption(requestedService, serviceGroups) : "";
+    const summary = params.get("summary") ?? "";
     const workloadToPlatform: Record<string, string> = {
       "ibm-i": "IBM i / AS/400",
       microsoft: "Microsoft / Azure",
@@ -97,66 +175,56 @@ export default function ConsultWizard({
       later: "exploring",
       research: "exploring",
     };
+
+    if (!source && !requestedService && !summary && !params.get("workload") && !params.get("timeline")) {
+      return;
+    }
+
+    setPrefillIntent({
+      requestedService: requestedService || undefined,
+      service: resolvedService || undefined,
+      source,
+      sourceLabel: labelForSource(source),
+      summary: summary || undefined,
+    });
+
     setFormData((current) => ({
       ...current,
-      service: params.get("service") || current.service,
+      service: resolvedService || current.service,
       platform: workloadToPlatform[params.get("workload") ?? ""] || current.platform,
       urgency: timelineToUrgency[params.get("timeline") ?? ""] || current.urgency,
+      message: summary && !current.message ? summary : current.message,
     }));
-  }, []);
+  }, [serviceGroups]);
 
-  const goToStep = (next: Step, source: "auto" | "manual" | "back") => {
-    clearAutoTimer();
-    if (source === "back") suppressAutoRef.current = true;
-    if (source === "manual" || source === "auto") suppressAutoRef.current = false;
-    if (source === "auto" || source === "manual") {
+  const effectiveServiceGroups = useMemo(
+    () => ensureServiceOption(serviceGroups, prefillIntent?.service),
+    [serviceGroups, prefillIntent?.service],
+  );
+
+  const goToStep = (next: Step, source: "manual" | "back") => {
+    if (source === "manual") {
       pushEvent("consult_wizard_step", { step, next, source });
     }
     setStep(next);
   };
 
-  const scheduleAdvance = (next: Step) => {
-    if (suppressAutoRef.current) return;
-    clearAutoTimer();
-    autoTimerRef.current = window.setTimeout(() => {
-      goToStep(next, "auto");
-    }, 380);
-  };
-
   const patchForm = (patch: Partial<typeof formData>) => {
-    suppressAutoRef.current = false;
-    setFormData((prev) => {
-      const next = { ...prev, ...patch };
-
-      // Schedule outside the updater via microtask so Strict Mode doesn't double-fire oddly
-      queueMicrotask(() => {
-        if (suppressAutoRef.current) return;
-        if (step === 1 && next.service && next.platform && next.urgency) {
-          scheduleAdvance(2);
-        }
-        if (
-          step === 2 &&
-          next.name.trim().length >= 2 &&
-          isValidEmail(next.email) &&
-          ("email" in patch || "name" in patch)
-        ) {
-          scheduleAdvance(3);
-        }
-      });
-
-      return next;
-    });
+    setFormData((prev) => ({ ...prev, ...patch }));
   };
 
   const canContinueStep1 = Boolean(formData.service && formData.platform && formData.urgency);
-  const canContinueStep2 = Boolean(formData.name.trim() && isValidEmail(formData.email));
+  const hasRequiredPhone = formData.phone.replace(/\D/g, "").length >= 7;
+  const canContinueStep2 = Boolean(formData.name.trim() && isValidEmail(formData.email) && hasRequiredPhone);
 
   const buildMessage = () => {
     const urgencyLabel =
       URGENCY_OPTIONS.find((o) => o.id === formData.urgency)?.label ?? formData.urgency;
     const lines = [
       formData.message.trim() || null,
-      "— Consult wizard —",
+      prefillIntent?.requestedService ? `Requested page: ${prefillIntent.requestedService}` : null,
+      prefillIntent?.source ? `Lead source: ${prefillIntent.source}` : null,
+      "Consult wizard",
       `Platform: ${formData.platform}`,
       `Urgency: ${urgencyLabel}`,
     ].filter(Boolean);
@@ -240,21 +308,40 @@ export default function ConsultWizard({
   return (
     <div
       id="contact-form"
-      className="flex flex-col gap-5 rounded-2xl bg-primary p-5 shadow-lg ring-1 ring-secondary ring-inset sm:p-7 md:p-8 dark:shadow-[0_0_60px_rgb(4_155_251/0.08)]"
+      className="flex flex-col gap-5 rounded-lg bg-primary p-5 shadow-lg ring-1 ring-secondary ring-inset sm:p-6 md:p-7 dark:shadow-[0_0_60px_rgb(4_155_251/0.08)]"
     >
       <div>
         <h2 className="text-display-xs font-semibold text-primary">Request a consultation</h2>
         <p className="mt-1 text-sm text-tertiary">A few quick questions — about a minute.</p>
       </div>
 
+      {prefillIntent && (
+        <div className="border-l-2 border-brand-solid pl-4">
+          <p className="text-xs font-semibold tracking-[0.18em] text-brand-secondary uppercase">
+            {prefillIntent.sourceLabel}
+          </p>
+          <p className="mt-1 text-sm font-semibold text-primary">
+            {prefillIntent.requestedService ?? prefillIntent.service}
+          </p>
+          {prefillIntent.summary && (
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-tertiary">{prefillIntent.summary}</p>
+          )}
+        </div>
+      )}
+
       {/* Step indicators */}
       <nav aria-label="Consultation progress" className="w-full">
-        <ol className="flex items-center gap-0">
-          {STEPS.map((s, i) => {
+        <ol className="grid grid-cols-3 gap-2">
+          {STEPS.map((s) => {
             const done = step > s.id;
             const current = step === s.id;
+            const reachable =
+              s.id < step ||
+              s.id === step ||
+              (s.id === 2 && canContinueStep1) ||
+              (s.id === 3 && canContinueStep1 && canContinueStep2);
             return (
-              <li key={s.id} className="flex min-w-0 flex-1 items-center">
+              <li key={s.id} className="min-w-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -264,16 +351,17 @@ export default function ConsultWizard({
                     else if (s.id === 3 && canContinueStep1 && canContinueStep2) goToStep(3, "manual");
                   }}
                   className={cx(
-                    "flex min-w-0 flex-col items-center gap-1.5 rounded-lg px-1 py-1 outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2",
-                    s.id <= step || (s.id === 2 && canContinueStep1) || (s.id === 3 && canContinueStep2)
-                      ? "cursor-pointer"
-                      : "cursor-default",
+                    "flex min-h-16 w-full min-w-0 items-center gap-2.5 rounded-lg px-3 py-3 text-left ring-1 outline-focus-ring transition focus-visible:outline-2 focus-visible:outline-offset-2",
+                    current && "bg-brand-primary_alt ring-brand",
+                    done && !current && "bg-secondary ring-secondary",
+                    !done && !current && "bg-primary ring-secondary",
+                    reachable ? "cursor-pointer hover:ring-brand" : "cursor-default opacity-70",
                   )}
                   aria-current={current ? "step" : undefined}
                 >
                   <span
                     className={cx(
-                      "flex size-8 items-center justify-center rounded-full text-sm font-semibold transition",
+                      "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition",
                       done && "bg-brand-solid text-white",
                       current &&
                         "bg-brand-solid text-white shadow-[0_0_0_4px_rgb(4_155_251/0.2)]",
@@ -284,22 +372,13 @@ export default function ConsultWizard({
                   </span>
                   <span
                     className={cx(
-                      "max-w-full truncate text-[11px] font-semibold tracking-wide uppercase",
+                      "min-w-0 text-sm font-semibold",
                       current ? "text-brand-secondary" : done ? "text-secondary" : "text-quaternary",
                     )}
                   >
                     {s.label}
                   </span>
                 </button>
-                {i < STEPS.length - 1 && (
-                  <div
-                    aria-hidden="true"
-                    className={cx(
-                      "mx-1 mb-5 h-0.5 min-w-[0.75rem] flex-1 rounded-full transition-colors",
-                      step > s.id ? "bg-brand-solid" : "bg-secondary",
-                    )}
-                  />
-                )}
               </li>
             );
           })}
@@ -307,8 +386,22 @@ export default function ConsultWizard({
       </nav>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        {/* Fixed-height panel so steps don't resize the card */}
-        <div className="relative min-h-[26rem] sm:min-h-[24rem]">
+        <div className="border-b border-secondary pb-4">
+          <p className="text-xs font-semibold tracking-[0.18em] text-brand-secondary uppercase">
+            {STEPS.find((item) => item.id === step)?.label}
+          </p>
+          <h3 className="mt-1 text-xl font-semibold text-primary">{STEP_META[step].title}</h3>
+          <p className="mt-1 max-w-xl text-sm leading-6 text-tertiary">{STEP_META[step].description}</p>
+        </div>
+
+        <div
+          className={cx(
+            "relative transition-[min-height] duration-200",
+            step === 1 && "min-h-[27rem] sm:min-h-[24rem]",
+            step === 2 && "min-h-[22rem] sm:min-h-[19rem]",
+            step === 3 && "min-h-[21rem] sm:min-h-[18rem]",
+          )}
+        >
           {step === 1 && (
             <div className="flex flex-col gap-5">
               <ServiceSelect
@@ -317,7 +410,7 @@ export default function ConsultWizard({
                 label="What do you need help with?"
                 value={formData.service}
                 onChange={(value) => patchForm({ service: value })}
-                groups={serviceGroups}
+                groups={effectiveServiceGroups}
               />
 
               <fieldset>
@@ -329,7 +422,7 @@ export default function ConsultWizard({
                       type="button"
                       onClick={() => patchForm({ platform: option })}
                       className={cx(
-                        "rounded-xl px-3 py-2.5 text-left text-sm ring-1 transition",
+                        "min-h-12 rounded-lg px-3.5 py-3 text-left text-sm ring-1 transition",
                         formData.platform === option
                           ? "bg-brand-primary_alt font-semibold text-brand-secondary ring-brand"
                           : "bg-primary text-secondary ring-secondary hover:bg-secondary",
@@ -343,14 +436,14 @@ export default function ConsultWizard({
 
               <fieldset>
                 <legend className="mb-2 text-sm font-medium text-secondary">Timeline</legend>
-                <div className="flex flex-col gap-2">
+                <div className="grid gap-2 sm:grid-cols-3">
                   {URGENCY_OPTIONS.map((option) => (
                     <button
                       key={option.id}
                       type="button"
                       onClick={() => patchForm({ urgency: option.id })}
                       className={cx(
-                        "rounded-xl px-3 py-2.5 text-left ring-1 transition",
+                        "min-h-[5rem] rounded-lg px-3.5 py-3 text-left ring-1 transition",
                         formData.urgency === option.id
                           ? "bg-brand-primary_alt ring-brand"
                           : "bg-primary ring-secondary hover:bg-secondary",
@@ -367,7 +460,7 @@ export default function ConsultWizard({
 
           {step === 2 && (
             <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-x-6 gap-y-5 sm:flex-row">
+              <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
                 <Input
                   isRequired
                   validationBehavior="native"
@@ -377,7 +470,7 @@ export default function ConsultWizard({
                   placeholder="John Smith"
                   value={formData.name}
                   onChange={(value) => patchForm({ name: value })}
-                  wrapperClassName="flex-1"
+                  wrapperClassName="min-w-0"
                 />
                 <Input
                   isRequired
@@ -391,26 +484,26 @@ export default function ConsultWizard({
                   placeholder="john@company.com"
                   value={formData.email}
                   onChange={(value) => patchForm({ email: value })}
-                  wrapperClassName="flex-1"
+                  wrapperClassName="min-w-0"
+                />
+                <Input
+                  size="md"
+                  name="company"
+                  label="Company"
+                  placeholder="Acme Corp"
+                  value={formData.company}
+                  onChange={(value) => patchForm({ company: value })}
+                  wrapperClassName="min-w-0"
+                />
+                <PhoneField
+                  isRequired
+                  size="md"
+                  label="Phone number"
+                  value={formData.phone}
+                  onChange={(value) => patchForm({ phone: value })}
+                  wrapperClassName="sm:col-span-2"
                 />
               </div>
-              <Input
-                size="md"
-                name="company"
-                label="Company"
-                placeholder="Acme Corp"
-                value={formData.company}
-                onChange={(value) => patchForm({ company: value })}
-              />
-              <PhoneField
-                size="md"
-                label="Phone number"
-                value={formData.phone}
-                onChange={(value) => patchForm({ phone: value })}
-              />
-              <p className="text-xs text-quaternary">
-                Completing name and email advances you automatically — or tap Continue.
-              </p>
             </div>
           )}
 
@@ -420,10 +513,10 @@ export default function ConsultWizard({
                 name="message"
                 label="Anything else we should know? (optional)"
                 placeholder="Environment details, compliance needs, current pain points…"
-                rows={4}
+                rows={6}
                 value={formData.message}
                 onChange={(value) => patchForm({ message: value })}
-                textAreaClassName="min-h-[6.5rem]"
+                textAreaClassName="min-h-[10rem]"
               />
               <Checkbox
                 name="smsConsent"

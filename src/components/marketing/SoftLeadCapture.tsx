@@ -9,6 +9,9 @@ import { pushEvent } from "@/lib/analytics";
 import { cx } from "@/utils/cx";
 
 const STORAGE_KEY = "ice-soft-lead-dismissed";
+const SOFT_LEAD_IDLE_DELAY_MS = 90000;
+const SOFT_LEAD_EXIT_DELAY_MS = 45000;
+const SOFT_LEAD_MIN_SCROLL_RATIO = 0.35;
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -20,7 +23,7 @@ function formatPhone(value: string): string {
 
 /**
  * Soft exit-intent / idle lead capture (#24).
- * Shows once per session after exit intent (desktop) or ~25s idle (mobile).
+ * Shows once per session after meaningful engagement, not during the hero.
  */
 export default function SoftLeadCapture({
   enabled = true,
@@ -56,23 +59,44 @@ export default function SoftLeadCapture({
     }
 
     let shown = false;
+    let timeReady = false;
+    let exitReady = false;
+    let scrollReady = false;
     const show = () => {
-      if (shown) return;
+      if (shown || !scrollReady) return;
       shown = true;
       setOpen(true);
       pushEvent("soft_lead_shown", {});
     };
 
-    const onMouseOut = (e: MouseEvent) => {
-      if (e.clientY <= 0) show();
+    const updateScrollReadiness = () => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const ratio = maxScroll <= 0 ? 1 : window.scrollY / maxScroll;
+      scrollReady = ratio >= SOFT_LEAD_MIN_SCROLL_RATIO;
+      if (timeReady) show();
     };
 
-    const idleTimer = window.setTimeout(show, 28000);
+    const onMouseOut = (e: MouseEvent) => {
+      if (e.clientY <= 0 && exitReady) show();
+    };
+
+    const idleTimer = window.setTimeout(() => {
+      timeReady = true;
+      show();
+    }, SOFT_LEAD_IDLE_DELAY_MS);
+    const exitTimer = window.setTimeout(() => {
+      exitReady = true;
+    }, SOFT_LEAD_EXIT_DELAY_MS);
 
     document.addEventListener("mouseout", onMouseOut);
+    window.addEventListener("scroll", updateScrollReadiness, { passive: true });
+    updateScrollReadiness();
+
     return () => {
       document.removeEventListener("mouseout", onMouseOut);
+      window.removeEventListener("scroll", updateScrollReadiness);
       window.clearTimeout(idleTimer);
+      window.clearTimeout(exitTimer);
     };
   }, [suppressed]);
 

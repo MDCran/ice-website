@@ -8,10 +8,12 @@ import SearchModal from "@/components/ui/SearchModal";
 import ContactWidget from "@/components/ui/ContactWidget";
 import AnnouncementBanner from "@/components/marketing/AnnouncementBanner";
 import SoftLeadCapture from "@/components/marketing/SoftLeadCapture";
+import { EnterpriseStickyCta } from "@/components/marketing/EnterpriseSalesWidgets";
 import Analytics from "@/components/analytics/Analytics";
 import PageViewTracker from "@/components/analytics/PageViewTracker";
 import WebVitalsReporter from "@/components/analytics/WebVitalsReporter";
 import { getSiteSettings, getNavigation, getSearchIndex } from "@/lib/cms";
+import { resolveSalesEnablement } from "@/lib/salesEnablement";
 import { getSeoConfig } from "@/lib/seo/config";
 import { JsonLd, organization, webSite } from "@/lib/seo/jsonld";
 import type { FooterCMSData } from "@/components/layout/Footer";
@@ -93,6 +95,7 @@ export default async function PublicLayout({
   }
 
   const announcement = (settings?.announcement_banner ?? null) as AnnouncementBannerContent | null;
+  const salesConfig = resolveSalesEnablement(settings.sales_enablement);
 
   return (
     <>
@@ -113,7 +116,17 @@ export default async function PublicLayout({
       </PageTransition>
       <Footer cmsData={footerData} />
       <ContactWidget />
-      <SoftLeadCapture />
+      {salesConfig.enabled && salesConfig.visibility.showStickyCta && (
+        <EnterpriseStickyCta config={salesConfig} />
+      )}
+      <SoftLeadCapture
+        enabled={
+          salesConfig.enabled &&
+          salesConfig.visibility.showSoftLeadCapture
+        }
+        headline={salesConfig.global.softLeadHeadline}
+        description={salesConfig.global.softLeadDescription}
+      />
     </>
   );
 }

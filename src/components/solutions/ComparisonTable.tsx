@@ -44,7 +44,7 @@ export default function ComparisonTable({ mode, title, data }: ComparisonTablePr
     return () => observer.disconnect();
   }, []);
 
-  const rowHidden = reduceMotion ? { opacity: 0 } : { opacity: 0, x: -16 };
+  const rowHidden = reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -16 };
   const rowVisible = reduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 };
 
   return (
@@ -127,14 +127,14 @@ export default function ComparisonTable({ mode, title, data }: ComparisonTablePr
             return (
               <motion.div
                 key={row.label}
-                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
                 animate={
                   isVisible
                     ? reduceMotion
-                      ? { opacity: 1 }
+                      ? { opacity: 1, y: 0 }
                       : { opacity: 1, y: 0 }
                     : reduceMotion
-                      ? { opacity: 0 }
+                      ? { opacity: 1, y: 0 }
                       : { opacity: 0, y: 12 }
                 }
                 transition={{

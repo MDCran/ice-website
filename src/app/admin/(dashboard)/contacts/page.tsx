@@ -101,6 +101,7 @@ export default async function ContactsPage({
               <Table.Head id="company" label="Company" />
               <Table.Head id="phone" label="Phone" />
               <Table.Head id="service" label="Service" />
+              <Table.Head id="intent" label="Intent" />
               <Table.Head id="message" label="Message" />
               <Table.Head id="date" label="Date" />
             </Table.Header>
@@ -147,6 +148,54 @@ export default async function ContactsPage({
                       <Badge size="sm" color="brand">
                         {contact.service}
                       </Badge>
+                    ) : (
+                      "—"
+                    )}
+                  </Table.Cell>
+                  <Table.Cell className="min-w-40">
+                    {typeof contact.lead_score === "number" || contact.source ? (
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {typeof contact.lead_score === "number" && (
+                            <Badge
+                              size="sm"
+                              color={
+                                contact.lead_score >= 70
+                                  ? "success"
+                                  : contact.lead_score >= 45
+                                    ? "warning"
+                                    : "gray"
+                              }
+                            >
+                              Score {contact.lead_score}
+                            </Badge>
+                          )}
+                          {contact.source && (
+                            <span className="text-xs font-medium text-secondary">
+                              {String(contact.source).replace(/_/g, " ")}
+                            </span>
+                          )}
+                        </div>
+                        {contact.qualification &&
+                          typeof contact.qualification === "object" && (
+                            <p
+                              className="max-w-48 truncate text-xs text-tertiary"
+                              title={[
+                                contact.qualification.priority,
+                                contact.qualification.timeline,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            >
+                              {[
+                                contact.qualification.priority,
+                                contact.qualification.timeline,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                          )}
+                      </div>
                     ) : (
                       "—"
                     )}

@@ -91,6 +91,8 @@ const SOLUTIONS_MEGA: MegaColumn[] = [
 const openSearch = () =>
   document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true }));
 
+const DEFAULT_TOP_INFO_HEIGHT = 35;
+
 export interface NavbarCompanyInfo {
   address?: string;
   city?: string;
@@ -123,7 +125,7 @@ export default function Navbar({
   // Seed data uses location "navbar"; older rows may use "navbar_top" — accept both.
   const navbarTopItems = navItems?.filter((i: any) => (i.location === "navbar_top" || i.location === "navbar") && i.is_visible)
     .sort((a: any, b: any) => a.sort_order - b.sort_order) ?? [];
-  const navLinks = navbarTopItems.length > 0
+  const resolvedNavLinks = navbarTopItems.length > 0
     ? navbarTopItems.map((i: any) => ({
         label: i.label,
         href: i.href,
@@ -132,6 +134,15 @@ export default function Navbar({
         hasMega: i.has_mega_menu ?? i.href === "/solutions",
       }))
     : NAV_LINKS;
+  const navLinks = resolvedNavLinks.filter((item) => {
+    const href = typeof item.href === "string" ? item.href.trim() : "";
+    return (
+      !/^\/enterprise(?:[/?#]|$)/i.test(href) &&
+      !/^https?:\/\/(?:www\.)?icesales\.com\/enterprise(?:[/?#]|$)/i.test(
+        href,
+      )
+    );
+  });
 
   const megaItems = navItems?.filter((i: any) => i.location === "navbar_mega" && i.is_visible)
     .sort((a: any, b: any) => a.sort_order - b.sort_order) ?? [];
@@ -155,6 +166,11 @@ export default function Navbar({
   const [megaOpen, setMegaOpen] = useState(false);
   const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showTopInfo, setShowTopInfo] = useState(true);
+  const [topInfoHeight, setTopInfoHeight] = useState(DEFAULT_TOP_INFO_HEIGHT);
+  const scrollFrame = useRef<number | null>(null);
+  const pendingScrollY = useRef(0);
+  const topInfoRef = useRef<HTMLDivElement | null>(null);
 
   // Close-intent delay so the mega menu doesn't flicker when the cursor
   // briefly leaves the trigger/panel while moving between them.
@@ -195,6 +211,25 @@ export default function Navbar({
     };
   }, []);
 
+  useEffect(() => {
+    const element = topInfoRef.current;
+    if (!element) return;
+
+    const measure = () => {
+      setTopInfoHeight(Math.ceil(element.getBoundingClientRect().height) || DEFAULT_TOP_INFO_HEIGHT);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    window.addEventListener("resize", measure);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
   // Keep open while pointer is anywhere over the trigger+panel hit area.
   // pointerenter/leave is more reliable than mouseenter when children remount.
   const onMegaPointerEnter = useCallback(() => {
@@ -205,14 +240,33 @@ export default function Navbar({
     scheduleMegaClose();
   }, [scheduleMegaClose]);
 
-  const handleScroll = useCallback(() => {
-    setScrolled(window.scrollY > 40);
+  const handleScroll = useCallback((event?: Event) => {
+    const customScroll = (event as CustomEvent<{ scroll?: number }> | undefined)?.detail?.scroll;
+    pendingScrollY.current = typeof customScroll === "number" ? customScroll : window.scrollY;
+    if (scrollFrame.current !== null) return;
+
+    scrollFrame.current = window.requestAnimationFrame(() => {
+      const scrollTop = pendingScrollY.current;
+
+      setScrolled(scrollTop > 8);
+      setShowTopInfo(scrollTop <= 8);
+
+      scrollFrame.current = null;
+    });
   }, []);
 
   useEffect(() => {
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("ice:scroll", handleScroll as EventListener);
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("ice:scroll", handleScroll as EventListener);
+      if (scrollFrame.current !== null) {
+        window.cancelAnimationFrame(scrollFrame.current);
+        scrollFrame.current = null;
+      }
+    };
   }, [handleScroll]);
 
   useEffect(() => {
@@ -238,15 +292,29 @@ export default function Navbar({
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full">
+    <header data-site-navbar className="sticky top-0 z-50 w-full">
       {/* ══════════ Top Info Bar ══════════ */}
-      <div
-        className={cx(
-          "hidden overflow-hidden transition-all duration-300 lg:block",
-          scrolled ? "max-h-0 opacity-0" : "max-h-12 opacity-100"
-        )}
+      <motion.div
+        data-top-info-bar
+        initial={false}
+        animate={
+          showTopInfo
+            ? { height: topInfoHeight, opacity: 1, y: 0 }
+            : { height: 0, opacity: 0, y: -8 }
+        }
+        transition={
+          prefersReducedMotion
+            ? { duration: 0 }
+            : {
+                height: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+                opacity: { duration: 0.26, ease: "easeOut" },
+                y: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+              }
+        }
+        style={{ willChange: "height, opacity, transform" }}
+        className="hidden overflow-hidden lg:block"
       >
-        <div className="border-b border-secondary bg-secondary">
+        <div ref={topInfoRef} className="border-b border-secondary bg-secondary">
           <div className="mx-auto flex max-w-container items-center justify-between px-4 py-2 text-xs text-tertiary md:px-8">
             <span className="inline-flex items-center gap-1.5">
               <MarkerPin02 className="size-3.5 shrink-0 text-fg-quaternary" />
@@ -270,7 +338,7 @@ export default function Navbar({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ══════════ Main Nav ══════════ */}
       {/* Light mode: solid pure white so the white logo plate blends seamlessly.
@@ -598,14 +666,15 @@ export default function Navbar({
                         className={cx(
                           "flex w-full cursor-pointer items-center justify-between rounded-lg px-4 py-3 text-md font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
                           isActive(link.href)
-                            ? "text-brand-secondary"
+                            ? "bg-brand-solid text-white shadow-[0_0_24px_rgb(4_155_251/0.28)] ring-1 ring-brand-solid/70"
                             : "text-secondary hover:bg-primary_hover hover:text-primary"
                         )}
                       >
                         {link.label}
                         <ChevronDown
                           className={cx(
-                            "size-5 text-fg-quaternary transition duration-100 ease-linear",
+                            "size-5 transition duration-100 ease-linear",
+                            isActive(link.href) ? "text-white" : "text-fg-quaternary",
                             mobileSolutionsOpen && "-rotate-180"
                           )}
                         />
@@ -624,7 +693,13 @@ export default function Navbar({
                               <Link
                                 href="/solutions"
                                 onClick={() => setMobileOpen(false)}
-                                className="rounded-lg px-4 py-2 text-sm font-semibold text-brand-secondary outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary_hover focus-visible:outline-2"
+                                aria-current={pathname === "/solutions" ? "page" : undefined}
+                                className={cx(
+                                  "rounded-lg px-4 py-2 text-sm font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2",
+                                  pathname === "/solutions"
+                                    ? "bg-brand-solid text-white shadow-[0_0_20px_rgb(4_155_251/0.24)] ring-1 ring-brand-solid/70"
+                                    : "text-brand-secondary hover:bg-primary_hover hover:text-brand-secondary_hover"
+                                )}
                               >
                                 View All Solutions
                               </Link>
@@ -640,7 +715,13 @@ export default function Navbar({
                                         <Link
                                           href={item.href}
                                           onClick={() => setMobileOpen(false)}
-                                          className="block rounded-lg px-4 py-2 text-sm text-tertiary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover hover:text-primary focus-visible:outline-2"
+                                          aria-current={isActive(item.href) ? "page" : undefined}
+                                          className={cx(
+                                            "block rounded-lg px-4 py-2 text-sm outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2",
+                                            isActive(item.href)
+                                              ? "bg-brand-solid text-white shadow-[0_0_20px_rgb(4_155_251/0.24)] ring-1 ring-brand-solid/70"
+                                              : "text-tertiary hover:bg-primary_hover hover:text-primary"
+                                          )}
                                         >
                                           {item.label}
                                         </Link>
@@ -662,7 +743,7 @@ export default function Navbar({
                       className={cx(
                         "block rounded-lg px-4 py-3 text-md font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
                         isActive(link.href)
-                          ? "bg-active text-brand-secondary"
+                          ? "bg-brand-solid text-white shadow-[0_0_24px_rgb(4_155_251/0.28)] ring-1 ring-brand-solid/70"
                           : "text-secondary hover:bg-primary_hover hover:text-primary"
                       )}
                     >

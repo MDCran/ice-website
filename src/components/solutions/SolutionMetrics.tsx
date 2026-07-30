@@ -613,7 +613,7 @@ export default function SolutionMetrics({ preset }: { preset: MetricPreset }) {
   const config = getPageConfig(resolved);
   const metrics = getMetrics(preset, inView);
 
-  const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 };
+  const hidden = reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 };
   const shown = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
 
   return (

@@ -169,7 +169,7 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   const footerCopy = cmsData?.footerCopy;
 
   const showSolutionsAccordion = cmsData?.showSolutionsAccordion ?? true;
-  const showGetInTouch = cmsData?.showGetInTouch ?? true;
+  const showGetInTouch = false;
   const showContactBar = cmsData?.showContactBar ?? true;
 
   const logoSrc = company?.logo ?? "/images/logo/ice-logo.jpg";

@@ -1,9 +1,7 @@
 "use client";
 
 import type { FC } from "react";
-import Link from "next/link";
 import {
-  ChevronRight,
   Clock,
   Mail01,
   MarkerPin02,
@@ -117,17 +115,6 @@ export default function ContactPage({
         <BrandOrbs />
 
         <div className="relative mx-auto flex w-full max-w-container flex-col px-4 py-10 md:px-8 md:py-12 lg:py-14">
-          <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-1.5 text-sm md:mb-8">
-            <Link
-              href="/"
-              className="rounded-xs font-medium text-tertiary outline-focus-ring transition-colors hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
-            >
-              Home
-            </Link>
-            <ChevronRight className="size-4 text-fg-quaternary" aria-hidden="true" />
-            <span className="font-medium text-secondary">Contact</span>
-          </nav>
-
           <div className="grid flex-1 grid-cols-1 items-start gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-16">
             <div className="flex flex-col">
               <span className="inline-flex items-center gap-2.5 text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Cloud01, File02, Shield01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
-import AtmosphericBand from "@/components/marketing/AtmosphericBand";
+import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import { JsonLd, breadcrumbs } from "@/lib/seo/jsonld";
 import { getSeoConfig } from "@/lib/seo/config";
 
@@ -52,18 +52,27 @@ export default async function ResourcesPage() {
         ])}
       />
       <main className="bg-primary">
-        <AtmosphericBand tone="dark" className="border-b border-white/10 py-20 md:py-28">
-          <div className="mx-auto w-full max-w-container px-4 md:px-8">
-            <p className="text-xs font-medium tracking-[0.2em] text-brand-300 uppercase">Resource hub</p>
-            <h1 className="mt-3 max-w-3xl text-display-md font-semibold text-white md:text-display-lg">
-              Practical guidance for enterprise infrastructure teams
+        <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
+          <div
+            aria-hidden="true"
+            className="texture-grid pointer-events-none absolute inset-0 opacity-[0.5] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="texture-noise pointer-events-none absolute inset-0 opacity-[0.025] dark:opacity-[0.04]"
+          />
+          <BrandOrbs />
+
+          <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center px-4 text-center md:px-8">
+            <h1 className="text-display-md font-semibold tracking-tight text-primary md:text-display-lg">
+              Knowledge Hub
             </h1>
-            <p className="mt-4 max-w-2xl text-lg text-white/70">
+            <p className="mt-4 text-lg text-tertiary md:mt-6 md:text-xl">
               Fact-dense primers on managed cloud, data protection, and IBM i security — written for
               architects and IT leaders evaluating ICE.
             </p>
           </div>
-        </AtmosphericBand>
+        </section>
 
         <section className="py-16 md:py-24">
           <div className="mx-auto grid w-full max-w-container gap-6 px-4 md:grid-cols-3 md:px-8">

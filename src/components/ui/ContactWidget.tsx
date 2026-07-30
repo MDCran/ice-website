@@ -127,6 +127,8 @@ export function ServiceSelect({
       selectedKey={value === "" ? null : value}
       onSelectionChange={(key) => onChange(key == null ? "" : String(key))}
       className="w-full"
+      popoverClassName="contact-form-popover overscroll-contain"
+      preventPageScroll
     >
       {groups.map((group, index) =>
         group.label ? (
@@ -288,6 +290,7 @@ interface PhoneFieldProps {
   placeholder?: string;
   size?: "sm" | "md";
   isRequired?: boolean;
+  wrapperClassName?: string;
   /** Composed full value, e.g. "+1 (561) 555-0100". Used to reset the field when cleared. */
   value: string;
   /** Called with the composed full number (dial code + national number) or "" when empty. */
@@ -304,6 +307,7 @@ export function PhoneField({
   placeholder = "(561) 555-0100",
   size = "md",
   isRequired,
+  wrapperClassName,
   value,
   onChange,
 }: PhoneFieldProps) {
@@ -330,7 +334,7 @@ export function PhoneField({
   };
 
   return (
-    <div className="flex w-full flex-col gap-1.5">
+    <div className={cx("flex w-full flex-col gap-1.5", wrapperClassName)}>
       <Label htmlFor={inputId} isRequired={isRequired}>
         {label}
       </Label>
@@ -340,7 +344,8 @@ export function PhoneField({
           aria-label="Country dial code"
           size={size}
           className="w-[7.5rem] shrink-0 sm:w-32"
-          popoverClassName="w-max min-w-[16rem]"
+          popoverClassName="contact-form-popover w-max min-w-[16rem] overscroll-contain"
+          preventPageScroll
           selectedKey={country.code}
           onSelectionChange={(key) => {
             const next = COUNTRIES.find((c) => c.code === key) ?? COUNTRIES[0];
@@ -415,6 +420,12 @@ const INITIAL_FORM: ContactFormState = {
   smsConsent: false,
 };
 
+const WELCOME_BUBBLE_DELAY_MS = 30000;
+
+function hasRequiredPhone(value: string) {
+  return value.replace(/\D/g, "").length >= 7;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Floating Contact Widget                                           */
 /* ------------------------------------------------------------------ */
@@ -446,14 +457,18 @@ export default function ContactWidget() {
       setShowWelcome(false);
       return;
     }
+    let timer: number | undefined;
     try {
       const seen = localStorage.getItem("ice-widget-seen");
       if (!seen) {
-        setShowWelcome(true);
+        timer = window.setTimeout(() => setShowWelcome(true), WELCOME_BUBBLE_DELAY_MS);
       }
     } catch {
       // localStorage unavailable — silently skip
     }
+    return () => {
+      if (timer != null) window.clearTimeout(timer);
+    };
   }, [suppressWelcomeBubble]);
 
   function dismissWelcome() {
@@ -473,6 +488,11 @@ export default function ContactWidget() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!hasRequiredPhone(form.phone)) {
+      setStatus("error");
+      setErrorMessage("Phone number is required.");
+      return;
+    }
     setStatus("sending");
     setErrorMessage("");
 
@@ -626,7 +646,13 @@ export default function ContactWidget() {
                     <Input size="sm" label="Company" placeholder="Acme Corp" value={form.company} onChange={(value) => setField("company", value)} />
 
                     {/* Phone with country code */}
-                    <PhoneField size="sm" label="Phone number" value={form.phone} onChange={(value) => setField("phone", value)} />
+                    <PhoneField
+                      isRequired
+                      size="sm"
+                      label="Phone number"
+                      value={form.phone}
+                      onChange={(value) => setField("phone", value)}
+                    />
 
                     {/* Service */}
                     <ServiceSelect size="sm" label="Service Interested In" value={form.service} onChange={(value) => setField("service", value)} />

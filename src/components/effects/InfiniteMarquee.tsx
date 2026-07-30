@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { AMBIENT_CYCLE_SECONDS } from "@/lib/motion";
 import { cx } from "@/utils/cx";
 
@@ -23,7 +22,6 @@ export default function InfiniteMarquee({
   pauseOnHover?: boolean;
 }) {
   const [paused, setPaused] = useState(false);
-  const reduceMotion = useHydratedReducedMotion();
 
   return (
     <div
@@ -47,11 +45,10 @@ export default function InfiniteMarquee({
       <div
         className="animate-ice-marquee flex w-max items-center"
         style={{
-          animationDuration: `${durationSec}s`,
-          animationPlayState: reduceMotion || paused ? "paused" : "running",
-          transform: reduceMotion ? "translateX(0)" : undefined,
-          willChange: reduceMotion ? "auto" : "transform",
-        }}
+          "--ice-marquee-duration": `${durationSec}s`,
+          animationPlayState: paused ? "paused" : "running",
+          willChange: "transform",
+        } as CSSProperties}
       >
         <div className="flex shrink-0 items-center">{renderTrack()}</div>
         <div className="flex shrink-0 items-center" aria-hidden="true">

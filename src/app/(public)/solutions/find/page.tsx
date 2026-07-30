@@ -6,12 +6,12 @@ import { JsonLd, breadcrumbs } from "@/lib/seo/jsonld";
 import { getSeoConfig } from "@/lib/seo/config";
 
 export const metadata: Metadata = {
-  title: "Advanced Solution Finder",
+  title: "Solution Finder",
   description:
-    "Build a tailored ICE solution stack from business goals, workload needs, risk posture, timeline, and operating priorities.",
+    "Find the right ICE solution with a quick guided match or a more detailed assessment.",
   alternates: { canonical: "/solutions/find" },
   openGraph: {
-    title: "Advanced Solution Finder | International Computer Exchange",
+    title: "Solution Finder | International Computer Exchange",
     description:
       "Get tailored ICE recommendations for managed cloud, DR, security, IBM Power, Microsoft, and managed operations.",
   },
@@ -48,10 +48,10 @@ export default async function SolutionFinderPage() {
                 Guided recommendations
               </p>
               <h1 className="mt-3 text-display-md font-semibold text-primary md:text-display-lg">
-                Build the right ICE solution stack
+                Find the right ICE solution
               </h1>
               <p className="mt-4 text-lg text-tertiary">
-                Answer a guided advisor, tune priorities, compare services, and turn the best fit into a working managed IT roadmap.
+                Choose a quick match or a detailed assessment to get one recommended starting point and two supporting options.
               </p>
             </div>
             <div className="mx-auto mt-10 max-w-6xl md:mt-12">

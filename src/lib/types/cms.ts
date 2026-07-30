@@ -2,6 +2,8 @@
 // Each interface describes the shape of the `content` jsonb column
 // for a specific section_type / section_key.
 
+import type { SalesEnablementConfig } from "@/lib/salesEnablement";
+
 export interface HeroSectionContent {
   badge?: string;
   heading: string;
@@ -178,4 +180,5 @@ export type SectionContent =
   | SolutionMetricsContent
   | FAQSectionContent
   | PartnerCardsContent
-  | ContactInfoContent;
+  | ContactInfoContent
+  | SalesEnablementConfig;

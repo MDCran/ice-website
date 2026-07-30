@@ -2,6 +2,17 @@ import { connection } from "next/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import { fetchPublishedPage } from "@/lib/cms/fetchPage";
 
+function pointsToRetiredEnterprisePage(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const normalized = value.trim();
+  return (
+    /^\/enterprise(?:[/?#]|$)/i.test(normalized) ||
+    /^https?:\/\/(?:www\.)?icesales\.com\/enterprise(?:[/?#]|$)/i.test(
+      normalized,
+    )
+  );
+}
+
 export interface PageSection {
   id: string;
   section_key: string;
@@ -65,7 +76,9 @@ export async function getNavigation() {
       .select("*")
       .eq("is_visible", true)
       .order("sort_order");
-    return items || [];
+    return (items || []).filter(
+      (item) => !pointsToRetiredEnterprisePage(item.href),
+    );
   } catch {
     return [];
   }
@@ -92,6 +105,7 @@ export async function getSearchIndex(): Promise<
       .select("slug, title, meta_description, page_type")
       .eq("is_published", true)
       .neq("slug", "site-settings")
+      .neq("slug", "enterprise")
       .neq("page_type", "settings");
 
     if (!pages || pages.length === 0) return [];

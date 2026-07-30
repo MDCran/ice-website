@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type FC } from "react";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion, useScroll, useSpring, useTransform } from "motion/react";
 import { CountUpNumber, CountUpText } from "@/components/ui/CountUpValue";
 import Link from "next/link";
 import Image from "next/image";
@@ -175,6 +175,13 @@ const DECISION_PATHS = [
     href: "/solutions/managed-cloud-hosting",
     icon: Cloud01,
   },
+  {
+    eyebrow: "Guided path",
+    title: "I'm not sure yet",
+    description: "Use the interactive finder to narrow options by urgency, platform, risk, budget, and business goals.",
+    href: "/solutions/find",
+    icon: MessageChatCircle,
+  },
 ];
 
 function normalizeMarqueePartners(
@@ -297,50 +304,22 @@ function SectionHeader({
   heading: string;
   description?: string;
 }) {
-  const reduceMotion = useHydratedReducedMotion();
-  const itemVariants = {
-    hidden: { opacity: 0, y: 18 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: EASE },
-    },
-  };
-
   return (
-    <motion.div
-      initial={reduceMotion ? false : "hidden"}
-      whileInView={reduceMotion ? undefined : "show"}
-      viewport={{ once: true, margin: "-80px" }}
-      variants={{
-        hidden: {},
-        show: { transition: { staggerChildren: MOTION_STAGGER } },
-      }}
-      className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
-    >
+    <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
       {eyebrow && (
-        <motion.span
-          variants={itemVariants}
-          className="text-sm font-semibold tracking-wider text-brand-secondary uppercase"
-        >
+        <span className="text-sm font-semibold tracking-wider text-brand-secondary uppercase">
           {eyebrow}
-        </motion.span>
+        </span>
       )}
-      <motion.h2
-        variants={itemVariants}
-        className="mt-3 text-display-sm font-semibold text-primary md:text-display-md"
-      >
+      <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">
         {heading}
-      </motion.h2>
+      </h2>
       {description && (
-        <motion.p
-          variants={itemVariants}
-          className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl"
-        >
+        <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">
           {description}
-        </motion.p>
+        </p>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -437,14 +416,12 @@ export default function Home({
   const hero = {
     ...heroDefaults,
     ...data?.hero,
-    // Keep the requested home-hero marketing copy even if CMS still has older strings.
-    badge: heroDefaults.badge,
-    headline: heroDefaults.headline,
-    headline_highlight: heroDefaults.headline_highlight,
-    subheadline: heroDefaults.subheadline,
-    cta_primary: heroDefaults.cta_primary,
-    cta_secondary: data?.hero?.cta_secondary ?? heroDefaults.cta_secondary,
   };
+  const normalizedHeroHeadline = hero.headline?.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  if (normalizedHeroHeadline === "enterprise technology redefined") {
+    hero.headline = heroDefaults.headline;
+    hero.headline_highlight = heroDefaults.headline_highlight;
+  }
 
   const experimentId = data?.hero?.experiment_id?.trim() || "";
   const abEnabled = Boolean(
@@ -546,14 +523,21 @@ export default function Home({
     target: timelineRailRef,
     offset: ["start 78%", "end 32%"],
   });
-  const timelineBeamTop = useTransform(timelineProgress, [0, 1], ["-22%", "100%"]);
+  const smoothTimelineProgress = useSpring(timelineProgress, {
+    stiffness: 82,
+    damping: 24,
+    mass: 0.55,
+    restDelta: 0.0005,
+  });
+  const timelineBeamTop = useTransform(smoothTimelineProgress, [0, 1], ["-22%", "100%"]);
   const timelineBeamOpacity = useTransform(
-    timelineProgress,
+    smoothTimelineProgress,
     [0, 0.04, 0.94, 1],
     [0, 1, 1, 0],
   );
-  const timelineEndOpacity = useTransform(timelineProgress, [0.92, 1], [0, 1]);
-  const timelineEndScale = useTransform(timelineProgress, [0.92, 1], [0.65, 1]);
+  const timelineTipTop = useTransform(smoothTimelineProgress, [0, 1], ["0%", "100%"]);
+  const timelineEndOpacity = useTransform(smoothTimelineProgress, [0.9, 1], [0, 1]);
+  const timelineEndScale = useTransform(smoothTimelineProgress, [0.9, 1], [0.65, 1]);
 
   return (
     <main className="bg-primary">
@@ -561,9 +545,9 @@ export default function Home({
           HERO — cinematic full-bleed background video
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="relative flex min-h-[calc(100svh-4.5rem)] flex-col overflow-hidden border-b border-secondary">
-        {/* LCP poster + deferred cinematic video (respects reduced motion) */}
+        {/* LCP poster + cinematic background video */}
         <div aria-hidden="true" className="absolute inset-0">
-          <OptimizedHeroMedia />
+          <OptimizedHeroMedia startDelayMs={150} />
           {/* Scrim: top-weighted dark wash for text legibility only — the hero
               ends in a hard edge (border-b on the section), no fade-out. */}
           <div className="absolute inset-0 bg-black/55" />
@@ -655,42 +639,66 @@ export default function Home({
           {...heroReveal(MOTION_STAGGER * 6)}
           href="#services"
           aria-label="Scroll to explore"
-          className="relative z-10 mb-4 flex flex-col items-center gap-1 self-center pb-[max(0.5rem,env(safe-area-inset-bottom))] text-white/70 transition hover:text-white md:mb-6"
+          className="ice-hero-scroll-cue relative z-10 mb-4 flex flex-col items-center gap-2 self-center pb-[max(0.5rem,env(safe-area-inset-bottom))] text-white/70 transition hover:text-white md:mb-6"
         >
           <span className="text-[10px] font-medium tracking-[0.2em] uppercase">Scroll</span>
-          <motion.span
+          <span
             aria-hidden="true"
-            animate={reduceMotion ? undefined : { y: [0, 8, 0] }}
-            transition={{ duration: 1.25, repeat: Infinity, ease: "easeInOut" }}
-            className="inline-flex"
+            className="flex flex-col items-center gap-1"
           >
-            <ChevronDown className="size-6 drop-shadow-[0_0_8px_rgb(4_155_251/0.45)]" />
-          </motion.span>
+            <span className="relative flex h-11 w-5 justify-center overflow-hidden rounded-full border border-white/25 bg-white/5 py-1 shadow-[0_0_20px_rgb(4_155_251/0.22)]">
+              <span className="ice-hero-scroll-wheel h-2.5 w-1 rounded-full bg-brand-solid shadow-[0_0_10px_rgb(4_155_251/0.7)]" />
+            </span>
+            <ChevronDown className="ice-hero-scroll-chevron size-6 drop-shadow-[0_0_8px_rgb(4_155_251/0.45)]" />
+          </span>
         </motion.a>
       </section>
 
       <ProofTicker items={resolveProofLabels(data?.hero?.proof_labels)} />
 
-      <section className="border-b border-secondary bg-secondary py-16 md:py-20">
-        <div className="mx-auto max-w-container px-4 md:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Choose your starting point</span>
+      <section className="relative isolate overflow-hidden border-b border-secondary bg-secondary py-14 md:py-18">
+        <div
+          aria-hidden="true"
+          className="texture-grid pointer-events-none absolute inset-0 opacity-35 [mask-image:radial-gradient(ellipse_at_center,black_18%,transparent_72%)]"
+        />
+        <div className="relative mx-auto grid max-w-container gap-8 px-4 md:px-8 lg:grid-cols-[0.74fr_1.26fr] lg:items-start">
+          <motion.div {...reveal()} className="max-w-xl">
+            <span className="text-xs font-semibold tracking-[0.2em] text-brand-secondary uppercase">Choose your starting point</span>
             <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">What are you trying to solve?</h2>
-          </div>
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            <p className="mt-4 text-lg leading-relaxed text-tertiary">
+              Start from the business pressure you feel first. Each route narrows the services, proof points, and next steps that fit the situation.
+            </p>
+            <Button
+              href="/solutions/find"
+              color="secondary"
+              size="lg"
+              iconTrailing={ArrowRight}
+              className="mt-7"
+            >
+              Open guided finder
+            </Button>
+          </motion.div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             {DECISION_PATHS.map((path, i) => (
-              <motion.div key={path.title} {...reveal(i * MOTION_STAGGER)}>
+              <motion.div key={path.title} {...reveal((i + 1) * MOTION_STAGGER)} className="h-full">
                 <Link
                   href={path.href}
-                  className="ice-lift group flex h-full flex-col rounded-2xl bg-primary p-6 ring-1 ring-secondary hover:ring-brand"
+                  className="ice-lift group relative flex h-full min-h-52 overflow-hidden rounded-lg bg-primary p-5 ring-1 ring-secondary transition hover:ring-brand"
                 >
-                  <FeaturedIcon icon={path.icon} size="lg" color="brand" theme="light" />
-                  <p className="mt-5 text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">{path.eyebrow}</p>
-                  <h3 className="mt-2 text-xl font-semibold text-primary">{path.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-tertiary">{path.description}</p>
-                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition group-hover:gap-2.5">
-                    Follow this path <ArrowRight className="size-4" />
-                  </span>
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-brand-500/12 to-transparent opacity-0 transition duration-300 group-hover:opacity-100"
+                  />
+                  <div className="relative flex h-full flex-col">
+                    <FeaturedIcon icon={path.icon} size="md" color="brand" theme="light" />
+                    <p className="mt-5 text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">{path.eyebrow}</p>
+                    <h3 className="mt-2 text-lg font-semibold leading-snug text-primary">{path.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-tertiary">{path.description}</p>
+                    <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-brand-secondary transition group-hover:gap-2.5">
+                      Follow this path <ArrowRight className="size-4" />
+                    </span>
+                  </div>
                 </Link>
               </motion.div>
             ))}
@@ -963,8 +971,9 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           COMPANY TIMELINE
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="overflow-hidden bg-secondary py-16 md:py-24">
-        <div className="mx-auto w-full max-w-container px-4 md:px-8">
+      <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
+        <SectionBloom align="left" />
+        <div className="relative z-10 mx-auto w-full max-w-container px-4 md:px-8">
           <SectionHeader
             eyebrow={timelineSection?.eyebrow ?? "Our Journey"}
             heading={timelineSection?.heading ?? "35+ Years of Innovation"}
@@ -978,26 +987,55 @@ export default function Home({
             >
               {/* Pipeline rail — a subtle brand-tinted track the beam runs along */}
               <div className="absolute inset-y-0 left-4 w-[3px] -translate-x-px rounded-full bg-gradient-to-b from-brand-500/20 via-brand-500/25 to-transparent md:left-1/2" />
+              <span
+                aria-hidden="true"
+                className="ice-timeline-auto-beam absolute left-[calc(1rem-1px)] z-[2] h-[24%] w-[3px] rounded-full md:left-[calc(50%-1px)]"
+              />
+              <span
+                aria-hidden="true"
+                className="ice-timeline-auto-tip absolute left-4 z-[3] -translate-x-1/2 -translate-y-1/2 md:left-1/2"
+              >
+                <span className="absolute top-1/2 left-1/2 size-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-solid/20 blur-lg" />
+                <span className="relative block size-2.5 rounded-full bg-brand-solid shadow-[0_0_18px_5px_rgb(4_155_251/0.55)]" />
+              </span>
               {/* Reading-progress line. Centering stays on the wrapper so Motion
                   can own the inner transform without clobbering it. */}
               <div className="absolute inset-y-0 left-4 w-[3px] -translate-x-px md:left-1/2">
                 <motion.div
                   className="h-full w-full origin-top rounded-full bg-border-brand"
-                  style={{ scaleY: reduceMotion ? 1 : timelineProgress }}
+                  style={{ scaleY: smoothTimelineProgress }}
                 />
               </div>
 
-              {/* The glow tip advances with reading pace instead of autoplay. */}
+              {/* The spring-smoothed glow beam advances with reading pace. */}
               <motion.span
                 className="ice-timeline-beam absolute left-4 z-[1] h-[22%] w-[3px] -translate-x-px rounded-full md:left-1/2"
                 style={{
-                  top: reduceMotion ? "100%" : timelineBeamTop,
-                  opacity: reduceMotion ? 0 : timelineBeamOpacity,
+                  top: timelineBeamTop,
+                  opacity: timelineBeamOpacity,
                   background:
                     "linear-gradient(to bottom, transparent, var(--color-brand-solid) 40%, rgb(124 212 253) 55%, transparent)",
                   boxShadow: "0 0 18px 3px rgb(4 155 251 / 0.55)",
                 }}
               />
+
+              {/* A restrained pulse marks the exact reading position. */}
+              <motion.span
+                className="absolute left-4 z-[2] -translate-x-1/2 -translate-y-1/2 md:left-1/2"
+                style={{
+                  top: timelineTipTop,
+                  opacity: timelineBeamOpacity,
+                }}
+              >
+                <span className="absolute top-1/2 left-1/2 size-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-solid/20 blur-md" />
+                <span className="relative block size-2.5 rounded-full bg-brand-solid shadow-[0_0_16px_4px_rgb(4_155_251/0.5)]">
+                  <motion.span
+                    className="absolute inset-0 rounded-full ring-1 ring-brand-solid/70"
+                    animate={{ scale: [1, 2.1], opacity: [0.8, 0] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
+                  />
+                </span>
+              </motion.span>
             </div>
 
             {timeline.map((item, i) => {
@@ -1011,23 +1049,20 @@ export default function Home({
                 >
                   {/* Dot — pops in with a spring; the latest milestone pulses gently */}
                   <motion.div
-                    initial={{ scale: reduceMotion ? 1 : 0 }}
-                    whileInView={{ scale: 1 }}
-                    viewport={{ once: true, margin: "-80px" }}
-                    transition={
-                      reduceMotion
-                        ? { duration: 0 }
-                        : {
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 18,
-                            delay: 0.14 + i * MOTION_STAGGER,
-                          }
-                    }
+                    initial={{ opacity: 0.32, scale: 0.68 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true, amount: 0.35, margin: "0px 0px -12% 0px" }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 210,
+                      damping: 18,
+                      mass: 0.65,
+                      delay: 0.08 + i * MOTION_STAGGER,
+                    }}
                     className="absolute left-4 z-10 -translate-x-1/2 md:left-1/2"
                   >
-                    <span className="relative flex size-5 items-center justify-center rounded-full bg-brand-secondary">
-                      {isLast && !reduceMotion && (
+                    <span className="relative flex size-5 items-center justify-center rounded-full bg-brand-secondary shadow-[0_0_0_4px_var(--color-bg-secondary)]">
+                      {isLast && (
                         <motion.span
                           aria-hidden="true"
                           className="absolute inset-0 rounded-full bg-brand-solid/40"
@@ -1041,14 +1076,14 @@ export default function Home({
 
                   {/* Content — slides in from its own side of the line */}
                   <motion.div
-                    initial={
-                      reduceMotion
-                        ? false
-                        : { opacity: 0, x: i % 2 === 0 ? -28 : 28 }
-                    }
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, margin: "-80px" }}
-                    transition={{ duration: 0.6, delay: i * MOTION_STAGGER, ease: EASE }}
+                    initial={{ opacity: 0.18, x: i % 2 === 0 ? -32 : 32, y: 14 }}
+                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    viewport={{ once: true, amount: 0.28, margin: "0px 0px -12% 0px" }}
+                    transition={{
+                      duration: 0.76,
+                      delay: i * MOTION_STAGGER,
+                      ease: EASE,
+                    }}
                     className={`ml-12 md:ml-0 md:w-[calc(50%-2rem)] ${
                       i % 2 === 0 ? "md:pr-8 md:text-right" : "md:ml-auto md:pl-8 md:text-left"
                     }`}
@@ -1058,11 +1093,19 @@ export default function Home({
                         i % 2 === 0 ? "md:text-right" : "md:text-left"
                       }`}
                     >
-                      <span
+                      <motion.span
                         aria-hidden="true"
                         className={`absolute top-0 h-px w-1/2 bg-gradient-to-r from-transparent via-brand-solid/70 to-transparent ${
-                          i % 2 === 0 ? "right-0" : "left-0"
+                          i % 2 === 0 ? "right-0 origin-right" : "left-0 origin-left"
                         }`}
+                        initial={{ scaleX: 0, opacity: 0 }}
+                        whileInView={{ scaleX: 1, opacity: 1 }}
+                        viewport={{ once: true, amount: 0.5 }}
+                        transition={{
+                          duration: 0.8,
+                          delay: 0.12 + i * MOTION_STAGGER,
+                          ease: EASE,
+                        }}
                       />
                       <div
                         className={`flex items-center gap-3 ${
@@ -1071,9 +1114,6 @@ export default function Home({
                       >
                         <span className="rounded-full bg-brand-primary_alt px-3 py-1 text-sm font-semibold tracking-wider text-brand-secondary ring-1 ring-brand/20">
                           {item.year}
-                        </span>
-                        <span className="text-xs font-medium tracking-[0.16em] text-quaternary uppercase">
-                          Milestone {String(i + 1).padStart(2, "0")}
                         </span>
                       </div>
                       <h3 className="mt-4 text-xl font-semibold text-primary">{item.title}</h3>
@@ -1093,8 +1133,8 @@ export default function Home({
                 <motion.span
                   className="flex size-5 items-center justify-center rounded-full bg-brand-secondary shadow-[0_0_12px_2px_rgb(4_155_251/0.45)]"
                   style={{
-                    opacity: reduceMotion ? 1 : timelineEndOpacity,
-                    scale: reduceMotion ? 1 : timelineEndScale,
+                    opacity: timelineEndOpacity,
+                    scale: timelineEndScale,
                   }}
                 >
                   <span className="size-1.5 rounded-full bg-brand-solid" />

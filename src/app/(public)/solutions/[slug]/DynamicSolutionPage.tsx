@@ -322,6 +322,11 @@ export default function DynamicSolutionPage({
       : orderedExtras;
   const orderWithDemo =
     mutedDemo && sectionOrder.length > 0 ? ["__demo", ...sectionOrder] : sectionOrder;
+  const defaultLeadHref = `/contact?service=${encodeURIComponent(solutionTitle)}&source=solution_detail`;
+  const leadHref = (href?: string) => {
+    const value = typeof href === "string" ? href.trim() : "";
+    return !value || value === "/contact" ? defaultLeadHref : value;
+  };
 
   return (
     <SolutionPageLayout
@@ -338,7 +343,7 @@ export default function DynamicSolutionPage({
       heroProofLabels={hero?.proof_labels ?? hero?.proofLabels}
       heroCtaPrimary={{
         label: "Speak to an Expert",
-        href: hero?.cta_primary?.href ?? hero?.ctaPrimary?.href ?? "/contact",
+        href: leadHref(hero?.cta_primary?.href ?? hero?.ctaPrimary?.href),
       }}
       heroCtaSecondary={undefined}
       features={features}
@@ -369,7 +374,7 @@ export default function DynamicSolutionPage({
         "Contact our enterprise architects to design a solution tailored to your needs."
       }
       ctaButtonLabel="Speak to an Expert"
-      ctaPrimaryHref={cta?.cta_primary?.href ?? cta?.ctaPrimary?.href ?? "/contact"}
+      ctaPrimaryHref={leadHref(cta?.cta_primary?.href ?? cta?.ctaPrimary?.href)}
       breadcrumbLabel={solutionTitle}
     />
   );

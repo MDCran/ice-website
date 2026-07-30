@@ -104,7 +104,7 @@ const QUESTIONS: Question[] = [
   {
     key: "industry",
     eyebrow: "Industry path",
-    prompt: "Which environment should the finder optimize around?",
+    prompt: "What industry are you in?",
     options: [
       { id: "healthcare", label: "Healthcare", detail: "HIPAA-ready resiliency, secure access, and recovery assurance." },
       { id: "finance", label: "Finance", detail: "Compliance, uptime, auditability, and risk controls." },
@@ -117,7 +117,7 @@ const QUESTIONS: Question[] = [
   {
     key: "workload",
     eyebrow: "Current platform",
-    prompt: "What is the most important workload?",
+    prompt: "Which platform matters most?",
     options: [
       { id: "ibm-i", label: "IBM i / Power", detail: "IBM i, AIX, IBM Power, or Power Virtual Server." },
       { id: "microsoft", label: "Microsoft / Azure", detail: "Microsoft 365, Azure, Windows Server, or Active Directory." },
@@ -129,7 +129,7 @@ const QUESTIONS: Question[] = [
   {
     key: "pain",
     eyebrow: "Primary pressure",
-    prompt: "What problem is creating the most pressure?",
+    prompt: "What problem needs attention first?",
     options: [
       { id: "backup", label: "Backups feel risky", detail: "Restore confidence, retention, and validated recovery." },
       { id: "outages", label: "Downtime is expensive", detail: "Availability, failover, and continuity planning." },
@@ -142,7 +142,7 @@ const QUESTIONS: Question[] = [
   {
     key: "continuity",
     eyebrow: "Recovery tolerance",
-    prompt: "How much downtime can the business tolerate?",
+    prompt: "How much downtime can your business tolerate?",
     options: [
       { id: "minutes", label: "Minutes", detail: "Architect for high availability and rapid failover." },
       { id: "hours", label: "Hours", detail: "DR and validated backup can carry the recovery plan." },
@@ -153,7 +153,7 @@ const QUESTIONS: Question[] = [
   {
     key: "compliance",
     eyebrow: "Risk posture",
-    prompt: "How heavy are the security and compliance requirements?",
+    prompt: "How strict are your security or compliance requirements?",
     options: [
       { id: "regulated", label: "Regulated", detail: "HIPAA, PCI, SOC, audit, or formal security governance." },
       { id: "customer", label: "Customer-driven", detail: "Vendor reviews, cyber insurance, or contract requirements." },
@@ -164,7 +164,7 @@ const QUESTIONS: Question[] = [
   {
     key: "team",
     eyebrow: "Operating model",
-    prompt: "How much internal IT capacity is available?",
+    prompt: "How much IT capacity do you have internally?",
     options: [
       { id: "lean", label: "Lean team", detail: "ICE should own more monitoring, patching, and response." },
       { id: "shared", label: "Shared ownership", detail: "Internal team plus ICE for specialized coverage." },
@@ -175,7 +175,7 @@ const QUESTIONS: Question[] = [
   {
     key: "timeline",
     eyebrow: "Timing",
-    prompt: "When does this need to move?",
+    prompt: "When do you want to begin?",
     options: [
       { id: "now", label: "This month", detail: "Prioritize low-friction assessments and fast stabilization." },
       { id: "quarter", label: "This quarter", detail: "Build a project plan with discovery and staged delivery." },
@@ -763,7 +763,7 @@ function SolutionCard({
   );
 }
 
-export default function SolutionFinder({ className }: { className?: string }) {
+function LegacySolutionFinder({ className }: { className?: string }) {
   const [answers, setAnswers] = useState<Answers>({});
   const [step, setStep] = useState(0);
   const [selectedGoals, setSelectedGoals] = useState<GoalId[]>(["downtime", "security", "operations"]);
@@ -1284,11 +1284,478 @@ export default function SolutionFinder({ className }: { className?: string }) {
   );
 }
 
+type FinderMode = "quick" | "advanced";
+
+const QUICK_QUESTIONS = QUESTIONS.slice(0, 4);
+
+function getFitLabel(fit: number) {
+  if (fit >= 75) return "Strong fit";
+  if (fit >= 55) return "Good fit";
+  return "Potential fit";
+}
+
+function getResultReasons(solution: RankedSolution) {
+  const fallbacks = [
+    `Fits the ${solution.role.toLowerCase()} need`,
+    `Supports a ${solution.timeline} planning window`,
+    solution.proof,
+  ];
+  return Array.from(new Set([...solution.reasons, ...fallbacks])).slice(0, 3);
+}
+
+function FinderResultCard({
+  solution,
+  featured = false,
+}: {
+  solution: RankedSolution;
+  featured?: boolean;
+}) {
+  const image = imageFor(solution);
+  const reasons = getResultReasons(solution);
+
+  return (
+    <article
+      className={cx(
+        "group relative isolate flex h-full flex-col overflow-hidden rounded-2xl bg-primary ring-1 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg",
+        featured ? "p-6 ring-brand md:p-8" : "p-5 ring-secondary hover:ring-brand",
+      )}
+    >
+      {image && (
+        <div
+          aria-hidden="true"
+          className={cx(
+            "pointer-events-none absolute inset-x-0 top-0 z-0 overflow-hidden transition duration-500",
+            featured ? "h-52 opacity-45 group-hover:opacity-65" : "h-36 opacity-25 group-hover:opacity-50",
+          )}
+        >
+          <img
+            src={image}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full scale-105 object-cover transition duration-500 group-hover:scale-100"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--color-bg-primary)]/50 to-[var(--color-bg-primary)]" />
+        </div>
+      )}
+
+      <div className="relative z-10 flex flex-1 flex-col">
+        <div className="flex items-start justify-between gap-4">
+          <IconBadge icon={solution.icon} />
+          <span className="rounded-full bg-brand-primary px-3 py-1 text-xs font-semibold text-brand-secondary ring-1 ring-brand">
+            {getFitLabel(solution.fit)}
+          </span>
+        </div>
+        <p className={cx("text-xs font-medium tracking-[0.18em] text-brand-secondary uppercase", featured ? "mt-24" : "mt-14")}>
+          {featured ? "Recommended starting point" : solution.category}
+        </p>
+        <h3 className={cx("mt-2 font-semibold text-primary", featured ? "text-display-xs md:text-display-sm" : "text-xl")}>
+          {solution.title}
+        </h3>
+        <p className="mt-2 text-sm text-tertiary">{solution.summary}</p>
+
+        <div className="mt-5">
+          <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Why it fits</p>
+          <ul className="mt-3 space-y-2">
+            {reasons.map((reason) => (
+              <li key={reason} className="flex items-start gap-2 text-sm text-secondary">
+                <CheckCircle className="mt-0.5 size-4 shrink-0 text-brand-secondary" />
+                <span>{reason}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-auto pt-6">
+          <Button
+            size={featured ? "md" : "sm"}
+            href={solution.href}
+            iconTrailing={ArrowRight}
+            onClick={() => pushEvent("solution_finder_result_clicked", { href: solution.href })}
+          >
+            Explore {solution.title}
+          </Button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export default function SolutionFinder({ className }: { className?: string }) {
+  const [mode, setMode] = useState<FinderMode>("quick");
+  const [answers, setAnswers] = useState<Answers>({});
+  const [step, setStep] = useState(0);
+  const [selectedGoals, setSelectedGoals] = useState<GoalId[]>([]);
+  const [weights, setWeights] = useState<Record<WeightKey, number>>(DEFAULT_WEIGHTS);
+
+  useEffect(() => {
+    const state = decodeFinderState(new URLSearchParams(window.location.search).get("finder"));
+    if (!state) return;
+    if (state.answers) setAnswers(state.answers);
+    if (state.goals) setSelectedGoals(state.goals.filter((goal): goal is GoalId => GOALS.some((item) => item.id === goal)));
+    if (state.weights) setWeights({ ...DEFAULT_WEIGHTS, ...state.weights });
+  }, []);
+
+  const activeQuestions = mode === "quick" ? QUICK_QUESTIONS : QUESTIONS;
+  const currentStep = Math.min(step, activeQuestions.length - 1);
+  const current = activeQuestions[currentStep];
+  const answeredCount = activeQuestions.filter((question) => answers[question.key]).length;
+  const totalAnswered = QUESTIONS.filter((question) => answers[question.key]).length;
+  const hasEnoughAnswers = totalAnswered >= 3;
+  const ranked = useMemo(
+    () =>
+      SOLUTIONS.map((solution) => scoreSolution(solution, answers, selectedGoals, weights)).sort(
+        (a, b) => b.score - a.score,
+      ),
+    [answers, selectedGoals, weights],
+  );
+  const primary = hasEnoughAnswers ? ranked[0] : undefined;
+  const supporting = hasEnoughAnswers ? ranked.slice(1, 3) : [];
+  const answerItems = QUESTIONS.flatMap((question, index) => {
+    const selected = question.options.find((option) => option.id === answers[question.key]);
+    return selected ? [{ question, selected, index }] : [];
+  });
+  const contactHref = `/contact?service=${encodeURIComponent(primary?.title ?? "Solution Finder")}&source=solution_finder&summary=${encodeURIComponent(
+    [...getAnswerLabels(answers), ...selectedGoals.map((goal) => GOALS.find((item) => item.id === goal)?.label).filter(Boolean)].join(", "),
+  )}`;
+  const stages =
+    mode === "quick"
+      ? [
+          { label: "Your environment", start: 0, end: 1 },
+          { label: "Business risk", start: 2, end: 3 },
+        ]
+      : [
+          { label: "Your environment", start: 0, end: 1 },
+          { label: "Business risk", start: 2, end: 4 },
+          { label: "Timing and resources", start: 5, end: 6 },
+        ];
+
+  const changeMode = (nextMode: FinderMode) => {
+    setMode(nextMode);
+    setStep(0);
+  };
+
+  const selectAnswer = (key: AnswerKey, value: string) => {
+    setAnswers((currentAnswers) => ({ ...currentAnswers, [key]: value }));
+    pushEvent("solution_finder_answer", { question: key, answer: value });
+  };
+
+  const continueFinder = () => {
+    if (currentStep < activeQuestions.length - 1) {
+      setStep(currentStep + 1);
+      return;
+    }
+    window.setTimeout(() => document.getElementById("finder-results")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  };
+
+  const applyStarter = (starter: (typeof PROBLEM_STARTERS)[number]) => {
+    setAnswers((currentAnswers) => ({ ...currentAnswers, ...starter.answers }));
+    setSelectedGoals((currentGoals) => Array.from(new Set([...currentGoals, ...starter.goals])));
+    setStep(0);
+    pushEvent("solution_finder_starter_clicked", { starter: starter.id });
+  };
+
+  const toggleGoal = (goal: GoalId) => {
+    setSelectedGoals((currentGoals) =>
+      currentGoals.includes(goal) ? currentGoals.filter((item) => item !== goal) : [...currentGoals, goal],
+    );
+  };
+
+  const reset = () => {
+    setMode("quick");
+    setAnswers({});
+    setSelectedGoals([]);
+    setWeights(DEFAULT_WEIGHTS);
+    setStep(0);
+  };
+
+  return (
+    <div data-testid="solution-finder" className={cx("space-y-8", className)}>
+      <section className="rounded-2xl bg-primary p-5 ring-1 ring-secondary md:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Choose your path</p>
+            <h2 className="mt-2 text-display-xs font-semibold text-primary">How much guidance do you want?</h2>
+          </div>
+          <button
+            type="button"
+            onClick={reset}
+            className="inline-flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm font-semibold text-secondary ring-1 ring-secondary transition hover:text-brand-secondary hover:ring-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          >
+            <RefreshCw01 className="size-4" />
+            Start over
+          </button>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {([
+            ["quick", "Quick match", "Four plain-language questions. Best when you want a clear place to start."],
+            ["advanced", "Detailed assessment", "Seven questions plus optional goals and priority controls."],
+          ] as const).map(([id, label, detail]) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={mode === id}
+              onClick={() => changeMode(id)}
+              className={cx(
+                "rounded-xl p-4 text-left ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                mode === id ? "bg-brand-solid text-white ring-transparent" : "bg-secondary ring-secondary hover:ring-brand",
+              )}
+            >
+              <span className={cx("font-semibold", mode === id ? "text-white" : "text-primary")}>{label}</span>
+              <span className={cx("mt-1 block text-sm", mode === id ? "text-white/75" : "text-tertiary")}>{detail}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-2xl bg-secondary p-5 ring-1 ring-secondary md:p-6">
+        <div className="flex items-center gap-3">
+          <IconBadge icon={Zap} className="size-9 rounded-lg" />
+          <div>
+            <p className="text-xs font-medium tracking-[0.18em] text-brand-secondary uppercase">Optional shortcut</p>
+            <h2 className="text-lg font-semibold text-primary">Start from the pressure</h2>
+          </div>
+        </div>
+        <p className="mt-2 text-sm text-tertiary">Choose a common situation to pre-fill two answers, then confirm the details below.</p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {PROBLEM_STARTERS.map((starter) => (
+            <button
+              key={starter.id}
+              type="button"
+              onClick={() => applyStarter(starter)}
+              className="rounded-xl bg-primary p-4 text-left ring-1 ring-secondary transition hover:-translate-y-0.5 hover:ring-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            >
+              <span className="text-sm font-semibold text-primary">{starter.label}</span>
+              <span className="mt-1 block text-sm text-tertiary">{starter.detail}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="rounded-2xl bg-primary p-5 ring-1 ring-secondary md:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">{current.eyebrow}</p>
+              <h2 className="mt-2 text-display-xs font-semibold text-primary md:text-display-sm">{current.prompt}</h2>
+            </div>
+            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary ring-1 ring-secondary">
+              {answeredCount}/{activeQuestions.length} answered
+            </span>
+          </div>
+
+          <div className="mt-6 grid gap-2 sm:grid-cols-3">
+            {stages.map((stage) => {
+              const complete = activeQuestions.slice(stage.start, stage.end + 1).every((question) => answers[question.key]);
+              const active = currentStep >= stage.start && currentStep <= stage.end;
+              return (
+                <button
+                  key={stage.label}
+                  type="button"
+                  onClick={() => setStep(stage.start)}
+                  className={cx(
+                    "rounded-xl px-3 py-3 text-left text-xs font-semibold ring-1 transition",
+                    active
+                      ? "bg-brand-solid text-white ring-transparent"
+                      : complete
+                        ? "bg-brand-primary text-brand-secondary ring-brand"
+                        : "bg-secondary text-tertiary ring-secondary hover:ring-brand",
+                  )}
+                >
+                  <span className="block">{stage.label}</span>
+                  <span className={cx("mt-1 block font-normal", active ? "text-white/70" : "text-quaternary")}>
+                    Questions {stage.start + 1}-{stage.end + 1}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {current.options.map((option) => {
+              const selected = answers[current.key] === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  data-testid={`finder-option-${current.key}-${option.id}`}
+                  aria-pressed={selected}
+                  onClick={() => selectAnswer(current.key, option.id)}
+                  className={cx(
+                    "group min-h-28 rounded-xl bg-secondary p-4 text-left ring-1 ring-secondary transition duration-150 hover:-translate-y-0.5 hover:ring-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                    selected && "bg-brand-solid text-white ring-transparent",
+                  )}
+                >
+                  <span className={cx("inline-flex items-center gap-2 text-md font-semibold", selected ? "text-white" : "text-primary")}>
+                    {option.label}
+                    {selected && <CheckCircle className="size-4" />}
+                  </span>
+                  <span className={cx("mt-2 block text-sm", selected ? "text-white/75" : "text-tertiary")}>{option.detail}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <Button size="sm" color="secondary" isDisabled={currentStep === 0} onClick={() => setStep(Math.max(0, currentStep - 1))}>
+              Back
+            </Button>
+            <Button
+              size="sm"
+              isDisabled={!answers[current.key]}
+              onClick={continueFinder}
+              iconTrailing={ChevronRight}
+            >
+              {currentStep === activeQuestions.length - 1 ? "View recommendations" : "Continue"}
+            </Button>
+          </div>
+        </div>
+
+        <aside className="self-start rounded-2xl bg-secondary p-5 ring-1 ring-secondary lg:sticky lg:top-24 md:p-6">
+          <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Your situation</p>
+          <h2 className="mt-2 text-xl font-semibold text-primary">
+            {hasEnoughAnswers ? `${getFitLabel(primary?.fit ?? 0)} found` : `Answer ${Math.max(0, 3 - totalAnswered)} more question${3 - totalAnswered === 1 ? "" : "s"}`}
+          </h2>
+          <p className="mt-2 text-sm text-tertiary">
+            {hasEnoughAnswers
+              ? "This is questionnaire alignment, not a technical guarantee. ICE will validate architecture, risk, and scope."
+              : "We’ll wait for at least three answers before suggesting a solution."}
+          </p>
+
+          {answerItems.length > 0 ? (
+            <dl className="mt-5 space-y-3">
+              {answerItems.map(({ question, selected, index }) => (
+                <div key={question.key} className="rounded-xl bg-primary p-3 ring-1 ring-secondary">
+                  <dt className="text-xs font-medium text-quaternary">{question.eyebrow}</dt>
+                  <dd className="mt-1 flex items-center justify-between gap-3 text-sm font-semibold text-primary">
+                    <span>{selected.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (index >= QUICK_QUESTIONS.length) setMode("advanced");
+                        setStep(index);
+                      }}
+                      className="text-xs font-semibold text-brand-secondary hover:underline"
+                    >
+                      Edit
+                    </button>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <div className="mt-5 rounded-xl border border-dashed border-secondary p-4 text-sm text-quaternary">
+              Your answers will stay visible here as you go.
+            </div>
+          )}
+        </aside>
+      </section>
+
+      {mode === "advanced" && (
+        <details className="group rounded-2xl bg-primary ring-1 ring-secondary">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 md:p-6">
+            <div>
+              <p className="text-xs font-medium tracking-[0.18em] text-brand-secondary uppercase">Optional</p>
+              <h2 className="mt-1 text-lg font-semibold text-primary">Fine-tune recommendations</h2>
+              <p className="mt-1 text-sm text-tertiary">Add outcomes and adjust priorities only if they matter to your decision.</p>
+            </div>
+            <ChevronRight className="size-5 shrink-0 text-tertiary transition group-open:rotate-90" />
+          </summary>
+          <div className="border-t border-secondary p-5 md:p-6">
+            <div className="flex flex-wrap gap-2">
+              {GOALS.map((goal) => {
+                const selected = selectedGoals.includes(goal.id);
+                return (
+                  <button
+                    key={goal.id}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => toggleGoal(goal.id)}
+                    className={cx(
+                      "rounded-full px-3 py-2 text-sm font-semibold ring-1 ring-inset transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                      selected ? "bg-brand-solid text-white ring-transparent" : "bg-secondary text-secondary ring-secondary hover:ring-brand",
+                    )}
+                    title={goal.detail}
+                  >
+                    {goal.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {(Object.keys(weights) as WeightKey[]).map((key) => (
+                <label key={key} className="block rounded-xl bg-secondary p-4 ring-1 ring-secondary">
+                  <span className="flex items-center justify-between gap-3 text-sm font-semibold text-primary">
+                    <span className="capitalize">{key}</span>
+                    <span className="text-brand-secondary">{weights[key]}</span>
+                  </span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={weights[key]}
+                    onChange={(event) => setWeights((currentWeights) => ({ ...currentWeights, [key]: Number(event.target.value) }))}
+                    className="mt-3 h-2 w-full accent-[var(--color-bg-brand-solid)]"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        </details>
+      )}
+
+      <section id="finder-results" className="scroll-mt-24">
+        {!hasEnoughAnswers || !primary ? (
+          <div className="rounded-2xl border border-dashed border-secondary bg-secondary p-8 text-center md:p-12">
+            <IconBadge icon={Target04} className="mx-auto" />
+            <h2 className="mt-4 text-xl font-semibold text-primary">Your recommendation will appear here</h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-tertiary">
+              Answer at least three questions so the finder has enough context to identify a useful starting point.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Your shortlist</p>
+                <h2 className="mt-2 text-display-xs font-semibold text-primary md:text-display-sm">Start here, then explore two supporting options</h2>
+                <p className="mt-2 max-w-2xl text-sm text-tertiary">
+                  Fit labels show alignment with your answers. They are directional and should be validated in discovery.
+                </p>
+              </div>
+              <Button
+                size="md"
+                href={contactHref}
+                iconTrailing={ArrowRight}
+                onClick={() => pushEvent("consultation_cta_clicked", { location: "solution_finder_results" })}
+              >
+                Talk with a specialist
+              </Button>
+            </div>
+
+            <FinderResultCard solution={primary} featured />
+
+            <div>
+              <h3 className="text-lg font-semibold text-primary">Supporting options</h3>
+              <p className="mt-1 text-sm text-tertiary">These can complement the starting solution or fit a different delivery preference.</p>
+              <div className="mt-4 grid gap-5 md:grid-cols-2">
+                {supporting.map((solution) => (
+                  <FinderResultCard key={solution.slug} solution={solution} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 export function SolutionFinderPromo({ className }: { className?: string }) {
   return (
     <div className={cx("rounded-2xl bg-secondary p-6 ring-1 ring-secondary", className)}>
       <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Solution finder</p>
-      <p className="mt-2 text-lg font-semibold text-primary">Build a matched ICE stack from goals, risk, workload, and timeline.</p>
+      <p className="mt-2 text-lg font-semibold text-primary">Find a clear starting solution from your workload, risk, and timing.</p>
       <Button href="/solutions/find" size="md" className="mt-4" iconTrailing={ArrowRight}>
         Open finder
       </Button>

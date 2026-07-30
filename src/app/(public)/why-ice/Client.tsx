@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, type FC } from "react";
-import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { CountUpNumber } from "@/components/ui/CountUpValue";
 import {
-  ChevronRight,
   ArrowRight,
   Server01,
   LayersThree01,
@@ -19,7 +17,7 @@ import {
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { BrandOrbs, PulseAccent } from "@/components/effects/AmbientMotion";
+import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import ScrollChapter from "@/components/effects/ScrollChapter";
 import { resolveIcon } from "@/lib/iconMap";
 import { MOTION_EASE } from "@/lib/motion";
@@ -331,7 +329,7 @@ export default function WhyICEPage({
     });
   };
 
-  const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 };
+  const hidden = reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 };
   const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
   const viewportOnce = { once: true, margin: "-80px" } as const;
 
@@ -354,41 +352,11 @@ export default function WhyICEPage({
 
         <div className="relative mx-auto max-w-container px-4 md:px-8">
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-            <motion.nav
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, ease: EASE }}
-              aria-label="Breadcrumb"
-              className="flex items-center gap-2 text-sm font-medium text-quaternary"
-            >
-              <Link
-                href="/"
-                className="rounded-xs outline-focus-ring transition hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
-              >
-                Home
-              </Link>
-              <ChevronRight className="size-4 text-fg-quaternary" />
-              <span className="text-brand-secondary">Why ICE</span>
-            </motion.nav>
-
-            {/* Eyebrow — pulsing brand dot + mono caps */}
-            <motion.p
-              initial={hidden}
-              animate={visible}
-              transition={{ delay: 0.05, duration: 0.5, ease: EASE }}
-              className="mt-6 flex items-center gap-2.5"
-            >
-              <PulseAccent />
-              <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
-                {hero.badge ?? hero.eyebrow ?? "The ICE Advantage"}
-              </span>
-            </motion.p>
-
             <motion.h1
               initial={hidden}
               animate={visible}
               transition={{ duration: 0.6, ease: EASE }}
-              className="mt-4 text-display-md font-semibold tracking-tight text-primary md:text-display-lg"
+              className="text-display-md font-semibold tracking-tight text-primary md:text-display-lg"
             >
               {hero.headline ?? "Why ICE"}
             </motion.h1>

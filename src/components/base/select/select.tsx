@@ -20,6 +20,8 @@ export { SelectContext, sizes, type CommonProps, type SelectItemType } from "./s
 export interface SelectProps extends Omit<AriaSelectProps<SelectItemType>, "children" | "items">, RefAttributes<HTMLDivElement>, CommonProps {
     items?: SelectItemType[];
     popoverClassName?: string;
+    /** Keep wheel/touch scrolling inside the open menu instead of scrolling the page. */
+    preventPageScroll?: boolean;
     icon?: FC | ReactNode;
     children: ReactNode | ((item: SelectItemType) => ReactNode);
 }
@@ -94,7 +96,21 @@ const SelectValue = ({ isOpen, isFocused, isDisabled, size, placeholder, icon, r
     );
 };
 
-const Select = ({ placeholder = "Select", icon, size = "md", children, items, label, hint, tooltip, hideRequiredIndicator, className, ...rest }: SelectProps) => {
+const Select = ({
+    placeholder = "Select",
+    icon,
+    size = "md",
+    children,
+    items,
+    label,
+    hint,
+    tooltip,
+    hideRequiredIndicator,
+    className,
+    popoverClassName,
+    preventPageScroll = false,
+    ...rest
+}: SelectProps) => {
     return (
         <SelectContext.Provider value={{ size }}>
             <AriaSelect {...rest} className={(state) => cx("flex flex-col gap-1.5", typeof className === "function" ? className(state) : className)}>
@@ -108,7 +124,11 @@ const Select = ({ placeholder = "Select", icon, size = "md", children, items, la
 
                         <SelectValue {...state} {...{ size, placeholder }} icon={icon} />
 
-                        <Popover size={size} className={rest.popoverClassName}>
+                        <Popover
+                            size={size}
+                            className={popoverClassName}
+                            data-lenis-prevent={preventPageScroll ? "" : undefined}
+                        >
                             <AriaListBox items={items} className="size-full outline-hidden">
                                 {children}
                             </AriaListBox>

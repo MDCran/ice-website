@@ -40,3 +40,11 @@ export const BUYER_FAQS = [
     answer: "A rough platform inventory, business priorities, pain points, compliance needs, and desired timeline are enough to begin. ICE can help structure the deeper discovery.",
   },
 ];
+
+export function getBuyerFaqAnchor(id: string) {
+  return `faq-${id}`;
+}
+
+export function getBuyerFaqHref(id: string) {
+  return `/faq#${getBuyerFaqAnchor(id)}`;
+}

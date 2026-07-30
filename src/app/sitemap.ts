@@ -39,7 +39,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from("pages")
     .select("slug, page_type, updated_at")
     .eq("is_published", true)
-    .neq("slug", "site-settings");
+    .neq("slug", "site-settings")
+    .neq("slug", "enterprise");
 
   const entries: MetadataRoute.Sitemap = [];
 

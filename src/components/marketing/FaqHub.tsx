@@ -1,9 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, SearchLg } from "@untitledui/icons";
-import { BUYER_FAQS } from "@/lib/buyerFaqs";
+import {
+  BUYER_FAQS,
+  getBuyerFaqAnchor,
+  getBuyerFaqHref,
+} from "@/lib/buyerFaqs";
 
 export function FaqPreview({ heading = "Questions buyers ask first" }: { heading?: string }) {
   return (
@@ -22,7 +26,8 @@ export function FaqPreview({ heading = "Questions buyers ask first" }: { heading
           {BUYER_FAQS.map((faq) => (
             <Link
               key={faq.id}
-              href={`/faq#faq-${faq.id}`}
+              href={getBuyerFaqHref(faq.id)}
+              scroll={false}
               className="group flex items-start justify-between gap-4 border-b border-secondary py-3 text-sm font-semibold text-primary hover:text-brand-secondary"
             >
               {faq.question}
@@ -37,6 +42,66 @@ export function FaqPreview({ heading = "Questions buyers ask first" }: { heading
 
 export default function FaqHub() {
   const [query, setQuery] = useState("");
+  const [openFaqIds, setOpenFaqIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    let firstFrame = 0;
+    let secondFrame = 0;
+
+    const revealHashTarget = () => {
+      let anchor = "";
+      try {
+        anchor = decodeURIComponent(window.location.hash.slice(1));
+      } catch {
+        return;
+      }
+
+      const faq = BUYER_FAQS.find(
+        (item) => getBuyerFaqAnchor(item.id) === anchor,
+      );
+      if (!faq) return;
+
+      setQuery("");
+      setOpenFaqIds((current) => {
+        if (current.has(faq.id)) return current;
+        const next = new Set(current);
+        next.add(faq.id);
+        return next;
+      });
+
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+      firstFrame = window.requestAnimationFrame(() => {
+        secondFrame = window.requestAnimationFrame(() => {
+          const target = document.getElementById(
+            getBuyerFaqAnchor(faq.id),
+          ) as HTMLDetailsElement | null;
+          if (!target) return;
+
+          target.open = true;
+          const reduceMotion = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+          ).matches;
+          target.scrollIntoView({
+            behavior: reduceMotion ? "auto" : "smooth",
+            block: "start",
+          });
+          target.querySelector<HTMLElement>("summary")?.focus({
+            preventScroll: true,
+          });
+        });
+      });
+    };
+
+    revealHashTarget();
+    window.addEventListener("hashchange", revealHashTarget);
+    return () => {
+      window.removeEventListener("hashchange", revealHashTarget);
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, []);
+
   const results = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return BUYER_FAQS;
@@ -44,6 +109,22 @@ export default function FaqHub() {
       `${faq.question} ${faq.answer}`.toLowerCase().includes(normalized),
     );
   }, [query]);
+
+  const handleToggle = (
+    faqId: string,
+    event: SyntheticEvent<HTMLDetailsElement>,
+  ) => {
+    const isOpen = event.currentTarget.open;
+    setOpenFaqIds((current) => {
+      const next = new Set(current);
+      if (isOpen) {
+        next.add(faqId);
+      } else {
+        next.delete(faqId);
+      }
+      return next;
+    });
+  };
 
   return (
     <main className="bg-primary">
@@ -70,9 +151,29 @@ export default function FaqHub() {
           <p className="mb-6 text-sm text-tertiary" aria-live="polite">{results.length} answers</p>
           <div className="space-y-4">
             {results.map((faq) => (
-              <details key={faq.id} id={`faq-${faq.id}`} className="group scroll-mt-24 rounded-2xl bg-secondary p-5 ring-1 ring-secondary open:ring-brand/40">
-                <summary className="cursor-pointer list-none pr-8 text-md font-semibold text-primary">{faq.question}</summary>
-                <p className="mt-4 border-t border-secondary pt-4 text-md leading-relaxed text-tertiary">{faq.answer}</p>
+              <details
+                key={faq.id}
+                id={getBuyerFaqAnchor(faq.id)}
+                open={openFaqIds.has(faq.id)}
+                onToggle={(event) => handleToggle(faq.id, event)}
+                aria-labelledby={`${getBuyerFaqAnchor(faq.id)}-question`}
+                className="group scroll-mt-24 rounded-2xl bg-secondary p-5 ring-1 ring-secondary open:ring-brand/40"
+              >
+                <summary
+                  id={`${getBuyerFaqAnchor(faq.id)}-question`}
+                  aria-controls={`${getBuyerFaqAnchor(faq.id)}-answer`}
+                  className="cursor-pointer list-none rounded-md pr-8 text-md font-semibold text-primary outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  {faq.question}
+                </summary>
+                <div
+                  id={`${getBuyerFaqAnchor(faq.id)}-answer`}
+                  role="region"
+                  aria-labelledby={`${getBuyerFaqAnchor(faq.id)}-question`}
+                  className="mt-4 border-t border-secondary pt-4"
+                >
+                  <p className="text-md leading-relaxed text-tertiary">{faq.answer}</p>
+                </div>
               </details>
             ))}
           </div>

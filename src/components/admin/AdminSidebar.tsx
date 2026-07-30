@@ -17,6 +17,7 @@ import {
   NavigationPointer01,
   SearchLg,
   Stars01,
+  Target04,
   Users01,
 } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
@@ -34,6 +35,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: BarChartSquare02 },
   { label: "CMS Pages", href: "/admin/cms", icon: File02 },
+  { label: "Sales Enablement", href: "/admin/sales", icon: Target04 },
   { label: "Navigation", href: "/admin/navigation", icon: NavigationPointer01 },
   { label: "SEO & Analytics", href: "/admin/seo", icon: SearchLg },
   { label: "Core Web Vitals", href: "/admin/performance", icon: Activity },

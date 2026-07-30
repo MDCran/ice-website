@@ -6,13 +6,17 @@ import Link from "next/link";
 import {
   Activity,
   ArrowRight,
+  Calendar,
+  CheckCircle,
   Cloud01,
   CpuChip01,
   Database01,
   Dataflow01,
   HardDrive,
   Lock01,
+  MessageChatCircle,
   Monitor01,
+  Phone01,
   RefreshCcw01,
   Scan,
   Server01,
@@ -34,6 +38,7 @@ import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { cx } from "@/utils/cx";
 import { experienceFor } from "@/lib/solutionExperience";
 import SolutionComparisonMatrix from "@/components/solutions/SolutionComparisonMatrix";
+import StickySolutionCta from "@/components/marketing/StickySolutionCta";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -95,6 +100,33 @@ function BrandHairline() {
   );
 }
 
+const SOLUTIONS_CONSULT_HREF =
+  "/contact?service=Solution%20Architecture%20Review&source=solutions_index";
+
+const BUYER_SIGNALS = [
+  {
+    value: "35+",
+    label: "years in enterprise IT",
+    detail: "IBM Business Partner since 1990",
+  },
+  {
+    value: "24/7",
+    label: "operations coverage",
+    detail: "NOC, SOC, escalation, and managed service ownership",
+  },
+  {
+    value: "99.99%",
+    label: "target uptime SLA",
+    detail: "Validated per service scope and architecture",
+  },
+];
+
+const SALES_NEXT_STEPS = [
+  "Current-state and risk review",
+  "Recommended service path",
+  "Budgetary scope and next actions",
+];
+
 export default function SolutionsPage({
   cmsData,
   orderedSections,
@@ -131,7 +163,7 @@ export default function SolutionsPage({
     (section) => !["hero", "categories", "final_cta", "cta"].includes(section.section_key)
   );
 
-  const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 };
+  const hidden = reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 };
   const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
   const filteredCategories = categories
     .map((category: any) => ({
@@ -154,7 +186,10 @@ export default function SolutionsPage({
   return (
     <main className="bg-primary">
       {/* Page header — distinct hero band, not flat paper */}
-      <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
+      <section
+        id="solutions-hero"
+        className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32"
+      >
         {/* Engineering-grid texture, fading out from the top of the band */}
         <div
           aria-hidden="true"
@@ -168,25 +203,91 @@ export default function SolutionsPage({
         {/* Ambient brand orbs — slow continuous drift */}
         <BrandOrbs />
 
-        <div className="relative mx-auto max-w-container px-4 md:px-8">
+        <div className="relative mx-auto grid max-w-container gap-10 px-4 md:px-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(22rem,0.75fr)] lg:items-center">
           <motion.div
             initial={hidden}
             animate={visible}
             transition={{ duration: 0.6, ease: EASE }}
-            className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
+            className="flex max-w-4xl flex-col items-start text-left"
           >
             <span className="inline-flex items-center gap-2 text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
               <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
               {hero.eyebrow ?? hero.badge ?? "Our Solutions"}
             </span>
-            <h1 className="mt-3 text-display-md font-semibold tracking-tight text-primary md:text-display-lg">
+            <h1 className="mt-3 max-w-4xl text-display-md font-semibold tracking-tight text-primary md:text-display-lg">
               {hero.headline ?? "Enterprise Technology Solutions"}
             </h1>
-            <p className="mt-4 text-lg text-tertiary md:mt-6 md:text-xl">
+            <p className="mt-4 max-w-2xl text-lg text-tertiary md:mt-6 md:text-xl">
               {hero.subheadline ??
                 "From cloud infrastructure to cybersecurity, we deliver end-to-end solutions engineered for reliability, performance, and scale."}
             </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button size="xl" href={SOLUTIONS_CONSULT_HREF} iconTrailing={ArrowRight}>
+                Talk to an architect
+              </Button>
+              <Button color="secondary" size="xl" href="/solutions/find" iconLeading={Target04}>
+                Use guided finder
+              </Button>
+            </div>
+            <div className="mt-8 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
+              {BUYER_SIGNALS.map((signal) => (
+                <div
+                  key={signal.label}
+                  className="rounded-lg bg-primary/70 p-4 ring-1 ring-secondary backdrop-blur"
+                >
+                  <p className="text-display-xs font-semibold tracking-tight text-primary">{signal.value}</p>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-secondary">{signal.label}</p>
+                  <p className="mt-2 text-xs leading-5 text-tertiary">{signal.detail}</p>
+                </div>
+              ))}
+            </div>
           </motion.div>
+
+          <motion.aside
+            initial={hidden}
+            animate={visible}
+            transition={{ duration: 0.6, delay: 0.12, ease: EASE }}
+            className="relative isolate overflow-hidden rounded-lg bg-primary/80 p-6 ring-1 ring-secondary backdrop-blur-xl dark:shadow-[0_0_40px_rgb(4_155_251/0.12)]"
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-brand-500/[0.08] via-transparent to-brand-600/[0.06]"
+            />
+            <div className="flex items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-solid text-white shadow-[0_0_24px_rgb(4_155_251/0.25)]">
+                <MessageChatCircle className="size-5" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-xs font-semibold tracking-[0.2em] text-brand-secondary uppercase">
+                  Buyer-ready next step
+                </p>
+                <h2 className="mt-2 text-xl font-semibold tracking-tight text-primary">
+                  Turn requirements into a scoped service plan.
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-tertiary">
+                  ICE architects help qualify the best-fit solution, deployment path, risk profile, and budgetary next step.
+                </p>
+              </div>
+            </div>
+            <ol className="mt-6 space-y-3">
+              {SALES_NEXT_STEPS.map((step, index) => (
+                <li key={step} className="flex items-center gap-3">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-brand-secondary ring-1 ring-secondary">
+                    {index + 1}
+                  </span>
+                  <span className="text-sm font-medium text-secondary">{step}</span>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <Button size="md" href={SOLUTIONS_CONSULT_HREF} iconLeading={Calendar} className="justify-center">
+                Book review
+              </Button>
+              <Button color="secondary" size="md" href="tel:18007869188" iconLeading={Phone01} className="justify-center">
+                Call ICE
+              </Button>
+            </div>
+          </motion.aside>
         </div>
       </section>
 
@@ -197,6 +298,35 @@ export default function SolutionsPage({
       </section>
 
       <SolutionComparisonMatrix />
+
+      <section className="border-b border-secondary bg-secondary py-8 md:py-10">
+        <div className="mx-auto grid max-w-container gap-6 px-4 md:px-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="flex items-start gap-4">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand-solid text-white ring-1 ring-brand/20">
+              <CheckCircle className="size-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-xs font-semibold tracking-[0.2em] text-brand-secondary uppercase">
+                Sales-ready scoping
+              </p>
+              <h2 className="mt-2 text-display-xs font-semibold tracking-tight text-primary">
+                Get a shortlist your team can actually evaluate.
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-tertiary">
+                Use the finder, compare solution families, or send your requirements to ICE for an architect-led recommendation with fit, risk, and budget guidance.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
+            <Button href={SOLUTIONS_CONSULT_HREF} size="lg" iconTrailing={ArrowRight}>
+              Request scoped recommendation
+            </Button>
+            <Button href="tel:18007869188" size="lg" color="secondary" iconLeading={Phone01}>
+              1-800-786-9188
+            </Button>
+          </div>
+        </div>
+      </section>
 
       <section className="border-b border-secondary bg-primary py-10 md:py-12">
         <div className="mx-auto max-w-container px-4 md:px-8">
@@ -297,6 +427,8 @@ export default function SolutionsPage({
             <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-12 md:gap-6">
               {cat.services.map((svc: any, i: number) => {
                 const serviceImage = serviceImageFor(svc);
+                const slug = String(svc.href ?? "").split("/").filter(Boolean).at(-1) ?? "";
+                const serviceExperience = experienceFor(slug);
 
                 return (
                   <motion.div
@@ -310,7 +442,8 @@ export default function SolutionsPage({
                   >
                     <Link
                       href={svc.href}
-                      className="group relative isolate flex h-full min-h-56 overflow-hidden rounded-2xl border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
+                      aria-label={`${svc.title}: ${serviceExperience.outcome}`}
+                      className="group relative isolate flex h-full min-h-64 overflow-hidden rounded-lg border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
                     >
                       {/* Right-side hero wash — faint at rest, clearer on hover (no pan/zoom) */}
                       {serviceImage && (
@@ -335,6 +468,19 @@ export default function SolutionsPage({
                         <FeaturedIcon icon={svc.icon} size="lg" color="brand" theme="light" />
                         <h3 className="mt-4 text-lg font-semibold text-primary">{svc.title}</h3>
                         <p className="mt-1 flex-1 text-md text-tertiary">{svc.desc}</p>
+                        <p className="mt-3 line-clamp-2 text-xs font-medium leading-5 text-brand-secondary">
+                          {serviceExperience.outcome}
+                        </p>
+                        <div className="mt-4 flex flex-wrap gap-1.5">
+                          {serviceExperience.platforms.slice(0, 3).map((platform) => (
+                            <span
+                              key={platform}
+                              className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-tertiary ring-1 ring-secondary"
+                            >
+                              {platform}
+                            </span>
+                          ))}
+                        </div>
                         <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
                           Learn more
                           <ArrowRight aria-hidden="true" className="size-4" />
@@ -361,7 +507,7 @@ export default function SolutionsPage({
             whileInView={visible}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6, ease: EASE }}
-            className="relative isolate overflow-hidden rounded-2xl bg-secondary px-6 py-12 ring-1 ring-secondary ring-inset lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]"
+            className="relative isolate overflow-hidden rounded-lg bg-secondary px-6 py-12 ring-1 ring-secondary ring-inset lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.08)]"
           >
             <div
               aria-hidden="true"
@@ -390,20 +536,37 @@ export default function SolutionsPage({
                   {finalCta.description ??
                     "Our enterprise architects will design a tailored solution that fits your business requirements and budget."}
                 </p>
+                <ul className="mt-6 grid gap-2 text-sm text-secondary sm:grid-cols-3">
+                  {["30-minute discovery", "Budgetary fit guidance", "Clear next steps"].map((item) => (
+                    <li key={item} className="flex items-center gap-2">
+                      <CheckCircle className="size-4 shrink-0 text-fg-brand-primary" aria-hidden="true" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
               <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start">
                 <Button
                   size="xl"
-                  href={finalCta.cta_primary?.href ?? finalCta.ctaPrimary?.href ?? "/contact"}
+                  href={finalCta.cta_primary?.href ?? finalCta.ctaPrimary?.href ?? SOLUTIONS_CONSULT_HREF}
                   iconTrailing={ArrowRight}
                 >
                   {finalCta.cta_primary?.label ?? finalCta.ctaPrimary?.label ?? "Contact Our Team"}
+                </Button>
+                <Button size="xl" color="secondary" href="tel:18007869188" iconLeading={Phone01}>
+                  Call 1-800-786-9188
                 </Button>
               </div>
             </div>
           </motion.div>
         </div>
       </section>
+      <StickySolutionCta
+        title="Need help choosing a solution?"
+        consultHref={SOLUTIONS_CONSULT_HREF}
+        consultLabel="Book solution review"
+        heroId="solutions-hero"
+      />
     </main>
   );
 }

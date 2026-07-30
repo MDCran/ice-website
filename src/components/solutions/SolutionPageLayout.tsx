@@ -3,7 +3,7 @@
 import { Fragment, type FC, type ReactNode } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronRight, MessageChatCircle } from "@untitledui/icons";
+import { ArrowRight, Check, ChevronRight, MessageChatCircle, Phone01 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -15,7 +15,6 @@ import { MOTION_EASE } from "@/lib/motion";
 import { cx } from "@/utils/cx";
 import SolutionMetrics, { type MetricPreset } from "./SolutionMetrics";
 import {
-  FreshnessCue,
   RpoRtoCalculator,
   SolutionArchitecture,
   SolutionProofStrip,
@@ -145,25 +144,24 @@ export default function SolutionPageLayout({
   ctaButtonLabel = "Speak to an Expert",
   breadcrumbLabel,
   heroEyebrow,
-  heroProofLabels,
   heroCtaPrimary,
   heroCtaSecondary,
   featuresIntro,
   processIntro,
   benefitsIntro,
   ctaPrimaryHref,
-  ctaSecondary: _ctaSecondary,
+  ctaSecondary,
   sectionOrder,
   orderedExtras,
 }: SolutionPageLayoutProps) {
   const reduceMotion = useHydratedReducedMotion();
   const experience = experienceFor(solutionSlug);
 
-  const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 };
+  const hidden = reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 };
   const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
   const viewportOnce = { once: true, margin: "-80px" } as const;
 
-  const proofLabels = (heroProofLabels ?? []).filter((label) => typeof label === "string" && label.trim());
+  const primaryConsultHref = ctaPrimaryHref ?? heroCtaPrimary?.href ?? "/contact";
 
   /* ── Features Grid ─────────────────────────────────────────────────── */
   const featuresBlock =
@@ -255,8 +253,8 @@ export default function SolutionPageLayout({
               return (
                 <motion.li
                   key={`${stepLabel}-${step.title}`}
-                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 28 }}
-                  whileInView={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                  initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
+                  whileInView={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
                   viewport={viewportOnce}
                   transition={{ duration: 0.55, delay: i * 0.1, ease: EASE }}
                   className="relative flex flex-col items-center text-center"
@@ -290,8 +288,8 @@ export default function SolutionPageLayout({
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
             <motion.div
-              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -16 }}
-              whileInView={reduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+              initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -16 }}
+              whileInView={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
               viewport={viewportOnce}
               transition={{ duration: 0.6, ease: EASE }}
             >
@@ -310,8 +308,8 @@ export default function SolutionPageLayout({
               {benefits.map((benefit, i) => (
                 <motion.li
                   key={i}
-                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 16 }}
-                  whileInView={reduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+                  initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: 16 }}
+                  whileInView={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
                   viewport={viewportOnce}
                   transition={{ duration: 0.5, delay: i * 0.06, ease: EASE }}
                   className="flex items-start gap-3"
@@ -378,8 +376,16 @@ export default function SolutionPageLayout({
                 <p className="mt-4 text-lg text-tertiary md:mt-5">{ctaSubtitle}</p>
               </div>
               <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start">
-                <Button href={ctaPrimaryHref ?? "/contact"} size="xl" iconTrailing={ArrowRight}>
+                <Button href={primaryConsultHref} size="xl" iconTrailing={ArrowRight}>
                   {ctaButtonLabel ?? "Speak to an Expert"}
+                </Button>
+                <Button
+                  href={ctaSecondary?.href ?? "tel:18007869188"}
+                  size="xl"
+                  color="secondary"
+                  iconLeading={Phone01}
+                >
+                  {ctaSecondary?.label ?? "Call 1-800-786-9188"}
                 </Button>
               </div>
             </div>
@@ -457,50 +463,42 @@ export default function SolutionPageLayout({
                 </span>
               )}
 
-              <p
-                className={cx(
-                  "text-sm font-semibold tracking-wide text-secondary uppercase",
-                  heroEyebrow ? "mt-3" : "mt-4",
-                )}
+              <h1
+                className="mt-5 max-w-2xl text-display-md font-semibold tracking-tight text-primary md:text-display-lg"
                 dangerouslySetInnerHTML={{ __html: title }}
               />
-              <h1 className="mt-3 max-w-2xl text-display-md font-semibold tracking-tight text-primary md:text-display-lg">
-                {experience.outcome}
-              </h1>
 
               <p className="mt-4 max-w-xl text-lg text-tertiary line-clamp-3 md:mt-6 md:text-xl">{subtitle}</p>
 
               <div className="mt-8 flex flex-col-reverse items-stretch gap-3 self-stretch sm:flex-row sm:items-start sm:self-auto md:mt-10">
-                <Button href={heroCtaPrimary?.href ?? "/contact"} size="xl" iconTrailing={ArrowRight}>
+                <Button href={heroCtaPrimary?.href ?? primaryConsultHref} size="xl" iconTrailing={ArrowRight}>
                   {heroCtaPrimary?.label ?? "Speak to an Expert"}
+                </Button>
+                <Button
+                  color="secondary"
+                  href={heroCtaSecondary?.href ?? "tel:18007869188"}
+                  size="xl"
+                  iconLeading={Phone01}
+                >
+                  {heroCtaSecondary?.label ?? "Call 1-800-786-9188"}
                 </Button>
               </div>
 
-              {/* Proof labels — 2×2 grid so long labels don't wrap awkwardly in a row */}
-              {proofLabels.length > 0 && (
-                <ul
-                  className={cx(
-                    "mt-10 grid w-full gap-x-6 gap-y-3 border-t border-secondary pt-6",
-                    proofLabels.length === 3 ? "max-w-2xl sm:grid-cols-3" : "max-w-xl sm:grid-cols-2",
-                  )}
-                >
-                  {proofLabels.map((label) => (
-                    <li key={label} className="flex items-start gap-2.5">
-                      <Check className="mt-0.5 size-4 shrink-0 text-fg-brand-primary dark:text-white" aria-hidden="true" />
-                      <span className="text-sm leading-snug font-medium text-secondary">{label}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <div className="mt-5">
-                <FreshnessCue />
-              </div>
+              <ul className="mt-6 grid max-w-xl gap-2 text-sm text-secondary sm:grid-cols-3">
+                {["Architecture fit", "Risk targets", "Budgetary next step"].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Check className="size-4 shrink-0 text-fg-brand-primary" aria-hidden="true" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+
             </motion.div>
 
             {heroVisualization && (
               <motion.div
-                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
-                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+                initial={reduceMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
+                animate={reduceMotion ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
                 transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
                 className="relative flex min-h-[18rem] w-full items-center justify-center lg:min-h-[22rem]"
               >
@@ -597,7 +595,7 @@ export default function SolutionPageLayout({
       )}
       <StickySolutionCta
         title={`Talk about ${breadcrumbLabel}`}
-        consultHref={ctaPrimaryHref ?? "/contact"}
+        consultHref={primaryConsultHref}
         consultLabel={ctaButtonLabel}
       />
     </main>
