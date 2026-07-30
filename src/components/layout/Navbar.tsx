@@ -24,6 +24,7 @@ import { Button } from "@/components/base/buttons/button";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { resolveIcon } from "@/lib/iconMap";
+import { Grid as GridPattern } from "@/components/shared-assets/background-patterns/grid";
 
 /* ─── Data ─────────────────────────────────────────────────────────────── */
 
@@ -362,10 +363,11 @@ export default function Navbar({
                           exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
                           transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
                         >
-                          <div className="w-[980px] overflow-hidden rounded-2xl bg-primary shadow-2xl ring-1 ring-black/5 dark:bg-primary dark:ring-white/10">
+                          <div className="w-[1100px] overflow-hidden rounded-2xl bg-primary shadow-2xl ring-1 ring-black/5 dark:bg-primary dark:ring-white/10">
                             {/* Brand gradient hairline */}
                             <div aria-hidden="true" className="h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent" />
-                            <div className="grid grid-cols-4 p-6">
+                            <div className="grid grid-cols-[1fr_280px]">
+                              <div className="grid grid-cols-4 p-6">
                               {solutionsMega.map((col, colIdx) => (
                                 <div
                                   key={col.heading}
@@ -398,6 +400,75 @@ export default function Navbar({
                                   </ul>
                                 </div>
                               ))}
+                              </div>
+
+                              {/* Featured CTA panel — theme-aware so light mode stays crisp */}
+                              <div
+                                className={cx(
+                                  "relative isolate flex flex-col justify-between overflow-hidden border-l p-6",
+                                  "border-brand/25 bg-brand-primary_alt",
+                                  "dark:border-secondary dark:bg-[rgb(4_11_25)]",
+                                )}
+                              >
+                                {/* Engineering grid */}
+                                <div
+                                  aria-hidden="true"
+                                  className="pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(ellipse_at_top_right,black_25%,transparent_75%)] dark:opacity-[0.45]"
+                                >
+                                  <GridPattern
+                                    size="md"
+                                    className="absolute -top-16 -right-20 text-brand-500/35 dark:text-white/35"
+                                  />
+                                </div>
+                                {/* Brand bloom */}
+                                <div
+                                  aria-hidden="true"
+                                  className="pointer-events-none absolute -top-10 -right-10 size-40 rounded-full bg-brand-500/20 blur-3xl dark:bg-brand-500/30"
+                                />
+                                <div
+                                  aria-hidden="true"
+                                  className="pointer-events-none absolute right-0 bottom-0 size-32 rounded-full bg-brand-400/10 blur-2xl dark:bg-brand-400/15"
+                                />
+                                {/* Top hairline */}
+                                <div
+                                  aria-hidden="true"
+                                  className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/45 to-transparent"
+                                />
+
+                                <div className="relative">
+                                  <span className="inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.2em] text-brand-secondary uppercase dark:text-brand-300">
+                                    <span
+                                      aria-hidden="true"
+                                      className="size-1.5 rounded-full bg-brand-solid shadow-[0_0_8px_rgb(4_155_251/0.65)]"
+                                    />
+                                    Talk to ICE
+                                  </span>
+                                  <p className="mt-3 text-lg font-semibold tracking-tight text-primary dark:text-white">
+                                    Not sure which solution fits?
+                                  </p>
+                                  <p className="mt-2 text-sm leading-relaxed text-tertiary dark:text-white/65">
+                                    Get a free infrastructure assessment — or jump into the solution finder in under a minute.
+                                  </p>
+                                </div>
+
+                                <div className="relative mt-6 flex flex-col gap-3">
+                                  <Button
+                                    href="/contact"
+                                    size="md"
+                                    className="w-full justify-center shadow-sm dark:shadow-[0_0_24px_rgb(4_155_251/0.35)]"
+                                    iconTrailing={ArrowRight}
+                                  >
+                                    Request a consultation
+                                  </Button>
+                                  <Link
+                                    href="/solutions/find"
+                                    className="group inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold text-brand-secondary outline-focus-ring transition hover:text-brand-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-brand-300 dark:hover:text-white"
+                                  >
+                                    Find your solution
+                                    <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+                                  </Link>
+                                </div>
+                              </div>
                             </div>
 
                             {/* Bottom bar */}

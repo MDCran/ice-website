@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useEffect, useState, type FC } from "react";
+import { useState, type FC } from "react";
 import Link from "next/link";
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { CountUpNumber } from "@/components/ui/CountUpValue";
 import {
   ChevronRight,
@@ -20,11 +20,14 @@ import {
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { BrandOrbs, PulseAccent } from "@/components/effects/AmbientMotion";
+import ScrollChapter from "@/components/effects/ScrollChapter";
 import { resolveIcon } from "@/lib/iconMap";
+import { MOTION_EASE } from "@/lib/motion";
+import { useInViewOnce } from "@/hooks/useInViewOnce";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 import { cx } from "@/utils/cx";
 
-const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const EASE = MOTION_EASE;
 
 /* -------------------------------------------------------------------------- */
 /*  Data                                                                       */
@@ -185,7 +188,16 @@ function AnimatedCounter({
   inView: boolean;
 }) {
   const numeric = typeof target === "number" ? target : parseFloat(String(target)) || 0;
-  return <CountUpNumber target={numeric} suffix={suffix} inView={inView} duration={1400} />;
+  const decimals = Number.isInteger(numeric) ? 0 : (String(numeric).split(".")[1]?.length ?? 0);
+  return (
+    <CountUpNumber
+      target={numeric}
+      suffix={suffix}
+      inView={inView}
+      decimals={decimals}
+      duration={2000}
+    />
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -298,8 +310,10 @@ export default function WhyICEPage({
     (section) => !["hero", "stats", "differentiators", "faqs", "industries", "final_cta", "cta"].includes(section.section_key)
   );
 
-  const statsRef = useRef<HTMLDivElement>(null);
-  const statsInView = useInView(statsRef, { once: true, amount: 0.25, margin: "0px 0px -40px 0px" });
+  const { ref: statsRef, inView: statsInView } = useInViewOnce<HTMLDListElement>({
+    amount: 0.15,
+    rootMargin: "0px",
+  });
 
   // Track open FAQs by array index so each item toggles independently —
   // CMS-provided items may not carry a unique `id`, which previously made
@@ -420,7 +434,7 @@ export default function WhyICEPage({
       {/* ================================================================= */}
       {/*  Value Proposition / Stats — dark brand feature band              */}
       {/* ================================================================= */}
-      <section className="bg-primary py-16 md:py-24" ref={statsRef}>
+      <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto max-w-container px-4 md:px-8">
           <div className="flex flex-col gap-12 md:gap-16">
             <motion.div
@@ -447,8 +461,11 @@ export default function WhyICEPage({
               <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.07]" />
               <BrandOrbs variant="onBrand" />
 
-              <dl className="relative grid grid-cols-1 gap-x-8 gap-y-10 px-6 py-12 sm:grid-cols-2 md:grid-cols-4 md:p-16">
-                {stats.map((stat: any) => {
+              <dl
+                ref={statsRef}
+                className="relative grid grid-cols-1 gap-x-8 gap-y-10 px-6 py-12 sm:grid-cols-2 md:grid-cols-4 md:p-16"
+              >
+                {stats.map((stat: any, i: number) => {
                   const rawValue = typeof stat.value === "number"
                     ? stat.value
                     : parseFloat(String(stat.value).replace(/,/g, "").replace(/[^\d.-]/g, "")) || 0;
@@ -458,12 +475,20 @@ export default function WhyICEPage({
                       ? 99.99
                       : rawValue;
                   return (
-                  <div key={stat.label} className="flex flex-col-reverse gap-3 text-center">
-                    <dt className="text-md font-medium text-secondary_on-brand">{stat.label}</dt>
-                    <dd className="text-display-lg font-semibold tracking-tight text-primary_on-brand tabular-nums md:text-display-xl">
-                      <AnimatedCounter target={value} suffix={stat.suffix} inView={statsInView} />
-                    </dd>
-                  </div>
+                    <div
+                      key={stat.label}
+                      className="flex flex-col-reverse gap-3 text-center transition-all duration-500 ease-out"
+                      style={{
+                        opacity: statsInView ? 1 : 0,
+                        transform: statsInView ? "translateY(0)" : "translateY(16px)",
+                        transitionDelay: statsInView ? `${i * 80}ms` : "0ms",
+                      }}
+                    >
+                      <dt className="text-md font-medium text-secondary_on-brand">{stat.label}</dt>
+                      <dd className="text-display-lg font-semibold tracking-tight text-primary_on-brand tabular-nums md:text-display-xl">
+                        <AnimatedCounter target={value} suffix={stat.suffix ?? ""} inView={statsInView} />
+                      </dd>
+                    </div>
                   );
                 })}
               </dl>
@@ -477,7 +502,7 @@ export default function WhyICEPage({
       {/* ================================================================= */}
       {/*  Key Differentiators — bordered cards over a textured backdrop    */}
       {/* ================================================================= */}
-      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+      <ScrollChapter className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
         <div
           aria-hidden="true"
           className="texture-grid pointer-events-none absolute inset-0 opacity-[0.45] [mask-image:radial-gradient(ellipse_at_center,black_10%,transparent_70%)]"
@@ -524,7 +549,7 @@ export default function WhyICEPage({
             })}
           </ul>
         </div>
-      </section>
+      </ScrollChapter>
 
       {/* ================================================================= */}
       {/*  Industries Section                                               */}

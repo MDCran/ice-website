@@ -2,6 +2,7 @@
 
 import { type FormEvent, type HTMLAttributes, useEffect, useId, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AlertCircle, CheckCircle, MessageChatCircle, Send01, XClose } from "@untitledui/icons";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Header as AriaHeader, ListBoxSection as AriaListBoxSection } from "react-aria-components";
@@ -419,6 +420,7 @@ const INITIAL_FORM: ContactFormState = {
 /* ------------------------------------------------------------------ */
 
 export default function ContactWidget() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
@@ -427,9 +429,23 @@ export default function ContactWidget() {
 
   const [form, setForm] = useState<ContactFormState>(INITIAL_FORM);
 
+  const onContactPage = pathname === "/contact" || pathname?.startsWith("/contact/");
+  const suppressWelcomeBubble = onContactPage || pathname === "/solutions/find";
+
+  /* ── Collapse when landing on the contact page (form already on-page) ── */
+  useEffect(() => {
+    if (!onContactPage) return;
+    setIsOpen(false);
+    setShowWelcome(false);
+  }, [onContactPage]);
+
   /* ── Welcome bubble logic (first visit only, persists until interaction) */
 
   useEffect(() => {
+    if (suppressWelcomeBubble) {
+      setShowWelcome(false);
+      return;
+    }
     try {
       const seen = localStorage.getItem("ice-widget-seen");
       if (!seen) {
@@ -438,7 +454,7 @@ export default function ContactWidget() {
     } catch {
       // localStorage unavailable — silently skip
     }
-  }, []);
+  }, [suppressWelcomeBubble]);
 
   function dismissWelcome() {
     setShowWelcome(false);

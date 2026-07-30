@@ -1,67 +1,75 @@
-import { Button } from "@/components/base/buttons/button";
-import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import SkipToContent from "@/components/layout/SkipToContent";
+import NotFoundContent from "@/components/marketing/NotFoundContent";
+import { getSiteSettings, getNavigation } from "@/lib/cms";
+import type { FooterCMSData } from "@/components/layout/Footer";
 
 /**
- * Root 404 — used when no segment layout wraps the request (e.g. outside
- * `(public)`). Keep this content-only so public routes that fall through
- * here via a parent layout don't get a second Navbar/Footer.
+ * Global 404 — unmatched URLs only get the root layout, so we render
+ * Navbar + Footer here. Segment `(public)/not-found` stays content-only
+ * to avoid double chrome when `notFound()` is called inside public routes.
  */
-export default function NotFound() {
+export default async function NotFound() {
+  const [settings, navItems] = await Promise.all([getSiteSettings(), getNavigation()]);
+
+  const footerData: FooterCMSData = {};
+  if (settings?.company_info) footerData.companyInfo = settings.company_info;
+  if (settings?.footer) {
+    footerData.footerCopy = settings.footer;
+    if (typeof settings.footer.show_get_in_touch === "boolean") {
+      footerData.showGetInTouch = settings.footer.show_get_in_touch;
+    }
+    if (typeof settings.footer.show_contact_bar === "boolean") {
+      footerData.showContactBar = settings.footer.show_contact_bar;
+    }
+    if (typeof settings.footer.show_solutions_accordion === "boolean") {
+      footerData.showSolutionsAccordion = settings.footer.show_solutions_accordion;
+    }
+  }
+
+  const quickLinks = navItems
+    .filter((i: any) => i.location === "footer_quick" && i.is_visible)
+    .sort((a: any, b: any) => a.sort_order - b.sort_order)
+    .map((i: any) => ({ label: i.label, href: i.href }));
+  if (quickLinks.length > 0) footerData.quickLinks = quickLinks;
+
+  const legalLinks = navItems
+    .filter((i: any) => i.location === "footer_legal" && i.is_visible)
+    .sort((a: any, b: any) => a.sort_order - b.sort_order)
+    .map((i: any) => ({ label: i.label, href: i.href }));
+  if (legalLinks.length > 0) footerData.legalLinks = legalLinks;
+
+  const megaExcludeIds = new Set(
+    navItems.filter((i: any) => i.location === "footer_mega_exclude").map((i: any) => i.href),
+  );
+  const megaItems = navItems
+    .filter(
+      (i: any) =>
+        i.location === "navbar_mega" && i.is_visible && !megaExcludeIds.has(i.parent_id),
+    )
+    .sort((a: any, b: any) => a.sort_order - b.sort_order);
+  if (megaItems.length > 0) {
+    const columnMap = new Map<string, { label: string; href: string }[]>();
+    for (const item of megaItems) {
+      const col = item.mega_column_title || "Solutions";
+      if (!columnMap.has(col)) columnMap.set(col, []);
+      columnMap.get(col)!.push({ label: item.label, href: item.href });
+    }
+    footerData.solutionCategories = Array.from(columnMap.entries()).map(([heading, links]) => ({
+      heading,
+      links,
+    }));
+  }
+
   return (
     <>
-      <style>{`
-        @keyframes nf-rise {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: none; }
-        }
-        @media (prefers-reduced-motion: no-preference) {
-          .nf-rise { animation: nf-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
-          .nf-d1 { animation-delay: 0.08s; }
-          .nf-d2 { animation-delay: 0.16s; }
-          .nf-d3 { animation-delay: 0.24s; }
-        }
-      `}</style>
-
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-primary py-16 md:py-24">
-        <BackgroundPattern
-          pattern="grid"
-          size="lg"
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        />
-
-        <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
-          <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-            <span className="nf-rise text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
-              Page not found
-            </span>
-
-            <span
-              aria-hidden="true"
-              className="nf-rise nf-d1 mt-4 bg-gradient-to-b from-brand-500 to-brand-800 bg-clip-text text-display-2xl font-semibold text-transparent md:text-[9rem] md:leading-none dark:from-brand-300 dark:to-brand-600 dark:drop-shadow-[0_0_40px_rgb(4_155_251/0.25)]"
-            >
-              404
-            </span>
-
-            <h1 className="nf-rise nf-d2 mt-4 text-display-sm font-semibold text-primary md:text-display-md">
-              We couldn&apos;t find that page
-            </h1>
-            <p className="nf-rise nf-d2 mt-4 max-w-xl text-lg text-tertiary md:mt-5 md:text-xl">
-              Sorry, the page you&apos;re looking for doesn&apos;t exist or has
-              been moved. Check the URL, or head back to explore our solutions.
-            </p>
-
-            <div className="nf-rise nf-d3 mt-8 flex flex-col-reverse gap-3 self-stretch sm:flex-row sm:justify-center sm:self-center md:mt-12">
-              <Button color="secondary" size="xl" href="/solutions">
-                View solutions
-              </Button>
-              <Button size="xl" href="/">
-                Go home
-              </Button>
-            </div>
-          </div>
-        </div>
-      </main>
+      <SkipToContent />
+      <Navbar navItems={navItems} companyInfo={settings?.company_info} />
+      <div id="main-content">
+        <NotFoundContent fullHeight />
+      </div>
+      <Footer cmsData={footerData} />
     </>
   );
 }

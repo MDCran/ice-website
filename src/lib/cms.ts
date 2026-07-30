@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { createPublicClient } from "@/lib/supabase/public";
+import { fetchPublishedPage } from "@/lib/cms/fetchPage";
 
 export interface PageSection {
   id: string;
@@ -38,72 +39,16 @@ export interface PageWithSections extends PageData {
  * on the public site, even when an admin session cookie is present.
  *
  * Always dynamic: `connection()` opts the caller out of static rendering so
- * CMS edits (new FAQ/ROI/etc. sections) appear without a redeploy.
+ * CMS edits appear without a redeploy. Prefer `getCachedPageContent` (#31)
+ * on high-traffic routes that can invalidate via `/api/admin/revalidate`.
+ *
+ * Scheduling: admin save promotes due `scheduled_publish_at` to `is_published`
+ * (see CMSPageEditor + `supabase/migrations/20260729_cms_publish_schedule.sql`).
  */
 export async function getPageContent(slug: string): Promise<PageWithSections | null> {
   try {
     await connection();
-    const supabase = createPublicClient();
-    const { data: page, error } = await supabase
-      .from("pages")
-      .select("*")
-      .eq("slug", slug)
-      .eq("is_published", true)
-      .maybeSingle();
-
-    if (error || !page) return null;
-
-    const { data: pageSections, error: sectionsError } = await supabase
-      .from("page_sections")
-      .select("*")
-      .eq("page_id", page.id)
-      .order("sort_order", { ascending: true });
-
-    if (sectionsError) return null;
-
-    const visibleSections = (pageSections || [])
-      .filter((s: any) => s.is_visible !== false && s.section_key !== "page_seo" && s.section_type !== "seo")
-      .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-
-    const sections: Record<string, any> = {};
-    for (const section of visibleSections) {
-      sections[section.section_key] = section.content;
-    }
-
-    const pageRow = page as Record<string, any>;
-    const seoSection = (pageSections || []).find(
-      (s: any) => s.section_key === "page_seo" || s.section_type === "seo"
-    );
-    const seo = (seoSection?.content ?? {}) as Record<string, unknown>;
-
-    return {
-      id: page.id,
-      slug: page.slug,
-      title: page.title,
-      meta_title: page.meta_title,
-      meta_description: page.meta_description,
-      page_type: page.page_type,
-      is_published: page.is_published,
-      updated_at: page.updated_at,
-      canonical_url:
-        (typeof seo.canonical_url === "string" ? seo.canonical_url : null) ??
-        pageRow.canonical_url ??
-        null,
-      og_image_url:
-        (typeof seo.og_image_url === "string" ? seo.og_image_url : null) ??
-        pageRow.og_image_url ??
-        null,
-      twitter_image_url:
-        (typeof seo.twitter_image_url === "string" ? seo.twitter_image_url : null) ??
-        pageRow.twitter_image_url ??
-        null,
-      favicon_url:
-        (typeof seo.favicon_url === "string" ? seo.favicon_url : null) ??
-        pageRow.favicon_url ??
-        null,
-      sections,
-      orderedSections: visibleSections,
-    };
+    return fetchPublishedPage(slug);
   } catch {
     return null;
   }

@@ -7,12 +7,15 @@ import { LogOut01, User01, Settings01, ChevronDown, ChevronRight } from "@untitl
 import { createClient } from "@/lib/supabase/client";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { Button } from "@/components/base/buttons/button";
+import { Badge } from "@/components/base/badges/badges";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
+import PortalNotifications from "@/components/portal/PortalNotifications";
 
 const PAGE_NAMES: Record<string, string> = {
   "/portal": "Dashboard",
   "/portal/profile": "Company & Contacts",
   "/portal/resources": "Resources",
+  "/portal/reports": "QBR & reports",
   "/portal/invoices": "Invoices",
   "/portal/surveys": "Surveys",
 };
@@ -46,6 +49,7 @@ export default function PortalHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const [userName, setUserName] = useState("");
+  const [role, setRole] = useState<string>("");
 
   const pageName = getPageName(pathname);
   const breadcrumbs = getBreadcrumbs(pathname);
@@ -57,10 +61,11 @@ export default function PortalHeader() {
       if (!user) return;
       const { data: cu } = await supabase
         .from("client_users")
-        .select("first_name")
+        .select("first_name, role")
         .eq("id", user.id)
         .single();
       setUserName(cu?.first_name || user.email || "User");
+      setRole(cu?.role || "viewer");
     }
     loadUser();
   }, []);
@@ -97,7 +102,17 @@ export default function PortalHeader() {
       </div>
 
       <div className="flex items-center gap-2">
+        <PortalNotifications />
         <ThemeToggle />
+        {role && (
+          <Badge
+            size="sm"
+            color={role === "admin" ? "brand" : role === "editor" ? "blue" : "gray"}
+            className="hidden sm:inline-flex"
+          >
+            {role}
+          </Badge>
+        )}
         <Dropdown.Root>
           <Button color="tertiary" size="sm" iconLeading={User01} iconTrailing={ChevronDown}>
             {userName}

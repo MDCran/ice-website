@@ -5,13 +5,14 @@ import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-ic
 import { Table, TableCard } from "@/components/application/table/table";
 import ContactsFilter from "./ContactsFilter";
 import ContactReadToggle from "./ContactReadToggle";
+import ContactStageSelect, { PIPELINE_STAGES } from "./ContactStageSelect";
 
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; from?: string; to?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; from?: string; to?: string; sort?: string; stage?: string }>;
 }) {
-  const { q, from, to, sort } = await searchParams;
+  const { q, from, to, sort, stage } = await searchParams;
   const supabase = await createClient();
   const ascending = sort === "oldest";
 
@@ -31,6 +32,9 @@ export default async function ContactsPage({
   if (to) {
     query = query.lte("created_at", `${to}T23:59:59`);
   }
+  if (stage && PIPELINE_STAGES.some((s) => s.value === stage)) {
+    query = query.eq("pipeline_stage", stage);
+  }
 
   const { data: contacts, error } = await query;
 
@@ -43,17 +47,26 @@ export default async function ContactsPage({
   }
 
   const unreadCount = contacts?.filter((c) => !c.is_read).length ?? 0;
+  const stageCounts = PIPELINE_STAGES.map((s) => ({
+    ...s,
+    count: contacts?.filter((c) => (c.pipeline_stage ?? "new") === s.value).length ?? 0,
+  }));
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-display-xs font-semibold text-primary">
-            Form Submissions
-          </h1>
+          <h1 className="text-display-xs font-semibold text-primary">Lead pipeline</h1>
           <p className="mt-1 text-sm text-tertiary">
             {contacts?.length ?? 0} total{unreadCount > 0 && ` · ${unreadCount} unread`}
           </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {stageCounts.map((s) => (
+            <Badge key={s.value} size="sm" color={s.color}>
+              {s.label}: {s.count}
+            </Badge>
+          ))}
         </div>
       </div>
 
@@ -62,17 +75,18 @@ export default async function ContactsPage({
         initialFrom={from ?? ""}
         initialTo={to ?? ""}
         initialSort={sort ?? "newest"}
+        initialStage={stage ?? ""}
       />
 
       {!contacts || contacts.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-16 text-center shadow-xs ring-1 ring-secondary">
           <FeaturedIcon color="gray" theme="modern" size="lg" icon={Mail01} />
           <p className="mt-4 text-md font-semibold text-primary">
-            {q || from || to ? "No contacts match your filters" : "No submissions yet"}
+            {q || from || to || stage ? "No contacts match your filters" : "No submissions yet"}
           </p>
           <p className="mt-1 text-sm text-tertiary">
-            {q || from || to
-              ? "Try different search terms or date range."
+            {q || from || to || stage
+              ? "Try different search terms, stage, or date range."
               : "Contact form submissions will appear here."}
           </p>
         </div>
@@ -81,6 +95,7 @@ export default async function ContactsPage({
           <Table aria-label="Form submissions" size="sm">
             <Table.Header>
               <Table.Head id="read" aria-label="Read status" className="w-10" />
+              <Table.Head id="stage" label="Stage" />
               <Table.Head id="name" label="Name" isRowHeader />
               <Table.Head id="email" label="Email" />
               <Table.Head id="company" label="Company" />
@@ -97,6 +112,9 @@ export default async function ContactsPage({
                       id={contact.id}
                       isRead={contact.is_read ?? false}
                     />
+                  </Table.Cell>
+                  <Table.Cell>
+                    <ContactStageSelect id={contact.id} stage={contact.pipeline_stage} />
                   </Table.Cell>
                   <Table.Cell className="whitespace-nowrap">
                     <span className="flex items-center gap-2 text-sm font-medium text-primary">

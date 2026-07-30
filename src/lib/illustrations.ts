@@ -1,9 +1,24 @@
+export type IllustrationSizePreset = "thumb" | "card" | "hero" | "full";
+
+/** Recommended render sizes for the illustration registry (#32). */
+export const ILLUSTRATION_SIZE_PRESETS: Record<
+  IllustrationSizePreset,
+  { label: string; className: string; hint: string }
+> = {
+  thumb: { label: "Thumb", className: "size-16", hint: "Nav / picker" },
+  card: { label: "Card", className: "size-40 md:size-48", hint: "Feature cards" },
+  hero: { label: "Hero", className: "h-64 w-full max-w-md md:h-80", hint: "Solution heroes" },
+  full: { label: "Full", className: "h-auto w-full max-w-xl", hint: "Full-bleed sections" },
+};
+
 export interface IllustrationMeta {
   id: string;
   name: string;
   category: string;
   description: string;
   tags: string[];
+  /** Preferred default size when dropping into CMS. */
+  defaultSize?: IllustrationSizePreset;
 }
 
 export const ILLUSTRATION_CATEGORIES = [
@@ -22,6 +37,7 @@ export const ILLUSTRATIONS: IllustrationMeta[] = [
     category: "Cloud & Hosting",
     description: "Cloud computing with server infrastructure",
     tags: ["cloud", "server", "hosting", "infrastructure"],
+    defaultSize: "hero",
   },
   {
     id: "hybrid-cloud",

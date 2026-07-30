@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Geist } from "next/font/google";
+import "lenis/dist/lenis.css";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/themeProvider";
 import { RouteProvider } from "@/components/providers/RouteProvider";

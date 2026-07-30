@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ClipboardCheck, File02, AlertTriangle, ArrowRight, CheckCircle } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import PortalOnboarding from "@/components/portal/PortalOnboarding";
 
 async function getPortalData() {
   const supabase = await createClient();
@@ -94,6 +95,11 @@ export default async function PortalDashboard() {
         </h1>
         <p className="mt-1 text-md text-tertiary">{data.companyName}</p>
       </div>
+
+      <PortalOnboarding
+        userName={data.userName}
+        hasActiveSurveys={data.activeSurveysCount > 0}
+      />
 
       {/* Action Items */}
       {actionItems.length > 0 && (

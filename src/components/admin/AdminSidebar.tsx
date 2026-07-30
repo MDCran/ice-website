@@ -1,12 +1,15 @@
 "use client";
 
 import type { FC } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
+  Activity,
   ArrowLeft,
   BarChartSquare02,
+  Clock,
   File02,
   Folder,
   LayersTwo01,
@@ -16,6 +19,9 @@ import {
   Stars01,
   Users01,
 } from "@untitledui/icons";
+import { createClient } from "@/lib/supabase/client";
+import { can, NAV_CAPABILITY, type AdminCapability } from "@/lib/admin/permissions";
+import { Badge } from "@/components/base/badges/badges";
 import { cx } from "@/utils/cx";
 import { useSidebar } from "./AdminSidebarContext";
 
@@ -30,6 +36,8 @@ const navItems: NavItem[] = [
   { label: "CMS Pages", href: "/admin/cms", icon: File02 },
   { label: "Navigation", href: "/admin/navigation", icon: NavigationPointer01 },
   { label: "SEO & Analytics", href: "/admin/seo", icon: SearchLg },
+  { label: "Core Web Vitals", href: "/admin/performance", icon: Activity },
+  { label: "Audit log", href: "/admin/audit", icon: Clock },
   { label: "Templates", href: "/admin/templates", icon: LayersTwo01 },
   { label: "Files", href: "/admin/files", icon: Folder },
   { label: "Illustrations", href: "/admin/illustrations", icon: Stars01 },
@@ -105,6 +113,29 @@ function SidebarNavItem({
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { collapsed } = useSidebar();
+  const [role, setRole] = useState<string>("admin");
+
+  useEffect(() => {
+    async function loadRole() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("admin_profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      if (data?.role) setRole(data.role);
+    }
+    void loadRole();
+  }, []);
+
+  const visibleNav = navItems.filter((item) => {
+    const required = NAV_CAPABILITY[item.href] as AdminCapability | undefined;
+    return !required || can(role, required);
+  });
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
@@ -132,13 +163,29 @@ export default function AdminSidebar() {
               />
             </div>
           </Link>
+          <div className="mt-3 flex justify-center">
+            <Badge
+              size="sm"
+              color={
+                role === "super_admin" || role === "admin"
+                  ? "brand"
+                  : role === "marketer"
+                    ? "purple"
+                    : role === "sales_ops"
+                      ? "blue"
+                      : "gray"
+              }
+            >
+              {role.replace(/_/g, " ")}
+            </Badge>
+          </div>
         </div>
       )}
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto">
         <ul className={cx("flex flex-col gap-0.5", collapsed ? "px-3.5 py-4" : "px-4 py-5")}>
-          {navItems.map((item) => (
+          {visibleNav.map((item) => (
             <li key={item.href}>
               <SidebarNavItem item={item} active={isActive(item.href)} collapsed={collapsed} />
             </li>

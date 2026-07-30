@@ -9,9 +9,9 @@ import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/mod
 import { Grid } from "@/components/shared-assets/background-patterns/grid";
 import { cx } from "@/utils/cx";
 
-const MDCRAN_URL = "https://mdcran.com";
+const CORETV_URL = "https://coretv.co";
 
-function MdcranRedirectModal({
+function CoreTvRedirectModal({
   isOpen,
   onClose,
 }: {
@@ -31,7 +31,7 @@ function MdcranRedirectModal({
       setSeconds((prev) => {
         if (prev <= 1) {
           window.clearInterval(interval);
-          window.location.assign(MDCRAN_URL);
+          window.location.assign(CORETV_URL);
           return 0;
         }
         return prev - 1;
@@ -56,7 +56,7 @@ function MdcranRedirectModal({
             Leaving ICE
           </h2>
           <p className="mt-3 text-md text-tertiary">
-            You are being redirected off this page to MDCran in{" "}
+            You are being redirected off this page to CoreTV in{" "}
             <span className="font-semibold text-brand-secondary tabular-nums">{seconds}</span>{" "}
             {seconds === 1 ? "second" : "seconds"}.
           </p>
@@ -64,7 +64,7 @@ function MdcranRedirectModal({
             <Button color="secondary" size="md" onClick={onClose}>
               Cancel
             </Button>
-            <Button size="md" onClick={() => window.location.assign(MDCRAN_URL)}>
+            <Button size="md" onClick={() => window.location.assign(CORETV_URL)}>
               Go now
             </Button>
           </div>
@@ -161,7 +161,7 @@ const footerLinkClass =
   "rounded-xs text-sm font-semibold text-tertiary outline-brand transition duration-100 ease-linear hover:text-tertiary_hover focus-visible:outline-2 focus-visible:outline-offset-2";
 
 export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
-  const [mdcranOpen, setMdcranOpen] = useState(false);
+  const [coreTvOpen, setCoreTvOpen] = useState(false);
   const quickLinks = cmsData?.quickLinks ?? DEFAULT_QUICK_LINKS;
   const solutionCategories = cmsData?.solutionCategories ?? DEFAULT_SOLUTION_CATEGORIES;
   const legalLinks = cmsData?.legalLinks ?? DEFAULT_LEGAL_LINKS;
@@ -169,7 +169,7 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   const footerCopy = cmsData?.footerCopy;
 
   const showSolutionsAccordion = cmsData?.showSolutionsAccordion ?? true;
-  const showGetInTouch = cmsData?.showGetInTouch ?? false;
+  const showGetInTouch = cmsData?.showGetInTouch ?? true;
   const showContactBar = cmsData?.showContactBar ?? true;
 
   const logoSrc = company?.logo ?? "/images/logo/ice-logo.jpg";
@@ -204,19 +204,37 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
       <div className="relative mx-auto max-w-container px-4 md:px-8">
         {/* Get in touch CTA */}
         {showGetInTouch && (
-          <div className="flex flex-col items-start justify-between gap-6 border-b border-secondary pb-12 md:flex-row md:items-center md:pb-16">
-            <div className="flex flex-col gap-2">
-              <p className="text-lg font-semibold text-primary md:text-xl">{getInTouchHeading}</p>
-              <p className="text-md text-tertiary">{getInTouchDescription}</p>
+          <div className="relative mb-12 overflow-hidden rounded-2xl border border-secondary bg-secondary md:mb-16">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/[0.08] via-transparent to-transparent"
+            />
+            <div className="relative flex flex-col items-start justify-between gap-6 px-6 py-8 md:flex-row md:items-center md:px-10 md:py-10">
+              <div className="flex max-w-2xl flex-col gap-2">
+                <p className="text-display-xs font-semibold text-primary md:text-display-sm">
+                  {getInTouchHeading}
+                </p>
+                <p className="text-md text-tertiary md:text-lg">{getInTouchDescription}</p>
+              </div>
+              <div className="flex w-full flex-col-reverse gap-3 sm:w-auto sm:flex-row">
+                <Button
+                  color="secondary"
+                  size="xl"
+                  href={`tel:${(company?.phone ?? "1-800-786-9188").replace(/[^\d+]/g, "")}`}
+                  iconLeading={Phone01}
+                >
+                  {company?.phone ?? "1-800-786-9188"}
+                </Button>
+                <Button size="xl" href={getInTouchCtaHref} iconTrailing={ArrowRight}>
+                  {getInTouchCtaLabel}
+                </Button>
+              </div>
             </div>
-            <Button size="xl" href={getInTouchCtaHref} iconTrailing={ArrowRight}>
-              {getInTouchCtaLabel}
-            </Button>
           </div>
         )}
 
         {/* Company info + link columns */}
-        <div className={cx("flex flex-col gap-12 xl:flex-row xl:gap-16", showGetInTouch && "pt-12 md:pt-16")}>
+        <div className={cx("flex flex-col gap-12 xl:flex-row xl:gap-16")}>
           <div className="flex flex-col gap-6 xl:w-80 xl:shrink-0">
             <Link
               href="/"
@@ -267,7 +285,7 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
             )}
 
             <div className="flex w-max items-center gap-3 rounded-xl border border-secondary px-4 py-3">
-              <Image src="/images/ibm.svg" alt="IBM" width={48} height={20} />
+              <Image src="/images/ibm.svg" alt="IBM" width={48} height={20} className="h-5 w-auto shrink-0" />
               <p className="text-sm font-medium text-secondary">
                 {ibmLabel}
                 <br />
@@ -319,16 +337,16 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
             ))}
             <button
               type="button"
-              onClick={() => setMdcranOpen(true)}
+              onClick={() => setCoreTvOpen(true)}
               className="rounded-xs text-sm text-quaternary outline-brand transition duration-100 ease-linear hover:text-tertiary focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-              by MDCran
+              by CoreTV
             </button>
           </div>
         </div>
       </div>
 
-      <MdcranRedirectModal isOpen={mdcranOpen} onClose={() => setMdcranOpen(false)} />
+      <CoreTvRedirectModal isOpen={coreTvOpen} onClose={() => setCoreTvOpen(false)} />
     </footer>
   );
 }

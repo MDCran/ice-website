@@ -25,6 +25,7 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { Toggle } from "@/components/base/toggle/toggle";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { cx } from "@/utils/cx";
+import SeoHealthChecklist from "@/components/admin/SeoHealthChecklist";
 
 /* ─────────────────────────────────────────────────────────────── */
 
@@ -293,6 +294,8 @@ export default function SeoSettingsClient({
           page&rsquo;s <strong className="font-medium text-secondary">CMS editor</strong> under Page Settings.
         </span>
       </div>
+
+      <SeoHealthChecklist values={values} />
 
       {/* ── General ── */}
       <Card icon={SearchLg} title="General" description="Default titles, description, and keywords.">

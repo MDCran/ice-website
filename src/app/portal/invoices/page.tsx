@@ -2,16 +2,24 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { File02, Check, XClose, AlertCircle } from "@untitledui/icons";
+import {
+  File02,
+  Check,
+  XClose,
+  AlertCircle,
+  CreditCard01,
+  Download01,
+} from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Table, TableCard } from "@/components/application/table/table";
 import { EmptyState } from "@/components/application/empty-state/empty-state";
 import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import DeadlineCountdown from "@/components/portal/DeadlineCountdown";
+import InvoicePayModal from "@/components/portal/InvoicePayModal";
 import type { ClientInvoice } from "@/lib/types/database";
 
-const statusColors: Record<string, "brand" | "success" | "error" | "gray"> = {
+const statusColors: Record<string, "brand" | "success" | "error" | "gray" | "warning"> = {
   sent: "brand",
   accepted: "success",
   denied: "error",
@@ -19,11 +27,23 @@ const statusColors: Record<string, "brand" | "success" | "error" | "gray"> = {
   overdue: "error",
 };
 
+function formatAmount(cents: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency || "USD",
+    }).format((cents ?? 0) / 100);
+  } catch {
+    return `$${((cents ?? 0) / 100).toFixed(2)}`;
+  }
+}
+
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<ClientInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [payInvoice, setPayInvoice] = useState<ClientInvoice | null>(null);
 
   const fetchInvoices = useCallback(async () => {
     const supabase = createClient();
@@ -89,7 +109,8 @@ export default function InvoicesPage() {
       <div className="mb-8">
         <h1 className="text-display-xs font-semibold text-primary">Invoices</h1>
         <p className="mt-1 text-md text-tertiary">
-          {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}
+          {invoices.length} invoice{invoices.length !== 1 ? "s" : ""} · accept,
+          deny, or pay online
         </p>
       </div>
 
@@ -119,6 +140,7 @@ export default function InvoicesPage() {
           <Table aria-label="Invoices">
             <Table.Header>
               <Table.Head id="invoice" isRowHeader label="Invoice" className="w-full" />
+              <Table.Head id="amount" label="Amount" />
               <Table.Head id="status" label="Status" />
               <Table.Head id="date" label="Date" />
               <Table.Head id="deadline" label="Deadline" />
@@ -128,7 +150,12 @@ export default function InvoicesPage() {
               {(invoice) => {
                 const isActionable =
                   invoice.status === "sent" || invoice.status === "overdue";
+                const canPay =
+                  invoice.status === "accepted" ||
+                  invoice.status === "sent" ||
+                  invoice.status === "overdue";
                 const isLoading = actionLoading === invoice.id;
+                const paymentPending = Boolean(invoice.payment_submitted_at) && invoice.status !== "paid";
 
                 return (
                   <Table.Row id={invoice.id}>
@@ -148,7 +175,12 @@ export default function InvoicesPage() {
                       </div>
                     </Table.Cell>
                     <Table.Cell>
-                      <div className="flex items-center gap-2">
+                      <span className="whitespace-nowrap text-sm font-medium text-primary">
+                        {formatAmount(invoice.amount_cents, invoice.currency)}
+                      </span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge
                           type="pill-color"
                           size="sm"
@@ -157,6 +189,11 @@ export default function InvoicesPage() {
                           {invoice.status.charAt(0).toUpperCase() +
                             invoice.status.slice(1)}
                         </Badge>
+                        {paymentPending && (
+                          <Badge type="pill-color" size="sm" color="warning">
+                            Payment submitted
+                          </Badge>
+                        )}
                         {invoice.extended_days > 0 && (
                           <Badge type="pill-color" size="sm" color="purple">
                             Extended {invoice.extended_days} day
@@ -183,30 +220,54 @@ export default function InvoicesPage() {
                       )}
                     </Table.Cell>
                     <Table.Cell>
-                      {isActionable && (
-                        <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-2">
+                        {invoice.pdf_url && (
                           <Button
                             size="sm"
-                            color="primary"
-                            iconLeading={Check}
-                            isDisabled={isLoading}
-                            isLoading={isLoading}
-                            showTextWhileLoading
-                            onClick={() => handleAction(invoice.id, "accepted")}
+                            color="tertiary"
+                            iconLeading={Download01}
+                            href={invoice.pdf_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
                           >
-                            Accept
+                            PDF
                           </Button>
+                        )}
+                        {canPay && invoice.status !== "paid" && !paymentPending && (
                           <Button
                             size="sm"
-                            color="secondary-destructive"
-                            iconLeading={XClose}
-                            isDisabled={isLoading}
-                            onClick={() => handleAction(invoice.id, "denied")}
+                            color="secondary"
+                            iconLeading={CreditCard01}
+                            onClick={() => setPayInvoice(invoice)}
                           >
-                            Deny
+                            Pay
                           </Button>
-                        </div>
-                      )}
+                        )}
+                        {isActionable && (
+                          <>
+                            <Button
+                              size="sm"
+                              color="primary"
+                              iconLeading={Check}
+                              isDisabled={isLoading}
+                              isLoading={isLoading}
+                              showTextWhileLoading
+                              onClick={() => handleAction(invoice.id, "accepted")}
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              color="secondary-destructive"
+                              iconLeading={XClose}
+                              isDisabled={isLoading}
+                              onClick={() => handleAction(invoice.id, "denied")}
+                            >
+                              Deny
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </Table.Cell>
                   </Table.Row>
                 );
@@ -214,6 +275,17 @@ export default function InvoicesPage() {
             </Table.Body>
           </Table>
         </TableCard.Root>
+      )}
+
+      {payInvoice && (
+        <InvoicePayModal
+          invoice={payInvoice}
+          onClose={() => setPayInvoice(null)}
+          onSubmitted={() => {
+            setPayInvoice(null);
+            fetchInvoices();
+          }}
+        />
       )}
     </div>
   );

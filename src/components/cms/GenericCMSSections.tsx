@@ -8,11 +8,13 @@ import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { Grid as GridPattern } from "@/components/shared-assets/background-patterns/grid";
-import { IllustrationRenderer } from "@/components/illustrations/IllustrationRenderer";
+import IceIllustration from "@/components/illustrations/IceIllustration";
 import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import { CountUpStat } from "@/components/ui/CountUpValue";
 import { resolveIcon } from "@/lib/iconMap";
 import { serviceImageFor } from "@/lib/solutionHeroImages";
+import { MOTION_DURATION, MOTION_EASE, MOTION_STAGGER, MOTION_VIEWPORT } from "@/lib/motion";
+import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { cx } from "@/utils/cx";
 
 /** Shared vertical rhythm for CMS section bands on solution (and other) pages. */
@@ -46,9 +48,7 @@ function titleFromKey(key: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-/* ── Motion primitives ─────────────────────────────────────────────────── */
-
-const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+/* ── Motion primitives (shared ICE budget #55) ─────────────────────────── */
 
 /** Entrance reveal: fades/slides content in the first time it scrolls into view. */
 function Reveal({
@@ -67,8 +67,8 @@ function Reveal({
       className={className}
       initial={reduceMotion ? false : { opacity: 0, y: 24 }}
       whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.6, delay, ease: EASE }}
+      viewport={MOTION_VIEWPORT}
+      transition={{ duration: MOTION_DURATION.reveal, delay, ease: MOTION_EASE }}
     >
       {children}
     </motion.div>
@@ -148,11 +148,11 @@ function PulseDot({ className, delay = 0 }: { className?: string; delay?: number
   );
 }
 
-/** Gentle continuous float for decorative graphics. */
+/** Gentle continuous float for decorative graphics (kept for legacy call sites). */
 function FloatWrap({
   children,
   className,
-  duration = 7,
+  duration = MOTION_DURATION.ambientShort,
 }: {
   children: ReactNode;
   className?: string;
@@ -199,7 +199,8 @@ const DEFAULT_PROCESS_ICONS = ["Radar", "Cloud", "Monitor", "RefreshCw"];
 
 function RoiMetricsGrid({ sectionKey, metrics }: { sectionKey: string; metrics: any[] }) {
   const gridRef = useRef<HTMLDListElement>(null);
-  const inView = useInView(gridRef, { once: true, amount: 0.35 });
+  const inView = useInView(gridRef, { once: true, amount: 0.25 });
+  const reduceMotion = useHydratedReducedMotion();
 
   return (
     <dl
@@ -218,16 +219,25 @@ function RoiMetricsGrid({ sectionKey, metrics }: { sectionKey: string; metrics: 
       {metrics.map((metric, index) => {
         const note = text(metric.note ?? metric.source_note ?? metric.sourceNote);
         return (
-          <div
+          <motion.div
             key={`${metric.label ?? sectionKey}-${index}`}
             className="flex flex-col items-center justify-center gap-2 bg-primary px-5 py-8 text-center md:px-6 md:py-10"
+            initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+            animate={
+              inView
+                ? { opacity: 1, y: 0 }
+                : reduceMotion
+                  ? { opacity: 1, y: 0 }
+                  : { opacity: 0, y: 14 }
+            }
+            transition={{ duration: 0.5, delay: reduceMotion ? 0 : index * 0.08, ease: MOTION_EASE }}
           >
             <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
-              <CountUpStat value={metric.value} suffix={text(metric.suffix)} inView={inView} duration={1400} />
+              <CountUpStat value={metric.value} suffix={text(metric.suffix)} inView={inView} duration={1600} />
             </dd>
             <dt className="text-sm font-semibold text-primary">{text(metric.label)}</dt>
             {note && <p className="text-xs text-quaternary">{note}</p>}
-          </div>
+          </motion.div>
         );
       })}
     </dl>
@@ -254,7 +264,8 @@ function StatsSection({
   content: Record<string, any>;
 }) {
   const gridRef = useRef<HTMLDListElement>(null);
-  const inView = useInView(gridRef, { once: true, amount: 0.35 });
+  const inView = useInView(gridRef, { once: true, amount: 0.25 });
+  const reduceMotion = useHydratedReducedMotion();
 
   return (
     <section className={cx("bg-primary", SECTION_Y)}>
@@ -285,16 +296,29 @@ function StatsSection({
             {items.map((item, index) => {
               const sourceNote = text(item.source_note ?? item.sourceNote);
               return (
-                <div
+                <motion.div
                   key={`${item.label ?? section.section_key}-${index}`}
                   className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center md:px-8 md:py-14"
+                  initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+                  animate={
+                    inView
+                      ? { opacity: 1, y: 0 }
+                      : reduceMotion
+                        ? { opacity: 1, y: 0 }
+                        : { opacity: 0, y: 16 }
+                  }
+                  transition={{
+                    duration: 0.5,
+                    delay: reduceMotion ? 0 : index * 0.08,
+                    ease: MOTION_EASE,
+                  }}
                 >
                   <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt md:text-display-lg">
-                    <CountUpStat value={item.value} suffix={text(item.suffix)} inView={inView} duration={1400} />
+                    <CountUpStat value={item.value} suffix={text(item.suffix)} inView={inView} duration={1600} />
                   </dd>
                   <dt className="text-sm font-semibold text-primary md:text-md">{text(item.label)}</dt>
                   {sourceNote && <p className="text-xs text-quaternary">{sourceNote}</p>}
-                </div>
+                </motion.div>
               );
             })}
           </dl>
@@ -492,7 +516,7 @@ function renderUseCases(section: CMSRenderableSection) {
             const Icon = resolveIcon(item.icon);
             return (
               <li key={`${item.title ?? section.section_key}-${index}`}>
-                <Reveal delay={index * 0.06} className="h-full">
+                <Reveal delay={index * MOTION_STAGGER} className="h-full">
                   <div className="flex h-full flex-col rounded-2xl bg-secondary p-6 ring-1 ring-secondary ring-inset transition duration-300 hover:-translate-y-1 hover:shadow-md hover:ring-brand md:p-8">
                     <AmbientIcon icon={Icon} size="lg" delay={(index % 3) * 1.1} className="self-start" />
                     <h3 className="mt-5 text-lg font-semibold text-primary">
@@ -539,7 +563,7 @@ function renderRelated(section: CMSRenderableSection) {
 
             return (
               <li key={`${item.title ?? section.section_key}-${index}`}>
-                <Reveal delay={index * 0.06} className="h-full">
+                <Reveal delay={index * MOTION_STAGGER} className="h-full">
                   <Link
                     href={href}
                     className="group relative isolate flex h-full min-h-56 overflow-hidden rounded-2xl border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
@@ -1171,15 +1195,15 @@ function renderContentBlock(section: CMSRenderableSection) {
               )}
             >
               {illustrationPos === "left" && (
-                <FloatWrap className="mx-auto w-full max-w-80 lg:mx-0">
-                  <IllustrationRenderer id={illustrationId} className="h-auto w-full" />
-                </FloatWrap>
+                <div className="mx-auto flex w-full max-w-80 items-center justify-center">
+                  <IceIllustration id={illustrationId} size="card" />
+                </div>
               )}
               {textBlock}
               {illustrationPos !== "left" && (
-                <FloatWrap className="mx-auto hidden w-full max-w-80 lg:mx-0 lg:block">
-                  <IllustrationRenderer id={illustrationId} className="h-auto w-full" />
-                </FloatWrap>
+                <div className="mx-auto hidden w-full max-w-80 items-center justify-center lg:flex">
+                  <IceIllustration id={illustrationId} size="card" />
+                </div>
               )}
             </div>
           ) : (
@@ -1218,9 +1242,9 @@ function renderCta(section: CMSRenderableSection) {
             />
             <BrandOrbs />
             {illustrationId && (
-              <FloatWrap className="relative w-40 shrink-0 self-center lg:self-auto">
-                <IllustrationRenderer id={illustrationId} className="h-auto w-full" />
-              </FloatWrap>
+              <div className="relative w-40 shrink-0 self-center lg:self-auto">
+                <IceIllustration id={illustrationId} size="thumb" caption="" />
+              </div>
             )}
             <div className="relative flex max-w-3xl flex-1 flex-col">
               <h2 className="text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
@@ -1250,12 +1274,310 @@ function renderIllustration(section: CMSRenderableSection) {
     <section className={cx("bg-primary", SECTION_Y)}>
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <Reveal className="mx-auto max-w-md">
-          <FloatWrap>
-            <IllustrationRenderer id={illustrationId} className="h-auto w-full" />
-          </FloatWrap>
-          {(content.caption || content.label) && (
-            <p className="mt-4 text-center text-sm text-tertiary">{text(content.caption ?? content.label)}</p>
-          )}
+          <IceIllustration
+            id={illustrationId}
+            size="hero"
+            caption={text(content.caption ?? content.label) || undefined}
+          />
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function renderQuote(section: CMSRenderableSection) {
+  const content = section.content ?? {};
+  const quote = text(content.quote ?? content.text);
+  if (!quote) return null;
+  const attribution = text(content.attribution ?? content.author);
+  const role = text(content.role ?? content.title);
+
+  return (
+    <section className={cx("relative overflow-hidden bg-secondary", SECTION_Y)}>
+      <BrandOrbs />
+      <div className="relative mx-auto w-full max-w-3xl px-4 text-center md:px-8">
+        <Reveal>
+          <blockquote>
+            <p className="text-display-xs font-semibold tracking-tight text-primary md:text-display-sm">
+              “{quote}”
+            </p>
+            {(attribution || role) && (
+              <footer className="mt-6 text-md text-tertiary">
+                {attribution && <cite className="font-semibold not-italic text-secondary">{attribution}</cite>}
+                {attribution && role ? " — " : null}
+                {role}
+              </footer>
+            )}
+          </blockquote>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function renderSplitMedia(section: CMSRenderableSection) {
+  const content = section.content ?? {};
+  const heading = text(content.heading ?? content.headline, titleFromKey(section.section_key));
+  const description = text(content.description ?? content.body);
+  const image = text(content.image ?? content.media_url);
+  const imageAlt = text(content.image_alt, heading);
+  const features = list(content.features ?? content.items);
+  const mediaLeft = text(content.media_position, "right") === "left";
+
+  const media = image ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={image}
+      alt={imageAlt}
+      className="h-auto w-full rounded-2xl object-cover ring-1 ring-secondary"
+      loading="lazy"
+    />
+  ) : null;
+
+  const copy = (
+    <div>
+      {content.eyebrow && (
+        <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+          {text(content.eyebrow)}
+        </span>
+      )}
+      <h2 className={cx("text-display-sm font-semibold text-primary md:text-display-md", content.eyebrow && "mt-3")}>
+        {heading}
+      </h2>
+      {description && <p className="mt-4 text-lg text-tertiary">{description}</p>}
+      {features.length > 0 && (
+        <ul className="mt-8 flex flex-col gap-3">
+          {features.map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <CheckCircle className="mt-0.5 size-5 shrink-0 text-fg-brand-primary" />
+              <span className="text-md text-tertiary">
+                {typeof item === "string" ? item : text(item.label ?? item.title ?? item.description)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {(content.cta?.label || content.cta_primary?.label) && (
+        <div className="mt-8">
+          <CTAButton button={content.cta ?? content.cta_primary} />
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <section className={cx("bg-primary", SECTION_Y)}>
+      <div className="mx-auto w-full max-w-container px-4 md:px-8">
+        <Reveal>
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+            {mediaLeft ? (
+              <>
+                {media}
+                {copy}
+              </>
+            ) : (
+              <>
+                {copy}
+                {media}
+              </>
+            )}
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function renderSlaTable(section: CMSRenderableSection) {
+  const content = section.content ?? {};
+  const rows = list(content.rows ?? content.items);
+  if (rows.length === 0) return null;
+  const heading = text(content.heading, "Service levels");
+  const description = text(content.description);
+
+  return (
+    <section className={cx("bg-primary", SECTION_Y)}>
+      <div className="mx-auto w-full max-w-container px-4 md:px-8">
+        <Reveal>
+          <div className="mx-auto mb-10 max-w-3xl text-center">
+            {content.eyebrow && (
+              <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+                {text(content.eyebrow)}
+              </span>
+            )}
+            <h2 className={cx("text-display-sm font-semibold text-primary md:text-display-md", content.eyebrow && "mt-3")}>
+              {heading}
+            </h2>
+            {description && <p className="mt-4 text-lg text-tertiary">{description}</p>}
+          </div>
+          <div className="overflow-hidden rounded-2xl ring-1 ring-secondary">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-secondary text-tertiary">
+                <tr>
+                  <th className="px-4 py-3 font-semibold md:px-6">{text(content.col_metric, "Metric")}</th>
+                  <th className="px-4 py-3 font-semibold md:px-6">{text(content.col_target, "Target")}</th>
+                  <th className="hidden px-4 py-3 font-semibold sm:table-cell md:px-6">
+                    {text(content.col_notes, "Notes")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => (
+                  <tr key={i} className="border-t border-secondary">
+                    <td className="px-4 py-3 font-medium text-primary md:px-6">
+                      {text(row.metric ?? row.label ?? row.title)}
+                    </td>
+                    <td className="px-4 py-3 text-brand-secondary md:px-6">
+                      {text(row.target ?? row.value)}
+                    </td>
+                    <td className="hidden px-4 py-3 text-tertiary sm:table-cell md:px-6">
+                      {text(row.notes ?? row.note)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function renderComparison(section: CMSRenderableSection) {
+  const content = section.content ?? {};
+  const rows = list(content.rows ?? content.items);
+  if (rows.length === 0) return null;
+  const beforeLabel = text(content.before_label ?? content.beforeLabel, "Status quo");
+  const afterLabel = text(content.after_label ?? content.afterLabel, "With ICE");
+  const heading = text(content.heading, "Why ICE vs status quo");
+  const footnote = text(content.footnote ?? content.notes);
+
+  return (
+    <section className={cx("bg-secondary", SECTION_Y)}>
+      <div className="mx-auto w-full max-w-container px-4 md:px-8">
+        <Reveal>
+          <div className="mx-auto mb-10 max-w-3xl text-center">
+            {content.eyebrow && (
+              <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+                {text(content.eyebrow)}
+              </span>
+            )}
+            <h2 className={cx("text-display-sm font-semibold text-primary md:text-display-md", content.eyebrow && "mt-3")}>
+              {heading}
+            </h2>
+            {content.description && <p className="mt-4 text-lg text-tertiary">{text(content.description)}</p>}
+          </div>
+          <div className="overflow-hidden rounded-2xl bg-primary ring-1 ring-secondary">
+            <table className="w-full text-left text-sm">
+              <caption className="sr-only">
+                {heading}: {beforeLabel} compared with {afterLabel}
+              </caption>
+              <thead className="bg-secondary/80 text-tertiary">
+                <tr>
+                  <th scope="col" className="px-4 py-3 font-semibold md:px-6">
+                    Capability
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-semibold md:px-6">
+                    {beforeLabel}
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-semibold text-brand-secondary md:px-6">
+                    {afterLabel}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => (
+                  <tr key={i} className="border-t border-secondary">
+                    <th scope="row" className="px-4 py-3 text-left font-medium text-primary md:px-6">
+                      {text(row.label ?? row.capability)}
+                    </th>
+                    <td className="px-4 py-3 text-tertiary md:px-6">{text(row.before)}</td>
+                    <td className="px-4 py-3 font-medium text-secondary md:px-6">{text(row.after)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {footnote && <p className="mt-4 text-center text-xs text-quaternary">{footnote}</p>}
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function renderCaseStudy(section: CMSRenderableSection) {
+  const content = section.content ?? {};
+  const heading = text(content.heading ?? content.title, "Customer outcome");
+  const summary = text(content.summary ?? content.description);
+  const metrics = list(content.metrics ?? content.stats);
+  const industry = text(content.industry);
+  const challenge = text(content.challenge);
+  const solution = text(content.solution);
+  const outcome = text(content.outcome);
+  const anonymized = content.anonymized !== false;
+  const company = text(content.company ?? content.client_name);
+  const narrative = [
+    challenge && { label: "Challenge", body: challenge },
+    solution && { label: "Solution", body: solution },
+    outcome && { label: "Outcome", body: outcome },
+  ].filter(Boolean) as Array<{ label: string; body: string }>;
+
+  return (
+    <section className={cx("bg-primary", SECTION_Y)}>
+      <div className="mx-auto w-full max-w-container px-4 md:px-8">
+        <Reveal>
+          <div className="rounded-2xl bg-secondary p-6 ring-1 ring-secondary md:p-10">
+            <div className="flex flex-wrap items-center gap-2">
+              {industry && (
+                <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+                  {industry}
+                </span>
+              )}
+              {anonymized && (
+                <span className="rounded-md bg-primary px-2 py-0.5 text-xs font-medium text-tertiary ring-1 ring-secondary">
+                  Anonymized outcome
+                </span>
+              )}
+              {!anonymized && company && (
+                <span className="text-xs font-medium text-tertiary">{company}</span>
+              )}
+            </div>
+            <h2 className={cx("text-display-sm font-semibold text-primary md:text-display-md", "mt-3")}>
+              {heading}
+            </h2>
+            {summary && <p className="mt-4 max-w-3xl text-lg text-tertiary">{summary}</p>}
+            {narrative.length > 0 && (
+              <ol className="mt-8 grid gap-6 md:grid-cols-3">
+                {narrative.map((item) => (
+                  <li key={item.label}>
+                    <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-secondary">{item.body}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+            {metrics.length > 0 && (
+              <dl className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
+                {metrics.map((m, i) => (
+                  <div key={i}>
+                    <dd className="text-display-xs font-semibold text-brand-secondary tabular-nums">
+                      {text(m.value)}
+                      {text(m.suffix)}
+                    </dd>
+                    <dt className="mt-1 text-sm text-tertiary">{text(m.label)}</dt>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {(content.cta?.label || content.cta_primary?.label) && (
+              <div className="mt-8">
+                <CTAButton button={content.cta ?? content.cta_primary} />
+              </div>
+            )}
+          </div>
         </Reveal>
       </div>
     </section>
@@ -1283,6 +1605,11 @@ function renderSection(section: CMSRenderableSection) {
   if (type === "contact") return renderContact(section);
   if (type === "cta") return renderCta(section);
   if (type === "illustration" || type === "graphic") return renderIllustration(section);
+  if (type === "quote") return renderQuote(section);
+  if (type === "split_media") return renderSplitMedia(section);
+  if (type === "sla_table") return renderSlaTable(section);
+  if (type === "comparison") return renderComparison(section);
+  if (type === "case_study") return renderCaseStudy(section);
 
   return renderContentBlock(section);
 }

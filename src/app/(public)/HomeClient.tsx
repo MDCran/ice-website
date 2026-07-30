@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, type FC, type ReactNode } from "react";
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { useRef, type FC } from "react";
+import { motion, useScroll, useTransform } from "motion/react";
 import { CountUpNumber, CountUpText } from "@/components/ui/CountUpValue";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,16 +9,12 @@ import {
   ArrowRight,
   CheckCircle,
   ChevronDown,
-  ChevronRight,
   Cloud01,
   Database01,
   MessageChatCircle,
-  Monitor04,
   Phone01,
   RefreshCw01,
   Server01,
-  Server03,
-  Shield01,
   ShieldTick,
   LayersThree01,
 } from "@untitledui/icons";
@@ -26,13 +22,28 @@ import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
 import { BrandOrbs, PulseGlow } from "@/components/effects/AmbientMotion";
+import ParallaxLayer from "@/components/effects/ParallaxLayer";
+import SectionBloom from "@/components/effects/SectionBloom";
+import OptimizedHeroMedia from "@/components/media/OptimizedHeroMedia";
+import ProofTicker from "@/components/marketing/ProofTicker";
+import InteractiveArchitecture from "@/components/marketing/InteractiveArchitecture";
+import InfiniteMarquee from "@/components/effects/InfiniteMarquee";
 import { resolveIcon } from "@/lib/iconMap";
+import {
+  AMBIENT_CYCLE_SECONDS,
+  MOTION_EASE,
+  MOTION_STAGGER,
+} from "@/lib/motion";
+import { useAbVariant, trackAbConversion } from "@/hooks/useAbVariant";
+import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
+import { useInViewOnce } from "@/hooks/useInViewOnce";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import { FaqPreview } from "@/components/marketing/FaqHub";
 
 type IconComponent = FC<{ className?: string }>;
 
 /** Premium ease curve used across all entrance reveals. */
-const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const EASE = MOTION_EASE;
 
 /* ══════════════════════════════════════════════════════════════════════════
    PROPS — data comes from server via CMS database
@@ -60,9 +71,15 @@ export interface HomePageData {
     badge?: string;
     headline: string;
     headline_highlight?: string;
+    headline_b?: string;
+    headline_highlight_b?: string;
     subheadline: string;
+    subheadline_b?: string;
+    experiment_id?: string;
     cta_primary?: { label: string; href: string };
+    cta_primary_b?: { label: string; href: string };
     cta_secondary?: { label: string; href: string };
+    proof_labels?: string[];
   };
   data_centers?: {
     eyebrow?: string;
@@ -125,6 +142,41 @@ const DEFAULT_PARTNERS: { name: string; logo_src: string }[] = [
   { name: "DASCOM", logo_src: "/images/v3/b_8.png" },
 ];
 
+const PARTNER_CAPABILITIES: Record<string, string> = {
+  IBM: "Power & IBM i since 1990",
+  Lenovo: "Enterprise compute",
+  Cisco: "Secure networking",
+  Dell: "Servers & storage",
+  Printronix: "Industrial printing",
+  Acronis: "Cyber protection",
+  Cybernetics: "Backup & archive",
+  DASCOM: "Document infrastructure",
+};
+
+const DECISION_PATHS = [
+  {
+    eyebrow: "IBM i",
+    title: "I’m running IBM i",
+    description: "Modernize, secure, host, or protect Power workloads without losing platform expertise.",
+    href: "/solutions?platform=ibm-i",
+    icon: Server01,
+  },
+  {
+    eyebrow: "Continuity",
+    title: "I need disaster recovery",
+    description: "Compare backup, DR, and high availability by the recovery target your business needs.",
+    href: "/solutions/disaster-recovery",
+    icon: RefreshCw01,
+  },
+  {
+    eyebrow: "Cloud operations",
+    title: "I want managed cloud",
+    description: "Move infrastructure responsibility to a US-based team with measurable service levels.",
+    href: "/solutions/managed-cloud-hosting",
+    icon: Cloud01,
+  },
+];
+
 function normalizeMarqueePartners(
   partners: Array<string | { name?: string; logo_src?: string; logoSrc?: string }> | undefined,
 ): { name: string; logo_src: string }[] {
@@ -148,17 +200,36 @@ function normalizeMarqueePartners(
 }
 
 /** Static proof points shown under the hero CTAs. */
-const HERO_PROOF = ["35+ Years Enterprise IT", "SOC 2 Type II Certified", "99.99% Uptime SLA", "24/7/365 NOC + SOC"];
-
-/** Clean data-flow steps (replaces the old InfrastructureDiagram viz). */
-const INFRASTRUCTURE_FLOW: { label: string; icon: IconComponent }[] = [
-  { label: "Client", icon: Monitor04 },
-  { label: "Firewall", icon: Shield01 },
-  { label: "Load Balancer", icon: Server03 },
-  { label: "Cloud Servers", icon: Cloud01 },
-  { label: "Storage", icon: Database01 },
-  { label: "Backup", icon: RefreshCw01 },
+/** Proof claims under the hero — long enough to fill wide viewports without gaps. */
+const HERO_PROOF = [
+  "35+ Years Enterprise IT",
+  "SOC 2 Type II Certified",
+  "99.99% Uptime SLA",
+  "24/7/365 NOC + SOC",
+  "IBM Business Partner Since 1990",
+  "US-Based Support Team",
+  "IBM Power & IBM i Specialists",
+  "Hybrid & Private Cloud",
+  "Defined RPO / RTO Targets",
+  "Tier-3 Data Centers",
+  "Zero-Trust Security",
+  "500+ Enterprise Clients",
+  "Flash Systems Storage",
+  "Boca Raton Headquarters",
+  "PCI & HIPAA Ready Environments",
+  "Dedicated Account Management",
 ];
+
+function resolveProofLabels(cms?: string[]): string[] {
+  const fromCms = (cms ?? []).map((s) => s.trim()).filter(Boolean);
+  if (fromCms.length >= 10) return fromCms;
+  const seen = new Set(fromCms.map((s) => s.toLowerCase()));
+  const merged = [...fromCms];
+  for (const item of HERO_PROOF) {
+    if (!seen.has(item.toLowerCase())) merged.push(item);
+  }
+  return merged;
+}
 
 /** Most-requested solutions — card treatment matches /solutions. */
 const POPULAR_SOLUTIONS: {
@@ -226,22 +297,49 @@ function SectionHeader({
   heading: string;
   description?: string;
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
+  const itemVariants = {
+    hidden: { opacity: 0, y: 18 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: EASE },
+    },
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: reduceMotion ? 0 : 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={reduceMotion ? false : "hidden"}
+      whileInView={reduceMotion ? undefined : "show"}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.6, ease: EASE }}
+      variants={{
+        hidden: {},
+        show: { transition: { staggerChildren: MOTION_STAGGER } },
+      }}
       className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
     >
       {eyebrow && (
-        <span className="text-sm font-semibold tracking-wider text-brand-secondary uppercase">
+        <motion.span
+          variants={itemVariants}
+          className="text-sm font-semibold tracking-wider text-brand-secondary uppercase"
+        >
           {eyebrow}
-        </span>
+        </motion.span>
       )}
-      <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">{heading}</h2>
-      {description && <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">{description}</p>}
+      <motion.h2
+        variants={itemVariants}
+        className="mt-3 text-display-sm font-semibold text-primary md:text-display-md"
+      >
+        {heading}
+      </motion.h2>
+      {description && (
+        <motion.p
+          variants={itemVariants}
+          className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl"
+        >
+          {description}
+        </motion.p>
+      )}
     </motion.div>
   );
 }
@@ -255,17 +353,29 @@ function StatItem({
   suffix,
   label,
   inView,
+  index = 0,
+  reduceMotion = false,
 }: {
   value: number;
   suffix: string;
   label: string;
   inView: boolean;
+  index?: number;
+  reduceMotion?: boolean;
 }) {
   return (
-    <div className="flex flex-1 flex-col-reverse gap-3 text-center">
+    <div
+      className="flex flex-1 flex-col-reverse gap-3 text-center transition-all duration-500 ease-out"
+      style={{
+        opacity: reduceMotion || inView ? 1 : 0,
+        transform: reduceMotion || inView ? "translateY(0)" : "translateY(16px)",
+        transitionDelay:
+          !reduceMotion && inView ? `${index * MOTION_STAGGER * 1000}ms` : "0ms",
+      }}
+    >
       <dt className="text-md font-semibold text-primary md:text-lg">{label}</dt>
       <dd className="text-display-lg font-semibold tracking-tight text-brand-tertiary_alt tabular-nums md:text-display-xl">
-        <CountUpNumber target={value} suffix={suffix} inView={inView} duration={1400} />
+        <CountUpNumber target={value} suffix={suffix} inView={inView} duration={2000} />
       </dd>
     </div>
   );
@@ -282,22 +392,37 @@ export default function Home({
   data?: HomePageData;
   orderedSections?: CMSRenderableSection[];
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
 
   /** Entrance reveal for below-the-fold content. */
-  const reveal = (delay = 0) => ({
-    initial: { opacity: 0, y: reduceMotion ? 0 : 24 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, margin: "-80px" as const },
-    transition: { duration: 0.6, delay, ease: EASE },
-  });
+  const reveal = (delay = 0) =>
+    reduceMotion
+      ? {
+          initial: false as const,
+          whileInView: { opacity: 1, y: 0 },
+          viewport: { once: true, margin: "-80px" as const },
+          transition: { duration: 0 },
+        }
+      : {
+          initial: { opacity: 0, y: 24 },
+          whileInView: { opacity: 1, y: 0 },
+          viewport: { once: true, margin: "-80px" as const },
+          transition: { duration: 0.6, delay, ease: EASE },
+        };
 
   /** Entrance reveal for above-the-fold hero content (plays on mount). */
-  const heroReveal = (delay = 0) => ({
-    initial: { opacity: 0, y: reduceMotion ? 0 : 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6, delay, ease: EASE },
-  });
+  const heroReveal = (delay = 0) =>
+    reduceMotion
+      ? {
+          initial: false as const,
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0 },
+        }
+      : {
+          initial: { opacity: 0, y: 20 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.6, delay, ease: EASE },
+        };
 
   /* ── Resolve CMS data with fallbacks ── */
   const heroDefaults = {
@@ -320,6 +445,31 @@ export default function Home({
     cta_primary: heroDefaults.cta_primary,
     cta_secondary: data?.hero?.cta_secondary ?? heroDefaults.cta_secondary,
   };
+
+  const experimentId = data?.hero?.experiment_id?.trim() || "";
+  const abEnabled = Boolean(
+    experimentId &&
+      (data?.hero?.headline_b?.trim() ||
+        data?.hero?.headline_highlight_b?.trim() ||
+        data?.hero?.cta_primary_b?.label?.trim()),
+  );
+  const abVariant = useAbVariant(experimentId || undefined, abEnabled);
+  const displayHeadline =
+    abEnabled && abVariant === "b" && data?.hero?.headline_b?.trim()
+      ? data.hero.headline_b
+      : hero.headline;
+  const displayHighlight =
+    abEnabled && abVariant === "b" && data?.hero?.headline_highlight_b?.trim()
+      ? data.hero.headline_highlight_b
+      : hero.headline_highlight;
+  const displaySubheadline =
+    abEnabled && abVariant === "b" && data?.hero?.subheadline_b?.trim()
+      ? data.hero.subheadline_b
+      : hero.subheadline;
+  const displayPrimaryCta =
+    abEnabled && abVariant === "b" && data?.hero?.cta_primary_b?.label
+      ? data.hero.cta_primary_b
+      : hero.cta_primary;
   const servicesSection = data?.services_grid;
   const statsSection = data?.stats;
   const dataCentersSection = data?.data_centers;
@@ -382,16 +532,28 @@ export default function Home({
       ].includes(section.section_key)
   );
 
-  // Plain elements (not opacity-animated motion nodes) so count-up is visible.
-  const statsRef = useRef<HTMLDListElement>(null);
-  const metricsRef = useRef<HTMLDListElement>(null);
-  const heroProofRef = useRef<HTMLUListElement>(null);
+  // Plain elements so count-up visibility isn't gated by motion opacity.
+  const { ref: statsRef, inView: statsInView } = useInViewOnce<HTMLDListElement>({
+    amount: 0.15,
+    rootMargin: "0px",
+  });
+  const { ref: metricsRef, inView: metricsInView } = useInViewOnce<HTMLDListElement>({
+    amount: 0.15,
+    rootMargin: "0px",
+  });
   const timelineRailRef = useRef<HTMLDivElement>(null);
-  const statsInView = useInView(statsRef, { once: true, amount: 0.25 });
-  const metricsInView = useInView(metricsRef, { once: true, amount: 0.25 });
-  const heroProofInView = useInView(heroProofRef, { once: true, amount: 0.35 });
-  const timelineRailInView = useInView(timelineRailRef, { once: true, margin: "-80px" });
-  const [marqueePaused, setMarqueePaused] = useState(false);
+  const { scrollYProgress: timelineProgress } = useScroll({
+    target: timelineRailRef,
+    offset: ["start 78%", "end 32%"],
+  });
+  const timelineBeamTop = useTransform(timelineProgress, [0, 1], ["-22%", "100%"]);
+  const timelineBeamOpacity = useTransform(
+    timelineProgress,
+    [0, 0.04, 0.94, 1],
+    [0, 1, 1, 0],
+  );
+  const timelineEndOpacity = useTransform(timelineProgress, [0.92, 1], [0, 1]);
+  const timelineEndScale = useTransform(timelineProgress, [0.92, 1], [0.65, 1]);
 
   return (
     <main className="bg-primary">
@@ -399,31 +561,37 @@ export default function Home({
           HERO — cinematic full-bleed background video
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="relative flex min-h-[calc(100svh-4.5rem)] flex-col overflow-hidden border-b border-secondary">
-        {/* Background video + readability treatment */}
+        {/* LCP poster + deferred cinematic video (respects reduced motion) */}
         <div aria-hidden="true" className="absolute inset-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster="/videos/data_center_cover.jpg"
-            className="absolute inset-0 size-full object-cover"
-          >
-            <source src="/videos/data_center.mp4" type="video/mp4" />
-          </video>
+          <OptimizedHeroMedia />
           {/* Scrim: top-weighted dark wash for text legibility only — the hero
               ends in a hard edge (border-b on the section), no fade-out. */}
           <div className="absolute inset-0 bg-black/55" />
           <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-black/40 to-transparent" />
-          {/* Subtle techy grid layered over the video */}
-          <BackgroundPattern
-            pattern="grid"
-            size="lg"
-            className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4 text-white opacity-[0.07]"
-          />
-          {/* Ambient brand glows — always-on breathing accents over the scrim */}
-          <PulseGlow className="top-[-10%] left-[8%] size-[28rem] bg-brand-500/25" duration={9} />
-          <PulseGlow className="right-[6%] bottom-[-14%] size-[26rem] bg-brand-400/20" duration={11} delay={2} />
+          {/* Only the atmosphere drifts; hero copy stays locked to the page. */}
+          <ParallaxLayer className="absolute inset-[-12px]" distance={8}>
+            <BackgroundPattern
+              pattern="grid"
+              size="lg"
+              className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4 text-white opacity-[0.06]"
+            />
+          </ParallaxLayer>
+          <ParallaxLayer className="absolute inset-[-12px]" distance={6} reverse>
+            <div className="texture-noise absolute inset-0 opacity-[0.025] mix-blend-soft-light" />
+          </ParallaxLayer>
+          <ParallaxLayer className="absolute inset-[-12px]" distance={12} reverse>
+            <PulseGlow
+              className="top-[-10%] left-[8%] size-[28rem] bg-brand-500/20"
+              duration={AMBIENT_CYCLE_SECONDS}
+            />
+          </ParallaxLayer>
+          <ParallaxLayer className="absolute inset-[-12px]" distance={8}>
+            <PulseGlow
+              className="right-[6%] bottom-[-14%] size-[26rem] bg-brand-400/16"
+              duration={AMBIENT_CYCLE_SECONDS}
+              delay={-AMBIENT_CYCLE_SECONDS / 2}
+            />
+          </ParallaxLayer>
         </div>
 
         <div className="relative flex flex-1 flex-col justify-center px-4 py-20 md:px-8 md:py-24">
@@ -431,7 +599,7 @@ export default function Home({
             <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
               {/* Quiet eyebrow — mono caps, no pill / no bullet */}
               <motion.p
-                {...heroReveal(0.1)}
+                {...heroReveal(MOTION_STAGGER)}
                 className="text-xs font-medium tracking-[0.2em] text-white/70 uppercase"
               >
                 {hero.badge}
@@ -439,27 +607,28 @@ export default function Home({
 
               {/* Hardcoded white is intentional here — text sits over the video in both themes */}
               <motion.h1
-                {...heroReveal(0.2)}
+                {...heroReveal(MOTION_STAGGER * 2)}
                 className="mt-4 text-display-md font-semibold text-white md:text-display-lg lg:text-display-xl"
+                data-ab-variant={abEnabled ? abVariant : undefined}
               >
-                {hero.headline}
-                {hero.headline_highlight && (
+                {displayHeadline}
+                {displayHighlight && (
                   <>
                     <br />
-                    <span className="ice-gradient-text">{hero.headline_highlight}</span>
+                    <span className="ice-gradient-text">{displayHighlight}</span>
                   </>
                 )}
               </motion.h1>
 
               <motion.p
-                {...heroReveal(0.35)}
+                {...heroReveal(MOTION_STAGGER * 3)}
                 className="mt-4 max-w-2xl text-lg text-white/80 md:mt-6 md:text-xl"
               >
-                {hero.subheadline}
+                {displaySubheadline}
               </motion.p>
 
               <motion.div
-                {...heroReveal(0.5)}
+                {...heroReveal(MOTION_STAGGER * 4)}
                 className="mt-8 flex w-full flex-col-reverse items-stretch gap-3 sm:w-auto sm:flex-row sm:items-start md:mt-12"
               >
                 <Button color="secondary" size="xl" href={hero.cta_secondary?.href ?? "/solutions"}>
@@ -467,41 +636,23 @@ export default function Home({
                 </Button>
                 <Button
                   size="xl"
-                  href={hero.cta_primary?.href ?? "tel:18007869188"}
+                  href={displayPrimaryCta?.href ?? "tel:18007869188"}
                   iconLeading={Phone01}
                   className="shadow-[0_0_40px_rgb(4_155_251/0.3)]"
+                  onClick={() => {
+                    if (abEnabled) trackAbConversion(experimentId, abVariant);
+                  }}
                 >
-                  {hero.cta_primary?.label ?? "Call 1-800-786-9188"}
+                  {displayPrimaryCta?.label ?? "Call 1-800-786-9188"}
                 </Button>
               </motion.div>
-
-              {/* Proof row — opaque (y-only reveal) so count-up is visible from frame 0. */}
-              <motion.ul
-                initial={{ y: reduceMotion ? 0 : 16 }}
-                animate={{ y: 0 }}
-                transition={{ duration: 0.6, delay: 0.65, ease: EASE }}
-                ref={heroProofRef}
-                className="mt-12 flex max-w-full flex-nowrap items-center justify-center gap-x-2 overflow-x-auto scrollbar-hide md:mt-16 md:gap-x-3"
-              >
-                {HERO_PROOF.map((item, i) => (
-                  <li key={item} className="flex shrink-0 items-center gap-x-2 md:gap-x-3">
-                    {i > 0 && <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/20" />}
-                    <CountUpText
-                      value={item}
-                      inView={heroProofInView}
-                      duration={1400}
-                      className="whitespace-nowrap text-[10px] tracking-wide text-white/60 uppercase tabular-nums sm:text-xs"
-                    />
-                  </li>
-                ))}
-              </motion.ul>
             </div>
           </div>
         </div>
 
         {/* Scroll cue — pinned near the bottom of the first viewport */}
         <motion.a
-          {...heroReveal(0.8)}
+          {...heroReveal(MOTION_STAGGER * 6)}
           href="#services"
           aria-label="Scroll to explore"
           className="relative z-10 mb-4 flex flex-col items-center gap-1 self-center pb-[max(0.5rem,env(safe-area-inset-bottom))] text-white/70 transition hover:text-white md:mb-6"
@@ -516,6 +667,35 @@ export default function Home({
             <ChevronDown className="size-6 drop-shadow-[0_0_8px_rgb(4_155_251/0.45)]" />
           </motion.span>
         </motion.a>
+      </section>
+
+      <ProofTicker items={resolveProofLabels(data?.hero?.proof_labels)} />
+
+      <section className="border-b border-secondary bg-secondary py-16 md:py-20">
+        <div className="mx-auto max-w-container px-4 md:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Choose your starting point</span>
+            <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">What are you trying to solve?</h2>
+          </div>
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {DECISION_PATHS.map((path, i) => (
+              <motion.div key={path.title} {...reveal(i * MOTION_STAGGER)}>
+                <Link
+                  href={path.href}
+                  className="ice-lift group flex h-full flex-col rounded-2xl bg-primary p-6 ring-1 ring-secondary hover:ring-brand"
+                >
+                  <FeaturedIcon icon={path.icon} size="lg" color="brand" theme="light" />
+                  <p className="mt-5 text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">{path.eyebrow}</p>
+                  <h3 className="mt-2 text-xl font-semibold text-primary">{path.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-tertiary">{path.description}</p>
+                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition group-hover:gap-2.5">
+                    Follow this path <ArrowRight className="size-4" />
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
@@ -545,7 +725,7 @@ export default function Home({
             {services.map((s, i) => (
               <motion.li
                 key={s.title}
-                {...reveal(i * 0.06)}
+                {...reveal(i * MOTION_STAGGER)}
                 whileHover={reduceMotion ? undefined : { y: -6 }}
                 className="h-full"
               >
@@ -591,7 +771,7 @@ export default function Home({
 
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-12 md:gap-6 lg:grid-cols-3">
             {POPULAR_SOLUTIONS.map((svc, i) => (
-              <motion.div key={svc.title} {...reveal(i * 0.06)} className="h-full">
+              <motion.div key={svc.title} {...reveal(i * MOTION_STAGGER)} className="h-full">
                 <Link
                   href={svc.href}
                   className="group relative isolate flex h-full min-h-56 overflow-hidden rounded-2xl border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
@@ -601,11 +781,11 @@ export default function Home({
                     aria-hidden="true"
                     className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[58%] overflow-hidden sm:w-[62%]"
                   >
-                    <img
+                    <Image
                       src={svc.image}
                       alt=""
-                      loading="lazy"
-                      decoding="async"
+                      fill
+                      sizes="(min-width: 1024px) 24rem, (min-width: 640px) 50vw, 100vw"
                       className="h-full w-full translate-x-[12%] object-cover object-center opacity-[0.18] transition-opacity duration-500 ease-out group-hover:opacity-[0.55] dark:opacity-[0.22] dark:group-hover:opacity-[0.62]"
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg-primary)] from-0% via-[var(--color-bg-primary)]/90 via-35% to-transparent to-85%" />
@@ -626,7 +806,7 @@ export default function Home({
             ))}
 
             {/* 6th tile — View All Solutions CTA */}
-            <motion.div {...reveal(POPULAR_SOLUTIONS.length * 0.06)} className="h-full">
+            <motion.div {...reveal(POPULAR_SOLUTIONS.length * MOTION_STAGGER)} className="h-full">
               <Link
                 href="/solutions"
                 className="group relative isolate flex h-full min-h-56 overflow-hidden rounded-2xl border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
@@ -666,8 +846,9 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           STATS
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-primary py-16 md:py-24">
-        <div className="mx-auto w-full max-w-container px-4 md:px-8">
+      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+        <SectionBloom align="left" />
+        <div className="relative z-10 mx-auto w-full max-w-container px-4 md:px-8">
           <div className="flex flex-col gap-8 md:gap-16">
             <SectionHeader
               eyebrow={statsSection?.eyebrow ?? "By The Numbers"}
@@ -675,13 +856,18 @@ export default function Home({
               description={statsSection?.description}
             />
 
-            {/* No opacity reveal on the number grid — count-up must be visible from frame 0. */}
             <dl
               ref={statsRef}
               className="grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-4"
             >
-              {stats.map((s) => (
-                <StatItem key={s.label} {...s} inView={statsInView} />
+              {stats.map((s, i) => (
+                <StatItem
+                  key={s.label}
+                  {...s}
+                  inView={statsInView}
+                  index={i}
+                  reduceMotion={reduceMotion}
+                />
               ))}
             </dl>
           </div>
@@ -695,7 +881,7 @@ export default function Home({
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <motion.div
-              initial={{ opacity: 0, x: reduceMotion ? 0 : -30 }}
+              initial={reduceMotion ? false : { opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.7, ease: EASE }}
@@ -716,7 +902,7 @@ export default function Home({
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, x: reduceMotion ? 0 : 30 }}
+              initial={reduceMotion ? false : { opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.7, ease: EASE }}
@@ -756,8 +942,9 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           INFRASTRUCTURE DATA FLOW
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-primary py-16 md:py-24">
-        <div className="mx-auto w-full max-w-container px-4 md:px-8">
+      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+        <SectionBloom align="right" />
+        <div className="relative z-10 mx-auto w-full max-w-container px-4 md:px-8">
           <SectionHeader
             eyebrow={infrastructureSection?.eyebrow ?? "Architecture"}
             heading={infrastructureSection?.heading ?? "Enterprise Data Flow"}
@@ -767,18 +954,8 @@ export default function Home({
             }
           />
 
-          <div className="mt-12 flex flex-wrap items-start justify-center gap-x-4 gap-y-8 md:mt-16">
-            {INFRASTRUCTURE_FLOW.map((node, i) => (
-              <motion.div key={node.label} {...reveal(i * 0.06)} className="flex items-start">
-                <div className="flex w-24 flex-col items-center gap-3 text-center md:w-28">
-                  <FeaturedIcon icon={node.icon} size="lg" color="brand" theme="modern" />
-                  <span className="text-sm font-medium text-secondary">{node.label}</span>
-                </div>
-                {i < INFRASTRUCTURE_FLOW.length - 1 && (
-                  <ChevronRight aria-hidden="true" className="mt-3.5 hidden size-5 text-fg-quaternary md:block" />
-                )}
-              </motion.div>
-            ))}
+          <div className="mt-12 md:mt-16">
+            <InteractiveArchitecture />
           </div>
         </div>
       </section>
@@ -801,21 +978,21 @@ export default function Home({
             >
               {/* Pipeline rail — a subtle brand-tinted track the beam runs along */}
               <div className="absolute inset-y-0 left-4 w-[3px] -translate-x-px rounded-full bg-gradient-to-b from-brand-500/20 via-brand-500/25 to-transparent md:left-1/2" />
-              {/* Vertical line — draws in from the top as the section scrolls into view */}
-              <motion.div
-                initial={{ scaleY: reduceMotion ? 1 : 0 }}
-                animate={timelineRailInView ? { scaleY: 1 } : undefined}
-                transition={{ duration: 1.4, ease: EASE }}
-                style={{ transformOrigin: "top" }}
-                className="absolute inset-y-0 left-4 w-[3px] -translate-x-px rounded-full bg-border-brand md:left-1/2"
-              />
+              {/* Reading-progress line. Centering stays on the wrapper so Motion
+                  can own the inner transform without clobbering it. */}
+              <div className="absolute inset-y-0 left-4 w-[3px] -translate-x-px md:left-1/2">
+                <motion.div
+                  className="h-full w-full origin-top rounded-full bg-border-brand"
+                  style={{ scaleY: reduceMotion ? 1 : timelineProgress }}
+                />
+              </div>
 
-              {/* Constant flowing beam — a bright brand pulse that continuously
-                  travels down the rail to signal an always-on pipeline. */}
-              <span
+              {/* The glow tip advances with reading pace instead of autoplay. */}
+              <motion.span
                 className="ice-timeline-beam absolute left-4 z-[1] h-[22%] w-[3px] -translate-x-px rounded-full md:left-1/2"
                 style={{
-                  animation: "timeline-flow 2.8s linear infinite",
+                  top: reduceMotion ? "100%" : timelineBeamTop,
+                  opacity: reduceMotion ? 0 : timelineBeamOpacity,
                   background:
                     "linear-gradient(to bottom, transparent, var(--color-brand-solid) 40%, rgb(124 212 253) 55%, transparent)",
                   boxShadow: "0 0 18px 3px rgb(4 155 251 / 0.55)",
@@ -840,7 +1017,12 @@ export default function Home({
                     transition={
                       reduceMotion
                         ? { duration: 0 }
-                        : { type: "spring", stiffness: 300, damping: 18, delay: 0.15 + i * 0.05 }
+                        : {
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 18,
+                            delay: 0.14 + i * MOTION_STAGGER,
+                          }
                     }
                     className="absolute left-4 z-10 -translate-x-1/2 md:left-1/2"
                   >
@@ -859,17 +1041,44 @@ export default function Home({
 
                   {/* Content — slides in from its own side of the line */}
                   <motion.div
-                    initial={{ opacity: 0, x: reduceMotion ? 0 : i % 2 === 0 ? -28 : 28 }}
+                    initial={
+                      reduceMotion
+                        ? false
+                        : { opacity: 0, x: i % 2 === 0 ? -28 : 28 }
+                    }
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true, margin: "-80px" }}
-                    transition={{ duration: 0.6, delay: i * 0.06, ease: EASE }}
+                    transition={{ duration: 0.6, delay: i * MOTION_STAGGER, ease: EASE }}
                     className={`ml-12 md:ml-0 md:w-[calc(50%-2rem)] ${
                       i % 2 === 0 ? "md:pr-8 md:text-right" : "md:ml-auto md:pl-8 md:text-left"
                     }`}
                   >
-                    <span className="text-sm font-semibold tracking-wider text-brand-secondary">{item.year}</span>
-                    <h3 className="mt-1 text-lg font-semibold text-primary">{item.title}</h3>
-                    <p className="mt-1 text-md text-tertiary">{item.description}</p>
+                    <div
+                      className={`group relative overflow-hidden rounded-2xl border border-secondary bg-primary/80 p-5 text-left shadow-sm backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lg md:p-6 ${
+                        i % 2 === 0 ? "md:text-right" : "md:text-left"
+                      }`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`absolute top-0 h-px w-1/2 bg-gradient-to-r from-transparent via-brand-solid/70 to-transparent ${
+                          i % 2 === 0 ? "right-0" : "left-0"
+                        }`}
+                      />
+                      <div
+                        className={`flex items-center gap-3 ${
+                          i % 2 === 0 ? "md:flex-row-reverse" : ""
+                        }`}
+                      >
+                        <span className="rounded-full bg-brand-primary_alt px-3 py-1 text-sm font-semibold tracking-wider text-brand-secondary ring-1 ring-brand/20">
+                          {item.year}
+                        </span>
+                        <span className="text-xs font-medium tracking-[0.16em] text-quaternary uppercase">
+                          Milestone {String(i + 1).padStart(2, "0")}
+                        </span>
+                      </div>
+                      <h3 className="mt-4 text-xl font-semibold text-primary">{item.title}</h3>
+                      <p className="mt-2 text-md leading-relaxed text-tertiary">{item.description}</p>
+                    </div>
                   </motion.div>
                 </div>
               );
@@ -877,23 +1086,20 @@ export default function Home({
 
             {/* Pipeline endcap — same size as milestone dots; rail ends on its center */}
             <div className="relative h-5">
-              <motion.span
+              <span
                 aria-hidden="true"
-                initial={{ scale: reduceMotion ? 1 : 0, opacity: reduceMotion ? 1 : 0 }}
-                animate={
-                  timelineRailInView
-                    ? { scale: 1, opacity: 1 }
-                    : { scale: reduceMotion ? 1 : 0, opacity: reduceMotion ? 1 : 0 }
-                }
-                transition={
-                  reduceMotion
-                    ? { duration: 0 }
-                    : { type: "spring", stiffness: 280, damping: 18, delay: 1.35 }
-                }
-                className="absolute bottom-0 left-4 z-10 flex size-5 -translate-x-1/2 items-center justify-center rounded-full bg-brand-secondary shadow-[0_0_12px_2px_rgb(4_155_251/0.45)] md:left-1/2"
+                className="absolute bottom-0 left-4 z-10 -translate-x-1/2 md:left-1/2"
               >
-                <span className="size-1.5 rounded-full bg-brand-solid" />
-              </motion.span>
+                <motion.span
+                  className="flex size-5 items-center justify-center rounded-full bg-brand-secondary shadow-[0_0_12px_2px_rgb(4_155_251/0.45)]"
+                  style={{
+                    opacity: reduceMotion ? 1 : timelineEndOpacity,
+                    scale: reduceMotion ? 1 : timelineEndScale,
+                  }}
+                >
+                  <span className="size-1.5 rounded-full bg-brand-solid" />
+                </motion.span>
+              </span>
             </div>
           </div>
         </div>
@@ -911,39 +1117,38 @@ export default function Home({
           <div className="mx-auto mt-12 h-px max-w-4xl bg-gradient-to-r from-transparent via-brand-500/40 to-transparent md:mt-16" />
         </div>
 
-        {/* Seamless infinite marquee — pauses on hover. Uses a dedicated CSS
-            class so the animation can't be stripped by Tailwind purging. */}
-        <div
-          className="mt-10 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)] md:mt-12"
-          onMouseEnter={() => setMarqueePaused(true)}
-          onMouseLeave={() => setMarqueePaused(false)}
-        >
-          <div
-            className="animate-ice-marquee flex w-max items-center"
-            style={{
-              animationPlayState: marqueePaused ? "paused" : "running",
-            }}
-          >
-            {[0, 1].map((setIdx) => (
-              <div
-                key={setIdx}
-                aria-hidden={setIdx === 1 ? true : undefined}
-                className="flex shrink-0 items-center"
-              >
-                {partnerLogos.map((partner, i) => (
-                  <div key={`${partner.name}-${i}`} className="mx-8 flex shrink-0 items-center justify-center md:mx-10">
-                    <Image
-                      src={partner.logo_src}
-                      alt={partner.name}
-                      width={160}
-                      height={60}
-                      className="h-10 w-auto object-contain opacity-70 brightness-[0.6] transition duration-300 hover:opacity-100 hover:brightness-[0.35] md:h-12 dark:opacity-60 dark:brightness-100 dark:hover:opacity-100 dark:hover:brightness-100"
-                    />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
+        <div className="mt-10 md:mt-12">
+          <InfiniteMarquee
+            durationSec={AMBIENT_CYCLE_SECONDS * 2}
+            pauseOnHover={false}
+            renderTrack={() => (
+              <>
+                {/* Duplicate once inside the track so the strip is always wider than the viewport */}
+                {[0, 1].flatMap((copy) =>
+                  partnerLogos.map((partner, i) => (
+                    <div
+                      key={`${copy}-${partner.name}-${i}`}
+                      className="mx-4 flex h-24 w-56 shrink-0 items-center gap-4 rounded-xl bg-secondary px-5 ring-1 ring-secondary md:mx-5"
+                    >
+                      <Image
+                        src={partner.logo_src}
+                        alt={copy === 0 ? partner.name : ""}
+                        width={180}
+                        height={64}
+                        className="h-9 w-auto max-w-[6.5rem] object-contain opacity-60 brightness-[0.5] dark:opacity-55 dark:brightness-100"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-xs font-semibold text-primary">{partner.name}</span>
+                        <span className="mt-1 block text-[11px] leading-snug text-tertiary">
+                          {PARTNER_CAPABILITIES[partner.name] ?? "Enterprise technology"}
+                        </span>
+                      </span>
+                    </div>
+                  )),
+                )}
+              </>
+            )}
+          />
         </div>
       </section>
 
@@ -954,18 +1159,22 @@ export default function Home({
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <motion.div
             {...reveal()}
-            className="relative isolate overflow-hidden rounded-2xl bg-secondary px-6 py-10 md:p-12 lg:p-16"
+            className="relative isolate overflow-hidden rounded-2xl bg-[rgb(4_11_25)] px-6 py-10 text-white md:p-12 lg:p-16"
           >
-            <BrandOrbs />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgb(4_155_251/0.25),transparent_55%)]"
+            />
+            <BrandOrbs variant="onBrand" />
             <div className="relative grid gap-12 lg:grid-cols-2 lg:gap-16">
               <div>
-                <span className="text-sm font-semibold tracking-wider text-brand-secondary uppercase">
+                <span className="text-sm font-semibold tracking-wider text-brand-300 uppercase">
                   {industriesSection?.eyebrow ?? "Why Choose ICE"}
                 </span>
-                <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">
+                <h2 className="mt-3 text-display-sm font-semibold text-white md:text-display-md">
                   {industriesSection?.heading ?? "Ready to Modernize Your IT Infrastructure?"}
                 </h2>
-                <p className="mt-4 text-lg text-tertiary md:mt-5">
+                <p className="mt-4 text-lg text-white/70 md:mt-5">
                   {industriesSection?.description ??
                     "Let our experts conduct a free assessment of your current IT environment and show you how we can reduce costs, improve performance, and strengthen security."}
                 </p>
@@ -981,29 +1190,29 @@ export default function Home({
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold tracking-wider text-brand-secondary uppercase">Industries We Serve</h3>
+                <h3 className="text-sm font-semibold tracking-wider text-brand-300 uppercase">Industries We Serve</h3>
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {industries.map((ind, i) => (
                     <motion.div
                       key={ind.name}
-                      {...reveal(i * 0.06)}
-                      className="flex items-center gap-3 rounded-lg bg-primary px-4 py-3 ring-1 ring-secondary ring-inset transition-shadow duration-200 hover:shadow-sm"
+                      {...reveal(i * MOTION_STAGGER)}
+                      className="flex items-center gap-3 rounded-lg bg-white/5 px-4 py-3 ring-1 ring-white/10 transition-shadow duration-200 hover:bg-white/10"
                     >
-                      <ind.icon className="size-5 shrink-0 text-fg-brand-primary" />
-                      <span className="text-sm font-medium text-secondary">{ind.name}</span>
+                      <ind.icon className="size-5 shrink-0 text-brand-300" />
+                      <span className="text-sm font-medium text-white/85">{ind.name}</span>
                     </motion.div>
                   ))}
                 </div>
 
-                <div className="mt-6 flex items-center gap-4 rounded-xl bg-primary p-4 ring-1 ring-secondary ring-inset">
+                <div className="mt-6 flex items-center gap-4 rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
                   <Image
                     src="/images/ibm.svg"
                     alt="IBM Business Partner"
                     width={44}
                     height={44}
-                    className="h-9 w-auto"
+                    className="h-9 w-auto brightness-0 invert"
                   />
-                  <p className="text-sm text-tertiary">
+                  <p className="text-sm text-white/70">
                     {industriesSection?.badge_note ??
                       "Proud IBM Business Partner, delivering enterprise solutions since 1990."}
                   </p>
@@ -1028,18 +1237,17 @@ export default function Home({
             {trustBadges.map((item, i) => (
               <motion.li
                 key={item.title}
-                // Y-only reveal — opacity:0 would hide CountUpText count-up.
-                initial={{ y: reduceMotion ? 0 : 24 }}
-                whileInView={{ y: 0 }}
+                initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: 0.6, delay: i * 0.06, ease: EASE }}
+                transition={{ duration: 0.6, delay: i * MOTION_STAGGER, ease: EASE }}
                 whileHover={reduceMotion ? undefined : { y: -4 }}
               >
                 <div className="flex max-w-sm flex-col items-center gap-4 text-center">
                   <FeaturedIcon icon={item.icon} size="lg" color="brand" theme="light" />
                   <div>
                     <h3 className="text-lg font-semibold text-primary">
-                      <CountUpText value={item.title} className="tabular-nums" />
+                      <CountUpText value={item.title} className="tabular-nums" duration={1600} />
                     </h3>
                     <p className="mt-1 text-md text-tertiary">{item.description}</p>
                   </div>
@@ -1089,15 +1297,28 @@ export default function Home({
                 ref={metricsRef}
                 className="relative grid grid-cols-2 gap-x-4 gap-y-8 px-6 py-10 md:grid-cols-4 md:p-16"
               >
-                {PERFORMANCE_METRICS.map((metric) => (
-                  <div key={metric.label} className="flex flex-col-reverse gap-3 text-center">
+                {PERFORMANCE_METRICS.map((metric, i) => (
+                  <div
+                    key={metric.label}
+                    className="flex flex-col-reverse gap-3 text-center transition-all duration-500 ease-out"
+                    style={{
+                      opacity: reduceMotion || metricsInView ? 1 : 0,
+                      transform:
+                        reduceMotion || metricsInView
+                          ? "translateY(0)"
+                          : "translateY(12px)",
+                      transitionDelay: !reduceMotion && metricsInView
+                        ? `${i * MOTION_STAGGER * 1000}ms`
+                        : "0ms",
+                    }}
+                  >
                     <dt className="text-md font-semibold text-primary md:text-lg">{metric.label}</dt>
                     <dd className="text-display-md font-semibold tracking-tight text-brand-tertiary_alt tabular-nums md:text-display-lg">
                       <CountUpText
                         value={metric.value}
                         suffix={"suffix" in metric ? metric.suffix : ""}
                         inView={metricsInView}
-                        duration={1400}
+                        duration={2000}
                       />
                     </dd>
                   </div>
@@ -1109,17 +1330,16 @@ export default function Home({
       </section>
 
       <GenericCMSSections sections={extraSections} />
+      <FaqPreview heading="Answers before you schedule a call" />
 
       {/* ═══════════════════════════════════════════════════════════════════
           FINAL CTA
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-primary py-16 md:py-24">
-        <div className="mx-auto w-full max-w-container px-4 md:px-8">
+      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+        <SectionBloom />
+        <div className="relative z-10 mx-auto w-full max-w-container px-4 md:px-8">
           <div className="mx-auto mb-12 h-px max-w-4xl bg-gradient-to-r from-transparent via-brand-500/40 to-transparent md:mb-16" />
-          <motion.div
-            {...reveal()}
-            className="relative isolate flex flex-col gap-x-8 gap-y-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--color-bg-secondary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary)] px-6 py-10 ring-1 ring-secondary ring-inset lg:flex-row lg:items-center lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.1)]"
-          >
+          <div className="relative isolate flex flex-col gap-x-8 gap-y-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--color-bg-secondary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary)] px-6 py-10 ring-1 ring-secondary ring-inset lg:flex-row lg:items-center lg:p-16 dark:shadow-[0_0_40px_rgb(4_155_251/0.1)]">
             {/* Depth layers: masked grid, film grain, and a large rotated icon
                 watermark bleeding past the card corner. */}
             <div
@@ -1136,15 +1356,24 @@ export default function Home({
             />
             <BrandOrbs />
             <div className="relative flex max-w-3xl flex-1 flex-col">
-              <h2 className="text-display-sm font-semibold text-primary md:text-display-md">
+              <motion.h2
+                {...reveal()}
+                className="text-display-sm font-semibold text-primary md:text-display-md"
+              >
                 {finalCta?.heading ?? "Let's Build Your Future Together"}
-              </h2>
-              <p className="mt-4 text-lg text-tertiary md:mt-5 lg:text-xl">
+              </motion.h2>
+              <motion.p
+                {...reveal(MOTION_STAGGER)}
+                className="mt-4 text-lg text-tertiary md:mt-5 lg:text-xl"
+              >
                 {finalCta?.description ??
                   "Schedule a free consultation with our enterprise architects and discover how ICE can transform your infrastructure."}
-              </p>
+              </motion.p>
             </div>
-            <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start">
+            <motion.div
+              {...reveal(MOTION_STAGGER * 2)}
+              className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start"
+            >
               {finalCta?.cta_secondary ? (
                 <Button color="secondary" size="xl" href={finalCta.cta_secondary.href}>
                   {finalCta.cta_secondary.label}
@@ -1157,8 +1386,8 @@ export default function Home({
               <Button size="xl" href={finalCta?.cta_primary?.href ?? "/contact"} iconTrailing={ArrowRight}>
                 {finalCta?.cta_primary?.label ?? "Get Started"}
               </Button>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
       </section>
     </main>

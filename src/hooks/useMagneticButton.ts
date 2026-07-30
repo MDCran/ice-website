@@ -1,36 +1,75 @@
 "use client";
 
-import { useRef, useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef } from "react";
+import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 
-export function useMagneticButton(strength = 3) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [style, setStyle] = useState<CSSProperties>({});
-  const [canHover, setCanHover] = useState(false);
+/**
+ * Adds a clamped, pointer-only magnetic drift without re-rendering on every
+ * pointer move. CSS variables keep the root transform composable with press.
+ */
+export function useMagneticButton<T extends HTMLElement = HTMLDivElement>(
+  maxOffset = 3,
+  enabled = true,
+) {
+  const ref = useRef<T>(null);
+  const reduceMotion = useHydratedReducedMotion();
 
   useEffect(() => {
-    setCanHover(window.matchMedia("(hover: hover)").matches);
-  }, []);
+    const element = ref.current;
+    const hoverQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if (!element || !enabled || reduceMotion || !hoverQuery.matches) return;
 
-  const onMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!canHover || !ref.current) return;
-      const rect = ref.current.getBoundingClientRect();
-      const x = e.clientX - (rect.left + rect.width / 2);
-      const y = e.clientY - (rect.top + rect.height / 2);
-      setStyle({
-        transform: `translate(${x / (rect.width / strength)}px, ${y / (rect.height / strength)}px)`,
-        transition: "transform 0.15s ease-out",
+    let frame = 0;
+
+    const reset = () => {
+      window.cancelAnimationFrame(frame);
+      element.dataset.magneticActive = "false";
+      element.style.setProperty("--ice-magnetic-x", "0px");
+      element.style.setProperty("--ice-magnetic-y", "0px");
+    };
+
+    const move = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const rect = element.getBoundingClientRect();
+        const normalizedX =
+          (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+        const normalizedY =
+          (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+        const x = Math.max(-1, Math.min(1, normalizedX)) * maxOffset;
+        const y = Math.max(-1, Math.min(1, normalizedY)) * maxOffset;
+
+        element.dataset.magneticActive = "true";
+        element.style.setProperty("--ice-magnetic-x", `${x.toFixed(2)}px`);
+        element.style.setProperty("--ice-magnetic-y", `${y.toFixed(2)}px`);
       });
-    },
-    [canHover, strength]
-  );
+    };
+    const leave = (event: PointerEvent) => {
+      if (!element.contains(event.relatedTarget as Node | null)) reset();
+    };
+    const resetWhenOutside = (event: PointerEvent) => {
+      if (!(event.target instanceof Node) || !element.contains(event.target)) reset();
+    };
 
-  const onMouseLeave = useCallback(() => {
-    setStyle({
-      transform: "translate(0px, 0px)",
-      transition: "transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-    });
-  }, []);
+    element.addEventListener("pointermove", move, { passive: true });
+    element.addEventListener("pointerleave", reset);
+    element.addEventListener("pointerout", leave);
+    element.addEventListener("lostpointercapture", reset);
+    element.addEventListener("blur", reset, true);
+    window.addEventListener("pointermove", resetWhenOutside, { passive: true });
 
-  return { ref, style, onMouseMove, onMouseLeave };
+    return () => {
+      window.cancelAnimationFrame(frame);
+      element.removeEventListener("pointermove", move);
+      element.removeEventListener("pointerleave", reset);
+      element.removeEventListener("pointerout", leave);
+      element.removeEventListener("lostpointercapture", reset);
+      element.removeEventListener("blur", reset, true);
+      window.removeEventListener("pointermove", resetWhenOutside);
+      reset();
+    };
+  }, [enabled, maxOffset, reduceMotion]);
+
+  return { ref };
 }

@@ -179,6 +179,8 @@ export interface ClientResource {
   visibility: string; // "draft" | "published"
   share_token: string | null;
   uploaded_by: string | null;
+  category?: string | null;
+  version_label?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -186,6 +188,7 @@ export interface ClientResource {
 export interface ClientInvoice {
   id: string; // uuid
   account_id: string; // uuid → client_accounts.id
+  client_account_id?: string; // uuid → client_accounts.id (portal schema)
   title: string | null;
   invoice_number: string;
   amount_cents: number;
@@ -196,6 +199,8 @@ export interface ClientInvoice {
   deadline_at: string | null;
   extended_days: number;
   paid_at: string | null;
+  payment_url?: string | null;
+  payment_submitted_at?: string | null;
   pdf_url: string | null;
   share_token: string | null;
   line_items: Record<string, unknown>[] | null; // jsonb array

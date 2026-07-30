@@ -2,35 +2,56 @@
 
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
+import { MOTION_DURATION, MOTION_EASE, MOTION_STAGGER } from "@/lib/motion";
 
+const ROUTE_DRIFT_DURATION = MOTION_DURATION.fast + MOTION_STAGGER;
+
+/**
+ * Soft route transition. Avoid opacity:0 on enter — that blocks count-ups and
+ * scroll reveals that wait for ancestors to become opaque.
+ */
 export default function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useHydratedReducedMotion();
 
-  // Safety net: force opacity:1 if animation hasn't completed after 2s
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (containerRef.current) {
-        containerRef.current.style.opacity = "1";
-        containerRef.current.style.transform = "none";
-      }
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [pathname]);
+  if (reduceMotion) {
+    return <>{children}</>;
+  }
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        ref={containerRef}
-        key={pathname}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" as const }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={pathname}
+          initial={{ y: 6 }}
+          animate={{ y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: ROUTE_DRIFT_DURATION, ease: MOTION_EASE }}
+        >
+          {children}
+        </motion.div>
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={`route-scrim:${pathname}`}
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-[10000] bg-brand-50/80 will-change-[opacity] dark:bg-brand-950/80"
+          style={{
+            backgroundImage: "radial-gradient(circle at 50% 38%, rgb(4 155 251 / 0.24), transparent 68%)",
+          }}
+          initial={{ opacity: 0.72 }}
+          animate={{
+            opacity: 0,
+            transition: { delay: MOTION_STAGGER, duration: MOTION_DURATION.fast, ease: MOTION_EASE },
+          }}
+          exit={{
+            opacity: 0.72,
+            transition: { duration: MOTION_DURATION.fast, ease: MOTION_EASE },
+          }}
+        />
+      </AnimatePresence>
+    </>
   );
 }

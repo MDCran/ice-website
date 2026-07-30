@@ -52,5 +52,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  return entries;
+  // App Router pages that are not CMS-backed yet
+  const staticExtras: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/solutions/find`,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/resources`,
+      changeFrequency: "monthly",
+      priority: 0.65,
+    },
+    {
+      url: `${baseUrl}/faq`,
+      changeFrequency: "monthly",
+      priority: 0.65,
+    },
+    {
+      url: `${baseUrl}/for-ai`,
+      changeFrequency: "monthly",
+      priority: 0.4,
+    },
+  ];
+
+  return [...entries, ...staticExtras];
 }

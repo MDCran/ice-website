@@ -8,12 +8,22 @@ import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { BrandOrbs, FloatY, PulseGlow } from "@/components/effects/AmbientMotion";
+import StickySolutionCta from "@/components/marketing/StickySolutionCta";
 import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { resolveIcon } from "@/lib/iconMap";
+import { MOTION_EASE } from "@/lib/motion";
 import { cx } from "@/utils/cx";
 import SolutionMetrics, { type MetricPreset } from "./SolutionMetrics";
+import {
+  FreshnessCue,
+  RpoRtoCalculator,
+  SolutionArchitecture,
+  SolutionProofStrip,
+  SolutionResourceTeaser,
+} from "./SolutionBuyerTools";
+import { experienceFor } from "@/lib/solutionExperience";
 
-const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const EASE = MOTION_EASE;
 
 /** Shared vertical rhythm for solution detail section bands. */
 const SECTION_Y = "py-16 md:py-24";
@@ -77,6 +87,7 @@ interface CtaLink {
 }
 
 interface SolutionPageLayoutProps {
+  solutionSlug: string;
   title: string;
   subtitle: string;
   categoryBadge: { label: string; icon: ReactNode };
@@ -119,6 +130,7 @@ interface SolutionPageLayoutProps {
 const KNOWN_SECTION_KEYS = new Set(["hero", "features", "process", "benefits", "cta"]);
 
 export default function SolutionPageLayout({
+  solutionSlug,
   title,
   subtitle,
   categoryBadge,
@@ -145,6 +157,7 @@ export default function SolutionPageLayout({
   orderedExtras,
 }: SolutionPageLayoutProps) {
   const reduceMotion = useHydratedReducedMotion();
+  const experience = experienceFor(solutionSlug);
 
   const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 };
   const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
@@ -389,7 +402,10 @@ export default function SolutionPageLayout({
   return (
     <main className="bg-primary">
       {/* ── Hero (split: text + solution visualization) ───────────────── */}
-      <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
+      <section
+        id="solution-hero"
+        className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32"
+      >
         {/* Engineering-grid texture, fading out from the top of the band */}
         <div
           aria-hidden="true"
@@ -441,13 +457,16 @@ export default function SolutionPageLayout({
                 </span>
               )}
 
-              <h1
+              <p
                 className={cx(
-                  "text-display-lg font-semibold tracking-tight text-primary md:text-display-xl",
+                  "text-sm font-semibold tracking-wide text-secondary uppercase",
                   heroEyebrow ? "mt-3" : "mt-4",
                 )}
                 dangerouslySetInnerHTML={{ __html: title }}
               />
+              <h1 className="mt-3 max-w-2xl text-display-md font-semibold tracking-tight text-primary md:text-display-lg">
+                {experience.outcome}
+              </h1>
 
               <p className="mt-4 max-w-xl text-lg text-tertiary line-clamp-3 md:mt-6 md:text-xl">{subtitle}</p>
 
@@ -473,6 +492,9 @@ export default function SolutionPageLayout({
                   ))}
                 </ul>
               )}
+              <div className="mt-5">
+                <FreshnessCue />
+              </div>
             </motion.div>
 
             {heroVisualization && (
@@ -480,7 +502,7 @@ export default function SolutionPageLayout({
                 initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
                 animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
                 transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
-                className="relative flex w-full justify-center lg:justify-end"
+                className="relative flex min-h-[18rem] w-full items-center justify-center lg:min-h-[22rem]"
               >
                 {/* Soft brand glow disc anchoring the visualization — both themes */}
                 <div
@@ -493,20 +515,28 @@ export default function SolutionPageLayout({
                 />
                 {/* Ambient brand glow behind the visualization — both themes */}
                 <PulseGlow
-                  className="inset-x-10 inset-y-6 -z-10 rounded-full bg-brand-500/10 blur-3xl dark:bg-brand-500/15"
+                  className="top-1/2 left-1/2 -z-10 size-[22rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-500/10 blur-3xl dark:bg-brand-500/15"
                   duration={7}
                   from={0.5}
                   to={0.9}
                 />
-                {/* Slow continuous float keeps the graphic alive after entrance */}
-                <FloatY className="w-full max-w-xl" distance={10} duration={7}>
-                  {heroVisualization}
+                {/* Slow continuous float — centered in the right column */}
+                <FloatY
+                  className="relative z-[1] mx-auto flex w-full max-w-xl items-center justify-center"
+                  distance={10}
+                  duration={7}
+                >
+                  <div className="flex w-full items-center justify-center [&>*]:mx-auto">
+                    {heroVisualization}
+                  </div>
                 </FloatY>
               </motion.div>
             )}
           </div>
         </div>
       </section>
+      <SolutionProofStrip slug={solutionSlug} />
+      <SolutionArchitecture slug={solutionSlug} />
 
       {useOrderedFlow ? (
         <>
@@ -549,6 +579,8 @@ export default function SolutionPageLayout({
           {metricsBlock}
           {orderedExtras?.faq ?? orderedExtras?.faqs ?? null}
           {orderedExtras?.related ?? null}
+          <RpoRtoCalculator slug={solutionSlug} />
+          <SolutionResourceTeaser slug={solutionSlug} />
           {ctaBlock}
         </>
       ) : (
@@ -558,9 +590,16 @@ export default function SolutionPageLayout({
           {benefitsBlock}
           {extraSections}
           {metricsBlock}
+          <RpoRtoCalculator slug={solutionSlug} />
+          <SolutionResourceTeaser slug={solutionSlug} />
           {ctaBlock}
         </>
       )}
+      <StickySolutionCta
+        title={`Talk about ${breadcrumbLabel}`}
+        consultHref={ctaPrimaryHref ?? "/contact"}
+        consultLabel={ctaButtonLabel}
+      />
     </main>
   );
 }

@@ -1,7 +1,8 @@
-import { getPageContent } from "@/lib/cms";
+import { getPageContent, getSiteSettings } from "@/lib/cms";
 import { getSeoConfig } from "@/lib/seo/config";
 import { JsonLd, breadcrumbs, localBusiness } from "@/lib/seo/jsonld";
 import ContactClient from "./Client";
+import { bookingUrlFromSettings } from "@/lib/booking";
 import type { Metadata } from "next";
 
 /** Trim to <=155 chars at a word boundary, appending an ellipsis when cut. */
@@ -26,7 +27,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ContactPage() {
-  const [page, seo] = await Promise.all([getPageContent("contact"), getSeoConfig()]);
+  const [page, seo, settings] = await Promise.all([
+    getPageContent("contact"),
+    getSeoConfig(),
+    getSiteSettings(),
+  ]);
   return (
     <>
       <JsonLd data={localBusiness(seo)} />
@@ -36,7 +41,11 @@ export default async function ContactPage() {
           { name: "Contact", url: "/contact" },
         ])}
       />
-      <ContactClient cmsData={page?.sections} orderedSections={page?.orderedSections} />
+      <ContactClient
+        cmsData={page?.sections}
+        orderedSections={page?.orderedSections}
+        bookingUrl={bookingUrlFromSettings(settings)}
+      />
     </>
   );
 }

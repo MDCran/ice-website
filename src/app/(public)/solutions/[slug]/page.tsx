@@ -1,4 +1,5 @@
-import { getPageContent, type PageWithSections } from "@/lib/cms";
+import type { PageWithSections } from "@/lib/cms";
+import { getCachedPageContent } from "@/lib/cms/cachedPage";
 import { getSeoConfig } from "@/lib/seo/config";
 import {
   JsonLd,
@@ -10,10 +11,6 @@ import {
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import DynamicSolutionPage from "./DynamicSolutionPage";
-
-/** Always read live CMS — never serve a statically baked incomplete page. */
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -73,11 +70,11 @@ function serviceDescription(page: PageLike): string {
 }
 
 /**
- * Live CMS only — never merge or replace with hardcoded solutionFallbacks.
+ * Tagged cache (#31) — invalidated on CMS save via /api/admin/revalidate.
  * Missing/unpublished pages 404 so incomplete fallback content cannot mask DB.
  */
 async function resolvePage(slug: string): Promise<PageLike | null> {
-  return getPageContent(slug);
+  return getCachedPageContent(slug);
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

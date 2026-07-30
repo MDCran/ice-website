@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
   AlertCircle,
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
   ClipboardCheck,
   DotsGrid,
   FlipBackward,
@@ -17,6 +19,7 @@ import {
   Trash01,
   XClose,
 } from "@untitledui/icons";
+import { writeAuditLog } from "@/lib/auditLog";
 import { Badge } from "@/components/base/badges/badges";
 import type { BadgeColor } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -65,6 +68,52 @@ const QUESTION_TYPES = [
   { value: "ranking", label: "Ranking" },
   { value: "phone_time_day", label: "Phone Time / Day" },
   { value: "star_rating", label: "Star Rating" },
+];
+
+const QUESTION_TEMPLATES: Array<{
+  label: string;
+  question_type: string;
+  question_text: string;
+  description?: string;
+  config?: Record<string, unknown>;
+  is_required?: boolean;
+}> = [
+  {
+    label: "Primary contact",
+    question_type: "short_text",
+    question_text: "Who is the primary technical contact?",
+    is_required: true,
+  },
+  {
+    label: "Platforms in scope",
+    question_type: "multiple_choice",
+    question_text: "Which platforms are in scope?",
+    description: "Select all that apply.",
+    config: {
+      choices: ["IBM i / Power", "Microsoft 365", "VMware / x86", "Public cloud", "Other"],
+      maxSelections: 5,
+    },
+    is_required: true,
+  },
+  {
+    label: "DR plan exists",
+    question_type: "yes_no",
+    question_text: "Do you currently have a documented disaster recovery plan?",
+    is_required: true,
+  },
+  {
+    label: "Satisfaction",
+    question_type: "star_rating",
+    question_text: "How would you rate ICE support this quarter?",
+    config: { maxStars: 5 },
+    is_required: true,
+  },
+  {
+    label: "Callback window",
+    question_type: "phone_time_day",
+    question_text: "Best day and time for a follow-up call?",
+    is_required: false,
+  },
 ];
 
 const typeBadge: Record<string, BadgeColor<"pill-color">> = {
@@ -238,6 +287,39 @@ export default function SurveyBuilderPage() {
     }
   };
 
+  const moveQuestion = (visibleIndex: number, direction: -1 | 1) => {
+    const visible = questions.filter((q) => !q._deleted);
+    const target = visibleIndex + direction;
+    if (target < 0 || target >= visible.length) return;
+    const fromId = visible[visibleIndex].id;
+    const toId = visible[target].id;
+    setQuestions((prev) => {
+      const next = [...prev];
+      const fromIdx = next.findIndex((q) => q.id === fromId);
+      const toIdx = next.findIndex((q) => q.id === toId);
+      if (fromIdx < 0 || toIdx < 0) return prev;
+      const tmp = next[fromIdx];
+      next[fromIdx] = next[toIdx];
+      next[toIdx] = tmp;
+      return next.map((q, i) => ({ ...q, sort_order: i }));
+    });
+  };
+
+  const addFromTemplate = (template: (typeof QUESTION_TEMPLATES)[number]) => {
+    const newQ: Question = {
+      id: crypto.randomUUID(),
+      survey_id: id,
+      question_type: template.question_type,
+      question_text: template.question_text,
+      description: template.description ?? null,
+      config: template.config ?? {},
+      is_required: template.is_required ?? true,
+      sort_order: questions.filter((q) => !q._deleted).length,
+      _isNew: true,
+    };
+    setQuestions((prev) => [...prev, newQ]);
+  };
+
   /* ----- persist all changes ----- */
   const handleSaveAll = async () => {
     if (!survey) return;
@@ -292,6 +374,13 @@ export default function SurveyBuilderPage() {
           .eq("id", q.id);
       }
     }
+
+    await writeAuditLog(supabase, {
+      action: "survey.saved",
+      entityType: "survey",
+      entityId: id,
+      summary: `Saved survey ${survey.title}`,
+    });
 
     setSuccess("Survey saved successfully.");
     setTimeout(() => setSuccess(""), 3000);
@@ -490,13 +579,28 @@ export default function SurveyBuilderPage() {
       </div>
 
       {/* Questions section */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-primary">
           Questions ({visibleQuestions.length})
         </h2>
-        <Button size="sm" color="secondary" iconLeading={Plus} onClick={openAddModal}>
-          Add Question
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <NativeSelect
+            aria-label="Add from template"
+            value=""
+            onChange={(e) => {
+              const t = QUESTION_TEMPLATES.find((x) => x.label === e.target.value);
+              if (t) addFromTemplate(t);
+              e.target.value = "";
+            }}
+            options={[
+              { value: "", label: "Add from template…" },
+              ...QUESTION_TEMPLATES.map((t) => ({ value: t.label, label: t.label })),
+            ]}
+          />
+          <Button size="sm" color="secondary" iconLeading={Plus} onClick={openAddModal}>
+            Add Question
+          </Button>
+        </div>
       </div>
 
       {visibleQuestions.length === 0 ? (
@@ -543,6 +647,22 @@ export default function SurveyBuilderPage() {
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
+                  <ButtonUtility
+                    size="sm"
+                    color="tertiary"
+                    icon={ArrowUp}
+                    tooltip="Move up"
+                    isDisabled={idx === 0 || survey.status === "completed"}
+                    onClick={() => moveQuestion(idx, -1)}
+                  />
+                  <ButtonUtility
+                    size="sm"
+                    color="tertiary"
+                    icon={ArrowDown}
+                    tooltip="Move down"
+                    isDisabled={idx === visibleQuestions.length - 1 || survey.status === "completed"}
+                    onClick={() => moveQuestion(idx, 1)}
+                  />
                   <ButtonUtility
                     size="sm"
                     color="tertiary"

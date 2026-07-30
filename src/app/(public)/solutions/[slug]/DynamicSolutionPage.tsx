@@ -1,39 +1,37 @@
 "use client";
 
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import { resolveIcon } from "@/lib/iconMap";
 import { SOLUTION_HERO_IMAGE_BY_SLUG } from "@/lib/solutionHeroImages";
 import SolutionPageLayout from "@/components/solutions/SolutionPageLayout";
 import SolutionHeroImage from "@/components/solutions/SolutionHeroImage";
 import type { MetricPreset } from "@/components/solutions/SolutionMetrics";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import SolutionMutedDemo from "@/components/solutions/SolutionMutedDemo";
+import { relatedItemsForCms } from "@/lib/cms/relatedSolutions";
 import { pushEvent } from "@/lib/analytics";
 
-// Hero component map — lazy loaded
-/*
- * Previous animated JSX illustration map, kept commented for rollback.
- *
- * import dynamic from "next/dynamic";
- * const HERO_MAP: Record<string, React.ComponentType> = {
- *   "managed-cloud-hosting": dynamic(() => import("@/components/solutions/heroes/CloudHostingHero")),
- *   "managed-private-cloud": dynamic(() => import("@/components/solutions/heroes/PrivateCloudHero")),
- *   "managed-hybrid-cloud": dynamic(() => import("@/components/solutions/heroes/HybridCloudHero")),
- *   "cloud-migration": dynamic(() => import("@/components/solutions/heroes/CloudMigrationHero")),
- *   "backup-as-a-service": dynamic(() => import("@/components/solutions/heroes/BackupHero")),
- *   "disaster-recovery": dynamic(() => import("@/components/solutions/heroes/DisasterRecoveryHero")),
- *   "high-availability": dynamic(() => import("@/components/solutions/heroes/HighAvailabilityHero")),
- *   "ransomware-recovery": dynamic(() => import("@/components/solutions/heroes/RansomwareRecoveryHero")),
- *   "ibm-i-security": dynamic(() => import("@/components/solutions/heroes/IBMiSecurityHero")),
- *   "protection-suite": dynamic(() => import("@/components/solutions/heroes/ProtectionSuiteHero")),
- *   "security-monitoring": dynamic(() => import("@/components/solutions/heroes/SecurityMonitoringHero")),
- *   "threat-detection": dynamic(() => import("@/components/solutions/heroes/ThreatDetectionHero")),
- *   "endpoint-security": dynamic(() => import("@/components/solutions/heroes/EndpointSecurityHero")),
- *   "managed-microsoft": dynamic(() => import("@/components/solutions/heroes/ManagedMicrosoftHero")),
- *   "automation-suite": dynamic(() => import("@/components/solutions/heroes/AutomationSuiteHero")),
- *   "systems-management": dynamic(() => import("@/components/solutions/heroes/SystemsManagementHero")),
- *   "ibm-power-vs": dynamic(() => import("@/components/solutions/heroes/IBMPowerVSHero")),
- * };
- */
+/** Animated solution heroes — code-split so only the active page pays the cost. */
+const HERO_MAP: Record<string, React.ComponentType> = {
+  "managed-cloud-hosting": dynamic(() => import("@/components/solutions/heroes/CloudHostingHero")),
+  "managed-private-cloud": dynamic(() => import("@/components/solutions/heroes/PrivateCloudHero")),
+  "managed-hybrid-cloud": dynamic(() => import("@/components/solutions/heroes/HybridCloudHero")),
+  "cloud-migration": dynamic(() => import("@/components/solutions/heroes/CloudMigrationHero")),
+  "backup-as-a-service": dynamic(() => import("@/components/solutions/heroes/BackupHero")),
+  "disaster-recovery": dynamic(() => import("@/components/solutions/heroes/DisasterRecoveryHero")),
+  "high-availability": dynamic(() => import("@/components/solutions/heroes/HighAvailabilityHero")),
+  "ransomware-recovery": dynamic(() => import("@/components/solutions/heroes/RansomwareRecoveryHero")),
+  "ibm-i-security": dynamic(() => import("@/components/solutions/heroes/IBMiSecurityHero")),
+  "protection-suite": dynamic(() => import("@/components/solutions/heroes/ProtectionSuiteHero")),
+  "security-monitoring": dynamic(() => import("@/components/solutions/heroes/SecurityMonitoringHero")),
+  "threat-detection": dynamic(() => import("@/components/solutions/heroes/ThreatDetectionHero")),
+  "endpoint-security": dynamic(() => import("@/components/solutions/heroes/EndpointSecurityHero")),
+  "managed-microsoft": dynamic(() => import("@/components/solutions/heroes/ManagedMicrosoftHero")),
+  "automation-suite": dynamic(() => import("@/components/solutions/heroes/AutomationSuiteHero")),
+  "systems-management": dynamic(() => import("@/components/solutions/heroes/SystemsManagementHero")),
+  "ibm-power-vs": dynamic(() => import("@/components/solutions/heroes/IBMPowerVSHero")),
+};
 
 const SOLUTION_HERO_ALTS: Record<string, string> = {
   "managed-cloud-hosting": "Generated illustration of managed cloud hosting infrastructure",
@@ -106,6 +104,17 @@ interface SectionData {
     imageAlt?: string;
     hero_image_alt?: string;
     heroImageAlt?: string;
+    demo_video_url?: string;
+    demoVideoUrl?: string;
+    demo_poster?: string;
+    demoPoster?: string;
+    demo_caption?: string;
+    experiment_id?: string;
+    experimentId?: string;
+    headline_b?: string;
+    headlineB?: string;
+    cta_primary_b?: CtaLink;
+    ctaPrimaryB?: CtaLink;
   };
   features?: {
     eyebrow?: string;
@@ -200,9 +209,50 @@ export default function DynamicSolutionPage({
             is_visible: true,
           }));
 
-  const sectionOrder = visibleOrdered.map((section) => section.section_key);
+  // Smart related solutions (#20): fill empty / auto related sections from catalog.
+  const autoRelatedItems = relatedItemsForCms(slug, 3);
+  const enrichedOrdered = visibleOrdered.map((section) => {
+    if (section.section_key !== "related" && section.section_type !== "related") return section;
+    const content = (section.content ?? {}) as Record<string, unknown>;
+    const items = Array.isArray(content.items) ? content.items : [];
+    const useAuto = content.auto === true || items.length === 0;
+    if (!useAuto) return section;
+    return {
+      ...section,
+      content: {
+        ...content,
+        eyebrow: content.eyebrow ?? "Related",
+        heading: content.heading ?? "Related solutions",
+        description:
+          content.description ??
+          "Adjacent ICE services commonly evaluated with this offer.",
+        auto: true,
+        items: autoRelatedItems,
+      },
+    };
+  });
+  const hasRelated = enrichedOrdered.some(
+    (s) => s.section_key === "related" || s.section_type === "related",
+  );
+  if (!hasRelated && autoRelatedItems.length > 0) {
+    enrichedOrdered.push({
+      section_key: "related",
+      section_type: "related",
+      content: {
+        eyebrow: "Related",
+        heading: "Related solutions",
+        description: "Adjacent ICE services commonly evaluated with this offer.",
+        auto: true,
+        items: autoRelatedItems,
+      },
+      sort_order: 900,
+      is_visible: true,
+    });
+  }
+
+  const sectionOrder = enrichedOrdered.map((section) => section.section_key);
   const orderedExtras: Record<string, React.ReactNode> = {};
-  for (const section of visibleOrdered) {
+  for (const section of enrichedOrdered) {
     // Hero/features/process/benefits/cta use bespoke layout chrome; everything
     // else (value_props, banner, roi, stats, use_cases, faq, related, …) goes
     // through GenericCMSSections so comparison tables and FAQs always appear.
@@ -211,7 +261,7 @@ export default function DynamicSolutionPage({
     }
   }
   // Legacy path (no ordered data): render extras as one block.
-  const extraSections = visibleOrdered.filter((section) => !KNOWN_KEYS.includes(section.section_key));
+  const extraSections = enrichedOrdered.filter((section) => !KNOWN_KEYS.includes(section.section_key));
 
   const categoryFallback = CATEGORY_MAP[slug] ?? { label: "Solutions", icon: "Globe" };
   const categoryLabel =
@@ -236,8 +286,46 @@ export default function DynamicSolutionPage({
     `${solutionTitle} illustration`,
   );
 
+  const AnimatedHero = HERO_MAP[slug];
+  const heroVisualization = AnimatedHero ? (
+    <AnimatedHero />
+  ) : heroImageSrc ? (
+    <SolutionHeroImage src={heroImageSrc} alt={heroImageAlt ?? ""} />
+  ) : undefined;
+
+  const demoVideoUrl = firstText(hero?.demo_video_url, hero?.demoVideoUrl);
+  const demoPoster = firstText(hero?.demo_poster, hero?.demoPoster, heroImageSrc);
+  const demoCaption = firstText(hero?.demo_caption) ?? `${solutionTitle} product demo (muted)`;
+
+  const mutedDemo = demoVideoUrl ? (
+    <section className="mx-auto max-w-container px-4 py-10 md:px-8">
+      <SolutionMutedDemo
+        videoSrc={demoVideoUrl}
+        posterSrc={demoPoster}
+        caption={demoCaption}
+        className="mx-auto max-w-3xl"
+      />
+    </section>
+  ) : null;
+
+  const genericExtras =
+    sectionOrder.length > 0 ? undefined : (
+      <>
+        {mutedDemo}
+        <GenericCMSSections sections={extraSections} />
+      </>
+    );
+
+  const extrasWithDemo =
+    mutedDemo && sectionOrder.length > 0
+      ? { __demo: mutedDemo, ...orderedExtras }
+      : orderedExtras;
+  const orderWithDemo =
+    mutedDemo && sectionOrder.length > 0 ? ["__demo", ...sectionOrder] : sectionOrder;
+
   return (
     <SolutionPageLayout
+      solutionSlug={slug}
       metricsPreset={slug as MetricPreset}
       title={solutionTitle}
       subtitle={hero?.subheadline ?? ""}
@@ -245,9 +333,7 @@ export default function DynamicSolutionPage({
         label: categoryLabel,
         icon: <CategoryIcon className="size-4" aria-hidden="true" />,
       }}
-      heroVisualization={
-        heroImageSrc ? <SolutionHeroImage src={heroImageSrc} alt={heroImageAlt ?? ""} /> : undefined
-      }
+      heroVisualization={heroVisualization}
       heroEyebrow={undefined}
       heroProofLabels={hero?.proof_labels ?? hero?.proofLabels}
       heroCtaPrimary={{
@@ -273,11 +359,9 @@ export default function DynamicSolutionPage({
         heading: sections.benefits?.heading,
         description: sections.benefits?.description,
       }}
-      sectionOrder={sectionOrder.length > 0 ? sectionOrder : undefined}
-      orderedExtras={sectionOrder.length > 0 ? orderedExtras : undefined}
-      extraSections={
-        sectionOrder.length > 0 ? undefined : <GenericCMSSections sections={extraSections} />
-      }
+      sectionOrder={orderWithDemo.length > 0 ? orderWithDemo : undefined}
+      orderedExtras={orderWithDemo.length > 0 ? extrasWithDemo : undefined}
+      extraSections={genericExtras}
       ctaTitle={cta?.heading ?? cta?.headline ?? "Ready to Speak to an Expert?"}
       ctaSubtitle={
         cta?.description ??

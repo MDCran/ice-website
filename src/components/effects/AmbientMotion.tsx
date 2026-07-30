@@ -16,8 +16,10 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import { cx } from "@/utils/cx";
+import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
+import { AMBIENT_CYCLE_SECONDS } from "@/lib/motion";
 
 /** Shared slow ease used across ambient loops. */
 const AMBIENT_EASE = "easeInOut" as const;
@@ -29,18 +31,18 @@ export function FloatY({
   children,
   className,
   distance = 8,
-  duration = 7,
+  duration = AMBIENT_CYCLE_SECONDS,
   delay = 0,
 }: {
   children: ReactNode;
   className?: string;
   /** Peak upward travel in px. Keep small (6–12). */
   distance?: number;
-  /** Full loop length in seconds (6–8 is the sweet spot). */
+  /** Full loop length in seconds. Defaults to the shared ambient rhythm. */
   duration?: number;
   delay?: number;
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
 
   if (reduceMotion) {
     return <div className={className}>{children}</div>;
@@ -64,10 +66,10 @@ export function FloatY({
    Reduced motion → static (rendered dimly) so the composition still reads. */
 export function PulseGlow({
   className,
-  duration = 8,
+  duration = AMBIENT_CYCLE_SECONDS,
   delay = 0,
-  from = 0.35,
-  to = 0.7,
+  from = 0.22,
+  to = 0.44,
 }: {
   className?: string;
   duration?: number;
@@ -76,7 +78,7 @@ export function PulseGlow({
   from?: number;
   to?: number;
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
 
   return (
     <motion.div
@@ -101,7 +103,7 @@ export function Drift({
   children,
   className,
   distance = 24,
-  duration = 16,
+  duration = AMBIENT_CYCLE_SECONDS,
   delay = 0,
 }: {
   children?: ReactNode;
@@ -111,7 +113,7 @@ export function Drift({
   duration?: number;
   delay?: number;
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
 
   if (reduceMotion) {
     return (
@@ -140,13 +142,13 @@ export function Drift({
 export function PulseAccent({
   className,
   delay = 0,
-  duration = 4,
+  duration = AMBIENT_CYCLE_SECONDS / 2,
 }: {
   className?: string;
   delay?: number;
   duration?: number;
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
 
   return (
     <span aria-hidden="true" className={cx("relative inline-flex size-2 shrink-0", className)}>
@@ -177,12 +179,12 @@ export function BrandOrbs({
   variant?: "subtle" | "onBrand";
   className?: string;
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useHydratedReducedMotion();
 
   const tint =
     variant === "onBrand"
-      ? { a: "bg-brand-400/40", b: "bg-brand-600/40", c: "bg-brand-solid/25" }
-      : { a: "bg-brand-solid/15", b: "bg-brand-solid/10", c: "bg-brand-solid/[0.07]" };
+      ? { a: "bg-brand-400/28", b: "bg-brand-600/26", c: "bg-brand-solid/18" }
+      : { a: "bg-brand-solid/10", b: "bg-brand-solid/[0.07]", c: "bg-brand-solid/[0.05]" };
 
   // Static fallback: render the orbs dimly so the section keeps its depth,
   // but with no loop running.
@@ -203,20 +205,20 @@ export function BrandOrbs({
       <motion.div
         className={cx(orbBase, tint.a, "-top-24 -left-16 size-72")}
         style={{ willChange: "transform, opacity" }}
-        animate={{ x: [0, 26, 0], y: [0, 16, 0], opacity: [0.4, 0.7, 0.4], scale: [1, 1.1, 1] }}
-        transition={{ duration: 18, repeat: Infinity, ease: AMBIENT_EASE }}
+        animate={{ x: [0, 18, 0], y: [0, 12, 0], opacity: [0.32, 0.5, 0.32], scale: [1, 1.06, 1] }}
+        transition={{ duration: AMBIENT_CYCLE_SECONDS, repeat: Infinity, ease: AMBIENT_EASE }}
       />
       <motion.div
         className={cx(orbBase, tint.b, "top-1/3 -right-20 size-80")}
         style={{ willChange: "transform, opacity" }}
-        animate={{ x: [0, -22, 0], y: [0, -18, 0], opacity: [0.55, 0.3, 0.55], scale: [1, 1.08, 1] }}
-        transition={{ duration: 22, delay: 1.5, repeat: Infinity, ease: AMBIENT_EASE }}
+        animate={{ x: [0, -16, 0], y: [0, -12, 0], opacity: [0.4, 0.24, 0.4], scale: [1, 1.05, 1] }}
+        transition={{ duration: AMBIENT_CYCLE_SECONDS, delay: -AMBIENT_CYCLE_SECONDS / 3, repeat: Infinity, ease: AMBIENT_EASE }}
       />
       <motion.div
         className={cx(orbBase, tint.c, "bottom-0 left-1/3 size-64")}
         style={{ willChange: "transform, opacity" }}
-        animate={{ x: [0, 18, 0], y: [0, -14, 0], opacity: [0.35, 0.6, 0.35], scale: [1, 1.12, 1] }}
-        transition={{ duration: 26, delay: 3, repeat: Infinity, ease: AMBIENT_EASE }}
+        animate={{ x: [0, 14, 0], y: [0, -10, 0], opacity: [0.24, 0.4, 0.24], scale: [1, 1.07, 1] }}
+        transition={{ duration: AMBIENT_CYCLE_SECONDS, delay: -(AMBIENT_CYCLE_SECONDS * 2) / 3, repeat: Infinity, ease: AMBIENT_EASE }}
       />
     </div>
   );
