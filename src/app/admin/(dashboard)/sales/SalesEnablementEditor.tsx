@@ -66,6 +66,7 @@ export default function SalesEnablementEditor({
   const [message, setMessage] = useState("");
   const [sectionId, setSectionId] = useState(initialSectionId);
   const [updatedAt, setUpdatedAt] = useState(initialUpdatedAt);
+  const [guideOpen, setGuideOpen] = useState(true);
 
   const enabledModuleCount = useMemo(
     () => Object.values(config.modules).filter(Boolean).length,
@@ -127,8 +128,9 @@ export default function SalesEnablementEditor({
           <div>
             <h1 className="text-display-xs font-semibold text-primary">Sales Enablement</h1>
             <p className="mt-1 max-w-2xl text-sm text-tertiary">
-              Control the enterprise buyer journey, decision proof, conversion paths, and
-              commercial planning content from one structured CMS workspace.
+              This is the control center for the enterprise buyer experience: the content,
+              proof, tools, forms, and calls to action that help a serious buyer decide to
+              contact ICE.
             </p>
             <p className="mt-2 text-xs text-quaternary">
               {sectionId ? `CMS section ${sectionId.slice(0, 8)} · ` : ""}
@@ -136,17 +138,57 @@ export default function SalesEnablementEditor({
             </p>
           </div>
         </div>
-        <Button
-          size="md"
-          iconLeading={Save01}
-          isLoading={saveStatus === "saving"}
-          showTextWhileLoading
-          onClick={handleSave}
-          className="shrink-0"
-        >
-          {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : "Save changes"}
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+          <Button
+            size="md"
+            color="secondary"
+            onClick={() => setGuideOpen((open) => !open)}
+          >
+            {guideOpen ? "Hide guide" : "How this works"}
+          </Button>
+          <Button
+            size="md"
+            iconLeading={Save01}
+            isLoading={saveStatus === "saving"}
+            showTextWhileLoading
+            onClick={handleSave}
+          >
+            {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : "Save changes"}
+          </Button>
+        </div>
       </header>
+
+      {guideOpen && (
+        <section className="overflow-hidden rounded-xl bg-brand-primary_alt/60 ring-1 ring-brand/20">
+          <div className="border-b border-brand/15 px-5 py-4">
+            <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">What this controls</p>
+            <h2 className="mt-1 text-lg font-semibold text-primary">Build and publish the buyer journey</h2>
+            <p className="mt-1 max-w-3xl text-sm text-tertiary">
+              Sales Enablement is not your CRM or a lead list. It controls what enterprise
+              prospects see, what proof they can evaluate, and which actions invite them into
+              a conversation with your team.
+            </p>
+          </div>
+          <div className="grid gap-px bg-brand/15 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["1", "Choose what is live", "Turn the entire experience or individual modules on and off."],
+              ["2", "Shape the story", "Order the modules so the page follows your preferred buying narrative."],
+              ["3", "Edit the content", "Update headlines, proof, personas, tools, FAQs, forms, and CTAs."],
+              ["4", "Save and publish", "Save changes to revalidate the public sales surfaces and homepage placements."],
+            ].map(([number, title, description]) => (
+              <div key={number} className="bg-primary/70 p-4">
+                <span className="flex size-7 items-center justify-center rounded-full bg-brand-solid text-xs font-bold text-white">{number}</span>
+                <h3 className="mt-3 text-sm font-semibold text-primary">{title}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-tertiary">{description}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col gap-2 border-t border-brand/15 px-5 py-3 text-xs text-tertiary sm:flex-row sm:items-center sm:justify-between">
+            <span><strong className="font-semibold text-secondary">Recommended first visit:</strong> enable the experience, choose your modules, then edit the hero and CTAs.</span>
+            <a href="#sales-enterprise-positioning" className="font-semibold text-brand-secondary hover:underline">Jump to first content section →</a>
+          </div>
+        </section>
+      )}
 
       {message && (
         <div
@@ -174,9 +216,24 @@ export default function SalesEnablementEditor({
         </span>
       </div>
 
+      <nav aria-label="Sales enablement sections" className="flex flex-wrap gap-2 rounded-xl bg-primary p-3 ring-1 ring-secondary">
+        <span className="px-2 py-1.5 text-xs font-semibold text-tertiary">Jump to:</span>
+        {[
+          ["Controls", "#sales-publication-controls"],
+          ["Arrange story", "#sales-module-order-and-visibility"],
+          ["Edit content", "#sales-enterprise-positioning"],
+          ["Edit CTAs", "#sales-global-conversion-surfaces"],
+        ].map(([label, href]) => (
+          <a key={href} href={href} className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary ring-1 ring-secondary transition hover:ring-brand">
+            {label}
+          </a>
+        ))}
+      </nav>
+
       <Panel
+        id="sales-publication-controls"
         title="Publication controls"
-        description="Master availability and global sales-surface visibility."
+        description="Start here: decide whether the buyer experience and each public placement are live."
       >
         <div className="rounded-lg bg-secondary p-4 ring-1 ring-secondary ring-inset">
           <Toggle
@@ -224,8 +281,9 @@ export default function SalesEnablementEditor({
       </Panel>
 
       <Panel
+        id="sales-module-order-and-visibility"
         title="Module order and visibility"
-        description={`${enabledModuleCount} of ${config.sectionOrder.length} modules enabled. Reorder modules to match the buying narrative.`}
+        description={`${enabledModuleCount} of ${config.sectionOrder.length} modules enabled. Reorder the page to match the story you want buyers to follow.`}
       >
         <ol className="space-y-2">
           {config.sectionOrder.map((moduleId, index) => (
@@ -270,7 +328,7 @@ export default function SalesEnablementEditor({
 
       <Panel
         title="20 live revenue capabilities"
-        description="A compact readiness view of the connected buyer-enablement system. Each capability follows its parent module switch."
+        description="A read-only health check showing which buyer capabilities are currently live. Each follows its parent module switch."
       >
         <div className="grid gap-2 sm:grid-cols-2">
           {SALES_UPGRADE_CATALOG.map((capability, index) => {
@@ -732,13 +790,6 @@ export default function SalesEnablementEditor({
           }
         />
         <CtaFields
-          title="Sticky secondary CTA"
-          value={config.global.stickySecondaryCta}
-          onChange={(stickySecondaryCta) =>
-            setSection("global", { ...config.global, stickySecondaryCta })
-          }
-        />
-        <CtaFields
           title="Homepage preview CTA"
           value={config.global.homePreviewCta}
           onChange={(homePreviewCta) =>
@@ -1078,16 +1129,18 @@ function StringList({
 }
 
 function Panel({
+  id,
   title,
   description,
   children,
 }: {
+  id?: string;
   title: string;
   description: string;
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
+    <section id={id} className="scroll-mt-24 overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
       <div className="border-b border-secondary px-5 py-4">
         <h2 className="text-sm font-semibold text-primary">{title}</h2>
         <p className="mt-0.5 text-xs text-tertiary">{description}</p>
@@ -1109,7 +1162,7 @@ function EditorSection({
   children: ReactNode;
 }) {
   return (
-    <details className="group overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
+    <details id={`sales-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`} className="group scroll-mt-24 overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2">
         <div>
           <h2 className="text-sm font-semibold text-primary">{title}</h2>

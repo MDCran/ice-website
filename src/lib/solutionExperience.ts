@@ -93,6 +93,17 @@ export const SOLUTION_EXPERIENCE: Record<string, SolutionExperience> = {
     architecture: ["Production", "Threat monitoring", "Immutable vault", "Clean room", "Validated recovery"],
     resources: DEFAULT_EXPERIENCE.resources,
   },
+  "as400": {
+    outcome: "Modernize AS400 without rewriting mission-critical applications",
+    proof: "IBM i enterprise - AS/400 hosting, security, backup, HA, and DR under one managed model",
+    industries: ["Manufacturing", "Finance", "Healthcare"],
+    platforms: ["IBM i", "Hybrid"],
+    architecture: ["AS400 workloads", "Secure connectivity", "IBM Power platform", "Protected storage", "ICE operations"],
+    resources: [
+      { title: "AS400 modernization assessment", kind: "Assessment", href: "/contact?service=AS400" },
+      { title: "IBM i security hardening checklist", kind: "Checklist", href: "/resources" },
+    ],
+  },
   "ibm-i-security": {
     outcome: "Reduce IBM i exposure with prioritized, auditable controls",
     proof: "Manufacturing · IBM i · Authority, exit-point, and audit hardening",

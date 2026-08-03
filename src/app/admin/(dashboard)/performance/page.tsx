@@ -79,6 +79,12 @@ export default async function PerformancePage() {
         </p>
       </div>
 
+      <div className="grid gap-3 rounded-xl bg-brand-primary_alt/60 p-4 ring-1 ring-brand/20 sm:grid-cols-3">
+        <div><p className="text-xs font-semibold text-brand-secondary">LCP</p><p className="mt-1 text-xs text-tertiary">How quickly the main content appears.</p></div>
+        <div><p className="text-xs font-semibold text-brand-secondary">INP</p><p className="mt-1 text-xs text-tertiary">How quickly the page responds to interaction.</p></div>
+        <div><p className="text-xs font-semibold text-brand-secondary">CLS</p><p className="mt-1 text-xs text-tertiary">How stable the layout feels while loading.</p></div>
+      </div>
+
       {error ? (
         <div className="flex items-start gap-3 rounded-xl bg-primary p-5 ring-1 ring-secondary">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning-primary" />

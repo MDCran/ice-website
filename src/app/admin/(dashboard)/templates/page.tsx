@@ -414,6 +414,11 @@ export default async function TemplatesPage() {
 
   return (
     <div className="space-y-10">
+      <div className="rounded-xl bg-brand-primary_alt/60 p-5 ring-1 ring-brand/20">
+        <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">Reusable building blocks</p>
+        <h2 className="mt-1 text-lg font-semibold text-primary">Use templates to keep pages consistent</h2>
+        <p className="mt-1 max-w-3xl text-sm leading-relaxed text-tertiary">Each template shows the structure and content fields available for a section. Open a page in the CMS to add or edit that section; the “Used on” links below show where the pattern is already in use.</p>
+      </div>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <FeaturedIcon icon={LayersThree01} color="brand" theme="modern" size="lg" />

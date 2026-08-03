@@ -56,6 +56,22 @@ export default async function ClientsListPage({
         <CreateClientModal />
       </div>
 
+      <div className="mb-6 grid gap-3 rounded-xl bg-secondary p-4 ring-1 ring-secondary sm:grid-cols-3">
+        {[
+          ["1", "Create the account", "Add the company and primary contact."],
+          ["2", "Set up access", "Invite the client and confirm their workspace."],
+          ["3", "Track the relationship", "Use the account page for balance, files, and activity."],
+        ].map(([step, title, description]) => (
+          <div key={step} className="flex gap-3">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white">{step}</span>
+            <div>
+              <p className="text-sm font-semibold text-primary">{title}</p>
+              <p className="mt-0.5 text-xs text-tertiary">{description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="mb-6">
         <ClientsSearch defaultValue={q ?? ""} />
       </div>

@@ -188,7 +188,6 @@ export interface SalesEnablementConfig {
     stickyTitle: string;
     stickyDescription: string;
     stickyPrimaryCta: SalesCta;
-    stickySecondaryCta: SalesCta;
     softLeadHeadline: string;
     softLeadDescription: string;
     homePreviewEyebrow: string;
@@ -800,15 +799,11 @@ export const DEFAULT_SALES_ENABLEMENT: SalesEnablementConfig = {
     reassurance: "No generic pitch deck. The first session is organized around your environment and decision criteria.",
   },
   global: {
-    stickyTitle: "Planning an enterprise infrastructure decision?",
-    stickyDescription: "Bring the requirements. ICE will help structure the technical and commercial path.",
+    stickyTitle: "Planning a major infrastructure decision?",
+    stickyDescription: "Talk it through with a US-based IBM Power and cloud infrastructure specialist.",
     stickyPrimaryCta: {
-      label: "Plan an executive briefing",
-      href: "/contact?service=Enterprise%20Infrastructure%20Planning&source=sticky_enterprise",
-    },
-    stickySecondaryCta: {
-      label: "Talk to an architect",
-      href: "/contact?service=Executive%20Architecture%20Review&source=sticky_enterprise",
+      label: "Call an architect now",
+      href: "tel:18007869188",
     },
     softLeadHeadline: "Want an executive infrastructure assessment?",
     softLeadDescription:
@@ -1000,10 +995,6 @@ export function resolveSalesEnablement(raw: unknown): SalesEnablementConfig {
       stickyPrimaryCta: safeCta(
         merged.global.stickyPrimaryCta,
         DEFAULT_SALES_ENABLEMENT.global.stickyPrimaryCta,
-      ),
-      stickySecondaryCta: safeCta(
-        merged.global.stickySecondaryCta,
-        DEFAULT_SALES_ENABLEMENT.global.stickySecondaryCta,
       ),
       homePreviewCta: safeCta(
         merged.global.homePreviewCta,

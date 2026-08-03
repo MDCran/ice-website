@@ -24,8 +24,7 @@ function sendBeacon(payload: Record<string, unknown>) {
   const body = JSON.stringify(payload);
   if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
     const blob = new Blob([body], { type: "application/json" });
-    navigator.sendBeacon("/api/analytics/pageview", blob);
-    return;
+    if (navigator.sendBeacon("/api/analytics/pageview", blob)) return;
   }
   void fetch("/api/analytics/pageview", {
     method: "POST",

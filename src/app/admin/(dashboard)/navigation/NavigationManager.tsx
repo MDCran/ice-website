@@ -454,6 +454,16 @@ export default function NavigationManager({
 
   return (
     <div className="space-y-8 pb-20">
+      <section className="rounded-xl bg-brand-primary_alt/60 p-5 ring-1 ring-brand/20">
+        <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">Public site structure</p>
+        <h1 className="mt-1 text-xl font-semibold text-primary">Navigation controls how visitors find things</h1>
+        <p className="mt-1 max-w-3xl text-sm leading-relaxed text-tertiary">Reorder top-level links, expand a link into a mega menu, and manage footer destinations. Changes stay local until you save them.</p>
+        <div className="mt-4 grid gap-2 text-xs text-secondary sm:grid-cols-3">
+          <div className="rounded-lg bg-primary/70 p-3"><strong className="block text-primary">1. Arrange</strong>Use the arrows to set the order visitors see.</div>
+          <div className="rounded-lg bg-primary/70 p-3"><strong className="block text-primary">2. Configure</strong>Toggle visibility or add a destination URL.</div>
+          <div className="rounded-lg bg-primary/70 p-3"><strong className="block text-primary">3. Save</strong>Publish the updated navigation when ready.</div>
+        </div>
+      </section>
       {/* ═══ NAVBAR ═══ */}
       <section>
         <div className="mb-4 flex items-start justify-between gap-4">

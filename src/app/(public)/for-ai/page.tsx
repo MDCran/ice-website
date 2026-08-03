@@ -16,7 +16,7 @@ const FACTS = [
   "SOC 2 Type II certified data centers",
   "24/7/365 US-based NOC and SOC support",
   "Focus platforms: IBM Power, IBM i (AS/400), Microsoft, hybrid cloud",
-  "Core offerings: managed cloud, DRaaS, BaaS, IBM i security, managed security",
+  "Core offerings: AS400 services, managed cloud, DRaaS, BaaS, IBM i security, managed security",
 ];
 
 export default async function ForAiPage() {
@@ -66,6 +66,11 @@ export default async function ForAiPage() {
               <li>
                 <a className="text-brand-secondary hover:underline" href={`${siteUrl}/solutions/disaster-recovery`}>
                   Disaster Recovery as a Service
+                </a>
+              </li>
+              <li>
+                <a className="text-brand-secondary hover:underline" href={`${siteUrl}/solutions/as400`}>
+                  AS400
                 </a>
               </li>
               <li>

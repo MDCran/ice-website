@@ -10,6 +10,7 @@ import { Grid } from "@/components/shared-assets/background-patterns/grid";
 import { cx } from "@/utils/cx";
 
 const CORETV_URL = "https://coretv.co";
+const AS400_FOOTER_LINK = { label: "AS400 Hosting", href: "/solutions/as400" };
 
 function CoreTvRedirectModal({
   isOpen,
@@ -116,6 +117,7 @@ const DEFAULT_SOLUTION_CATEGORIES = [
   {
     heading: "Managed Services",
     links: [
+      AS400_FOOTER_LINK,
       { label: "Managed Microsoft", href: "/solutions/managed-microsoft" },
       { label: "Automation Suite", href: "/solutions/automation-suite" },
       { label: "Systems Management", href: "/solutions/systems-management" },
@@ -124,9 +126,47 @@ const DEFAULT_SOLUTION_CATEGORIES = [
   },
 ];
 
+function ensureAs400FooterLink(
+  categories: { heading: string; links: { label: string; href: string }[] }[],
+) {
+  const hasAs400 = categories.some((category) =>
+    category.links.some((link) => link.href === AS400_FOOTER_LINK.href),
+  );
+
+  if (hasAs400) {
+    return categories.map((category) => ({
+      ...category,
+      links: category.links.map((link) =>
+        link.href === AS400_FOOTER_LINK.href ? AS400_FOOTER_LINK : link,
+      ),
+    }));
+  }
+
+  const managedIndex = categories.findIndex((category) =>
+    category.heading.toLowerCase().includes("managed services"),
+  );
+
+  if (managedIndex >= 0) {
+    return categories.map((category, index) =>
+      index === managedIndex
+        ? { ...category, links: [AS400_FOOTER_LINK, ...category.links] }
+        : category,
+    );
+  }
+
+  return [
+    ...categories,
+    {
+      heading: "Managed Services",
+      links: [AS400_FOOTER_LINK],
+    },
+  ];
+}
+
 const DEFAULT_LEGAL_LINKS = [
   { label: "Terms of Service", href: "/terms-of-service" },
   { label: "SMS Consent", href: "/sms-consent" },
+  { label: "Email preferences", href: "/subscribe" },
 ];
 
 export interface FooterCMSData {
@@ -163,7 +203,7 @@ const footerLinkClass =
 export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   const [coreTvOpen, setCoreTvOpen] = useState(false);
   const quickLinks = cmsData?.quickLinks ?? DEFAULT_QUICK_LINKS;
-  const solutionCategories = cmsData?.solutionCategories ?? DEFAULT_SOLUTION_CATEGORIES;
+  const solutionCategories = ensureAs400FooterLink(cmsData?.solutionCategories ?? DEFAULT_SOLUTION_CATEGORIES);
   const legalLinks = cmsData?.legalLinks ?? DEFAULT_LEGAL_LINKS;
   const company = cmsData?.companyInfo;
   const footerCopy = cmsData?.footerCopy;
@@ -344,6 +384,11 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
             </button>
           </div>
         </div>
+
+        <div
+          aria-hidden="true"
+          className="h-28 md:h-32"
+        />
       </div>
 
       <CoreTvRedirectModal isOpen={coreTvOpen} onClose={() => setCoreTvOpen(false)} />

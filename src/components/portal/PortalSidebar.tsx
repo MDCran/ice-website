@@ -8,10 +8,8 @@ import {
   Home01,
   Building07,
   Folder,
-  File02,
   ClipboardCheck,
   ArrowLeft,
-  BarChart01,
 } from "@untitledui/icons";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -29,8 +27,6 @@ const navItems: NavItem[] = [
   { label: "Dashboard", href: "/portal", icon: Home01 },
   { label: "Company & Contacts", href: "/portal/profile", icon: Building07 },
   { label: "Resources", href: "/portal/resources", icon: Folder },
-  { label: "QBR & reports", href: "/portal/reports", icon: BarChart01 },
-  { label: "Invoices", href: "/portal/invoices", icon: File02 },
   {
     label: "Surveys",
     href: "/portal/surveys",

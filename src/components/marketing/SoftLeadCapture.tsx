@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { usePathname } from "next/navigation";
 import { AlertCircle, CheckCircle, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
 import { pushEvent } from "@/lib/analytics";
 import { cx } from "@/utils/cx";
@@ -40,6 +41,7 @@ export default function SoftLeadCapture({
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [phone, setPhone] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -132,6 +134,7 @@ export default function SoftLeadCapture({
           service: "Free Assessment",
           message: "Soft lead capture — requested a free infrastructure assessment.",
           smsConsent: false,
+          marketingConsent,
         }),
       });
       if (!res.ok) {
@@ -216,6 +219,13 @@ export default function SoftLeadCapture({
                 placeholder="(561) 555-0100"
               />
               <Input size="md" label="Company" value={company} onChange={setCompany} />
+              <Checkbox
+                size="sm"
+                aria-label="Email marketing consent"
+                isSelected={marketingConsent}
+                onChange={setMarketingConsent}
+                hint="Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time."
+              />
               <Button type="submit" size="lg" isLoading={status === "loading"} showTextWhileLoading>
                 {status === "loading" ? "Sending…" : "Request assessment"}
               </Button>

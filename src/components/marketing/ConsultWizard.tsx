@@ -41,13 +41,30 @@ const STEP_META: Record<Step, { title: string; description: string }> = {
   },
 };
 
-const URGENCY_OPTIONS = [
+type UrgencyId = "exploring" | "planning" | "urgent";
+type UrgencyOption = { id: UrgencyId; label: string; hint: string };
+type QuestionProfile = {
+  key: string;
+  matchers: string[];
+  scopeTitle: string;
+  scopeDescription: string;
+  platformLabel: string;
+  platformOptions: readonly string[];
+  timelineLabel: string;
+  urgencyOptions: UrgencyOption[];
+  detailTitle: string;
+  detailDescription: string;
+  detailLabel: string;
+  detailPlaceholder: string;
+};
+
+const URGENCY_OPTIONS: UrgencyOption[] = [
   { id: "exploring", label: "Exploring options", hint: "No immediate deadline" },
   { id: "planning", label: "Planning this quarter", hint: "Budget / design in progress" },
   { id: "urgent", label: "Urgent / active issue", hint: "Need help within days" },
-] as const;
+];
 
-const PLATFORM_OPTIONS = [
+const DEFAULT_PLATFORM_OPTIONS = [
   "IBM i / AS/400",
   "IBM Power / AIX",
   "Microsoft / Azure",
@@ -68,6 +85,9 @@ type PrefillIntent = {
 };
 
 const SERVICE_ALIASES = [
+  ["AS/400", "AS400"],
+  ["IBM i / AS/400", "AS400"],
+  ["iSeries", "AS400"],
   ["Cloud Migration Services", "Cloud Migration"],
   ["Disaster Recovery as a Service", "Disaster Recovery"],
   ["High Availability as a Service", "High Availability"],
@@ -75,7 +95,7 @@ const SERVICE_ALIASES = [
   ["IBM Power Virtual Servers", "IBM Power VS"],
   ["Managed Microsoft Services", "Managed Microsoft"],
   ["Threat Detection", "Threat Detection & Response"],
-] as const;
+];
 
 function normalizeServiceName(value: string) {
   return value
@@ -85,6 +105,195 @@ function normalizeServiceName(value: string) {
     .replace(/\bservices?\b/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+function formatServiceDisplayName(value: string) {
+  const trimmed = value.trim().replace(/\s+/g, " ");
+  if (!trimmed) return "";
+
+  const exactWords: Record<string, string> = {
+    as400: "AS400",
+    "as/400": "AS/400",
+    ibm: "IBM",
+    i: "i",
+    aix: "AIX",
+    azure: "Azure",
+    microsoft: "Microsoft",
+    vmware: "VMware",
+    dr: "DR",
+    ha: "HA",
+    rpo: "RPO",
+    rto: "RTO",
+  };
+  const smallWords = new Set(["a", "an", "and", "as", "for", "in", "of", "the", "to"]);
+
+  return trimmed
+    .split(/(\s+|\/|-)/)
+    .map((part, index) => {
+      if (/^\s+$|^\/$|^-$/.test(part)) return part;
+      const lower = part.toLowerCase();
+      if (exactWords[lower]) return exactWords[lower];
+      if (index > 0 && smallWords.has(lower)) return lower;
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join("");
+}
+
+const DEFAULT_QUESTION_PROFILE: QuestionProfile = {
+  key: "default",
+  matchers: [],
+  scopeTitle: "Scope the request",
+  scopeDescription: "Confirm the service area, platform, and timing so the right ICE specialist can follow up.",
+  platformLabel: "Primary platform",
+  platformOptions: DEFAULT_PLATFORM_OPTIONS,
+  timelineLabel: "Timeline",
+  urgencyOptions: URGENCY_OPTIONS,
+  detailTitle: "Add useful context",
+  detailDescription: "Share environment details, deadlines, compliance needs, or anything the team should review first.",
+  detailLabel: "Anything else we should know? (optional)",
+  detailPlaceholder: "Environment details, compliance needs, current pain points...",
+};
+
+const QUESTION_PROFILES: QuestionProfile[] = [
+  {
+    key: "security",
+    matchers: ["security", "threat detection", "endpoint", "protection suite", "hardening"],
+    scopeTitle: "Scope the security request",
+    scopeDescription: "Confirm the environment, security driver, and timeline so a platform-aware security specialist can follow up.",
+    platformLabel: "Security scope",
+    platformOptions: [
+      "IBM i / AS/400",
+      "Microsoft / Azure",
+      "Endpoints / users",
+      "Network / firewall",
+      "Hybrid / multi-platform",
+      "Not sure yet",
+    ],
+    timelineLabel: "Security priority",
+    urgencyOptions: [
+      { id: "exploring", label: "Security posture review", hint: "Baseline / roadmap" },
+      { id: "planning", label: "Audit or hardening deadline", hint: "Compliance / project need" },
+      { id: "urgent", label: "Active threat or finding", hint: "Needs fast triage" },
+    ],
+    detailTitle: "Add security context",
+    detailDescription: "Share audit drivers, recent findings, platform exposure, or monitoring gaps the team should review.",
+    detailLabel: "Security details (optional)",
+    detailPlaceholder: "Audit deadline, current findings, IBM i authorities, endpoint scope, MFA/SIEM tooling, urgent concerns...",
+  },
+  {
+    key: "data-protection",
+    matchers: ["backup", "disaster recovery", "high availability", "ransomware", "continuity", "recovery"],
+    scopeTitle: "Scope the recovery need",
+    scopeDescription: "Confirm the systems to protect, recovery expectations, and timing so ICE can frame the right continuity plan.",
+    platformLabel: "Systems to protect",
+    platformOptions: [
+      "IBM i / AS/400",
+      "IBM Power / AIX",
+      "VMware",
+      "Windows / Linux",
+      "Microsoft / Azure",
+      "Hybrid / multi-platform",
+      "Not sure yet",
+    ],
+    timelineLabel: "Recovery priority",
+    urgencyOptions: [
+      { id: "exploring", label: "Review RPO / RTO", hint: "Validate requirements" },
+      { id: "planning", label: "Build a DR plan", hint: "Design / budget this quarter" },
+      { id: "urgent", label: "Active outage / recovery need", hint: "Escalate quickly" },
+    ],
+    detailTitle: "Add recovery context",
+    detailDescription: "Share current backup or replication methods, critical applications, and target recovery expectations.",
+    detailLabel: "Recovery details (optional)",
+    detailPlaceholder: "Current backup method, RPO/RTO targets, protected systems, outage scenario, test window, ransomware concern...",
+  },
+  {
+    key: "as400",
+    matchers: ["as400", "as 400", "ibm i", "iseries"],
+    scopeTitle: "Scope the AS400 / IBM i request",
+    scopeDescription: "Confirm whether this is hosting, support, security, backup, HA/DR, or lifecycle planning for your IBM i environment.",
+    platformLabel: "IBM platform focus",
+    platformOptions: [
+      "IBM i / AS/400",
+      "IBM Power / AIX",
+      "IBM Power VS",
+      "Hybrid / multi-platform",
+      "Not sure yet",
+    ],
+    timelineLabel: "IBM i planning need",
+    urgencyOptions: [
+      { id: "exploring", label: "Modernization review", hint: "Assess options" },
+      { id: "planning", label: "Hosting / lifecycle project", hint: "Budget or migration plan" },
+      { id: "urgent", label: "Production issue or audit risk", hint: "Needs specialist review" },
+    ],
+    detailTitle: "Add AS400 / IBM i context",
+    detailDescription: "Share platform version, hardware lifecycle, LPAR count, backup posture, or continuity goals.",
+    detailLabel: "AS400 / IBM i details (optional)",
+    detailPlaceholder: "IBM i release, Power model, LPAR count, current HA/DR tools, backup process, deadline, vendor constraints...",
+  },
+  {
+    key: "cloud",
+    matchers: ["managed cloud", "private cloud", "hybrid cloud", "cloud migration", "hosting", "power vs"],
+    scopeTitle: "Scope the cloud plan",
+    scopeDescription: "Confirm the workload type, hosting target, and planning stage so ICE can route the right cloud architect.",
+    platformLabel: "Workload / hosting target",
+    platformOptions: [
+      "IBM i / AS/400",
+      "IBM Power / AIX",
+      "VMware",
+      "Windows / Linux",
+      "Microsoft / Azure",
+      "Hybrid / multi-platform",
+      "Not sure yet",
+    ],
+    timelineLabel: "Planning stage",
+    urgencyOptions: [
+      { id: "exploring", label: "Sizing options", hint: "Early evaluation" },
+      { id: "planning", label: "Architecture / quote this quarter", hint: "Design in progress" },
+      { id: "urgent", label: "Capacity or hosting issue", hint: "Needs quick review" },
+    ],
+    detailTitle: "Add cloud context",
+    detailDescription: "Share workload mix, hosting requirements, migration constraints, compliance needs, or desired timeline.",
+    detailLabel: "Cloud details (optional)",
+    detailPlaceholder: "Current location, workload type, storage/compute needs, users, compliance requirements, migration window...",
+  },
+  {
+    key: "managed-services",
+    matchers: ["managed microsoft", "automation", "systems management", "managed services"],
+    scopeTitle: "Scope the managed services need",
+    scopeDescription: "Confirm the operational scope, platform mix, and timing so ICE can identify the right managed services team.",
+    platformLabel: "Operations scope",
+    platformOptions: [
+      "IBM i / AS/400",
+      "Microsoft / Azure",
+      "Windows / Linux",
+      "Hybrid / multi-platform",
+      "Not sure yet",
+    ],
+    timelineLabel: "Support priority",
+    urgencyOptions: [
+      { id: "exploring", label: "Operational review", hint: "Explore improvements" },
+      { id: "planning", label: "Managed support transition", hint: "Project this quarter" },
+      { id: "urgent", label: "Coverage gap / escalation", hint: "Needs help soon" },
+    ],
+    detailTitle: "Add operations context",
+    detailDescription: "Share current support coverage, ticket volume, systems under management, and operational gaps.",
+    detailLabel: "Managed services details (optional)",
+    detailPlaceholder: "Systems covered, current tools, coverage gaps, escalation pain points, automation goals, support timeline...",
+  },
+];
+
+function getQuestionProfile(service?: string) {
+  const normalized = normalizeServiceName(service ?? "");
+  if (!normalized) return DEFAULT_QUESTION_PROFILE;
+
+  return (
+    QUESTION_PROFILES.find((profile) =>
+      profile.matchers.some((matcher) => {
+        const normalizedMatcher = normalizeServiceName(matcher);
+        return normalized.includes(normalizedMatcher) || normalizedMatcher.includes(normalized);
+      }),
+    ) ?? DEFAULT_QUESTION_PROFILE
+  );
 }
 
 function serviceOptions(groups: ServiceGroup[]) {
@@ -152,6 +361,7 @@ export default function ConsultWizard({
     phone: "",
     message: "",
     smsConsent: false,
+    marketingConsent: false,
   });
   const [prefillIntent, setPrefillIntent] = useState<PrefillIntent | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -161,8 +371,21 @@ export default function ConsultWizard({
     const params = new URLSearchParams(window.location.search);
     const source = params.get("source") ?? undefined;
     const requestedService = params.get("service") ?? "";
-    const resolvedService = requestedService ? findServiceOption(requestedService, serviceGroups) : "";
     const summary = params.get("summary") ?? "";
+    const priority = params.get("priority") ?? "";
+    const priorityService =
+      !requestedService && /migration/i.test(priority)
+        ? "Cloud Migration"
+        : !requestedService && /(incident|outage|recovery)/i.test(priority)
+          ? "Disaster Recovery"
+          : "";
+    const rawService = requestedService || priorityService;
+    const resolvedService = rawService ? findServiceOption(rawService, serviceGroups) : "";
+    const displayRequestedService = rawService
+      ? normalizeServiceName(resolvedService) !== normalizeServiceName(rawService)
+        ? resolvedService
+        : formatServiceDisplayName(resolvedService || rawService)
+      : "";
     const workloadToPlatform: Record<string, string> = {
       "ibm-i": "IBM i / AS/400",
       microsoft: "Microsoft / Azure",
@@ -176,24 +399,24 @@ export default function ConsultWizard({
       research: "exploring",
     };
 
-    if (!source && !requestedService && !summary && !params.get("workload") && !params.get("timeline")) {
+    if (!source && !requestedService && !summary && !priority && !params.get("workload") && !params.get("timeline")) {
       return;
     }
 
     setPrefillIntent({
-      requestedService: requestedService || undefined,
-      service: resolvedService || undefined,
+      requestedService: displayRequestedService || undefined,
+      service: displayRequestedService || undefined,
       source,
       sourceLabel: labelForSource(source),
-      summary: summary || undefined,
+      summary: summary || priority || undefined,
     });
 
     setFormData((current) => ({
       ...current,
-      service: resolvedService || current.service,
+      service: displayRequestedService || current.service,
       platform: workloadToPlatform[params.get("workload") ?? ""] || current.platform,
       urgency: timelineToUrgency[params.get("timeline") ?? ""] || current.urgency,
-      message: summary && !current.message ? summary : current.message,
+      message: (summary || priority) && !current.message ? summary || `Primary need: ${priority}` : current.message,
     }));
   }, [serviceGroups]);
 
@@ -201,6 +424,16 @@ export default function ConsultWizard({
     () => ensureServiceOption(serviceGroups, prefillIntent?.service),
     [serviceGroups, prefillIntent?.service],
   );
+  const activeProfile = useMemo(
+    () => getQuestionProfile(formData.service || prefillIntent?.service || prefillIntent?.requestedService),
+    [formData.service, prefillIntent?.requestedService, prefillIntent?.service],
+  );
+  const activeStepMeta =
+    step === 1
+      ? { title: activeProfile.scopeTitle, description: activeProfile.scopeDescription }
+      : step === 3
+        ? { title: activeProfile.detailTitle, description: activeProfile.detailDescription }
+        : STEP_META[step];
 
   const goToStep = (next: Step, source: "manual" | "back") => {
     if (source === "manual") {
@@ -213,18 +446,36 @@ export default function ConsultWizard({
     setFormData((prev) => ({ ...prev, ...patch }));
   };
 
-  const canContinueStep1 = Boolean(formData.service && formData.platform && formData.urgency);
+  const handleServiceChange = (value: string) => {
+    const nextProfile = getQuestionProfile(value);
+    setFormData((prev) => ({
+      ...prev,
+      service: value,
+      platform: prev.platform && nextProfile.platformOptions.includes(prev.platform) ? prev.platform : "",
+      urgency:
+        prev.urgency && nextProfile.urgencyOptions.some((option) => option.id === prev.urgency)
+          ? prev.urgency
+          : "",
+    }));
+  };
+
+  const canContinueStep1 = Boolean(
+    formData.service &&
+      activeProfile.platformOptions.includes(formData.platform) &&
+      activeProfile.urgencyOptions.some((option) => option.id === formData.urgency),
+  );
   const hasRequiredPhone = formData.phone.replace(/\D/g, "").length >= 7;
   const canContinueStep2 = Boolean(formData.name.trim() && isValidEmail(formData.email) && hasRequiredPhone);
 
   const buildMessage = () => {
     const urgencyLabel =
-      URGENCY_OPTIONS.find((o) => o.id === formData.urgency)?.label ?? formData.urgency;
+      activeProfile.urgencyOptions.find((o) => o.id === formData.urgency)?.label ?? formData.urgency;
     const lines = [
       formData.message.trim() || null,
-      prefillIntent?.requestedService ? `Requested page: ${prefillIntent.requestedService}` : null,
+      prefillIntent?.requestedService ? `Prefilled service: ${prefillIntent.requestedService}` : null,
       prefillIntent?.source ? `Lead source: ${prefillIntent.source}` : null,
       "Consult wizard",
+      `Question profile: ${activeProfile.key}`,
       `Platform: ${formData.platform}`,
       `Urgency: ${urgencyLabel}`,
     ].filter(Boolean);
@@ -246,6 +497,7 @@ export default function ConsultWizard({
         service: formData.service,
         message: buildMessage(),
         smsConsent: formData.smsConsent,
+        marketingConsent: formData.marketingConsent,
       };
       const res = await fetch("/api/contact", {
         method: "POST",
@@ -321,7 +573,7 @@ export default function ConsultWizard({
             {prefillIntent.sourceLabel}
           </p>
           <p className="mt-1 text-sm font-semibold text-primary">
-            {prefillIntent.requestedService ?? prefillIntent.service}
+            {prefillIntent.service ?? prefillIntent.requestedService}
           </p>
           {prefillIntent.summary && (
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-tertiary">{prefillIntent.summary}</p>
@@ -390,8 +642,8 @@ export default function ConsultWizard({
           <p className="text-xs font-semibold tracking-[0.18em] text-brand-secondary uppercase">
             {STEPS.find((item) => item.id === step)?.label}
           </p>
-          <h3 className="mt-1 text-xl font-semibold text-primary">{STEP_META[step].title}</h3>
-          <p className="mt-1 max-w-xl text-sm leading-6 text-tertiary">{STEP_META[step].description}</p>
+          <h3 className="mt-1 text-xl font-semibold text-primary">{activeStepMeta.title}</h3>
+          <p className="mt-1 max-w-xl text-sm leading-6 text-tertiary">{activeStepMeta.description}</p>
         </div>
 
         <div
@@ -409,14 +661,14 @@ export default function ConsultWizard({
                 name="service"
                 label="What do you need help with?"
                 value={formData.service}
-                onChange={(value) => patchForm({ service: value })}
+                onChange={handleServiceChange}
                 groups={effectiveServiceGroups}
               />
 
               <fieldset>
-                <legend className="mb-2 text-sm font-medium text-secondary">Primary platform</legend>
+                <legend className="mb-2 text-sm font-medium text-secondary">{activeProfile.platformLabel}</legend>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {PLATFORM_OPTIONS.map((option) => (
+                  {activeProfile.platformOptions.map((option) => (
                     <button
                       key={option}
                       type="button"
@@ -435,9 +687,9 @@ export default function ConsultWizard({
               </fieldset>
 
               <fieldset>
-                <legend className="mb-2 text-sm font-medium text-secondary">Timeline</legend>
+                <legend className="mb-2 text-sm font-medium text-secondary">{activeProfile.timelineLabel}</legend>
                 <div className="grid gap-2 sm:grid-cols-3">
-                  {URGENCY_OPTIONS.map((option) => (
+                  {activeProfile.urgencyOptions.map((option) => (
                     <button
                       key={option.id}
                       type="button"
@@ -511,8 +763,8 @@ export default function ConsultWizard({
             <div className="flex flex-col gap-5">
               <TextArea
                 name="message"
-                label="Anything else we should know? (optional)"
-                placeholder="Environment details, compliance needs, current pain points…"
+                label={activeProfile.detailLabel}
+                placeholder={activeProfile.detailPlaceholder}
                 rows={6}
                 value={formData.message}
                 onChange={(value) => patchForm({ message: value })}
@@ -537,6 +789,14 @@ export default function ConsultWizard({
                     .
                   </>
                 }
+              />
+              <Checkbox
+                name="marketingConsent"
+                size="md"
+                aria-label="Email marketing consent"
+                isSelected={formData.marketingConsent}
+                onChange={(value) => patchForm({ marketingConsent: value })}
+                hint="Send me occasional ICE infrastructure guidance, service updates, and event announcements. I can unsubscribe at any time."
               />
               {bookingUrl && (
                 <Button

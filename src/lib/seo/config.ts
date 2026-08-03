@@ -65,11 +65,17 @@ export const DEFAULT_SEO_CONFIG: SeoConfig = {
     "International Computer Exchange — Enterprise Cloud, Security & IBM Managed Services",
   titleTemplate: "%s | International Computer Exchange",
   defaultDescription:
-    "IBM Business Partner since 1990. ICE delivers managed cloud hosting, disaster recovery, backup, IBM i security, and enterprise managed services from SOC 2 Type II certified data centers.",
+    "IBM Business Partner since 1990. ICE delivers AS400 and IBM i hosting, managed cloud hosting, disaster recovery, backup, IBM i security, and enterprise managed services.",
   keywords: [
+    "AS400",
+    "AS400 hosting",
+    "AS/400",
+    "AS/400 hosting",
     "IBM Business Partner",
     "IBM Power Systems",
     "IBM i hosting",
+    "IBM i cloud hosting",
+    "iSeries hosting",
     "managed cloud hosting",
     "disaster recovery as a service",
     "backup as a service",

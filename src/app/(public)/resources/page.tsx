@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Cloud01, File02, Shield01 } from "@untitledui/icons";
+import { ArrowRight, Cloud01, File02, Server01, Shield01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import { JsonLd, breadcrumbs } from "@/lib/seo/jsonld";
@@ -14,6 +14,14 @@ export const metadata: Metadata = {
 };
 
 const RESOURCES = [
+  {
+    category: "AS400",
+    title: "AS400 modernization assessment",
+    summary:
+      "How to evaluate AS/400, iSeries, and IBM i hosting, security, backup, HA, and DR options.",
+    href: "/solutions/as400",
+    icon: Server01,
+  },
   {
     category: "Cloud",
     title: "Managed cloud for IBM Power workloads",
@@ -75,7 +83,7 @@ export default async function ResourcesPage() {
         </section>
 
         <section className="py-16 md:py-24">
-          <div className="mx-auto grid w-full max-w-container gap-6 px-4 md:grid-cols-3 md:px-8">
+          <div className="mx-auto grid w-full max-w-container gap-6 px-4 sm:grid-cols-2 lg:grid-cols-4 md:px-8">
             {RESOURCES.map((item) => (
               <Link
                 key={item.href}

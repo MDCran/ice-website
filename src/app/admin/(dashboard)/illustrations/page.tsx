@@ -11,6 +11,18 @@ export default function IllustrationsPage() {
           Select any illustration when editing a section field to embed it in your content.
         </p>
       </div>
+      <div className="mb-6 grid gap-3 rounded-xl bg-secondary p-4 ring-1 ring-secondary sm:grid-cols-3">
+        {[
+          ["Browse", "Find a visual by category in the library below."],
+          ["Preview", "Check the artwork at the size and color treatment you need."],
+          ["Use", "Select an illustration from a CMS section to add it to a page."],
+        ].map(([title, description]) => (
+          <div key={title}>
+            <p className="text-sm font-semibold text-primary">{title}</p>
+            <p className="mt-1 text-xs leading-5 text-tertiary">{description}</p>
+          </div>
+        ))}
+      </div>
       <IllustrationsClient illustrations={ILLUSTRATIONS} categories={ILLUSTRATION_CATEGORIES} />
     </div>
   );

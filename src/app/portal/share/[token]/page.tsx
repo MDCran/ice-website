@@ -73,50 +73,6 @@ export default async function SharePage({ params }: SharePageProps) {
     );
   }
 
-  const { data: invoice } = await supabase
-    .from("client_invoices")
-    .select("*")
-    .eq("share_token", token)
-    .maybeSingle();
-
-  if (invoice && invoice.client_account_id === clientUser.client_account_id) {
-    const expiresAt = (invoice as { share_expires_at?: string | null }).share_expires_at ?? null;
-    const requiresPassword = Boolean((invoice as { share_password_hash?: string | null }).share_password_hash);
-    const viewCount = (invoice as { share_view_count?: number | null }).share_view_count ?? null;
-
-    void supabase
-      .from("client_invoices")
-      .update({
-        share_view_count: (viewCount ?? 0) + 1,
-        share_last_viewed_at: new Date().toISOString(),
-      })
-      .eq("id", invoice.id)
-      .then(() => undefined);
-
-    if (!expiresAt && !requiresPassword) {
-      redirect("/portal/invoices");
-    }
-
-    return (
-      <SecureShareGate
-        meta={{
-          title: (invoice as { title?: string }).title ?? "Shared invoice",
-          kind: "invoice",
-          expiresAt,
-          requiresPassword,
-          viewCount,
-        }}
-      >
-        <div className="rounded-xl bg-primary p-6 text-center ring-1 ring-secondary">
-          <p className="text-md text-tertiary">This invoice link is valid for your account.</p>
-          <Button href="/portal/invoices" size="md" className="mt-4">
-            Open invoices
-          </Button>
-        </div>
-      </SecureShareGate>
-    );
-  }
-
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
       <FeaturedIcon color="error" theme="light" size="xl" icon={FileX02} className="mb-4" />

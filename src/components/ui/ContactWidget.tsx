@@ -41,7 +41,7 @@ export const SERVICE_CATALOG: ServiceGroup[] = [
   },
   {
     label: "Managed Services",
-    options: ["Managed Microsoft", "Automation Suite", "Systems Management", "IBM Power VS"],
+    options: ["AS400", "Managed Microsoft", "Automation Suite", "Systems Management", "IBM Power VS"],
   },
 ];
 
@@ -408,6 +408,7 @@ type ContactFormState = {
   service: string;
   message: string;
   smsConsent: boolean;
+  marketingConsent: boolean;
 };
 
 const INITIAL_FORM: ContactFormState = {
@@ -418,6 +419,7 @@ const INITIAL_FORM: ContactFormState = {
   service: "",
   message: "",
   smsConsent: false,
+  marketingConsent: false,
 };
 
 const WELCOME_BUBBLE_DELAY_MS = 30000;
@@ -687,6 +689,14 @@ export default function ContactWidget() {
                       }
                     />
 
+                    <Checkbox
+                      size="sm"
+                      aria-label="Email marketing consent"
+                      isSelected={form.marketingConsent}
+                      onChange={(isSelected) => setField("marketingConsent", isSelected)}
+                      hint="Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time."
+                    />
+
                     {/* Error message */}
                     {status === "error" && (
                       <motion.div
@@ -728,7 +738,7 @@ export default function ContactWidget() {
               dismissWelcome();
               setIsOpen(true);
             }}
-            className="relative mb-3 max-w-65 cursor-pointer rounded-xl bg-primary/90 px-4 py-3 shadow-lg ring-1 ring-secondary backdrop-blur-xl"
+            className="relative mb-3 max-w-65 cursor-pointer rounded-xl bg-primary px-4 py-3 shadow-lg ring-1 ring-secondary"
           >
             <p className="text-sm font-medium text-primary">Need help? Schedule a free consultation!</p>
             <p className="mt-1 text-xs text-tertiary">Click to get started</p>

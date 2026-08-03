@@ -168,7 +168,7 @@ export async function POST(request: Request) {
       client_account_id: client.id,
       title: "Getting started with the ICE portal",
       description:
-        "Bookmark this space for invoices, QBR reports, surveys, and shared documents.",
+        "Bookmark this space for account updates, surveys, and shared documents.",
       author: "ICE Client Success",
       file_url: "/for-ai",
       storage_path: "",

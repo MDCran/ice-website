@@ -12,6 +12,7 @@ import {
   Calendar,
   User01,
   Lock01,
+  SearchLg,
 } from "@untitledui/icons";
 import { Badge, BadgeWithIcon } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -31,6 +32,7 @@ export default function ResourcesPage() {
   const [resources, setResources] = useState<ClientResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== "undefined") {
       return (localStorage.getItem("portal_resources_view") as ViewMode) || "grid";
@@ -96,10 +98,17 @@ export default function ResourcesPage() {
     ),
   ).sort();
 
-  const visibleResources =
-    category === "all"
-      ? resources
-      : resources.filter((r) => (r.category?.trim() || "Uncategorized") === category);
+  const visibleResources = resources.filter((resource) => {
+    const matchesCategory =
+      category === "all" || (resource.category?.trim() || "Uncategorized") === category;
+    const query = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !query ||
+      [resource.title, resource.description, resource.author, resource.category]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+    return matchesCategory && matchesSearch;
+  });
 
   if (loading) {
     return (
@@ -120,6 +129,17 @@ export default function ResourcesPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <label className="relative block w-full sm:w-64">
+            <span className="sr-only">Search documents</span>
+            <SearchLg aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-quaternary" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search documents..."
+              className="h-10 w-full rounded-lg border-0 bg-primary py-2 pr-3 pl-9 text-sm text-primary outline-none ring-1 ring-secondary placeholder:text-placeholder focus:ring-2 focus:ring-brand"
+            />
+          </label>
           {(categories.length > 0 || resources.some((r) => r.version_label)) && (
             <div className="flex flex-wrap gap-1.5">
               <button

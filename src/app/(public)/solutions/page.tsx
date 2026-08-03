@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: page?.meta_title ?? page?.title ?? "Solutions | ICE",
     description: clampDescription(
       page?.meta_description ??
-        "Enterprise cloud, data protection, security, and IBM managed services from ICE — an IBM Business Partner since 1990.",
+        "Enterprise cloud, AS400 and IBM i hosting, data protection, security, and managed services from ICE, an IBM Business Partner since 1990.",
     ),
     alternates: { canonical: "/solutions" },
   };

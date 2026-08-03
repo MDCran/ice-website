@@ -99,6 +99,9 @@ export interface ServiceInput {
   /** Absolute or root-relative URL of the service page. */
   url: string;
   serviceType?: string;
+  alternateName?: string[];
+  keywords?: string[];
+  hasOfferCatalog?: Record<string, unknown>;
 }
 
 /** Service node provided by the organization. */
@@ -115,6 +118,9 @@ export function service(cfg: SeoConfig, input: ServiceInput): Record<string, unk
     areaServed: "US",
   };
   if (input.serviceType) node.serviceType = input.serviceType;
+  if (input.alternateName?.length) node.alternateName = input.alternateName;
+  if (input.keywords?.length) node.keywords = input.keywords.join(", ");
+  if (input.hasOfferCatalog) node.hasOfferCatalog = input.hasOfferCatalog;
   return node;
 }
 

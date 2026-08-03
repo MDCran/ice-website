@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import Link from "next/link";
+import { type ReactNode } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Building07, CheckCircle, Settings01, ShieldTick } from "@untitledui/icons";
@@ -214,17 +213,6 @@ export default function PartnersPage({
     const benefitsSection = cmsData?.benefits ?? {};
     const finalCta = cmsData?.final_cta ?? cmsData?.cta ?? {};
     const partners = (cmsData?.partners_grid?.partners ?? DEFAULT_PARTNERS).map(normalizePartner);
-    const [selectedPartnerName, setSelectedPartnerName] = useState(partners[0]?.name ?? "IBM");
-    const selectedPartner =
-        partners.find((partner: Partner) => partner.name === selectedPartnerName) ?? partners[0];
-    const relatedHref =
-        selectedPartner?.name === "IBM"
-            ? "/solutions/ibm-power-vs"
-            : selectedPartner?.name === "Acronis" || selectedPartner?.name === "Cybernetics"
-              ? "/solutions/backup-as-a-service"
-              : selectedPartner?.name === "Cisco"
-                ? "/solutions/security-monitoring"
-                : "/solutions/managed-cloud-hosting";
     const benefits = (benefitsSection.items ?? benefitsSection.benefits ?? DEFAULT_BENEFITS).map(
         (b: any, i: number) => ({
             title: b.title ?? b.heading,
@@ -318,77 +306,6 @@ export default function PartnersPage({
                                 "ICE resells and integrates solutions from industry-leading technology partners. We work with trusted providers to deliver the best fit for your business needs, from cloud hosting and disaster recovery to hardware and managed services."}
                         </p>
                     </motion.div>
-                </div>
-            </section>
-
-            {/* ================================================================= */}
-            {/*  Partner cards — logo-forward                                     */}
-            {/* ================================================================= */}
-            <section className="border-y border-secondary bg-secondary py-16 md:py-24">
-                <div className="mx-auto w-full max-w-5xl px-4 md:px-8">
-                    <motion.div {...reveal()} className="mx-auto max-w-3xl text-center">
-                        <Eyebrow>Capability map</Eyebrow>
-                        <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary">
-                            Choose a partner. See what ICE delivers.
-                        </h2>
-                        <p className="mt-4 text-lg text-tertiary">
-                            Vendor relationships matter when they translate into design, implementation, and accountable operations.
-                        </p>
-                    </motion.div>
-                    <div className="mt-10 flex flex-wrap justify-center gap-2">
-                        {partners.map((partner: Partner) => (
-                            <button
-                                key={partner.name}
-                                type="button"
-                                aria-pressed={selectedPartner?.name === partner.name}
-                                onClick={() => setSelectedPartnerName(partner.name)}
-                                className={cx(
-                                    "rounded-full px-4 py-2 text-sm font-semibold ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                                    selectedPartner?.name === partner.name
-                                        ? "bg-brand-solid text-white ring-brand"
-                                        : "bg-primary text-secondary ring-secondary hover:ring-brand",
-                                )}
-                            >
-                                {partner.name}
-                            </button>
-                        ))}
-                    </div>
-                    {selectedPartner && (
-                        <div className="mt-8 grid gap-6 rounded-2xl bg-primary p-6 ring-1 ring-secondary md:grid-cols-[0.7fr_1.3fr] md:p-8">
-                            <div className={cx("flex min-h-36 items-center justify-center rounded-xl p-6", NAVY_TILE)}>
-                                {selectedPartner.logoSrc ? (
-                                    <Image
-                                        src={selectedPartner.logoSrc}
-                                        alt={`${selectedPartner.name} logo`}
-                                        width={180}
-                                        height={72}
-                                        className="max-h-14 w-auto object-contain"
-                                    />
-                                ) : (
-                                    <span className="text-xl font-semibold text-white">{selectedPartner.name}</span>
-                                )}
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold tracking-[0.18em] text-brand-secondary uppercase">
-                                    Why {selectedPartner.name}
-                                </p>
-                                <h3 className="mt-2 text-display-xs font-semibold text-primary">
-                                    ICE turns {selectedPartner.name} platforms into an operated capability
-                                </h3>
-                                <p className="mt-3 text-md text-tertiary">{selectedPartner.description}</p>
-                                <ul className="mt-5 flex flex-wrap gap-2">
-                                    {selectedPartner.specializations.map((item: string) => (
-                                        <li key={item} className="rounded-full bg-brand-primary_alt px-3 py-1 text-sm font-medium text-brand-secondary ring-1 ring-brand/20">
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <Link href={relatedHref} className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary">
-                                    Explore related ICE solutions <ArrowRight className="size-4" />
-                                </Link>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </section>
 

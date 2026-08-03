@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ClipboardCheck, File02, GitPullRequest, Home01, Receipt, Users01 } from "@untitledui/icons";
+import { ClipboardCheck, File02, GitPullRequest, Home01, Users01 } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
 import type { BadgeColor } from "@/components/base/badges/badges";
 import { Badge } from "@/components/base/badges/badges";
@@ -12,7 +12,6 @@ import { Tabs } from "@/components/application/tabs/tabs";
 import ClientEditForm from "@/components/admin/clients/ClientEditForm";
 import ContactsManager from "@/components/admin/clients/ContactsManager";
 import ResourcesManager from "@/components/admin/clients/ResourcesManager";
-import InvoicesManager from "@/components/admin/clients/InvoicesManager";
 import DeleteClientButton from "@/components/admin/clients/DeleteClientButton";
 import ChangeActions from "@/app/admin/(dashboard)/contact-changes/ChangeActions";
 
@@ -20,7 +19,6 @@ const tabs = [
   { id: "home", label: "Home", icon: Home01 },
   { id: "contacts", label: "Contacts", icon: Users01 },
   { id: "resources", label: "Documents", icon: File02 },
-  { id: "invoices", label: "Invoices", icon: Receipt },
   { id: "surveys", label: "Surveys", icon: ClipboardCheck },
   { id: "contact-changes", label: "Contact Changes", icon: GitPullRequest },
 ];
@@ -54,10 +52,6 @@ export default function ClientTabs({ client }: { client: any }) {
 
         <Tabs.Panel id="resources">
           <ResourcesManager clientId={client.id} />
-        </Tabs.Panel>
-
-        <Tabs.Panel id="invoices">
-          <InvoicesManager clientId={client.id} />
         </Tabs.Panel>
 
         <Tabs.Panel id="surveys">

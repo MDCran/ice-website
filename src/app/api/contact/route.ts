@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { notifyNewLead } from "@/lib/notifyLead";
 
 /** Max lengths to keep submissions sane (DB columns are unbounded text). */
@@ -92,6 +93,7 @@ export async function POST(request: NextRequest) {
       service,
       message,
       smsConsent,
+      marketingConsent,
       formKey,
       source,
       pagePath,
@@ -146,6 +148,9 @@ export async function POST(request: NextRequest) {
       service: cleanService,
       message: cleanMessage,
       sms_consent: smsConsent === true,
+      email_marketing_consent: marketingConsent === true,
+      email_consent_at: marketingConsent === true ? new Date().toISOString() : null,
+      email_consent_source: marketingConsent === true ? cleanFormKey ?? "contact_form" : null,
       pipeline_stage: "new",
       form_key: cleanFormKey,
       source: cleanSource,
@@ -159,7 +164,7 @@ export async function POST(request: NextRequest) {
     let { error } = await supabase.from("contacts").insert(row);
     if (
       error &&
-      /pipeline_stage|form_key|source|page_path|referrer|utm|qualification|lead_score|schema cache|column/i.test(
+      /pipeline_stage|form_key|source|page_path|referrer|utm|qualification|lead_score|email_marketing_consent|email_consent_at|email_consent_source|schema cache|column/i.test(
         error.message,
       )
     ) {
@@ -172,6 +177,9 @@ export async function POST(request: NextRequest) {
         "utm",
         "qualification",
         "lead_score",
+        "email_marketing_consent",
+        "email_consent_at",
+        "email_consent_source",
       ]) {
         delete row[key];
       }
@@ -184,6 +192,26 @@ export async function POST(request: NextRequest) {
         { error: "An error occurred while submitting the contact form." },
         { status: 500 }
       );
+    }
+
+    if (marketingConsent === true && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const marketingAdmin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+      );
+      const nameParts = cleanName.split(/\s+/);
+      await marketingAdmin.from("marketing_contacts").upsert({
+        first_name: nameParts[0] || null,
+        last_name: nameParts.slice(1).join(" ") || null,
+        email: cleanEmail.toLowerCase(),
+        phone: cleanPhone,
+        company: cleanCompany,
+        source: cleanFormKey ?? cleanSource ?? "contact_form",
+        email_consent_status: "subscribed",
+        email_consent_at: new Date().toISOString(),
+        email_consent_source: cleanPagePath ?? "contact_form",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "email" });
     }
 
     // Fire-and-forget notifications (Slack / email when env configured).

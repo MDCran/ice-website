@@ -22,6 +22,10 @@ export default async function AdminAuditPage() {
         </p>
       </div>
 
+      <div className="mb-6 rounded-xl bg-brand-primary_alt/60 p-4 text-sm text-tertiary ring-1 ring-brand/20">
+        <strong className="font-semibold text-primary">Use this log for accountability.</strong> Search is limited to the latest 100 events; each row identifies the actor, action, record, and time so you can trace important changes.
+      </div>
+
       {error ? (
         <div className="rounded-xl bg-primary p-6 ring-1 ring-secondary">
           <div className="flex items-start gap-3 text-sm text-tertiary">

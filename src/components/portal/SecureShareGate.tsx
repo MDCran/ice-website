@@ -9,7 +9,7 @@ import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-ic
 
 export interface ShareMeta {
   title?: string;
-  kind: "resource" | "invoice";
+  kind: "resource";
   expiresAt?: string | null;
   requiresPassword?: boolean;
   watermark?: boolean;

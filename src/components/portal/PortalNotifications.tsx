@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell01, ClipboardCheck, Receipt, File02, XClose } from "@untitledui/icons";
+import { Bell01, BankNote01, ClipboardCheck, File02, XClose } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
@@ -11,12 +11,12 @@ interface PortalNotice {
   id: string;
   title: string;
   href: string;
-  kind: "survey" | "invoice" | "resource";
+  kind: "survey" | "resource" | "billing";
+  external?: boolean;
 }
 
 /**
- * Portal notifications center (#52) — aggregates open surveys, recent invoices,
- * and new resources into a header dropdown.
+ * Portal notifications center — aggregates open surveys and new resources.
  */
 export default function PortalNotifications() {
   const [open, setOpen] = useState(false);
@@ -40,7 +40,7 @@ export default function PortalNotifications() {
         if (!cu) return;
 
         const accountId = cu.client_account_id;
-        const [surveys, invoices, resources] = await Promise.all([
+        const [surveys, resources, account] = await Promise.all([
           supabase
             .from("surveys")
             .select("id, title")
@@ -48,37 +48,36 @@ export default function PortalNotifications() {
             .eq("status", "active")
             .limit(5),
           supabase
-            .from("client_invoices")
-            .select("id, title, created_at")
-            .eq("client_account_id", accountId)
-            .not("status", "in", '("draft","hidden")')
-            .order("created_at", { ascending: false })
-            .limit(3),
-          supabase
             .from("client_resources")
             .select("id, title, created_at")
             .eq("client_account_id", accountId)
             .eq("visibility", "published")
             .order("created_at", { ascending: false })
             .limit(3),
+          supabase
+            .from("client_accounts")
+            .select("balance_due_cents, quickbooks_payment_url")
+            .eq("id", accountId)
+            .single(),
         ]);
 
         if (cancelled) return;
         const next: PortalNotice[] = [];
+        if ((account.data?.balance_due_cents ?? 0) > 0) {
+          next.push({
+            id: "account-balance",
+            title: "Balance due: review your account",
+            href: account.data?.quickbooks_payment_url || "/portal/profile",
+            kind: "billing",
+            external: Boolean(account.data?.quickbooks_payment_url),
+          });
+        }
         for (const s of surveys.data ?? []) {
           next.push({
             id: `survey-${s.id}`,
             title: `Survey due: ${s.title ?? "Untitled"}`,
             href: `/portal/surveys/${s.id}`,
             kind: "survey",
-          });
-        }
-        for (const inv of invoices.data ?? []) {
-          next.push({
-            id: `invoice-${inv.id}`,
-            title: `Invoice: ${inv.title ?? "Untitled"}`,
-            href: "/portal/invoices",
-            kind: "invoice",
           });
         }
         for (const res of resources.data ?? []) {
@@ -101,7 +100,7 @@ export default function PortalNotifications() {
 
   const iconFor = (kind: PortalNotice["kind"]) => {
     if (kind === "survey") return ClipboardCheck;
-    if (kind === "invoice") return Receipt;
+    if (kind === "billing") return BankNote01;
     return File02;
   };
 
@@ -149,6 +148,8 @@ export default function PortalNotifications() {
                     <Link
                       href={item.href}
                       onClick={() => setOpen(false)}
+                      target={item.external ? "_blank" : undefined}
+                      rel={item.external ? "noreferrer" : undefined}
                       className="flex items-start gap-3 px-4 py-3 text-sm hover:bg-secondary"
                     >
                       <Icon className="mt-0.5 size-4 shrink-0 text-fg-brand-primary" />

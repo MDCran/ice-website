@@ -19,10 +19,10 @@ import {
   Stars01,
   Target04,
   Users01,
+  Send01,
 } from "@untitledui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { can, NAV_CAPABILITY, type AdminCapability } from "@/lib/admin/permissions";
-import { Badge } from "@/components/base/badges/badges";
 import { cx } from "@/utils/cx";
 import { useSidebar } from "./AdminSidebarContext";
 
@@ -30,21 +30,23 @@ interface NavItem {
   label: string;
   href: string;
   icon: FC<{ className?: string }>;
+  group: "Build" | "Optimize" | "Operate";
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: BarChartSquare02 },
-  { label: "CMS Pages", href: "/admin/cms", icon: File02 },
-  { label: "Sales Enablement", href: "/admin/sales", icon: Target04 },
-  { label: "Navigation", href: "/admin/navigation", icon: NavigationPointer01 },
-  { label: "SEO & Analytics", href: "/admin/seo", icon: SearchLg },
-  { label: "Core Web Vitals", href: "/admin/performance", icon: Activity },
-  { label: "Audit log", href: "/admin/audit", icon: Clock },
-  { label: "Templates", href: "/admin/templates", icon: LayersTwo01 },
-  { label: "Files", href: "/admin/files", icon: Folder },
-  { label: "Illustrations", href: "/admin/illustrations", icon: Stars01 },
-  { label: "Clients", href: "/admin/clients", icon: Users01 },
-  { label: "Form Submissions", href: "/admin/contacts", icon: Mail01 },
+  { label: "Dashboard", href: "/admin", icon: BarChartSquare02, group: "Build" },
+  { label: "CMS Pages", href: "/admin/cms", icon: File02, group: "Build" },
+  { label: "Sales Enablement", href: "/admin/sales", icon: Target04, group: "Build" },
+  { label: "Marketing Center", href: "/admin/marketing", icon: Send01, group: "Build" },
+  { label: "Navigation", href: "/admin/navigation", icon: NavigationPointer01, group: "Optimize" },
+  { label: "SEO & Analytics", href: "/admin/seo", icon: SearchLg, group: "Optimize" },
+  { label: "Core Web Vitals", href: "/admin/performance", icon: Activity, group: "Optimize" },
+  { label: "Audit log", href: "/admin/audit", icon: Clock, group: "Optimize" },
+  { label: "Templates", href: "/admin/templates", icon: LayersTwo01, group: "Optimize" },
+  { label: "Files", href: "/admin/files", icon: Folder, group: "Optimize" },
+  { label: "Illustrations", href: "/admin/illustrations", icon: Stars01, group: "Optimize" },
+  { label: "Clients", href: "/admin/clients", icon: Users01, group: "Operate" },
+  { label: "Form Submissions", href: "/admin/contacts", icon: Mail01, group: "Operate" },
 ];
 
 /** Untitled UI nav item (link) — adapted from application/app-navigation/base-components/nav-item.tsx,
@@ -138,6 +140,7 @@ export default function AdminSidebar() {
     const required = NAV_CAPABILITY[item.href] as AdminCapability | undefined;
     return !required || can(role, required);
   });
+  const navGroups = ["Build", "Optimize", "Operate"] as const;
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
@@ -165,33 +168,32 @@ export default function AdminSidebar() {
               />
             </div>
           </Link>
-          <div className="mt-3 flex justify-center">
-            <Badge
-              size="sm"
-              color={
-                role === "super_admin" || role === "admin"
-                  ? "brand"
-                  : role === "marketer"
-                    ? "purple"
-                    : role === "sales_ops"
-                      ? "blue"
-                      : "gray"
-              }
-            >
-              {role.replace(/_/g, " ")}
-            </Badge>
-          </div>
         </div>
       )}
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto">
         <ul className={cx("flex flex-col gap-0.5", collapsed ? "px-3.5 py-4" : "px-4 py-5")}>
-          {visibleNav.map((item) => (
-            <li key={item.href}>
-              <SidebarNavItem item={item} active={isActive(item.href)} collapsed={collapsed} />
-            </li>
-          ))}
+          {navGroups.map((group) => {
+            const groupItems = visibleNav.filter((item) => item.group === group);
+            if (groupItems.length === 0) return null;
+            return (
+              <li key={group} className={cx(!collapsed && "contents")}>
+                {!collapsed && (
+                  <p className="px-2 pb-1 pt-4 text-[10px] font-semibold tracking-[0.16em] text-quaternary uppercase first:pt-0">
+                    {group}
+                  </p>
+                )}
+                <ul className="flex flex-col gap-0.5">
+                  {groupItems.map((item) => (
+                    <li key={item.href}>
+                      <SidebarNavItem item={item} active={isActive(item.href)} collapsed={collapsed} />
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
         </ul>
       </nav>
 

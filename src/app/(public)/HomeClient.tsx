@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, type FC } from "react";
-import { motion, useScroll, useSpring, useTransform } from "motion/react";
+import { type FC } from "react";
+import { motion } from "motion/react";
 import { CountUpNumber, CountUpText } from "@/components/ui/CountUpValue";
 import Link from "next/link";
 import Image from "next/image";
@@ -44,6 +44,8 @@ type IconComponent = FC<{ className?: string }>;
 
 /** Premium ease curve used across all entrance reveals. */
 const EASE = MOTION_EASE;
+const BUSINESS_PHONE_LABEL = "Call 1-800-786-9188";
+const BUSINESS_PHONE_HREF = "tel:18007869188";
 
 /* ══════════════════════════════════════════════════════════════════════════
    PROPS — data comes from server via CMS database
@@ -102,10 +104,40 @@ export interface HomePageData {
 
 const DEFAULT_SERVICES = [
   { icon: "Cloud", title: "Managed Cloud Services", description: "Scalable cloud hosting, private cloud, hybrid cloud, and seamless migration services for enterprise workloads.", href: "/solutions/managed-cloud-hosting" },
+  { icon: "Server", title: "AS400 / IBM i Services", description: "AS400 and IBM i hosting, modernization, security, backup, and managed operations under one team.", href: "/solutions/as400" },
   { icon: "Shield", title: "Data Protection", description: "Enterprise backup, disaster recovery, high availability, and ransomware recovery to safeguard critical data.", href: "/solutions/backup-as-a-service" },
   { icon: "Lock", title: "Managed Security", description: "IBM i security, endpoint protection, threat detection, and 24/7 security monitoring for complete coverage.", href: "/solutions/ibm-i-security" },
   { icon: "Server", title: "Managed Services", description: "Microsoft services, automation, systems management, and IBM Power VS — fully managed by our experts.", href: "/solutions/managed-microsoft" },
 ];
+
+const AS400_HOME_SERVICE = {
+  icon: "Server",
+  title: "AS400 / IBM i Services",
+  description: "AS400 and IBM i hosting, modernization, security, backup, and managed operations under one team.",
+  href: "/solutions/as400",
+};
+
+interface HomeServiceEntry {
+  icon: string;
+  title: string;
+  description: string;
+  href: string;
+}
+
+function ensureAs400OnHome(services: HomeServiceEntry[]): HomeServiceEntry[] {
+  const hasAs400 = services.some(
+    (service) =>
+      service.href === AS400_HOME_SERVICE.href ||
+      /as400|ibm i/i.test(service.title || "") ||
+      /ibm i/i.test(service.href || ""),
+  );
+
+  if (hasAs400) {
+    return services;
+  }
+
+  return [AS400_HOME_SERVICE, ...services];
+}
 
 const DEFAULT_STATS = [
   { value: 35, suffix: "+", label: "Years of Experience" },
@@ -155,10 +187,10 @@ const PARTNER_CAPABILITIES: Record<string, string> = {
 
 const DECISION_PATHS = [
   {
-    eyebrow: "IBM i",
+    eyebrow: "AS400 / IBM i",
     title: "I’m running IBM i",
-    description: "Modernize, secure, host, or protect Power workloads without losing platform expertise.",
-    href: "/solutions?platform=ibm-i",
+    description: "Modernize, secure, host, or protect AS/400 and IBM i workloads without losing platform expertise.",
+    href: "/solutions/as400",
     icon: Server01,
   },
   {
@@ -266,6 +298,13 @@ const POPULAR_SOLUTIONS: {
     desc: "Full disaster recovery with guaranteed RTOs and RPOs.",
     icon: RefreshCw01,
     image: "/images/solutions/heroes/disaster-recovery.webp",
+  },
+  {
+    title: "AS400 / IBM i Hosting",
+    href: "/solutions/as400",
+    desc: "Secure hosting, operations, and modernization support for AS400 / IBM i environments.",
+    icon: Server01,
+    image: "/images/solutions/heroes/ibm-i-security.webp",
   },
   {
     title: "High Availability as a Service",
@@ -410,7 +449,7 @@ export default function Home({
     headline_highlight: "We Know Technology.",
     subheadline:
       "Together, we create innovative solutions. We support IBM Power environments, cloud infrastructure, cybersecurity, data protection, and managed services.",
-    cta_primary: { label: "Call 1-800-786-9188", href: "tel:18007869188" },
+    cta_primary: { label: BUSINESS_PHONE_LABEL, href: BUSINESS_PHONE_HREF },
     cta_secondary: { label: "Explore Solutions", href: "/solutions" },
   };
   const hero = {
@@ -443,10 +482,13 @@ export default function Home({
     abEnabled && abVariant === "b" && data?.hero?.subheadline_b?.trim()
       ? data.hero.subheadline_b
       : hero.subheadline;
-  const displayPrimaryCta =
+  const requestedPrimaryCta =
     abEnabled && abVariant === "b" && data?.hero?.cta_primary_b?.label
       ? data.hero.cta_primary_b
       : hero.cta_primary;
+  const displayPrimaryCta = /book\s+(a\s+)?(free\s+)?consult/i.test(requestedPrimaryCta?.label ?? "")
+    ? { label: BUSINESS_PHONE_LABEL, href: BUSINESS_PHONE_HREF }
+    : requestedPrimaryCta;
   const servicesSection = data?.services_grid;
   const statsSection = data?.stats;
   const dataCentersSection = data?.data_centers;
@@ -458,7 +500,9 @@ export default function Home({
   const metricsSection = data?.metrics;
   const finalCta = data?.final_cta;
 
-  const services = (data?.services_grid?.items ?? DEFAULT_SERVICES).map((s) => ({
+  const services = ensureAs400OnHome(
+    (data?.services_grid?.items?.length ? data.services_grid.items : DEFAULT_SERVICES),
+  ).map((s) => ({
     icon: resolveIcon(s.icon) as IconComponent,
     title: s.title,
     description: s.description,
@@ -518,27 +562,6 @@ export default function Home({
     amount: 0.15,
     rootMargin: "0px",
   });
-  const timelineRailRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: timelineProgress } = useScroll({
-    target: timelineRailRef,
-    offset: ["start 78%", "end 32%"],
-  });
-  const smoothTimelineProgress = useSpring(timelineProgress, {
-    stiffness: 82,
-    damping: 24,
-    mass: 0.55,
-    restDelta: 0.0005,
-  });
-  const timelineBeamTop = useTransform(smoothTimelineProgress, [0, 1], ["-22%", "100%"]);
-  const timelineBeamOpacity = useTransform(
-    smoothTimelineProgress,
-    [0, 0.04, 0.94, 1],
-    [0, 1, 1, 0],
-  );
-  const timelineTipTop = useTransform(smoothTimelineProgress, [0, 1], ["0%", "100%"]);
-  const timelineEndOpacity = useTransform(smoothTimelineProgress, [0.9, 1], [0, 1]);
-  const timelineEndScale = useTransform(smoothTimelineProgress, [0.9, 1], [0.65, 1]);
-
   return (
     <main className="bg-primary">
       {/* ═══════════════════════════════════════════════════════════════════
@@ -693,7 +716,9 @@ export default function Home({
                   <div className="relative flex h-full flex-col">
                     <FeaturedIcon icon={path.icon} size="md" color="brand" theme="light" />
                     <p className="mt-5 text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">{path.eyebrow}</p>
-                    <h3 className="mt-2 text-lg font-semibold leading-snug text-primary">{path.title}</h3>
+                    <h3 className="mt-2 text-lg font-semibold leading-snug text-primary">
+                      {path.href === "/solutions/as400" ? "I'm running AS400" : path.title}
+                    </h3>
                     <p className="mt-2 text-sm leading-relaxed text-tertiary">{path.description}</p>
                     <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-brand-secondary transition group-hover:gap-2.5">
                       Follow this path <ArrowRight className="size-4" />
@@ -709,7 +734,7 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           SERVICES GRID
           ═══════════════════════════════════════════════════════════════════ */}
-      <section id="services" className="relative scroll-mt-20 overflow-hidden bg-primary py-16 md:py-24">
+      {false && <section id="services" className="relative scroll-mt-20 overflow-hidden bg-primary py-16 md:py-24">
         {/* Depth: engineering grid fading down from the hero's hard edge + grain */}
         <div
           aria-hidden="true"
@@ -729,7 +754,7 @@ export default function Home({
             }
           />
 
-          <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-16 lg:grid-cols-4">
+          <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-16 lg:grid-cols-4 xl:grid-cols-5">
             {services.map((s, i) => (
               <motion.li
                 key={s.title}
@@ -760,7 +785,7 @@ export default function Home({
             ))}
           </ul>
         </div>
-      </section>
+      </section>}
 
       {/* ═══════════════════════════════════════════════════════════════════
           POPULAR SOLUTIONS — same card treatment as /solutions
@@ -814,7 +839,10 @@ export default function Home({
             ))}
 
             {/* 6th tile — View All Solutions CTA */}
-            <motion.div {...reveal(POPULAR_SOLUTIONS.length * MOTION_STAGGER)} className="h-full">
+            <motion.div
+              {...reveal(POPULAR_SOLUTIONS.length * MOTION_STAGGER)}
+              className="h-full sm:col-span-2 lg:col-span-3"
+            >
               <Link
                 href="/solutions"
                 className="group relative isolate flex h-full min-h-56 overflow-hidden rounded-2xl border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
@@ -979,63 +1007,25 @@ export default function Home({
             heading={timelineSection?.heading ?? "35+ Years of Innovation"}
           />
 
-          <div ref={timelineRailRef} className="relative mx-auto mt-12 max-w-4xl md:mt-16">
+          <div className="relative mx-auto mt-12 max-w-5xl md:mt-16">
             {/* Rail + beam stop at the endcap center (bottom-2.5 = half of size-5). */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 bottom-2.5 overflow-hidden"
+              className="pointer-events-none absolute top-1 bottom-3 left-6 z-0 w-9 -translate-x-1/2 overflow-hidden rounded-full md:left-1/2"
             >
               {/* Pipeline rail — a subtle brand-tinted track the beam runs along */}
-              <div className="absolute inset-y-0 left-4 w-[3px] -translate-x-px rounded-full bg-gradient-to-b from-brand-500/20 via-brand-500/25 to-transparent md:left-1/2" />
+              <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 rounded-full bg-gradient-to-b from-brand-500/10 via-border-brand/45 to-brand-500/10" />
               <span
                 aria-hidden="true"
-                className="ice-timeline-auto-beam absolute left-[calc(1rem-1px)] z-[2] h-[24%] w-[3px] rounded-full md:left-[calc(50%-1px)]"
+                className="ice-timeline-auto-beam absolute top-0 left-1/2 z-[2] h-28 w-[2px] -translate-x-1/2 rounded-full"
               />
               <span
                 aria-hidden="true"
-                className="ice-timeline-auto-tip absolute left-4 z-[3] -translate-x-1/2 -translate-y-1/2 md:left-1/2"
+                className="ice-timeline-auto-tip absolute left-1/2 z-[3] -translate-x-1/2 -translate-y-1/2"
               >
-                <span className="absolute top-1/2 left-1/2 size-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-solid/20 blur-lg" />
-                <span className="relative block size-2.5 rounded-full bg-brand-solid shadow-[0_0_18px_5px_rgb(4_155_251/0.55)]" />
+                <span className="absolute top-1/2 left-1/2 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-solid/12 blur-md" />
+                <span className="relative block size-2 rounded-full bg-brand-solid shadow-[0_0_12px_3px_rgb(4_155_251/0.42)]" />
               </span>
-              {/* Reading-progress line. Centering stays on the wrapper so Motion
-                  can own the inner transform without clobbering it. */}
-              <div className="absolute inset-y-0 left-4 w-[3px] -translate-x-px md:left-1/2">
-                <motion.div
-                  className="h-full w-full origin-top rounded-full bg-border-brand"
-                  style={{ scaleY: smoothTimelineProgress }}
-                />
-              </div>
-
-              {/* The spring-smoothed glow beam advances with reading pace. */}
-              <motion.span
-                className="ice-timeline-beam absolute left-4 z-[1] h-[22%] w-[3px] -translate-x-px rounded-full md:left-1/2"
-                style={{
-                  top: timelineBeamTop,
-                  opacity: timelineBeamOpacity,
-                  background:
-                    "linear-gradient(to bottom, transparent, var(--color-brand-solid) 40%, rgb(124 212 253) 55%, transparent)",
-                  boxShadow: "0 0 18px 3px rgb(4 155 251 / 0.55)",
-                }}
-              />
-
-              {/* A restrained pulse marks the exact reading position. */}
-              <motion.span
-                className="absolute left-4 z-[2] -translate-x-1/2 -translate-y-1/2 md:left-1/2"
-                style={{
-                  top: timelineTipTop,
-                  opacity: timelineBeamOpacity,
-                }}
-              >
-                <span className="absolute top-1/2 left-1/2 size-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-solid/20 blur-md" />
-                <span className="relative block size-2.5 rounded-full bg-brand-solid shadow-[0_0_16px_4px_rgb(4_155_251/0.5)]">
-                  <motion.span
-                    className="absolute inset-0 rounded-full ring-1 ring-brand-solid/70"
-                    animate={{ scale: [1, 2.1], opacity: [0.8, 0] }}
-                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
-                  />
-                </span>
-              </motion.span>
             </div>
 
             {timeline.map((item, i) => {
@@ -1043,9 +1033,7 @@ export default function Home({
               return (
                 <div
                   key={item.year}
-                  className={`relative mb-12 flex items-start gap-8 last:mb-8 ${
-                    i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
-                  }`}
+                  className="relative grid grid-cols-[3rem_minmax(0,1fr)] gap-x-5 pb-12 last:pb-6 md:grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] md:gap-x-8 md:pb-14"
                 >
                   {/* Dot — pops in with a spring; the latest milestone pulses gently */}
                   <motion.div
@@ -1059,9 +1047,9 @@ export default function Home({
                       mass: 0.65,
                       delay: 0.08 + i * MOTION_STAGGER,
                     }}
-                    className="absolute left-4 z-10 -translate-x-1/2 md:left-1/2"
+                    className="relative z-10 col-start-1 row-start-1 flex justify-center pt-2 md:col-start-2"
                   >
-                    <span className="relative flex size-5 items-center justify-center rounded-full bg-brand-secondary shadow-[0_0_0_4px_var(--color-bg-secondary)]">
+                    <span className="relative flex size-6 items-center justify-center rounded-full border border-brand/35 bg-primary shadow-[0_0_0_6px_var(--color-bg-primary),0_12px_28px_-16px_rgb(4_155_251/0.9)] dark:bg-secondary">
                       {isLast && (
                         <motion.span
                           aria-hidden="true"
@@ -1084,20 +1072,18 @@ export default function Home({
                       delay: i * MOTION_STAGGER,
                       ease: EASE,
                     }}
-                    className={`ml-12 md:ml-0 md:w-[calc(50%-2rem)] ${
-                      i % 2 === 0 ? "md:pr-8 md:text-right" : "md:ml-auto md:pl-8 md:text-left"
+                    className={`col-start-2 row-start-1 min-w-0 md:w-full md:max-w-[430px] ${
+                      i % 2 === 0
+                        ? "md:col-start-1 md:justify-self-end"
+                        : "md:col-start-3 md:justify-self-start"
                     }`}
                   >
                     <div
-                      className={`group relative overflow-hidden rounded-2xl border border-secondary bg-primary/80 p-5 text-left shadow-sm backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lg md:p-6 ${
-                        i % 2 === 0 ? "md:text-right" : "md:text-left"
-                      }`}
+                      className="group relative overflow-hidden rounded-lg border border-secondary bg-primary/95 p-5 text-left shadow-[0_18px_48px_-36px_rgb(15_23_42/0.45)] backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-brand/45 hover:shadow-[0_24px_56px_-34px_rgb(4_155_251/0.55)] md:p-6 dark:bg-secondary/70"
                     >
                       <motion.span
                         aria-hidden="true"
-                        className={`absolute top-0 h-px w-1/2 bg-gradient-to-r from-transparent via-brand-solid/70 to-transparent ${
-                          i % 2 === 0 ? "right-0 origin-right" : "left-0 origin-left"
-                        }`}
+                        className="absolute top-0 left-0 h-px w-2/3 origin-left bg-gradient-to-r from-brand-solid/70 via-brand-400/45 to-transparent"
                         initial={{ scaleX: 0, opacity: 0 }}
                         whileInView={{ scaleX: 1, opacity: 1 }}
                         viewport={{ once: true, amount: 0.5 }}
@@ -1107,11 +1093,7 @@ export default function Home({
                           ease: EASE,
                         }}
                       />
-                      <div
-                        className={`flex items-center gap-3 ${
-                          i % 2 === 0 ? "md:flex-row-reverse" : ""
-                        }`}
-                      >
+                      <div className="flex items-center gap-3">
                         <span className="rounded-full bg-brand-primary_alt px-3 py-1 text-sm font-semibold tracking-wider text-brand-secondary ring-1 ring-brand/20">
                           {item.year}
                         </span>
@@ -1125,20 +1107,14 @@ export default function Home({
             })}
 
             {/* Pipeline endcap — same size as milestone dots; rail ends on its center */}
-            <div className="relative h-5">
+            <div className="relative grid grid-cols-[3rem_minmax(0,1fr)] gap-x-5 md:grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] md:gap-x-8">
               <span
                 aria-hidden="true"
-                className="absolute bottom-0 left-4 z-10 -translate-x-1/2 md:left-1/2"
+                className="relative z-10 col-start-1 flex justify-center md:col-start-2"
               >
-                <motion.span
-                  className="flex size-5 items-center justify-center rounded-full bg-brand-secondary shadow-[0_0_12px_2px_rgb(4_155_251/0.45)]"
-                  style={{
-                    opacity: timelineEndOpacity,
-                    scale: timelineEndScale,
-                  }}
-                >
+                <span className="flex size-6 items-center justify-center rounded-full border border-brand/35 bg-primary shadow-[0_0_0_6px_var(--color-bg-primary),0_0_18px_2px_rgb(4_155_251/0.28)] dark:bg-secondary">
                   <span className="size-1.5 rounded-full bg-brand-solid" />
-                </motion.span>
+                </span>
               </span>
             </div>
           </div>
@@ -1161,6 +1137,7 @@ export default function Home({
           <InfiniteMarquee
             durationSec={AMBIENT_CYCLE_SECONDS * 2}
             pauseOnHover={false}
+            className="py-6 md:py-8"
             renderTrack={() => (
               <>
                 {/* Duplicate once inside the track so the strip is always wider than the viewport */}
@@ -1168,18 +1145,18 @@ export default function Home({
                   partnerLogos.map((partner, i) => (
                     <div
                       key={`${copy}-${partner.name}-${i}`}
-                      className="mx-4 flex h-24 w-56 shrink-0 items-center gap-4 rounded-xl bg-secondary px-5 ring-1 ring-secondary md:mx-5"
+                      className="mx-4 flex h-24 w-60 shrink-0 items-center gap-4 rounded-xl border border-brand/10 bg-white px-5 shadow-[0_16px_40px_rgb(15_23_42/0.08)] ring-1 ring-slate-950/5 md:mx-5 dark:border-white/10 dark:bg-secondary dark:shadow-none dark:ring-secondary"
                     >
                       <Image
                         src={partner.logo_src}
                         alt={copy === 0 ? partner.name : ""}
                         width={180}
                         height={64}
-                        className="h-9 w-auto max-w-[6.5rem] object-contain opacity-60 brightness-[0.5] dark:opacity-55 dark:brightness-100"
+                        className="h-9 w-auto max-w-[7rem] object-contain opacity-75 brightness-[0.35] contrast-125 saturate-0 dark:opacity-60 dark:brightness-100 dark:contrast-100"
                       />
                       <span className="min-w-0">
-                        <span className="block text-xs font-semibold text-primary">{partner.name}</span>
-                        <span className="mt-1 block text-[11px] leading-snug text-tertiary">
+                        <span className="block text-xs font-semibold text-slate-950 dark:text-primary">{partner.name}</span>
+                        <span className="mt-1 block text-[11px] leading-snug text-slate-600 dark:text-tertiary">
                           {PARTNER_CAPABILITIES[partner.name] ?? "Enterprise technology"}
                         </span>
                       </span>
@@ -1407,24 +1384,15 @@ export default function Home({
                 className="mt-4 text-lg text-tertiary md:mt-5 lg:text-xl"
               >
                 {finalCta?.description ??
-                  "Schedule a free consultation with our enterprise architects and discover how ICE can transform your infrastructure."}
+                  "Talk through the platform, risk, timing, and cost questions with a US-based IBM Power and cloud infrastructure specialist."}
               </motion.p>
             </div>
             <motion.div
               {...reveal(MOTION_STAGGER * 2)}
               className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start"
             >
-              {finalCta?.cta_secondary ? (
-                <Button color="secondary" size="xl" href={finalCta.cta_secondary.href}>
-                  {finalCta.cta_secondary.label}
-                </Button>
-              ) : (
-                <Button color="secondary" size="xl" href="tel:18007869188">
-                  Call 1-800-786-9188
-                </Button>
-              )}
-              <Button size="xl" href={finalCta?.cta_primary?.href ?? "/contact"} iconTrailing={ArrowRight}>
-                {finalCta?.cta_primary?.label ?? "Get Started"}
+              <Button size="xl" href={finalCta?.cta_primary?.href ?? "tel:18007869188"} iconTrailing={ArrowRight}>
+                {finalCta?.cta_primary?.label ?? "Call an architect now"}
               </Button>
             </motion.div>
           </div>

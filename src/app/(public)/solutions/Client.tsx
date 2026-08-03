@@ -42,6 +42,13 @@ import StickySolutionCta from "@/components/marketing/StickySolutionCta";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
+const AS400_SERVICE = {
+  title: "AS400 Hosting",
+  href: "/solutions/as400",
+  icon: Server01,
+  desc: "AS400, AS/400, iSeries, and IBM i hosting, support, security, backup, high availability, and disaster recovery.",
+};
+
 const DEFAULT_CATEGORIES = [
   {
     title: "Managed Cloud Services",
@@ -82,6 +89,7 @@ const DEFAULT_CATEGORIES = [
     description: "Fully managed IT operations so you can focus on your business.",
     icon: Server01,
     services: [
+      AS400_SERVICE,
       { title: "Managed Microsoft Services", href: "/solutions/managed-microsoft", icon: Monitor01, desc: "Complete Microsoft 365 and Azure management and optimization." },
       { title: "Automation Suite", href: "/solutions/automation-suite", icon: Dataflow01, desc: "AI-powered patch management, vulnerability remediation, and security automation." },
       { title: "Systems Management", href: "/solutions/systems-management", icon: Settings01, desc: "Proactive monitoring, patching, and performance management." },
@@ -98,6 +106,42 @@ function BrandHairline() {
       className="h-px w-full bg-gradient-to-r from-transparent via-brand-500/40 to-transparent"
     />
   );
+}
+
+type SolutionCategoryLike = {
+  title?: string;
+  description?: string;
+  icon?: any;
+  services?: any[];
+};
+
+function ensureAs400Visible(categories: SolutionCategoryLike[]): SolutionCategoryLike[] {
+  const hasAs400 = categories.some((category) =>
+    (category.services ?? []).some((service) => service?.href === AS400_SERVICE.href),
+  );
+  if (hasAs400) return categories;
+
+  const managedIndex = categories.findIndex((category) =>
+    String(category.title ?? "").toLowerCase().includes("managed services"),
+  );
+
+  if (managedIndex >= 0) {
+    return categories.map((category, index) =>
+      index === managedIndex
+        ? { ...category, services: [AS400_SERVICE, ...(category.services ?? [])] }
+        : category,
+    );
+  }
+
+  return [
+    ...categories,
+    {
+      title: "Managed Services",
+      description: "Fully managed IT operations for IBM i, Microsoft, automation, and systems management.",
+      icon: Server01,
+      services: [AS400_SERVICE],
+    },
+  ];
 }
 
 const SOLUTIONS_CONSULT_HREF =
@@ -149,7 +193,7 @@ export default function SolutionsPage({
   }, []);
 
   const hero = cmsData?.hero ?? {};
-  const categories = (cmsData?.categories?.items ?? DEFAULT_CATEGORIES).map((cat: any) => ({
+  const categories = ensureAs400Visible((cmsData?.categories?.items ?? DEFAULT_CATEGORIES).map((cat: any) => ({
     ...cat,
     icon: typeof cat.icon === "string" ? resolveIcon(cat.icon) : cat.icon,
     services: (cat.services ?? []).map((svc: any) => ({
@@ -157,7 +201,7 @@ export default function SolutionsPage({
       icon: typeof svc.icon === "string" ? resolveIcon(svc.icon) : svc.icon,
       desc: svc.desc ?? svc.description ?? "",
     })),
-  }));
+  })));
   const finalCta = cmsData?.final_cta ?? cmsData?.cta ?? {};
   const extraSections = (orderedSections ?? []).filter(
     (section) => !["hero", "categories", "final_cta", "cta"].includes(section.section_key)
@@ -328,17 +372,17 @@ export default function SolutionsPage({
         </div>
       </section>
 
-      <section className="border-b border-secondary bg-primary py-10 md:py-12">
+      <section className="border-b border-secondary bg-primary py-7 md:py-8">
         <div className="mx-auto max-w-container px-4 md:px-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+          <div className="grid gap-5 lg:grid-cols-[minmax(280px,0.9fr)_minmax(520px,1fr)] lg:items-start">
+            <div className="max-w-xl">
               <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Who this is for</p>
               <h2 className="mt-2 text-display-xs font-semibold text-primary">Narrow the catalog live</h2>
               <p className="mt-2 text-sm text-tertiary" aria-live="polite">
                 Showing {visibleCount} solution{visibleCount === 1 ? "" : "s"} for this environment.
               </p>
             </div>
-            <div className="flex flex-col gap-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:w-full lg:max-w-2xl lg:justify-self-end">
               <fieldset>
                 <legend className="mb-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Industry</legend>
                 <div className="flex flex-wrap gap-2">

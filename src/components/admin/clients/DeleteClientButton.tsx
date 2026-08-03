@@ -59,7 +59,7 @@ export default function DeleteClientButton({ clientId, clientName }: { clientId:
 
               <p className="text-sm text-tertiary">
                 Are you sure you want to delete <strong className="font-semibold text-primary">{clientName}</strong>? All
-                associated contacts, invoices, documents, resources, and surveys will be permanently removed.
+                associated contacts, billing history, documents, resources, and surveys will be permanently removed.
               </p>
 
               {error && (

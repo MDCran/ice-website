@@ -57,11 +57,18 @@ function AdminLoginForm() {
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("admin_profiles")
-        .select("id, totp_enabled")
+        .select("id, role")
         .eq("id", user.id)
         .single();
+
+      if (profileError) {
+        setError(profileError.message ?? "Admin access check failed.");
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
 
       if (!profile) {
         await supabase.auth.signOut();
@@ -70,7 +77,24 @@ function AdminLoginForm() {
         return;
       }
 
-      if (profile.totp_enabled) {
+      const { data: profileWithTotp, error: totpError } = await supabase
+        .from("admin_profiles")
+        .select("totp_enabled")
+        .eq("id", user.id)
+        .single();
+
+      const requiresTotp =
+        !totpError &&
+        Boolean((profileWithTotp as { totp_enabled?: boolean } | null)?.totp_enabled);
+
+      if (totpError && totpError.code !== "42703") {
+        setError(totpError.message);
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+
+      if (requiresTotp) {
         setStep("2fa");
         setTotpCode("");
         setLoading(false);

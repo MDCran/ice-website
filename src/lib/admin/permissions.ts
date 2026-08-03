@@ -17,6 +17,7 @@ export type AdminCapability =
   | "clients.provision"
   | "surveys.manage"
   | "leads.manage"
+  | "marketing.manage"
   | "settings.manage"
   | "audit.view"
   | "performance.view"
@@ -35,6 +36,7 @@ const ROLE_CAPS: Record<string, AdminCapability[]> = {
     "clients.provision",
     "surveys.manage",
     "leads.manage",
+    "marketing.manage",
     "settings.manage",
     "audit.view",
     "performance.view",
@@ -52,6 +54,7 @@ const ROLE_CAPS: Record<string, AdminCapability[]> = {
     "clients.provision",
     "surveys.manage",
     "leads.manage",
+    "marketing.manage",
     "settings.manage",
     "audit.view",
     "performance.view",
@@ -70,6 +73,7 @@ const ROLE_CAPS: Record<string, AdminCapability[]> = {
     "nav.edit",
     "performance.view",
     "leads.manage",
+    "marketing.manage",
   ],
   sales_ops: [
     "leads.manage",
@@ -109,5 +113,6 @@ export const NAV_CAPABILITY: Record<string, AdminCapability | undefined> = {
   "/admin/illustrations": "media.manage",
   "/admin/clients": "clients.manage",
   "/admin/contacts": "leads.manage",
+  "/admin/marketing": "marketing.manage",
   "/admin/settings": "settings.manage",
 };

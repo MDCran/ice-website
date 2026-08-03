@@ -56,6 +56,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // App Router pages that are not CMS-backed yet
   const staticExtras: MetadataRoute.Sitemap = [
     {
+      url: `${baseUrl}/solutions/as400`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/solutions/find`,
       changeFrequency: "monthly",
       priority: 0.7,
@@ -71,11 +76,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.65,
     },
     {
+      url: `${baseUrl}/subscribe`,
+      changeFrequency: "monthly",
+      priority: 0.4,
+    },
+    {
       url: `${baseUrl}/for-ai`,
       changeFrequency: "monthly",
       priority: 0.4,
     },
   ];
 
-  return [...entries, ...staticExtras];
+  const seen = new Set<string>();
+  return [...entries, ...staticExtras].filter((entry) => {
+    if (seen.has(entry.url)) return false;
+    seen.add(entry.url);
+    return true;
+  });
 }

@@ -112,6 +112,10 @@ create table if not exists client_accounts (
   country text default 'US',
   phone text,
   website text,
+  balance_due_cents bigint not null default 0,
+  balance_currency text not null default 'USD',
+  quickbooks_payment_url text,
+  balance_due_updated_at timestamptz,
   is_active boolean default true,
   created_at timestamptz default now(),
   updated_at timestamptz default now()

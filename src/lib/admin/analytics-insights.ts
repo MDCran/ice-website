@@ -8,6 +8,7 @@ export interface PageViewInsight {
 
 export interface AnalyticsInsights {
   available: boolean;
+  setupRequired: boolean;
   totalViews: number;
   viewsLast7Days: number;
   viewsLast30Days: number;
@@ -35,6 +36,7 @@ function dateKey(d: Date): string {
 export async function getAnalyticsInsights(): Promise<AnalyticsInsights> {
   const empty: AnalyticsInsights = {
     available: false,
+    setupRequired: false,
     totalViews: 0,
     viewsLast7Days: 0,
     viewsLast30Days: 0,
@@ -65,7 +67,13 @@ export async function getAnalyticsInsights(): Promise<AnalyticsInsights> {
 
     // Missing relation / permission → treat as not set up yet
     if (totalRes.error) {
-      return empty;
+      return {
+        ...empty,
+        setupRequired: /relation|table|schema cache|does not exist|permission/i.test(totalRes.error.message),
+        setupHint: /relation|table|schema cache|does not exist/i.test(totalRes.error.message)
+          ? "Analytics storage is not installed in the connected Supabase project. Apply the migration below, then browse the public site once."
+          : "Analytics could not be read from Supabase. Check the page_views table policy and service configuration.",
+      };
     }
 
     const totalViews = totalRes.count ?? 0;
@@ -133,6 +141,7 @@ export async function getAnalyticsInsights(): Promise<AnalyticsInsights> {
 
     return {
       available: true,
+      setupRequired: false,
       totalViews,
       viewsLast7Days: last7Res.count ?? 0,
       viewsLast30Days: last30Res.count ?? 0,

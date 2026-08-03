@@ -5,7 +5,8 @@ import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-ic
 import { Table, TableCard } from "@/components/application/table/table";
 import ContactsFilter from "./ContactsFilter";
 import ContactReadToggle from "./ContactReadToggle";
-import ContactStageSelect, { PIPELINE_STAGES } from "./ContactStageSelect";
+import ContactStageSelect from "./ContactStageSelect";
+import { PIPELINE_STAGES } from "@/lib/admin/pipeline";
 
 export default async function ContactsPage({
   searchParams,
@@ -37,6 +38,11 @@ export default async function ContactsPage({
   }
 
   const { data: contacts, error } = await query;
+  const { data: callbacks } = await supabase
+    .from("callback_requests")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   if (error) {
     return (
@@ -70,6 +76,13 @@ export default async function ContactsPage({
         </div>
       </div>
 
+      <div className="mb-6 rounded-xl bg-secondary p-4 ring-1 ring-secondary">
+        <p className="text-sm font-semibold text-primary">Turn submissions into follow-up</p>
+        <p className="mt-1 max-w-3xl text-sm text-tertiary">
+          Start with the newest unread requests, move each lead through a stage, and use the callback cards above to schedule the next conversation. Filters and stages save time when the queue grows.
+        </p>
+      </div>
+
       <ContactsFilter
         initialQuery={q ?? ""}
         initialFrom={from ?? ""}
@@ -77,6 +90,28 @@ export default async function ContactsPage({
         initialSort={sort ?? "newest"}
         initialStage={stage ?? ""}
       />
+
+      {callbacks && callbacks.length > 0 && (
+        <section className="mb-6 rounded-xl bg-primary p-5 ring-1 ring-secondary">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-md font-semibold text-primary">Callback requests</h2>
+              <p className="mt-1 text-sm text-tertiary">Fast phone requests submitted from the personalized website CTA.</p>
+            </div>
+            <Badge size="sm" color="brand">{callbacks.filter((item) => item.status === "new").length} new</Badge>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {callbacks.slice(0, 9).map((item) => (
+              <div key={item.id} className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
+                <a href={`tel:${String(item.phone).replace(/\D/g, "")}`} className="text-sm font-semibold text-brand-secondary hover:underline">{item.phone}</a>
+                <p className="mt-1 text-sm text-primary">{item.preferred_time || "No preferred time"}</p>
+                <p className="mt-1 text-xs text-tertiary">{item.context || "General inquiry"}</p>
+                <p className="mt-2 text-xs text-quaternary">{new Date(item.created_at).toLocaleString("en-US")}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {!contacts || contacts.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-16 text-center shadow-xs ring-1 ring-secondary">

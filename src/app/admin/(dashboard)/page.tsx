@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import {
+  Activity,
   AlertTriangle,
   ArrowRight,
   Clock,
@@ -87,6 +88,79 @@ const quickActions: { label: string; href: string; external?: boolean }[] = [
   { label: "Upload Files", href: "/admin/files" },
 ];
 
+const adminAreaGuide = [
+  {
+    group: "Build",
+    label: "CMS Pages",
+    description: "Create, arrange, preview, and publish public page content.",
+    href: "/admin/cms",
+    icon: Globe01,
+  },
+  {
+    group: "Build",
+    label: "Sales Enablement",
+    description: "Shape the enterprise buyer story, proof, tools, and CTAs.",
+    href: "/admin/sales",
+    icon: TrendUp01,
+  },
+  {
+    group: "Build",
+    label: "Marketing Center",
+    description: "Build audiences, email campaigns, and customer messages.",
+    href: "/admin/marketing",
+    icon: Mail01,
+  },
+  {
+    group: "Optimize",
+    label: "Navigation",
+    description: "Control how visitors move through the public site.",
+    href: "/admin/navigation",
+    icon: ArrowRight,
+  },
+  {
+    group: "Optimize",
+    label: "SEO & Analytics",
+    description: "Improve discoverability and understand what visitors do.",
+    href: "/admin/seo",
+    icon: Globe01,
+  },
+  {
+    group: "Optimize",
+    label: "Core Web Vitals",
+    description: "Find pages that are slow, unstable, or hard to interact with.",
+    href: "/admin/performance",
+    icon: Activity,
+  },
+  {
+    group: "Optimize",
+    label: "Templates & Files",
+    description: "Reuse approved layouts and keep the asset library organized.",
+    href: "/admin/templates",
+    icon: LayersTwo01,
+  },
+  {
+    group: "Operate",
+    label: "Clients",
+    description: "Manage accounts, portal content, contacts, and balances.",
+    href: "/admin/clients",
+    icon: Users01,
+  },
+  {
+    group: "Operate",
+    label: "Form Submissions",
+    description: "Review inbound requests and move them through follow-up.",
+    href: "/admin/contacts",
+    icon: Mail01,
+  },
+  {
+    group: "Operate",
+    label: "Audit Log",
+    description: "See who changed important content and when.",
+    href: "/admin/audit",
+    icon: Clock,
+  },
+];
+
 export default async function AdminDashboard() {
   const data = await getDashboardData();
   const maxCount = Math.max(...data.dailyCounts.map((d) => d.count), 1);
@@ -104,6 +178,37 @@ export default async function AdminDashboard() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-display-xs font-semibold text-primary">Dashboard</h1>
+
+      <section className="overflow-hidden rounded-xl bg-brand-primary_alt/60 ring-1 ring-brand/20">
+        <div className="border-b border-brand/15 px-5 py-4">
+          <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">Admin control center</p>
+          <h2 className="mt-1 text-lg font-semibold text-primary">What would you like to manage?</h2>
+          <p className="mt-1 max-w-3xl text-sm text-tertiary">
+            Build public experiences, improve how they perform, or operate customer follow-up from one workspace. Choose an area below to go directly to its tools.
+          </p>
+        </div>
+        <div className="grid gap-px bg-brand/15 sm:grid-cols-2 lg:grid-cols-3">
+          {adminAreaGuide.map((area) => {
+            const Icon = area.icon;
+            return (
+              <Link
+                key={area.label}
+                href={area.href}
+                className="group bg-primary/75 p-4 outline-focus-ring transition hover:bg-primary focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
+              >
+                <div className="flex items-start gap-3">
+                  <FeaturedIcon icon={Icon} color="brand" theme="light" size="sm" />
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-semibold tracking-[0.16em] text-quaternary uppercase">{area.group}</span>
+                    <h3 className="mt-1 text-sm font-semibold text-primary group-hover:text-brand-secondary">{area.label}</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-tertiary">{area.description}</p>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -139,7 +244,7 @@ export default async function AdminDashboard() {
         {!a.available ? (
           <div className="rounded-xl bg-primary px-6 py-10 text-center shadow-xs ring-1 ring-secondary">
             <FeaturedIcon icon={CursorClick01} color="gray" theme="light" size="lg" className="mx-auto" />
-            <p className="mt-4 text-sm font-semibold text-primary">No analytics data yet</p>
+            <p className="mt-4 text-sm font-semibold text-primary">{a.setupRequired ? "Analytics storage is not connected" : "No pageviews recorded yet"}</p>
             <p className="mx-auto mt-1 max-w-lg text-sm text-tertiary">{a.setupHint}</p>
             <p className="mx-auto mt-3 max-w-lg text-xs text-quaternary">
               Migration file:{" "}

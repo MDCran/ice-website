@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { AlertCircle, CheckCircle, Send01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
 import { NativeSelect } from "@/components/base/select/select-native";
 import { TextArea } from "@/components/base/textarea/textarea";
@@ -53,6 +54,7 @@ export function EnterpriseBriefingForm({
   const [timeline, setTimeline] = useState("");
   const [context, setContext] = useState("");
   const [website, setWebsite] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -83,6 +85,7 @@ export function EnterpriseBriefingForm({
           service: config.serviceValue,
           message,
           smsConsent: false,
+          marketingConsent,
           website,
           formKey: "enterprise_briefing",
           source: "enterprise_briefing",
@@ -229,6 +232,15 @@ export function EnterpriseBriefingForm({
                 value={context}
                 onChange={setContext}
               />
+              <div className="sm:col-span-2">
+                <Checkbox
+                  size="md"
+                  aria-label="Email marketing consent"
+                  isSelected={marketingConsent}
+                  onChange={setMarketingConsent}
+                  hint="Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time."
+                />
+              </div>
 
               {status === "error" && (
                 <p

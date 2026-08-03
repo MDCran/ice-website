@@ -52,7 +52,7 @@ exception
 end $$;
 
 -- ─── 2. page_views: first-party analytics ────────────────────────────────────
-create table if not exists page_views (
+create table if not exists public.page_views (
   id bigint generated always as identity primary key,
   path text not null,
   title text,
@@ -63,19 +63,19 @@ create table if not exists page_views (
   created_at timestamptz not null default now()
 );
 
-create index if not exists page_views_created_at_idx on page_views (created_at desc);
-create index if not exists page_views_path_idx on page_views (path);
-create index if not exists page_views_path_created_idx on page_views (path, created_at desc);
+create index if not exists page_views_created_at_idx on public.page_views (created_at desc);
+create index if not exists page_views_path_idx on public.page_views (path);
+create index if not exists page_views_path_created_idx on public.page_views (path, created_at desc);
 
-comment on table page_views is
+comment on table public.page_views is
   'First-party public pageview + optional LCP samples for the admin dashboard.';
 
-alter table page_views enable row level security;
+alter table public.page_views enable row level security;
 
 -- Inserts go through the Next.js API (service role). Admins can read aggregates.
-drop policy if exists "page_views: admins can select" on page_views;
+drop policy if exists "page_views: admins can select" on public.page_views;
 create policy "page_views: admins can select"
-  on page_views for select to authenticated
+  on public.page_views for select to authenticated
   using (is_admin());
 
 -- No direct anon/authenticated insert policies — use service role via API.

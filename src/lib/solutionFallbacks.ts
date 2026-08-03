@@ -13,6 +13,7 @@ export const SOLUTION_SLUGS = [
   "disaster-recovery",
   "high-availability",
   "ransomware-recovery",
+  "as400",
   "ibm-i-security",
   "protection-suite",
   "security-monitoring",
@@ -39,6 +40,7 @@ type SectionMap = {
   features?: {
     eyebrow?: string;
     heading?: string;
+    description?: string;
     items: { icon: string; title: string; description: string }[];
   };
   process: {
@@ -51,6 +53,7 @@ type SectionMap = {
     heading: string;
     description: string;
   };
+  [key: string]: unknown;
 };
 
 export type SolutionFallbackPage = {
@@ -174,6 +177,197 @@ const FALLBACKS: Record<SolutionSlug, SolutionFallbackPage> = {
     "Ransomware Recovery",
     "Immutable backups, rapid restore paths, and incident response to get operations back online after an attack.",
   ),
+  "as400": (() => {
+    const sections: SectionMap = {
+      hero: {
+        headline: "AS400",
+        subheadline:
+          "AS400 hosting, AS/400 support, iSeries managed services, and IBM i cloud hosting for mission-critical workloads. ICE hosts, secures, backs up, and manages IBM i environments with 24/7 support from an IBM Business Partner since 1990.",
+        proof_labels: ["IBM Business Partner since 1990", "AS400 and IBM i expertise", "24/7 managed operations", "SOC 2 Type II"],
+      },
+      features: {
+        eyebrow: "AS400 services",
+        heading: "AS400 hosting, IBM i support, security, backup, HA, and DR",
+        description:
+          "A single AS400 partner for the high-intent services buyers search for: hosting, support, modernization, security, backup, high availability, and disaster recovery.",
+        items: [
+          {
+            icon: "Server",
+            title: "AS400 hosting and IBM i cloud hosting",
+            description:
+              "Move AS400, AS/400, iSeries, and IBM i workloads to ICE-managed IBM Power infrastructure with secure connectivity, monitored capacity, and predictable service levels.",
+          },
+          {
+            icon: "Shield",
+            title: "AS400 security hardening",
+            description:
+              "Harden object authority, user access, exit points, audit settings, and monitoring for IBM i environments that support regulated or uptime-sensitive operations.",
+          },
+          {
+            icon: "Database",
+            title: "AS400 backup and restore testing",
+            description:
+              "Protect IBM i data with managed backup policies, encrypted offsite copies, restore testing, and ransomware-aware recovery planning.",
+          },
+          {
+            icon: "Zap",
+            title: "AS400 high availability and disaster recovery",
+            description:
+              "Design replication, failover, RPO/RTO targets, and recovery runbooks for AS/400 and IBM i systems that cannot tolerate extended downtime.",
+          },
+          {
+            icon: "RefreshCw",
+            title: "AS400 migration and modernization",
+            description:
+              "Plan migrations from aging AS/400 hardware, iSeries, and IBM Power environments with dependency mapping, testing, rollback planning, and validated cutover steps.",
+          },
+          {
+            icon: "Monitor",
+            title: "IBM i managed services",
+            description:
+              "Add experienced IBM i administrators for monitoring, PTF planning, performance tuning, capacity planning, reporting, and daily operational ownership.",
+          },
+        ],
+      },
+      process: {
+        items: [
+          {
+            step: "01",
+            title: "Assess the AS400 environment",
+            description:
+              "We review IBM i release level, hardware lifecycle, LPARs, storage, backups, security posture, users, integrations, dependencies, and uptime requirements.",
+          },
+          {
+            step: "02",
+            title: "Map hosting, security, HA, and DR",
+            description:
+              "ICE designs the right mix of AS400 hosting, IBM i cloud hosting, security hardening, backup, high availability, disaster recovery, and managed services.",
+          },
+          {
+            step: "03",
+            title: "Migrate and validate",
+            description:
+              "We coordinate replication, cutover, testing, access, rollback planning, and business validation around your workload window.",
+          },
+          {
+            step: "04",
+            title: "Operate with specialists",
+            description:
+              "Your AS400 estate is monitored, tuned, protected, and supported by engineers who understand IBM i, IBM Power Systems, and enterprise operations.",
+          },
+        ],
+      },
+      benefits: {
+        items: [
+          "Keep AS400 applications running without buying and maintaining aging hardware",
+          "Improve IBM i security posture with prioritized, auditable controls",
+          "Add tested AS400 backup, high availability, and disaster recovery for critical workloads",
+          "Get a practical roadmap from AS/400 terminology to modern IBM i cloud hosting and operations",
+        ],
+      },
+      cta: {
+        heading: "Need help with AS400?",
+        description:
+          "Talk with ICE about AS400 hosting, AS/400 support, IBM i cloud hosting, iSeries managed services, security hardening, backup, high availability, or disaster recovery.",
+      },
+    };
+
+    const orderedSections = buildOrdered(sections);
+    orderedSections.splice(
+      3,
+      0,
+      {
+        section_key: "as400_faq",
+        section_type: "faq",
+        content: {
+          eyebrow: "AS400 FAQ",
+          heading: "AS400 questions buyers ask first",
+          items: [
+            {
+              question: "What is AS400 called now?",
+              answer:
+                "AS400 is commonly written as AS/400. The platform evolved through iSeries and is now known as IBM i running on IBM Power Systems. Many teams still search for AS400 when they need IBM i hosting, AS/400 support, iSeries managed services, security, backup, or disaster recovery.",
+            },
+            {
+              question: "Does ICE support AS400 and IBM i systems?",
+              answer:
+                "Yes. ICE supports AS400, AS/400, iSeries, IBM i, and IBM Power environments across AS400 hosting, IBM i cloud hosting, security hardening, backup, high availability, disaster recovery, migration, and ongoing operations.",
+            },
+            {
+              question: "Can AS400 workloads move to the cloud?",
+              answer:
+                "Yes. ICE helps organizations move AS400, AS/400, iSeries, and IBM i workloads to managed cloud or hosted IBM Power infrastructure while preserving critical applications, data, access patterns, integrations, and recovery requirements.",
+            },
+            {
+              question: "What AS400 services does ICE provide?",
+              answer:
+                "ICE provides AS400 hosting, AS/400 support, IBM i cloud hosting, iSeries managed services, security assessment and hardening, backup, disaster recovery, high availability, migration planning, monitoring, performance support, and lifecycle support.",
+            },
+            {
+              question: "Who is AS400 hosting best for?",
+              answer:
+                "AS400 hosting is best for organizations that rely on IBM i applications but want to reduce aging hardware risk, improve resilience, add 24/7 operations, strengthen security, or build a tested disaster recovery path without rewriting the application.",
+            },
+            {
+              question: "Can ICE help with AS400 backup and disaster recovery?",
+              answer:
+                "Yes. ICE can design AS400 backup, high availability, and disaster recovery plans with encrypted copies, replication, recovery testing, failover planning, and RPO/RTO targets matched to the workload.",
+            },
+          ],
+        },
+        sort_order: 3,
+        is_visible: true,
+      },
+      {
+        section_key: "as400_comparison",
+        section_type: "comparison",
+        content: {
+          eyebrow: "Modernization",
+          heading: "AS400 support without staying stuck on old hardware",
+          description:
+            "ICE helps teams keep trusted AS400 applications while improving IBM i hosting, infrastructure lifecycle, resilience, security, and operational coverage.",
+          before_label: "Aging AS400 estate",
+          after_label: "ICE-managed IBM i platform",
+          rows: [
+            {
+              label: "Infrastructure",
+              before: "Aging on-prem hardware and limited refresh options",
+              after: "Managed IBM Power capacity with lifecycle planning",
+            },
+            {
+              label: "Operations",
+              before: "Knowledge concentrated in a small internal team",
+              after: "24/7 support from IBM i and enterprise infrastructure specialists",
+            },
+            {
+              label: "Recovery",
+              before: "Backups or DR plans that may not be regularly tested",
+              after: "Managed backup, HA, DR runbooks, and restore validation",
+            },
+            {
+              label: "Security",
+              before: "Legacy access patterns and audit gaps",
+              after: "IBM i hardening, access review, audit posture, and monitoring",
+            },
+          ],
+        },
+        sort_order: 4,
+        is_visible: true,
+      },
+    );
+    orderedSections.forEach((section, index) => {
+      section.sort_order = index;
+    });
+
+    return {
+      title: "AS400",
+      meta_title: "AS400 Hosting | AS/400 IBM i Cloud Hosting & Support | ICE",
+      meta_description:
+        "AS400 hosting, AS/400 support, IBM i cloud hosting, iSeries managed services, security, backup, HA, and disaster recovery from ICE.",
+      sections,
+      orderedSections,
+    };
+  })(),
   "ibm-i-security": page(
     "IBM i Security",
     "Hardened IBM i environments with monitoring, access controls, and compliance-ready security operations.",

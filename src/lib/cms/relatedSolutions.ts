@@ -84,6 +84,14 @@ export const SOLUTION_CATALOG: SolutionRef[] = [
     tags: ["ransomware", "recovery", "immutable"],
   },
   {
+    slug: "as400",
+    title: "AS400 Hosting",
+    description: "AS400, AS/400, iSeries, and IBM i hosting, support, security, backup, HA, DR, and modernization planning.",
+    category: "Managed Services",
+    icon: "Server",
+    tags: ["as400", "as400 hosting", "as/400", "ibm i hosting", "iseries", "ibm power", "hosting"],
+  },
+  {
     slug: "ibm-i-security",
     title: "IBM i Security",
     description: "Hardening, monitoring, and access controls purpose-built for IBM i.",

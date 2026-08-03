@@ -26,6 +26,7 @@ This file is a machine-readable directory of ICE's services and company informat
 - [Endpoint Security](https://icesales.com/solutions/endpoint-security): Centralized endpoint protection and management securing servers, workstations, and remote devices at scale.
 
 ### Managed Services
+- [AS400 Hosting](https://icesales.com/solutions/as400): AS400, AS/400, iSeries, IBM i hosting, IBM i cloud hosting, support, security, backup, high availability, disaster recovery, and modernization planning from ICE.
 - [Managed Microsoft Services](https://icesales.com/solutions/managed-microsoft): End-to-end management of Microsoft 365, Azure, and Windows Server environments with monitoring, patching, and support.
 - [Automation Suite](https://icesales.com/solutions/automation-suite): Operational automation for scheduling, monitoring, and routine IT tasks to reduce manual effort and error across systems.
 - [Systems Management](https://icesales.com/solutions/systems-management): Proactive management, patching, and performance tuning of IBM Power, IBM i, and enterprise server infrastructure.

@@ -23,8 +23,13 @@ function pageSubtitle(page: { slug: string; page_type: string }): string | null 
   return null;
 }
 
-export default async function CMSPagesPage() {
+export default async function CMSPagesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ q?: string; status?: string }>;
+}) {
   const supabase = await createClient();
+  const { q = "", status = "all" } = (await searchParams) ?? {};
   const { data: pages, error } = await supabase
     .from("pages")
     .select("*")
@@ -38,6 +43,15 @@ export default async function CMSPagesPage() {
     );
   }
 
+  const query = q.trim().toLowerCase();
+  const filteredPages = (pages ?? []).filter((page) => {
+    const matchesQuery = !query || [page.title, page.slug, page.page_type].some((value) =>
+      String(value ?? "").toLowerCase().includes(query),
+    );
+    const matchesStatus = status === "all" || (status === "published" ? page.is_published : !page.is_published);
+    return matchesQuery && matchesStatus;
+  });
+
   return (
     <div>
       <div className="mb-8 flex items-center justify-between gap-4">
@@ -47,8 +61,37 @@ export default async function CMSPagesPage() {
             Manage website pages and their content sections
           </p>
         </div>
-        <CMSPageActions mode="create" />
+        <div className="flex items-center gap-2">
+          <span className="hidden text-xs text-tertiary sm:inline">{filteredPages.length} of {pages?.length ?? 0} pages</span>
+          <CMSPageActions mode="create" />
+        </div>
       </div>
+
+      <form method="get" className="mb-5 flex flex-col gap-2 rounded-xl bg-primary p-3 shadow-xs ring-1 ring-secondary sm:flex-row">
+        <label className="sr-only" htmlFor="cms-search">Search pages</label>
+        <input
+          id="cms-search"
+          name="q"
+          defaultValue={q}
+          placeholder="Search by page title, slug, or type..."
+          className="h-10 flex-1 rounded-lg border-0 bg-secondary px-3 text-sm text-primary outline-none ring-1 ring-secondary placeholder:text-placeholder focus:ring-2 focus:ring-brand"
+        />
+        <label className="sr-only" htmlFor="cms-status">Filter by status</label>
+        <select
+          id="cms-status"
+          name="status"
+          defaultValue={status}
+          className="h-10 rounded-lg border-0 bg-secondary px-3 text-sm font-medium text-primary outline-none ring-1 ring-secondary focus:ring-2 focus:ring-brand"
+        >
+          <option value="all">All statuses</option>
+          <option value="published">Published</option>
+          <option value="draft">Drafts</option>
+        </select>
+        <button type="submit" className="h-10 rounded-lg bg-brand-solid px-4 text-sm font-semibold text-white transition hover:brightness-105">
+          Search
+        </button>
+        {(q || status !== "all") && <Link href="/admin/cms" className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-semibold text-tertiary hover:bg-secondary">Clear</Link>}
+      </form>
 
       {!pages || pages.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-16 text-center ring-1 ring-secondary">
@@ -57,6 +100,11 @@ export default async function CMSPagesPage() {
           <p className="mt-1 text-sm text-tertiary">
             Create your first page to get started.
           </p>
+        </div>
+      ) : filteredPages.length === 0 ? (
+        <div className="rounded-xl bg-primary px-6 py-12 text-center ring-1 ring-secondary">
+          <p className="text-md font-semibold text-primary">No matching pages</p>
+          <p className="mt-1 text-sm text-tertiary">Try a different search term or clear the filters.</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
@@ -85,7 +133,7 @@ export default async function CMSPagesPage() {
                 </tr>
               </thead>
               <tbody>
-                {pages.map((page) => {
+                {filteredPages.map((page) => {
                   const config =
                     page.slug === "site-settings"
                       ? typeConfig.settings

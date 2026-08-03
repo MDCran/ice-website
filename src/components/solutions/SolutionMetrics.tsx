@@ -425,7 +425,7 @@ function ClockWidget({ inView, hours, label }: { inView: boolean; hours: number;
 export type MetricPreset =
   | "managed-cloud-hosting" | "managed-private-cloud" | "managed-hybrid-cloud" | "cloud-migration"
   | "backup-as-a-service" | "disaster-recovery" | "high-availability" | "ransomware-recovery"
-  | "ibm-i-security" | "protection-suite" | "security-monitoring" | "threat-detection" | "endpoint-security"
+  | "as400" | "ibm-i-security" | "protection-suite" | "security-monitoring" | "threat-detection" | "endpoint-security"
   | "managed-microsoft" | "automation-suite" | "systems-management" | "ibm-power-vs"
   // Legacy presets still work — they map to a representative page
   | "cloud" | "data-protection" | "security" | "managed-services";
@@ -449,6 +449,7 @@ function getPageConfig(preset: MetricPreset): PageConfig {
     "disaster-recovery": { heading: "Recovery readiness", subtitle: "Guaranteed disaster recovery metrics backed by SLA commitments." },
     "high-availability": { heading: "Availability metrics", subtitle: "Mission-critical uptime metrics for zero-tolerance environments." },
     "ransomware-recovery": { heading: "Cyber resilience", subtitle: "Ransomware defense and recovery metrics with immutable, air-gapped protection." },
+    "as400": { heading: "AS400 modernization signals", subtitle: "Managed IBM i outcomes for uptime, security, recovery, and operational coverage." },
     "ibm-i-security": { heading: "IBM i security posture", subtitle: "Hardening and compliance metrics for your IBM i environment." },
     "protection-suite": { heading: "Protection coverage", subtitle: "Multi-layered defense metrics across your entire threat surface." },
     "security-monitoring": { heading: "SOC performance", subtitle: "24/7 Security Operations Center monitoring metrics." },
@@ -524,6 +525,13 @@ function getMetrics(preset: MetricPreset, inView: boolean): ReactNode[] {
       <TimerDisplay key="c" inView={inView} minutes={240} label="Full System Recovery" />,
       <DonutGauge key="d" inView={inView} percent={100} label="Air-Gap Isolation" color="emerald" />,
       <Checklist key="e" inView={inView} label="Cyber Vault" items={["Immutable Copy", "Air-Gapped", "Threat Scanned", "Clean Room", "Time-Locked"]} />,
+    ],
+    "as400": [
+      <BigCounter key="a" inView={inView} value={35} suffix="+" label="Years IBM Experience" />,
+      <UptimeBar key="b" inView={inView} sla={99.99} label="Managed Platform Target" />,
+      <TimerDisplay key="c" inView={inView} minutes={15} label="Recovery Planning Target" />,
+      <Speedometer key="d" inView={inView} value={96} label="Operational Readiness" />,
+      <Checklist key="e" inView={inView} label="AS400 Coverage" items={["Hosting", "Security", "Backup", "HA", "DR"]} />,
     ],
     "ibm-i-security": [
       <RadarScan key="a" inView={inView} count={342} label="Vulnerabilities Found" />,

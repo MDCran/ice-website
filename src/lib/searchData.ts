@@ -129,6 +129,33 @@ export const searchIndex: SearchItem[] = [
 
   // Solutions - Managed Services
   {
+    title: "AS400 Hosting",
+    description:
+      "AS400, AS/400, iSeries, and IBM i hosting, support, security, backup, high availability, disaster recovery, and modernization services.",
+    url: "/solutions/as400",
+    category: "Managed Services",
+    keywords: [
+      "as400",
+      "as400 hosting",
+      "as/400",
+      "as/400 hosting",
+      "ibm i",
+      "ibm i hosting",
+      "ibm i cloud hosting",
+      "iseries",
+      "iseries hosting",
+      "ibm power",
+      "hosting",
+      "support",
+      "security",
+      "backup",
+      "high availability",
+      "ha",
+      "disaster recovery",
+      "draas",
+    ],
+  },
+  {
     title: "Managed Microsoft Services",
     description:
       "Full lifecycle management of Microsoft 365, Azure, and Windows Server environments.",

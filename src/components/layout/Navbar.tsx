@@ -42,6 +42,57 @@ interface MegaColumn {
   links: { label: string; href: string }[];
 }
 
+const AS400_MEGA_LINK = { label: "AS400 Hosting", href: "/solutions/as400" };
+const AS400_MEGA_MATCHERS: string[] = [
+  "as400",
+  "as/400",
+  "as-400",
+  "/as400",
+  "/as-400",
+];
+
+function isAs400Link(link: { label: string; href: string }): boolean {
+  const label = link.label.toLowerCase();
+  const href = link.href.toLowerCase();
+  return AS400_MEGA_MATCHERS.some((token) => label.includes(token) || href.includes(token));
+}
+
+function ensureAs400MegaLink(columns: MegaColumn[]): MegaColumn[] {
+  const hasAs400 = columns.some((column) =>
+    column.links.some((link) => isAs400Link(link)),
+  );
+
+  if (hasAs400) {
+    return columns.map((column) => ({
+      ...column,
+      links: column.links.map((link) =>
+        link.href === AS400_MEGA_LINK.href ? AS400_MEGA_LINK : link,
+      ),
+    }));
+  }
+
+  const managedIndex = columns.findIndex((column) =>
+    column.heading.toLowerCase().includes("managed services"),
+  );
+
+  if (managedIndex >= 0) {
+    return columns.map((column, index) =>
+      index === managedIndex
+        ? { ...column, links: [AS400_MEGA_LINK, ...column.links] }
+        : column,
+    );
+  }
+
+  return [
+    ...columns,
+    {
+      heading: "Managed Services",
+      icon: Server01,
+      links: [AS400_MEGA_LINK],
+    },
+  ];
+}
+
 const SOLUTIONS_MEGA: MegaColumn[] = [
   {
     heading: "Managed Cloud Services",
@@ -78,6 +129,7 @@ const SOLUTIONS_MEGA: MegaColumn[] = [
     heading: "Managed Services",
     icon: Server01,
     links: [
+      AS400_MEGA_LINK,
       { label: "Managed Microsoft Services", href: "/solutions/managed-microsoft" },
       { label: "Automation Suite", href: "/solutions/automation-suite" },
       { label: "Systems Management", href: "/solutions/systems-management" },
@@ -146,7 +198,7 @@ export default function Navbar({
 
   const megaItems = navItems?.filter((i: any) => i.location === "navbar_mega" && i.is_visible)
     .sort((a: any, b: any) => a.sort_order - b.sort_order) ?? [];
-  const solutionsMega: MegaColumn[] = megaItems.length > 0
+  const rawSolutionsMega: MegaColumn[] = megaItems.length > 0
     ? (() => {
         const columnMap = new Map<string, MegaColumn>();
         for (const item of megaItems) {
@@ -159,6 +211,7 @@ export default function Navbar({
         return Array.from(columnMap.values());
       })()
     : SOLUTIONS_MEGA;
+  const solutionsMega = ensureAs400MegaLink(rawSolutionsMega);
 
   const pathname = usePathname();
   const prefersReducedMotion = useReducedMotion();

@@ -285,6 +285,19 @@ export default function SeoSettingsClient({
         </div>
       )}
 
+      <div className="grid gap-3 rounded-xl bg-secondary p-4 ring-1 ring-secondary sm:grid-cols-3">
+        {[
+          ["Discover", "Titles, descriptions, and structured data help search engines understand each page."],
+          ["Measure", "Analytics and Search Console show which pages attract and convert visitors."],
+          ["Improve", "Use the health checklist below to fix missing metadata before publishing."],
+        ].map(([title, description]) => (
+          <div key={title}>
+            <p className="text-sm font-semibold text-primary">{title}</p>
+            <p className="mt-1 text-xs leading-5 text-tertiary">{description}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Per-page note */}
       <div className="flex items-start gap-2.5 rounded-lg bg-secondary p-3.5 text-sm text-tertiary ring-1 ring-secondary ring-inset">
         <InfoCircle className="mt-0.5 size-4 shrink-0 text-fg-quaternary" />

@@ -15,8 +15,6 @@ const PAGE_NAMES: Record<string, string> = {
   "/portal": "Dashboard",
   "/portal/profile": "Company & Contacts",
   "/portal/resources": "Resources",
-  "/portal/reports": "QBR & reports",
-  "/portal/invoices": "Invoices",
   "/portal/surveys": "Surveys",
 };
 
@@ -43,6 +41,12 @@ function getBreadcrumbs(pathname: string) {
     });
   }
   return crumbs;
+}
+
+function formatRoleLabel(role: string) {
+  return role
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 export default function PortalHeader() {
@@ -110,7 +114,7 @@ export default function PortalHeader() {
             color={role === "admin" ? "brand" : role === "editor" ? "blue" : "gray"}
             className="hidden sm:inline-flex"
           >
-            {role}
+            {formatRoleLabel(role)}
           </Badge>
         )}
         <Dropdown.Root>

@@ -340,6 +340,16 @@ export default function MediaPage() {
         </div>
       </div>
 
+      <div className="mb-6 flex flex-col gap-2 rounded-xl bg-secondary p-4 ring-1 ring-secondary sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-primary">Keep the media library ready to publish</p>
+          <p className="mt-1 text-sm text-tertiary">Upload source files, organize them into folders, and add useful alt text so every image is accessible and searchable.</p>
+        </div>
+        {missingAltCount > 0 && (
+          <span className="shrink-0 rounded-full bg-utility-orange-50 px-3 py-1 text-xs font-medium text-utility-orange-700">{missingAltCount} missing alt text</span>
+        )}
+      </div>
+
       {/* New Folder Dialog */}
       {showNewFolder && (
         <div className="mb-6 flex items-center gap-3 rounded-xl bg-primary p-4 shadow-xs ring-1 ring-secondary">

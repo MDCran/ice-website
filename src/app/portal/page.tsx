@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ClipboardCheck, File02, AlertTriangle, ArrowRight, CheckCircle } from "@untitledui/icons";
-import { Badge } from "@/components/base/badges/badges";
+import { ClipboardCheck, AlertTriangle, ArrowRight, CheckCircle, BankNote01 } from "@untitledui/icons";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import PortalOnboarding from "@/components/portal/PortalOnboarding";
 
@@ -24,7 +23,10 @@ async function getPortalData() {
       companyName: "",
       userName: "",
       activeSurveysCount: 0,
-      recentInvoices: [],
+      balanceDueCents: 0,
+      balanceCurrency: "USD",
+      quickBooksPaymentUrl: null,
+      balanceDueUpdatedAt: null,
       noAccess: true,
       debugUserId: user.id,
       debugError: clientUserError?.message ?? "No row found",
@@ -33,30 +35,24 @@ async function getPortalData() {
 
   const { data: account } = await supabase
     .from("client_accounts")
-    .select("company_name")
+    .select("company_name, balance_due_cents, balance_currency, quickbooks_payment_url, balance_due_updated_at")
     .eq("id", clientUser.client_account_id)
     .single();
 
-  const [activeSurveys, recentInvoices] = await Promise.all([
-    supabase
-      .from("surveys")
-      .select("id", { count: "exact", head: true })
-      .eq("client_account_id", clientUser.client_account_id)
-      .eq("status", "active"),
-    supabase
-      .from("client_invoices")
-      .select("*")
-      .eq("client_account_id", clientUser.client_account_id)
-      .not("status", "in", '("draft","hidden")')
-      .order("created_at", { ascending: false })
-      .limit(5),
-  ]);
+  const { count: activeSurveysCount } = await supabase
+    .from("surveys")
+    .select("id", { count: "exact", head: true })
+    .eq("client_account_id", clientUser.client_account_id)
+    .eq("status", "active");
 
   return {
     companyName: account?.company_name ?? "Your Company",
     userName: clientUser.first_name,
-    activeSurveysCount: activeSurveys.count ?? 0,
-    recentInvoices: recentInvoices.data ?? [],
+    activeSurveysCount: activeSurveysCount ?? 0,
+    balanceDueCents: account?.balance_due_cents ?? 0,
+    balanceCurrency: account?.balance_currency ?? "USD",
+    quickBooksPaymentUrl: account?.quickbooks_payment_url ?? null,
+    balanceDueUpdatedAt: account?.balance_due_updated_at ?? null,
   };
 }
 
@@ -98,7 +94,6 @@ export default async function PortalDashboard() {
 
       <PortalOnboarding
         userName={data.userName}
-        hasActiveSurveys={data.activeSurveysCount > 0}
       />
 
       {/* Action Items */}
@@ -136,82 +131,46 @@ export default async function PortalDashboard() {
         </div>
       )}
 
-      {/* Recent Invoices */}
-      <div className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
-        <div className="flex items-center justify-between gap-4 border-b border-secondary px-4 py-5 md:px-6">
-          <h2 className="text-md font-semibold text-primary">Recent Invoices</h2>
-          <Link
-            href="/portal/invoices"
-            className="rounded-sm text-sm font-semibold text-brand-secondary outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            View all
-          </Link>
+      <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <FeaturedIcon color={data.balanceDueCents > 0 ? "warning" : "success"} theme="light" size="md" icon={BankNote01} />
+            <div>
+              <p className="text-sm font-semibold text-primary">Account balance</p>
+              <p className="mt-1 text-sm text-tertiary">
+                {data.balanceDueCents > 0 ? "Balance due" : "Your account is paid in full"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+              <p className="text-xl font-semibold text-primary">
+              {formatCurrency(data.balanceDueCents, data.balanceCurrency)}
+            </p>
+            {data.balanceDueCents > 0 && data.quickBooksPaymentUrl && (
+              <a
+                href={data.quickBooksPaymentUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-lg bg-brand-solid px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105"
+              >
+                Pay balance
+              </a>
+            )}
+          </div>
         </div>
-        {data.recentInvoices.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-secondary">
-                <tr className="border-b border-secondary">
-                  <th className="px-6 py-3 text-left text-xs font-semibold whitespace-nowrap text-quaternary">
-                    Invoice
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold whitespace-nowrap text-quaternary">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold whitespace-nowrap text-quaternary">
-                    Date
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.recentInvoices.map((invoice) => (
-                  <tr
-                    key={invoice.id}
-                    className="border-b border-secondary transition-colors last:border-b-0 hover:bg-secondary"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <File02 aria-hidden="true" className="size-4 text-fg-quaternary" />
-                        <span className="text-sm font-medium text-primary">
-                          {invoice.title || invoice.invoice_number}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <InvoiceStatusBadge status={invoice.status} />
-                    </td>
-                    <td className="px-6 py-4 text-sm text-tertiary">
-                      {invoice.created_at
-                        ? new Date(invoice.created_at).toLocaleDateString()
-                        : "N/A"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="px-6 py-12 text-center text-sm text-tertiary">
-            No invoices found.
-          </div>
+        {data.balanceDueUpdatedAt && (
+          <p className="mt-3 text-xs text-quaternary">
+            Balance last updated {new Date(data.balanceDueUpdatedAt).toLocaleDateString()}
+          </p>
         )}
       </div>
     </div>
   );
 }
 
-function InvoiceStatusBadge({ status }: { status: string }) {
-  const colors: Record<string, "brand" | "success" | "error" | "gray"> = {
-    sent: "brand",
-    accepted: "success",
-    denied: "error",
-    paid: "success",
-    overdue: "error",
-  };
-
-  return (
-    <Badge type="pill-color" size="sm" color={colors[status] || "gray"}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </Badge>
-  );
+function formatCurrency(cents: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency || "USD",
+  }).format((cents || 0) / 100);
 }

@@ -49,6 +49,16 @@ export default function ClientEditForm({
   const [logoUrl, setLogoUrl] = useState(client.logo_url ?? "");
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const [isActive, setIsActive] = useState(client.is_active !== false);
+  const [balanceDue, setBalanceDue] = useState(
+    typeof client.balance_due_cents === "number"
+      ? (client.balance_due_cents / 100).toFixed(2)
+      : "0.00",
+  );
+  const [quickBooksPaymentUrl, setQuickBooksPaymentUrl] = useState(
+    typeof client.quickbooks_payment_url === "string"
+      ? client.quickbooks_payment_url
+      : "",
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +75,9 @@ export default function ClientEditForm({
         website: website || null,
         logo_url: logoUrl || null,
         is_active: isActive,
+        balance_due_cents: Math.max(0, Math.round(Number(balanceDue || 0) * 100)),
+        quickbooks_payment_url: quickBooksPaymentUrl || null,
+        balance_due_updated_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq("id", client.id);
@@ -111,6 +124,31 @@ export default function ClientEditForm({
           onChange={(value) => setPhone(formatPhone(value))}
           placeholder="(555) 123-4567"
         />
+      </div>
+
+      <div className="rounded-xl bg-secondary p-4 ring-1 ring-secondary">
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-primary">Account balance</h3>
+          <p className="mt-1 text-xs text-tertiary">
+            Keep this summary in sync with QuickBooks. The payment link is shown to the client.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <Input
+            label="Balance due (USD)"
+            type="number"
+            value={balanceDue}
+            onChange={setBalanceDue}
+            placeholder="0.00"
+          />
+          <Input
+            label="QuickBooks payment link"
+            type="url"
+            value={quickBooksPaymentUrl}
+            onChange={setQuickBooksPaymentUrl}
+            placeholder="https://quickbooks.intuit.com/..."
+          />
+        </div>
       </div>
 
       <TextArea

@@ -184,7 +184,7 @@ export default function ContactPage({
       </section>
 
       {bookingUrl && (
-        <section className="border-b border-secondary py-12 md:py-16">
+        <section id="book-time" className="scroll-mt-24 border-b border-secondary py-12 md:py-16">
           <div className="mx-auto max-w-container px-4 md:px-8">
             <BookingEmbed url={bookingUrl} location="contact_page" />
           </div>

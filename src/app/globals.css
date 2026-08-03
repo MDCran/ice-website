@@ -145,17 +145,20 @@ body:has(.contact-form-popover) {
 }
 
 @keyframes ice-hero-scroll-wheel {
-  0% {
-    opacity: 0;
-    transform: translateY(-0.15rem);
-  }
-  22%,
-  58% {
-    opacity: 1;
-  }
+  0%,
   100% {
-    opacity: 0;
-    transform: translateY(1.55rem);
+    opacity: 0.72;
+    transform: translateY(-0.45rem);
+    box-shadow: 0 0 8px rgb(4 155 251 / 0.48);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(0.85rem);
+    box-shadow: 0 0 14px rgb(4 155 251 / 0.85);
+  }
+  72% {
+    opacity: 0.92;
+    transform: translateY(0.35rem);
   }
 }
 
@@ -177,8 +180,8 @@ body:has(.contact-form-popover) {
 }
 
 .ice-hero-scroll-wheel {
-  animation: ice-hero-scroll-wheel 1.85s ease-in-out infinite;
-  will-change: transform, opacity;
+  animation: ice-hero-scroll-wheel 1.35s ease-in-out infinite;
+  will-change: transform, opacity, box-shadow;
 }
 
 .ice-hero-scroll-chevron {
@@ -193,15 +196,15 @@ body:has(.contact-form-popover) {
 @keyframes ice-timeline-auto-beam {
   0% {
     opacity: 0;
-    top: -24%;
+    top: -18%;
   }
-  10%,
-  78% {
-    opacity: 1;
+  12%,
+  84% {
+    opacity: 0.9;
   }
   100% {
     opacity: 0;
-    top: 100%;
+    top: 106%;
   }
 }
 
@@ -224,18 +227,18 @@ body:has(.contact-form-popover) {
   background: linear-gradient(
     to bottom,
     transparent,
-    rgb(4 155 251 / 0.92) 34%,
-    rgb(186 230 254 / 0.98) 52%,
-    rgb(4 155 251 / 0.72) 68%,
+    rgb(4 155 251 / 0.5) 30%,
+    rgb(186 230 254 / 0.9) 52%,
+    rgb(4 155 251 / 0.4) 70%,
     transparent
   );
-  box-shadow: 0 0 22px 4px rgb(4 155 251 / 0.58);
-  animation: ice-timeline-auto-beam 4.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  box-shadow: 0 0 12px 2px rgb(4 155 251 / 0.32);
+  animation: ice-timeline-auto-beam 5.4s cubic-bezier(0.45, 0, 0.2, 1) infinite;
   will-change: top, opacity;
 }
 
 .ice-timeline-auto-tip {
-  animation: ice-timeline-auto-tip 4.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  animation: ice-timeline-auto-tip 5.4s cubic-bezier(0.45, 0, 0.2, 1) infinite;
   will-change: top, opacity;
 }
 
@@ -266,6 +269,50 @@ body:has(.contact-form-popover) {
   animation-delay: -0.75s;
   animation-duration: 2.2s;
   opacity: 0.72;
+}
+
+@keyframes ice-arch-data-packet {
+  0% {
+    left: -2%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+  10% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    left: 102%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+}
+
+.ice-arch-data-packet {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: rgb(186 230 254 / 0.98);
+  box-shadow:
+    0 0 8px 2px rgb(125 211 252 / 0.9),
+    -1.5rem 0 1.25rem -0.4rem rgb(4 155 251 / 0.65);
+  animation: ice-arch-data-packet 2.8s linear infinite;
+  will-change: left, opacity, transform;
+}
+
+.ice-arch-data-packet-delayed {
+  animation-delay: -1.4s;
+  animation-duration: 3.4s;
+  opacity: 0.8;
+}
+
+.ice-arch-data-packet-fast {
+  animation-delay: -0.75s;
+  animation-duration: 2.2s;
+  opacity: 0.7;
 }
 
 @keyframes ice-arch-ambient-flow {
@@ -335,6 +382,26 @@ body:has(.contact-form-popover) {
 .ice-arch-progress-stream {
   background-size: 200% 100%;
   animation: ice-arch-progress-stream 1.8s linear infinite;
+}
+
+@keyframes ice-arch-flow-fill-pulse {
+  0%,
+  100% {
+    opacity: 0.74;
+    filter: saturate(1) brightness(0.9);
+  }
+  50% {
+    opacity: 1;
+    filter: saturate(1.18) brightness(1.18);
+  }
+}
+
+.ice-arch-flow-fill {
+  animation:
+    ice-arch-progress-stream 1.45s linear infinite,
+    ice-arch-flow-fill-pulse 3.6s ease-in-out infinite;
+  transform: translateZ(0);
+  will-change: background-position, opacity, filter;
 }
 
 @keyframes ice-arch-rail-base {
@@ -426,6 +493,47 @@ body:has(.contact-form-popover) {
   animation: ice-arch-node-live 3.4s ease-in-out infinite;
 }
 
+@keyframes ice-arch-node-active {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgb(4 155 251 / 0.2));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgb(4 155 251 / 0.48));
+  }
+}
+
+.ice-arch-node-active {
+  animation: ice-arch-node-active 2.2s ease-in-out infinite;
+}
+
+@keyframes ice-arch-detail-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ice-arch-detail-enter {
+  animation: ice-arch-detail-enter 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ice-arch-detail-item-enter {
+  animation: ice-arch-detail-enter 550ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ice-arch-detail-item-enter:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.ice-arch-detail-item-enter:nth-child(3) {
+  animation-delay: 140ms;
+}
+
 @keyframes ice-arch-node-meter {
   0% {
     opacity: 0;
@@ -446,6 +554,60 @@ body:has(.contact-form-popover) {
   box-shadow: 0 0 12px rgb(125 211 252 / 0.7);
   transform-origin: left center;
   width: 62%;
+}
+
+@keyframes ice-arch-layer-card {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 rgb(125 211 252 / 0),
+      0 0 0 rgb(4 155 251 / 0);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 28px rgb(125 211 252 / 0.06),
+      0 0 28px rgb(4 155 251 / 0.12);
+  }
+}
+
+.ice-arch-layer-card {
+  animation: ice-arch-layer-card 4.2s ease-in-out infinite;
+}
+
+@keyframes ice-arch-vertical-flow {
+  0% {
+    top: 0;
+    opacity: 0;
+    transform: translateY(-50%);
+  }
+  14%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+    transform: translateY(50%);
+  }
+}
+
+.ice-arch-vertical-flow::after {
+  position: absolute;
+  left: 50%;
+  width: 3px;
+  height: 3.5rem;
+  content: "";
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgb(255 255 255 / 0.9) 38%,
+    rgb(4 155 251 / 0.9) 70%,
+    transparent
+  );
+  box-shadow: 0 0 14px rgb(4 155 251 / 0.7);
+  animation: ice-arch-vertical-flow 2.6s linear infinite;
+  will-change: top, opacity, transform;
 }
 
 @keyframes ice-solution-architecture-grid {
@@ -483,6 +645,7 @@ body:has(.contact-form-popover) {
 
 @media (prefers-reduced-motion: reduce) {
   .ice-arch-pipeline-sheen,
+  .ice-arch-data-packet,
   .ice-arch-rail-flow,
   .ice-arch-node-breathe,
   .ice-solution-architecture-grid,
@@ -490,9 +653,15 @@ body:has(.contact-form-popover) {
   .ice-arch-ambient-flow,
   .ice-arch-scanner,
   .ice-arch-progress-stream,
+  .ice-arch-flow-fill,
   .ice-arch-rail-base,
   .ice-arch-node-live,
+  .ice-arch-node-active,
+  .ice-arch-detail-enter,
+  .ice-arch-detail-item-enter,
   .ice-arch-node-meter,
+  .ice-arch-layer-card,
+  .ice-arch-vertical-flow::after,
   .ice-hero-scroll-cue,
   .ice-hero-scroll-wheel,
   .ice-hero-scroll-chevron,
