@@ -1,0 +1,708 @@
+{
+  "managed-cloud-hosting": {
+    "listed": true,
+    "category": "Managed Cloud Services",
+    "category_description": "Scalable, reliable cloud infrastructure tailored to enterprise workloads.",
+    "category_icon": "Cloud",
+    "icon": "Cloud",
+    "card_description": "Enterprise cloud hosting with 24/7 management for mission-critical workloads.",
+    "card_image": "/images/solutions/heroes/managed-cloud-hosting.webp",
+    "card_image_alt": "Managed cloud hosting infrastructure",
+    "tags": ["cloud", "hosting", "ibm power", "uptime", "hybrid", "scale", "cost", "outages", "year"],
+    "industries": ["Manufacturing", "Finance", "Healthcare"],
+    "platforms": ["IBM i", "Hybrid"],
+    "outcome": "Run critical workloads at 99.99% target availability",
+    "workloads": ["ibm-i", "hybrid", "distributed", "unsure"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Cloud Services", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Cloud hosting by the numbers",
+      "description": "Real-world performance metrics from Tier-3 data center infrastructure.",
+      "items": [
+        { "type": "donut", "value": 50, "label": "Avg Cost Reduction (3yr)" },
+        { "type": "donut", "value": 70, "label": "Time Saved on Infra Mgmt", "color": "sky" },
+        { "type": "scale", "label": "Auto-Scale" },
+        { "type": "speedometer", "value": 97, "label": "Performance Score" },
+        { "type": "checklist", "label": "Compliance", "items": ["PCI", "HIPAA", "SOX", "GDPR"] }
+      ]
+    },
+    "finder": {
+      "proof": "Tier-3 data centers and engineer-led operations.",
+      "outcomes": ["modernize", "cost", "scale", "operations"],
+      "complexity": "Medium",
+      "timeline": "2-6 weeks",
+      "role": "Primary hosting layer",
+      "cta_label": "Plan a hosting assessment",
+      "next_step": "Inventory workloads, dependency maps, network needs, and service-level targets."
+    }
+  },
+  "managed-private-cloud": {
+    "listed": true,
+    "category": "Managed Cloud Services",
+    "category_description": "Scalable, reliable cloud infrastructure tailored to enterprise workloads.",
+    "category_icon": "Cloud",
+    "icon": "Server",
+    "card_description": "Dedicated private cloud with isolation, compliance controls, and ICE operations.",
+    "card_image": "/images/solutions/heroes/managed-private-cloud.webp",
+    "card_image_alt": "Secure private cloud infrastructure",
+    "tags": ["private cloud", "dedicated", "compliance", "cloud", "private", "regulated", "customer", "security", "scale"],
+    "industries": ["Finance", "Healthcare", "Manufacturing"],
+    "platforms": ["Hybrid", "Azure"],
+    "outcome": "Gain dedicated cloud control without owning the operations",
+    "workloads": ["ibm-i", "microsoft", "hybrid", "unsure"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Cloud Services", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Private cloud performance",
+      "description": "Dedicated environment metrics delivering predictable, compliant results.",
+      "items": [
+        { "type": "donut", "value": 40, "label": "Lower TCO" },
+        { "type": "checklist", "label": "Compliance Ready", "items": ["ISO 27001", "SOC 2", "HIPAA", "PCI-DSS", "GDPR", "NIST-800-53"] },
+        { "type": "donut", "value": 70, "label": "IT Mgmt Time Saved", "color": "sky" },
+        { "type": "shield", "value": 100, "unit": "%", "label": "Tenant Isolation" },
+        { "type": "donut", "value": 0, "suffix": "%", "color": "emerald", "label": "Resource Oversubscription" }
+      ]
+    },
+    "finder": {
+      "proof": "Dedicated environments with compliance-ready controls.",
+      "outcomes": ["modernize", "security", "compliance", "scale"],
+      "complexity": "Medium",
+      "timeline": "3-8 weeks",
+      "role": "Dedicated landing zone",
+      "cta_label": "Scope a private cloud",
+      "next_step": "Define isolation, compliance, access, and performance requirements."
+    }
+  },
+  "managed-hybrid-cloud": {
+    "listed": true,
+    "category": "Managed Cloud Services",
+    "category_description": "Scalable, reliable cloud infrastructure tailored to enterprise workloads.",
+    "category_icon": "Cloud",
+    "icon": "Layers",
+    "card_description": "Connect on-prem IBM Power with cloud capacity under one operating model.",
+    "card_image": "/images/solutions/heroes/managed-hybrid-cloud.webp",
+    "card_image_alt": "Hybrid cloud infrastructure",
+    "tags": ["hybrid", "ibm power", "cloud", "migration", "scale", "microsoft", "ibm-i", "distributed"],
+    "industries": ["Manufacturing", "Finance"],
+    "platforms": ["IBM i", "Azure", "Hybrid"],
+    "outcome": "Unify on-prem and cloud operations under one accountable team",
+    "workloads": ["hybrid", "microsoft", "ibm-i", "distributed"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Cloud Services", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Hybrid cloud impact",
+      "description": "Measurable outcomes from unified hybrid cloud management.",
+      "items": [
+        { "type": "donut", "value": 45, "label": "Cost Optimization" },
+        { "type": "scale", "label": "Elastic Bursting" },
+        { "type": "checklist", "label": "Unified Compliance", "items": ["On-Prem", "Private Cloud", "Public Cloud", "Edge"] },
+        { "type": "uptime", "value": 99.99, "label": "Hybrid SLA" },
+        { "type": "comparison", "label": "Before vs After", "bars": [{ "label": "Vendor Lock-in", "before": 85, "after": 20 }, { "label": "Deploy Time", "before": 80, "after": 25 }, { "label": "Costs", "before": 75, "after": 42 }] }
+      ]
+    },
+    "finder": {
+      "proof": "Unified management across mixed estates.",
+      "outcomes": ["modernize", "scale", "operations"],
+      "complexity": "High",
+      "timeline": "4-10 weeks",
+      "role": "Integration fabric",
+      "cta_label": "Map a hybrid design",
+      "next_step": "Map applications, data flows, identity, and network boundaries."
+    }
+  },
+  "cloud-migration": {
+    "listed": true,
+    "category": "Managed Cloud Services",
+    "category_description": "Scalable, reliable cloud infrastructure tailored to enterprise workloads.",
+    "category_icon": "Cloud",
+    "icon": "RefreshCw",
+    "card_description": "Assess, migrate, and stabilize workloads with a controlled cutover plan.",
+    "card_image": "/images/solutions/heroes/cloud-migration.webp",
+    "card_image_alt": "Enterprise workloads moving to cloud infrastructure",
+    "tags": ["migration", "cutover", "cloud", "modernize", "now", "quarter", "year", "speed"],
+    "industries": ["Manufacturing", "Finance", "Healthcare"],
+    "platforms": ["IBM i", "Azure", "Hybrid"],
+    "outcome": "Move workloads with a controlled, rollback-ready cutover",
+    "workloads": ["ibm-i", "microsoft", "hybrid", "unsure"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Cloud Services", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Migration results",
+      "description": "Proven outcomes from ICE-managed cloud migration projects.",
+      "items": [
+        { "type": "counter", "value": 1200, "suffix": "+", "label": "ICE Migrations" },
+        { "type": "donut", "value": 50, "label": "Avg Cost Reduction" },
+        { "type": "counter", "value": 3, "suffix": "x", "label": "Faster Deployments" },
+        { "type": "donut", "value": 40, "color": "sky", "label": "Fewer Post-Migration Issues" },
+        { "type": "checklist", "label": "Compliance", "items": ["HIPAA", "PCI-DSS", "SOC II", "GDPR"] }
+      ]
+    },
+    "finder": {
+      "proof": "Runbook-led migrations for IBM i, AIX, Windows, and Linux.",
+      "outcomes": ["modernize", "cost", "scale"],
+      "complexity": "Medium",
+      "timeline": "2-12 weeks",
+      "role": "Transition program",
+      "cta_label": "Start migration planning",
+      "next_step": "Prioritize workloads, dependencies, rollback paths, and cutover windows."
+    }
+  },
+  "backup-as-a-service": {
+    "listed": true,
+    "category": "Managed Data Protection",
+    "category_description": "Comprehensive data resilience and business continuity strategies.",
+    "category_icon": "Shield",
+    "icon": "Database",
+    "card_description": "Managed backups with defined RPO targets and restore validation.",
+    "card_image": "/images/solutions/heroes/backup-as-a-service.webp",
+    "card_image_alt": "Secure managed backup storage",
+    "tags": ["backup", "rpo", "restore", "ransomware", "hours", "day", "unknown", "compliance"],
+    "industries": ["Healthcare", "Finance", "Manufacturing"],
+    "platforms": ["IBM i", "Azure", "Hybrid"],
+    "outcome": "Restore protected data in minutes—not after a crisis",
+    "workloads": ["ibm-i", "microsoft", "hybrid", "distributed", "unsure"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Data Protection", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Backup performance",
+      "description": "Enterprise data protection metrics that give you peace of mind.",
+      "items": [
+        { "type": "shield", "value": 2.5, "unit": "PB", "label": "Data Protected" },
+        { "type": "timer", "value": 15, "label": "Recovery Time (RTO)" },
+        { "type": "uptime", "value": 99.999, "label": "Backup Success Rate" },
+        { "type": "donut", "value": 60, "label": "Infrastructure Savings" },
+        { "type": "checklist", "label": "Compliance Ready", "items": ["SOC 2", "HIPAA", "PCI-DSS", "SOX", "GDPR"] }
+      ]
+    },
+    "finder": {
+      "proof": "Recovery confidence before the incident.",
+      "outcomes": ["downtime", "ransomware", "compliance"],
+      "complexity": "Low",
+      "timeline": "1-4 weeks",
+      "role": "Data safety net",
+      "cta_label": "Review backup risk",
+      "next_step": "Assess backup coverage, retention, restore tests, and immutable copy needs."
+    }
+  },
+  "disaster-recovery": {
+    "listed": true,
+    "category": "Managed Data Protection",
+    "category_description": "Comprehensive data resilience and business continuity strategies.",
+    "category_icon": "Shield",
+    "icon": "Shield",
+    "card_description": "Tested DR runbooks with contractual RTO/RPO for IBM i and enterprise systems.",
+    "card_image": "/images/solutions/heroes/disaster-recovery.webp",
+    "card_image_alt": "Disaster recovery replication infrastructure",
+    "tags": ["dr", "rto", "rpo", "ibm i", "backup", "outages", "hours", "minutes", "ransomware", "regulated"],
+    "industries": ["Manufacturing", "Finance", "Healthcare"],
+    "platforms": ["IBM i", "Azure", "Hybrid"],
+    "outcome": "Recover priority systems in under 4 hours",
+    "workloads": ["ibm-i", "microsoft", "hybrid", "distributed", "unsure"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Data Protection", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Recovery readiness",
+      "description": "Guaranteed disaster recovery metrics backed by SLA commitments.",
+      "items": [
+        { "type": "timer", "value": 15, "label": "Guaranteed RTO" },
+        { "type": "donut", "value": 100, "color": "emerald", "label": "DR Test Pass Rate" },
+        { "type": "radar", "value": 0, "label": "Unplanned Outages" },
+        { "type": "uptime", "value": 99.99, "label": "Recovery SLA" },
+        { "type": "comparison", "label": "Business Impact", "bars": [{ "label": "Downtime Cost", "before": 90, "after": 8 }, { "label": "Data Loss Risk", "before": 75, "after": 5 }, { "label": "Recovery Time", "before": 85, "after": 12 }] }
+      ]
+    },
+    "finder": {
+      "proof": "Recovery runbooks built around business tolerance.",
+      "outcomes": ["downtime", "ransomware", "compliance"],
+      "complexity": "Medium",
+      "timeline": "3-8 weeks",
+      "role": "Recovery orchestration",
+      "cta_label": "Define RPO/RTO",
+      "next_step": "Set recovery tiers, failover scope, test cadence, and communication paths."
+    }
+  },
+  "high-availability": {
+    "listed": true,
+    "category": "Managed Data Protection",
+    "category_description": "Comprehensive data resilience and business continuity strategies.",
+    "category_icon": "Shield",
+    "icon": "Zap",
+    "card_description": "Redundant architectures designed for continuous operations.",
+    "card_image": "/images/solutions/heroes/high-availability.webp",
+    "card_image_alt": "High availability systems with redundant infrastructure",
+    "tags": ["ha", "failover", "uptime", "outages", "minutes", "regulated", "logistics", "manufacturing"],
+    "industries": ["Finance", "Manufacturing"],
+    "platforms": ["IBM i", "Hybrid"],
+    "outcome": "Fail over critical systems with near-zero disruption",
+    "workloads": ["ibm-i", "hybrid", "microsoft"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Data Protection", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Availability metrics",
+      "description": "Mission-critical uptime metrics for zero-tolerance environments.",
+      "items": [
+        { "type": "uptime", "value": 99.999, "label": "Target Uptime" },
+        { "type": "timer", "value": 30, "label": "Failover RTO" },
+        { "type": "timer", "value": 10, "label": "RPO (Data Loss Window)" },
+        { "type": "speedometer", "value": 99, "label": "Replication Health" },
+        { "type": "checklist", "label": "Platform Coverage", "items": ["IBM i (HA4i)", "AIX", "Linux", "Windows"] }
+      ]
+    },
+    "finder": {
+      "proof": "Replication and failover for mission-critical workloads.",
+      "outcomes": ["downtime", "scale"],
+      "complexity": "High",
+      "timeline": "4-10 weeks",
+      "role": "Continuity layer",
+      "cta_label": "Model HA options",
+      "next_step": "Identify critical transactions, replication paths, and failover targets."
+    }
+  },
+  "ransomware-recovery": {
+    "listed": true,
+    "category": "Managed Data Protection",
+    "category_description": "Comprehensive data resilience and business continuity strategies.",
+    "category_icon": "Shield",
+    "icon": "Lock",
+    "card_description": "Immutable recovery paths and incident playbooks for ransomware events.",
+    "card_image": "/images/solutions/heroes/ransomware-recovery.webp",
+    "card_image_alt": "Ransomware recovery from protected backups",
+    "tags": ["ransomware", "recovery", "immutable", "backup", "security", "customer", "regulated", "now"],
+    "industries": ["Healthcare", "Finance", "Manufacturing"],
+    "platforms": ["IBM i", "Azure", "Hybrid"],
+    "outcome": "Recover from a clean, immutable point after an attack",
+    "workloads": ["microsoft", "hybrid", "distributed", "ibm-i", "unsure"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Data Protection", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Cyber resilience",
+      "description": "Ransomware defense and recovery metrics with immutable, air-gapped protection.",
+      "items": [
+        { "type": "shield", "value": 100, "unit": "%", "label": "Immutable Backups" },
+        { "type": "radar", "value": 847, "label": "Threats Scanned (24h)" },
+        { "type": "timer", "value": 240, "label": "Full System Recovery" },
+        { "type": "donut", "value": 100, "color": "emerald", "label": "Air-Gap Isolation" },
+        { "type": "checklist", "label": "Cyber Vault", "items": ["Immutable Copy", "Air-Gapped", "Threat Scanned", "Clean Room", "Time-Locked"] }
+      ]
+    },
+    "finder": {
+      "proof": "Clean recovery planning before attackers set the terms.",
+      "outcomes": ["ransomware", "security", "downtime", "compliance"],
+      "complexity": "Medium",
+      "timeline": "2-6 weeks",
+      "role": "Clean recovery path",
+      "cta_label": "Build recovery readiness",
+      "next_step": "Assess immutable backups, identity dependencies, endpoint scope, and recovery order."
+    }
+  },
+  "as400": {
+    "listed": true,
+    "category": "Managed Services",
+    "category_description": "Fully managed IT operations so you can focus on your business.",
+    "category_icon": "Server",
+    "icon": "Server",
+    "card_description": "AS400, AS/400, iSeries, and IBM i hosting, support, security, backup, HA, DR, and modernization planning.",
+    "card_image": "/images/solutions/heroes/as400-ibmi.png",
+    "card_image_alt": "AS400 and IBM i managed infrastructure",
+    "tags": ["as400", "as400 hosting", "as400-hosting", "as/400", "ibm i hosting", "ibm-i-hosting", "ibm-i", "iseries", "ibm power", "hosting", "managed", "modernize", "outsourced", "downtime", "security"],
+    "industries": ["Manufacturing", "Finance", "Healthcare"],
+    "platforms": ["IBM i", "Hybrid"],
+    "outcome": "Modernize AS400 without rewriting mission-critical applications",
+    "workloads": ["ibm-i"],
+    "link_label": "Learn more",
+    "schema": {
+      "service_type": "Managed Services",
+      "aliases": ["AS/400", "iSeries", "IBM i", "IBM Power Systems", "OS/400"],
+      "offer_names": ["AS400 hosting", "AS/400 support", "IBM i cloud hosting", "iSeries managed services", "AS400 security", "AS400 backup", "AS400 high availability", "AS400 disaster recovery"]
+    },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "AS400 modernization signals",
+      "description": "Managed IBM i outcomes for uptime, security, recovery, and operational coverage.",
+      "items": [
+        { "type": "counter", "value": 35, "suffix": "+", "label": "Years IBM Experience" },
+        { "type": "uptime", "value": 99.99, "label": "Managed Platform Target" },
+        { "type": "timer", "value": 15, "label": "Recovery Planning Target" },
+        { "type": "speedometer", "value": 96, "label": "Operational Readiness" },
+        { "type": "checklist", "label": "AS400 Coverage", "items": ["Hosting", "Security", "Backup", "HA", "DR"] }
+      ]
+    },
+    "finder": {
+      "proof": "IBM Business Partner since 1990 with IBM i and AS/400 infrastructure specialists.",
+      "outcomes": ["modernize", "operations", "downtime", "security", "compliance"],
+      "complexity": "Medium",
+      "timeline": "2-8 weeks",
+      "role": "AS400 modernization path",
+      "cta_label": "Talk AS400 hosting",
+      "next_step": "Review IBM i release level, hardware lifecycle, security posture, backups, and recovery targets."
+    }
+  },
+  "ibm-i-security": {
+    "listed": true,
+    "category": "Managed Security",
+    "category_description": "End-to-end cybersecurity for the modern enterprise threat landscape.",
+    "category_icon": "Lock",
+    "icon": "Shield",
+    "card_description": "Hardening, monitoring, and access controls purpose-built for IBM i.",
+    "card_image": "/images/solutions/heroes/ibm-i-security.webp",
+    "card_image_alt": "IBM i enterprise security controls",
+    "tags": ["ibm i", "ibm-i", "security", "hardening", "regulated", "customer", "compliance"],
+    "industries": ["Manufacturing", "Finance", "Healthcare"],
+    "platforms": ["IBM i"],
+    "outcome": "Reduce IBM i exposure with prioritized, auditable controls",
+    "workloads": ["ibm-i"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Security", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "IBM i security posture",
+      "description": "Hardening and compliance metrics for your IBM i environment.",
+      "items": [
+        { "type": "radar", "value": 342, "label": "Vulnerabilities Found" },
+        { "type": "checklist", "label": "Compliance", "items": ["ISO 27001", "SOC 2", "HIPAA", "PCI-DSS", "GDPR", "NIST-800-53"] },
+        { "type": "speedometer", "value": 96, "label": "Security Score" },
+        { "type": "counter", "value": 48, "label": "Exit Points Monitored" },
+        { "type": "comparison", "label": "Risk Reduction", "bars": [{ "label": "Breach Risk", "before": 75, "after": 8 }, { "label": "Unauth Access", "before": 60, "after": 5 }, { "label": "Audit Gaps", "before": 80, "after": 10 }] }
+      ]
+    },
+    "finder": {
+      "proof": "IBM i-specific controls from engineers who know the platform.",
+      "outcomes": ["security", "compliance", "operations"],
+      "complexity": "Medium",
+      "timeline": "2-6 weeks",
+      "role": "Platform hardening",
+      "cta_label": "Assess IBM i security",
+      "next_step": "Review profiles, authorities, exit points, logging, and compliance posture."
+    }
+  },
+  "protection-suite": {
+    "listed": true,
+    "category": "Managed Security",
+    "category_description": "End-to-end cybersecurity for the modern enterprise threat landscape.",
+    "category_icon": "Lock",
+    "icon": "Shield",
+    "card_description": "Layered security controls packaged for ICE-managed estates.",
+    "card_image": "/images/solutions/heroes/protection-suite.webp",
+    "card_image_alt": "Layered enterprise security protection",
+    "tags": ["suite", "security", "layered", "endpoint", "customer", "distributed", "regulated"],
+    "industries": ["Healthcare", "Finance", "Manufacturing"],
+    "platforms": ["Azure", "Hybrid"],
+    "outcome": "Close common endpoint and identity gaps with one protection layer",
+    "workloads": ["distributed", "microsoft", "hybrid"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Security", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Protection coverage",
+      "description": "Multi-layered defense metrics across your entire threat surface.",
+      "items": [
+        { "type": "radar", "value": 18432, "label": "Threats Blocked (30d)" },
+        { "type": "speedometer", "value": 99, "label": "Detection Rate" },
+        { "type": "timer", "value": 2, "label": "Avg Response Time" },
+        { "type": "donut", "value": 95, "label": "False Positive Reduction" },
+        { "type": "checklist", "label": "Layers Active", "items": ["Endpoint", "Network", "Email", "Web", "SOAR"] }
+      ]
+    },
+    "finder": {
+      "proof": "Defense-in-depth without adding operational noise.",
+      "outcomes": ["security", "ransomware", "compliance"],
+      "complexity": "Medium",
+      "timeline": "2-5 weeks",
+      "role": "Layered controls",
+      "cta_label": "Review security coverage",
+      "next_step": "Compare current tools, endpoint coverage, policies, and response gaps."
+    }
+  },
+  "security-monitoring": {
+    "listed": true,
+    "category": "Managed Security",
+    "category_description": "End-to-end cybersecurity for the modern enterprise threat landscape.",
+    "category_icon": "Lock",
+    "icon": "Eye",
+    "card_description": "24/7 US-based monitoring with escalation to ICE security operations.",
+    "card_image": "/images/solutions/heroes/security-monitoring.webp",
+    "card_image_alt": "Security monitoring operations",
+    "tags": ["soc", "monitoring", "24/7", "security", "customer", "regulated", "now", "lean"],
+    "industries": ["Healthcare", "Finance", "Manufacturing"],
+    "platforms": ["IBM i", "Azure", "Hybrid"],
+    "outcome": "Move from alert noise to 24/7 triage and escalation",
+    "workloads": ["microsoft", "hybrid", "distributed", "ibm-i", "unsure"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Security", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "SOC performance",
+      "description": "24/7 Security Operations Center monitoring metrics.",
+      "items": [
+        { "type": "counter", "value": 24, "suffix": "/7", "label": "SOC Coverage" },
+        { "type": "radar", "value": 2100000, "label": "Events Analyzed (30d)" },
+        { "type": "donut", "value": 92, "label": "Alert Noise Reduction" },
+        { "type": "speedometer", "value": 98, "label": "Detection Accuracy" },
+        { "type": "comparison", "label": "SOC Impact", "bars": [{ "label": "Dwell Time", "before": 80, "after": 12 }, { "label": "Alert Fatigue", "before": 85, "after": 15 }, { "label": "Response Time", "before": 70, "after": 10 }] }
+      ]
+    },
+    "finder": {
+      "proof": "Signals reviewed by people who can act.",
+      "outcomes": ["security", "compliance", "operations"],
+      "complexity": "Low",
+      "timeline": "1-3 weeks",
+      "role": "Visibility layer",
+      "cta_label": "Start monitoring review",
+      "next_step": "Identify log sources, alert paths, escalation contacts, and severity rules."
+    }
+  },
+  "threat-detection": {
+    "listed": true,
+    "category": "Managed Security",
+    "category_description": "End-to-end cybersecurity for the modern enterprise threat landscape.",
+    "category_icon": "Lock",
+    "icon": "AlertTriangle",
+    "card_description": "Detection and response workflows tuned for enterprise environments.",
+    "card_image": "/images/solutions/heroes/threat-detection.webp",
+    "card_image_alt": "Threat detection and response operations",
+    "tags": ["threat", "detection", "response", "security", "ransomware", "now", "customer", "endpoint", "distributed"],
+    "industries": ["Healthcare", "Finance", "Manufacturing"],
+    "platforms": ["Azure", "Hybrid"],
+    "outcome": "Detect and contain priority threats before they spread",
+    "workloads": ["distributed", "microsoft", "hybrid", "unsure"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Security", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Detection intelligence",
+      "description": "AI-powered threat detection and response performance.",
+      "items": [
+        { "type": "speedometer", "value": 99, "label": "AI Detection Rate" },
+        { "type": "counter", "value": 24, "suffix": "/7", "label": "MDR Coverage" },
+        { "type": "timer", "value": 3, "label": "Containment Time" },
+        { "type": "radar", "value": 14723, "label": "Threats Neutralized" },
+        { "type": "checklist", "label": "MITRE ATT&CK", "items": ["Recon", "Initial Access", "Execution", "Persistence", "Exfiltration"] }
+      ]
+    },
+    "finder": {
+      "proof": "Incident response discipline attached to detection.",
+      "outcomes": ["security", "ransomware", "operations"],
+      "complexity": "Medium",
+      "timeline": "2-5 weeks",
+      "role": "Response muscle",
+      "cta_label": "Tune detection coverage",
+      "next_step": "Review threat model, response ownership, and high-value assets."
+    }
+  },
+  "endpoint-security": {
+    "listed": true,
+    "category": "Managed Security",
+    "category_description": "End-to-end cybersecurity for the modern enterprise threat landscape.",
+    "category_icon": "Lock",
+    "icon": "Monitor",
+    "card_description": "Managed endpoint protection for distributed workforces.",
+    "card_image": "/images/solutions/heroes/endpoint-security.webp",
+    "card_image_alt": "Managed endpoint security protection",
+    "tags": ["endpoint", "edr", "devices", "security", "distributed", "ransomware", "lean"],
+    "industries": ["Healthcare", "Finance", "Manufacturing"],
+    "platforms": ["Azure", "Hybrid"],
+    "outcome": "Protect every managed endpoint with continuously enforced policy",
+    "workloads": ["distributed", "microsoft", "hybrid"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Security", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Endpoint defense",
+      "description": "Next-gen endpoint protection metrics across every device.",
+      "items": [
+        { "type": "donut", "value": 70, "color": "red", "label": "Breaches Start at Endpoint" },
+        { "type": "counter", "value": 24, "suffix": "/7", "label": "EDR Monitoring" },
+        { "type": "clock", "value": 4, "label": "Patch Window" },
+        { "type": "checklist", "label": "Zero-Trust Checks", "items": ["Device Health", "Compliance", "Identity", "Posture", "Encryption"] },
+        { "type": "comparison", "label": "Endpoint Impact", "bars": [{ "label": "Threats", "before": 80, "after": 2 }, { "label": "Vuln Window", "before": 85, "after": 15 }, { "label": "Incidents", "before": 70, "after": 8 }] }
+      ]
+    },
+    "finder": {
+      "proof": "Endpoint visibility across the places attackers enter.",
+      "outcomes": ["security", "ransomware", "operations"],
+      "complexity": "Low",
+      "timeline": "1-4 weeks",
+      "role": "Endpoint control",
+      "cta_label": "Assess endpoints",
+      "next_step": "Measure device coverage, policy gaps, alert response, and user risk."
+    }
+  },
+  "managed-microsoft": {
+    "listed": true,
+    "category": "Managed Services",
+    "category_description": "Fully managed IT operations so you can focus on your business.",
+    "category_icon": "Server",
+    "icon": "Globe",
+    "card_description": "Microsoft 365 and related services operated by ICE specialists.",
+    "card_image": "/images/solutions/heroes/managed-microsoft.webp",
+    "card_image_alt": "Managed Microsoft cloud services",
+    "tags": ["microsoft", "m365", "identity", "managed", "manual", "lean", "outsourced", "cost"],
+    "industries": ["Finance", "Healthcare"],
+    "platforms": ["Azure", "Hybrid"],
+    "outcome": "Keep Microsoft and Azure environments patched, governed, and supported",
+    "workloads": ["microsoft", "hybrid", "distributed"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Services", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Microsoft optimization",
+      "description": "Managed M365 and Azure performance and savings metrics.",
+      "items": [
+        { "type": "donut", "value": 38, "label": "Cost Savings" },
+        { "type": "uptime", "value": 99.99, "label": "Service Availability" },
+        { "type": "clock", "value": 0, "label": "Migration Downtime" },
+        { "type": "speedometer", "value": 96, "label": "User Satisfaction" },
+        { "type": "comparison", "label": "Operational Impact", "bars": [{ "label": "License Waste", "before": 80, "after": 12 }, { "label": "Ticket Volume", "before": 70, "after": 22 }, { "label": "Config Drift", "before": 65, "after": 8 }] }
+      ]
+    },
+    "finder": {
+      "proof": "Operational ownership for the Microsoft stack.",
+      "outcomes": ["operations", "cost", "security"],
+      "complexity": "Low",
+      "timeline": "1-5 weeks",
+      "role": "Microsoft operations",
+      "cta_label": "Review Microsoft operations",
+      "next_step": "Review tenant, identity, endpoint, licensing, and support handoffs."
+    }
+  },
+  "automation-suite": {
+    "listed": true,
+    "category": "Managed Services",
+    "category_description": "Fully managed IT operations so you can focus on your business.",
+    "category_icon": "Server",
+    "icon": "Zap",
+    "card_description": "Operational automation to reduce toil and speed change windows.",
+    "card_image": "/images/solutions/heroes/automation-suite.webp",
+    "card_image_alt": "Managed IT automation workflows",
+    "tags": ["automation", "runbooks", "ops", "manual", "lean", "managed", "speed", "cost", "security"],
+    "industries": ["Manufacturing", "Finance", "Healthcare"],
+    "platforms": ["Azure", "Hybrid"],
+    "outcome": "Turn repetitive remediation into governed, repeatable workflows",
+    "workloads": ["microsoft", "hybrid", "distributed", "ibm-i"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Services", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Automation impact",
+      "description": "Measurable efficiency gains from AI-powered security and patch automation.",
+      "items": [
+        { "type": "donut", "value": 50, "label": "Downtime Reduction" },
+        { "type": "counter", "value": 100, "suffix": "+", "label": "OSs Supported" },
+        { "type": "speedometer", "value": 76, "label": "IT Leaders: Automation Critical" },
+        { "type": "checklist", "label": "Automation Coverage", "items": ["Patch Mgmt", "Vuln Remediation", "Endpoint Security", "Cloud Gateway"] },
+        { "type": "comparison", "label": "Automation ROI", "bars": [{ "label": "Patch Time", "before": 85, "after": 15 }, { "label": "Vuln Window", "before": 80, "after": 20 }, { "label": "Incidents", "before": 70, "after": 25 }] }
+      ]
+    },
+    "finder": {
+      "proof": "Less toil, faster closure, and fewer configuration surprises.",
+      "outcomes": ["operations", "cost", "security"],
+      "complexity": "Medium",
+      "timeline": "2-6 weeks",
+      "role": "Operational accelerator",
+      "cta_label": "Find automation wins",
+      "next_step": "Identify recurring tickets, patch windows, manual checks, and reporting gaps."
+    }
+  },
+  "systems-management": {
+    "listed": true,
+    "category": "Managed Services",
+    "category_description": "Fully managed IT operations so you can focus on your business.",
+    "category_icon": "Server",
+    "icon": "Settings",
+    "card_description": "Patching, monitoring, and steady-state operations for enterprise systems.",
+    "card_image": "/images/solutions/heroes/systems-management.webp",
+    "card_image_alt": "Enterprise systems management operations",
+    "tags": ["systems", "patching", "ops", "managed", "manual", "lean", "outsourced", "monitoring", "cost", "hybrid"],
+    "industries": ["Manufacturing", "Finance", "Healthcare"],
+    "platforms": ["IBM i", "Azure", "Hybrid"],
+    "outcome": "Reduce operational backlog with proactive monitoring and patching",
+    "workloads": ["ibm-i", "microsoft", "hybrid", "distributed", "unsure"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Services", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Operations excellence",
+      "description": "Proactive systems management performance metrics.",
+      "items": [
+        { "type": "donut", "value": 40, "label": "IT Support Cost Savings" },
+        { "type": "counter", "value": 24, "suffix": "/7", "label": "NOC Operations" },
+        { "type": "uptime", "value": 100, "label": "Uptime Commitment" },
+        { "type": "speedometer", "value": 99, "label": "Platform Health" },
+        { "type": "checklist", "label": "Platforms Managed", "items": ["IBM i", "AIX", "Linux", "Windows", "Cloud"] }
+      ]
+    },
+    "finder": {
+      "proof": "Operational coverage without hiring around the clock.",
+      "outcomes": ["operations", "cost", "downtime"],
+      "complexity": "Low",
+      "timeline": "1-4 weeks",
+      "role": "Daily operations",
+      "cta_label": "Scope managed operations",
+      "next_step": "Define systems, monitoring thresholds, patch cadence, and escalation paths."
+    }
+  },
+  "ibm-power-vs": {
+    "listed": true,
+    "category": "Managed Services",
+    "category_description": "Fully managed IT operations so you can focus on your business.",
+    "category_icon": "Server",
+    "icon": "Server",
+    "card_description": "IBM Power Virtual Server design and managed operations.",
+    "card_image": "/images/solutions/heroes/ibm-power-vs.webp",
+    "card_image_alt": "IBM Power Virtual Server cloud infrastructure",
+    "tags": ["ibm power", "power vs", "cloud", "ibm-i", "migration", "modernize", "scale"],
+    "industries": ["Manufacturing", "Finance"],
+    "platforms": ["IBM i", "Hybrid"],
+    "outcome": "Run IBM Power workloads in cloud capacity without replatforming",
+    "workloads": ["ibm-i", "hybrid"],
+    "link_label": "Learn more",
+    "schema": { "service_type": "Managed Services", "aliases": [], "offer_names": [] },
+    "metrics": {
+      "enabled": true,
+      "eyebrow": "Measurable results",
+      "heading": "Power VS performance",
+      "description": "Cloud-based IBM Power infrastructure metrics.",
+      "items": [
+        { "type": "counter", "value": 15, "suffix": "x", "label": "Faster Provisioning" },
+        { "type": "donut", "value": 40, "label": "Cost Savings" },
+        { "type": "donut", "value": 70, "color": "sky", "label": "On-Prem Infra Reduction" },
+        { "type": "counter", "value": 35, "suffix": "+", "label": "Years IBM Expertise" },
+        { "type": "donut", "value": 80, "color": "emerald", "label": "Lower DR Costs" }
+      ]
+    },
+    "finder": {
+      "proof": "Elastic IBM Power capacity with ICE guidance.",
+      "outcomes": ["modernize", "scale", "operations"],
+      "complexity": "High",
+      "timeline": "4-12 weeks",
+      "role": "IBM Power cloud path",
+      "cta_label": "Plan Power VS",
+      "next_step": "Review IBM Power workloads, licensing, connectivity, and migration windows."
+    }
+  }
+}

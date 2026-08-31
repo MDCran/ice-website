@@ -58,6 +58,62 @@ type QuestionProfile = {
   detailPlaceholder: string;
 };
 
+type QuestionProfileCopy = {
+  key?: string;
+  scope_title?: string;
+  scope_description?: string;
+  platform_label?: string;
+  platform_options?: string[];
+  timeline_label?: string;
+  urgency_options?: Array<{ id: UrgencyId; label?: string; hint?: string }>;
+  detail_title?: string;
+  detail_description?: string;
+  detail_label?: string;
+  detail_placeholder?: string;
+};
+
+export interface ConsultWizardContent {
+  steps?: Array<{ id: Step; label?: string; title?: string; description?: string }>;
+  default_profile?: QuestionProfileCopy;
+  profiles?: QuestionProfileCopy[];
+  copy?: {
+    heading?: string;
+    description?: string;
+    progress_aria_label?: string;
+    service_label?: string;
+    name_label?: string;
+    name_placeholder?: string;
+    email_label?: string;
+    email_placeholder?: string;
+    company_label?: string;
+    company_placeholder?: string;
+    phone_label?: string;
+    sms_aria_label?: string;
+    sms_consent_prefix?: string;
+    sms_policy_label?: string;
+    sms_policy_href?: string;
+    sms_consent_suffix?: string;
+    marketing_aria_label?: string;
+    marketing_consent?: string;
+    calendar_step_label?: string;
+    back_label?: string;
+    continue_label?: string;
+    sending_label?: string;
+    submit_label?: string;
+    reply_note?: string;
+    success_heading?: string;
+    success_message?: string;
+    success_calendar_label?: string;
+    generic_error?: string;
+  };
+  source_labels?: {
+    solution_detail?: string;
+    solution_finder?: string;
+    solutions_index?: string;
+    default?: string;
+  };
+}
+
 const URGENCY_OPTIONS: UrgencyOption[] = [
   { id: "exploring", label: "Exploring options", hint: "No immediate deadline" },
   { id: "planning", label: "Planning this quarter", hint: "Budget / design in progress" },
@@ -282,6 +338,137 @@ const QUESTION_PROFILES: QuestionProfile[] = [
   },
 ];
 
+const DEFAULT_WIZARD_COPY = {
+  heading: "Request a consultation",
+  description: "A few quick questions — about a minute.",
+  progress_aria_label: "Consultation progress",
+  service_label: "What do you need help with?",
+  name_label: "Name",
+  name_placeholder: "John Smith",
+  email_label: "Email",
+  email_placeholder: "john@company.com",
+  company_label: "Company",
+  company_placeholder: "Acme Corp",
+  phone_label: "Phone number",
+  sms_aria_label: "SMS consent",
+  sms_consent_prefix: "I consent to receive SMS text messages from International Computer Exchange. Message and data rates may apply. Reply STOP to opt out. See our",
+  sms_policy_label: "SMS Consent Policy",
+  sms_policy_href: "/sms-consent",
+  sms_consent_suffix: ".",
+  marketing_aria_label: "Email marketing consent",
+  marketing_consent: "Send me occasional ICE infrastructure guidance, service updates, and event announcements. I can unsubscribe at any time.",
+  calendar_step_label: "Prefer to book a calendar slot?",
+  back_label: "Back",
+  continue_label: "Continue",
+  sending_label: "Sending...",
+  submit_label: "Submit request",
+  reply_note: "Typical reply within 1 business day. Urgent requests are prioritized.",
+  success_heading: "Request received",
+  success_message: "Your consultation request was sent. An ICE specialist will follow up shortly.",
+  success_calendar_label: "Or book a time on the calendar",
+  generic_error: "Something went wrong. Please try again.",
+};
+
+const DEFAULT_SOURCE_LABELS = {
+  solution_detail: "Prefilled from the solution page",
+  solution_finder: "Prefilled from the solution finder",
+  solutions_index: "Prefilled from the solutions catalog",
+  default: "Prefilled from your previous page",
+};
+
+function profileToCopy(profile: QuestionProfile): QuestionProfileCopy {
+  return {
+    key: profile.key,
+    scope_title: profile.scopeTitle,
+    scope_description: profile.scopeDescription,
+    platform_label: profile.platformLabel,
+    platform_options: [...profile.platformOptions],
+    timeline_label: profile.timelineLabel,
+    urgency_options: profile.urgencyOptions.map((option) => ({ ...option })),
+    detail_title: profile.detailTitle,
+    detail_description: profile.detailDescription,
+    detail_label: profile.detailLabel,
+    detail_placeholder: profile.detailPlaceholder,
+  };
+}
+
+export function getDefaultConsultWizardContent(): ConsultWizardContent {
+  return {
+    steps: STEPS.map((step) => ({ ...step, ...STEP_META[step.id] })),
+    default_profile: profileToCopy(DEFAULT_QUESTION_PROFILE),
+    profiles: QUESTION_PROFILES.map(profileToCopy),
+    copy: { ...DEFAULT_WIZARD_COPY },
+    source_labels: { ...DEFAULT_SOURCE_LABELS },
+  };
+}
+
+function copyText(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function resolveProfileCopy(base: QuestionProfile, override?: QuestionProfileCopy): QuestionProfile {
+  const urgencyOverrides = Array.isArray(override?.urgency_options) ? override.urgency_options : [];
+  const platformOptions = Array.isArray(override?.platform_options)
+    ? override.platform_options.filter((option): option is string => typeof option === "string")
+    : [...base.platformOptions];
+  return {
+    ...base,
+    scopeTitle: copyText(override?.scope_title, base.scopeTitle),
+    scopeDescription: copyText(override?.scope_description, base.scopeDescription),
+    platformLabel: copyText(override?.platform_label, base.platformLabel),
+    platformOptions: platformOptions.length > 0 ? platformOptions : base.platformOptions,
+    timelineLabel: copyText(override?.timeline_label, base.timelineLabel),
+    urgencyOptions: base.urgencyOptions.map((option) => {
+      const current = urgencyOverrides.find((candidate) => candidate?.id === option.id);
+      return {
+        ...option,
+        label: copyText(current?.label, option.label),
+        hint: copyText(current?.hint, option.hint),
+      };
+    }),
+    detailTitle: copyText(override?.detail_title, base.detailTitle),
+    detailDescription: copyText(override?.detail_description, base.detailDescription),
+    detailLabel: copyText(override?.detail_label, base.detailLabel),
+    detailPlaceholder: copyText(override?.detail_placeholder, base.detailPlaceholder),
+  };
+}
+
+function resolveWizardContent(content?: ConsultWizardContent) {
+  const stepOverrides = Array.isArray(content?.steps) ? content.steps : [];
+  const profileOverrides = Array.isArray(content?.profiles) ? content.profiles : [];
+  const steps = STEPS.map((step) => {
+    const override = stepOverrides.find((candidate) => candidate?.id === step.id);
+    return {
+      ...step,
+      label: copyText(override?.label, step.label),
+      title: copyText(override?.title, STEP_META[step.id].title),
+      description: copyText(override?.description, STEP_META[step.id].description),
+    };
+  });
+  const rawCopy = content?.copy;
+  const copy = Object.fromEntries(
+    Object.entries(DEFAULT_WIZARD_COPY).map(([key, fallback]) => [
+      key,
+      copyText(rawCopy?.[key as keyof typeof DEFAULT_WIZARD_COPY], fallback),
+    ]),
+  ) as typeof DEFAULT_WIZARD_COPY;
+  const rawSourceLabels = content?.source_labels;
+  const sourceLabels = Object.fromEntries(
+    Object.entries(DEFAULT_SOURCE_LABELS).map(([key, fallback]) => [
+      key,
+      copyText(rawSourceLabels?.[key as keyof typeof DEFAULT_SOURCE_LABELS], fallback),
+    ]),
+  ) as typeof DEFAULT_SOURCE_LABELS;
+
+  return {
+    steps,
+    copy,
+    sourceLabels,
+    defaultProfile: resolveProfileCopy(DEFAULT_QUESTION_PROFILE, content?.default_profile),
+    profileOverrides,
+  };
+}
+
 function getQuestionProfile(service?: string) {
   const normalized = normalizeServiceName(service ?? "");
   if (!normalized) return DEFAULT_QUESTION_PROFILE;
@@ -294,6 +481,16 @@ function getQuestionProfile(service?: string) {
       }),
     ) ?? DEFAULT_QUESTION_PROFILE
   );
+}
+
+function getQuestionProfileWithCopy(
+  service: string | undefined,
+  wizard: ReturnType<typeof resolveWizardContent>,
+): QuestionProfile {
+  const base = getQuestionProfile(service);
+  if (base.key === "default") return wizard.defaultProfile;
+  const override = wizard.profileOverrides.find((candidate) => candidate?.key === base.key);
+  return resolveProfileCopy(base, override);
 }
 
 function serviceOptions(groups: ServiceGroup[]) {
@@ -329,16 +526,19 @@ function ensureServiceOption(groups: ServiceGroup[], service?: string) {
   return [{ label: "From your visit", options: [service] }, ...groups];
 }
 
-function labelForSource(source?: string) {
+function labelForSource(
+  source: string | undefined,
+  labels: ReturnType<typeof resolveWizardContent>["sourceLabels"],
+) {
   switch (source) {
     case "solution_detail":
-      return "Prefilled from the solution page";
+      return labels.solution_detail;
     case "solution_finder":
-      return "Prefilled from the solution finder";
+      return labels.solution_finder;
     case "solutions_index":
-      return "Prefilled from the solutions catalog";
+      return labels.solutions_index;
     default:
-      return "Prefilled from your previous page";
+      return labels.default;
   }
 }
 
@@ -346,10 +546,13 @@ function labelForSource(source?: string) {
 export default function ConsultWizard({
   serviceGroups,
   bookingUrl,
+  content,
 }: {
   serviceGroups: ServiceGroup[];
   bookingUrl?: string | null;
+  content?: ConsultWizardContent;
 }) {
+  const wizard = useMemo(() => resolveWizardContent(content), [content]);
   const [step, setStep] = useState<Step>(1);
   const [formData, setFormData] = useState({
     service: "",
@@ -407,7 +610,7 @@ export default function ConsultWizard({
       requestedService: displayRequestedService || undefined,
       service: displayRequestedService || undefined,
       source,
-      sourceLabel: labelForSource(source),
+      sourceLabel: labelForSource(source, wizard.sourceLabels),
       summary: summary || priority || undefined,
     });
 
@@ -418,22 +621,22 @@ export default function ConsultWizard({
       urgency: timelineToUrgency[params.get("timeline") ?? ""] || current.urgency,
       message: (summary || priority) && !current.message ? summary || `Primary need: ${priority}` : current.message,
     }));
-  }, [serviceGroups]);
+  }, [serviceGroups, wizard.sourceLabels]);
 
   const effectiveServiceGroups = useMemo(
     () => ensureServiceOption(serviceGroups, prefillIntent?.service),
     [serviceGroups, prefillIntent?.service],
   );
   const activeProfile = useMemo(
-    () => getQuestionProfile(formData.service || prefillIntent?.service || prefillIntent?.requestedService),
-    [formData.service, prefillIntent?.requestedService, prefillIntent?.service],
+    () => getQuestionProfileWithCopy(formData.service || prefillIntent?.service || prefillIntent?.requestedService, wizard),
+    [formData.service, prefillIntent?.requestedService, prefillIntent?.service, wizard],
   );
   const activeStepMeta =
     step === 1
       ? { title: activeProfile.scopeTitle, description: activeProfile.scopeDescription }
       : step === 3
         ? { title: activeProfile.detailTitle, description: activeProfile.detailDescription }
-        : STEP_META[step];
+        : wizard.steps.find((item) => item.id === step) ?? STEP_META[step];
 
   const goToStep = (next: Step, source: "manual" | "back") => {
     if (source === "manual") {
@@ -447,7 +650,7 @@ export default function ConsultWizard({
   };
 
   const handleServiceChange = (value: string) => {
-    const nextProfile = getQuestionProfile(value);
+    const nextProfile = getQuestionProfileWithCopy(value, wizard);
     setFormData((prev) => ({
       ...prev,
       service: value,
@@ -506,7 +709,7 @@ export default function ConsultWizard({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error || "Something went wrong. Please try again.");
+        throw new Error(data?.error || wizard.copy.generic_error);
       }
 
       pushEvent("contact_submitted", {
@@ -516,12 +719,10 @@ export default function ConsultWizard({
         urgency: formData.urgency,
       });
       setStatus("success");
-      setStatusMessage(
-        "Your consultation request was sent. An ICE specialist will follow up shortly.",
-      );
+      setStatusMessage(wizard.copy.success_message);
     } catch (err) {
       setStatus("error");
-      setStatusMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setStatusMessage(err instanceof Error ? err.message : wizard.copy.generic_error);
     }
   };
 
@@ -531,7 +732,7 @@ export default function ConsultWizard({
         <div role="alert" className="flex items-start gap-3 rounded-lg bg-success-secondary px-4 py-3">
           <CheckCircle className="mt-0.5 size-5 shrink-0 text-fg-success-primary" />
           <div>
-            <p className="text-sm font-semibold text-success-primary">Request received</p>
+            <p className="text-sm font-semibold text-success-primary">{wizard.copy.success_heading}</p>
             <p className="mt-1 text-sm text-success-primary">{statusMessage}</p>
           </div>
         </div>
@@ -550,7 +751,7 @@ export default function ConsultWizard({
               })
             }
           >
-            Or book a time on the calendar
+            {wizard.copy.success_calendar_label}
           </Button>
         )}
       </div>
@@ -563,8 +764,8 @@ export default function ConsultWizard({
       className="flex flex-col gap-5 rounded-lg bg-primary p-5 shadow-lg ring-1 ring-secondary ring-inset sm:p-6 md:p-7 dark:shadow-[0_0_60px_rgb(4_155_251/0.08)]"
     >
       <div>
-        <h2 className="text-display-xs font-semibold text-primary">Request a consultation</h2>
-        <p className="mt-1 text-sm text-tertiary">A few quick questions — about a minute.</p>
+        <h2 className="text-display-xs font-semibold text-primary">{wizard.copy.heading}</h2>
+        <p className="mt-1 text-sm text-tertiary">{wizard.copy.description}</p>
       </div>
 
       {prefillIntent && (
@@ -582,9 +783,9 @@ export default function ConsultWizard({
       )}
 
       {/* Step indicators */}
-      <nav aria-label="Consultation progress" className="w-full">
+      <nav aria-label={wizard.copy.progress_aria_label} className="w-full">
         <ol className="grid grid-cols-3 gap-2">
-          {STEPS.map((s) => {
+          {wizard.steps.map((s) => {
             const done = step > s.id;
             const current = step === s.id;
             const reachable =
@@ -640,7 +841,7 @@ export default function ConsultWizard({
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="border-b border-secondary pb-4">
           <p className="text-xs font-semibold tracking-[0.18em] text-brand-secondary uppercase">
-            {STEPS.find((item) => item.id === step)?.label}
+            {wizard.steps.find((item) => item.id === step)?.label}
           </p>
           <h3 className="mt-1 text-xl font-semibold text-primary">{activeStepMeta.title}</h3>
           <p className="mt-1 max-w-xl text-sm leading-6 text-tertiary">{activeStepMeta.description}</p>
@@ -657,9 +858,9 @@ export default function ConsultWizard({
           {step === 1 && (
             <div className="flex flex-col gap-5">
               <ServiceSelect
-                size="md"
+                size="lg"
                 name="service"
-                label="What do you need help with?"
+                label={wizard.copy.service_label}
                 value={formData.service}
                 onChange={handleServiceChange}
                 groups={effectiveServiceGroups}
@@ -718,8 +919,8 @@ export default function ConsultWizard({
                   validationBehavior="native"
                   size="md"
                   name="name"
-                  label="Name"
-                  placeholder="John Smith"
+                  label={wizard.copy.name_label}
+                  placeholder={wizard.copy.name_placeholder}
                   value={formData.name}
                   onChange={(value) => patchForm({ name: value })}
                   wrapperClassName="min-w-0"
@@ -732,8 +933,8 @@ export default function ConsultWizard({
                   type="email"
                   inputMode="email"
                   autoComplete="email"
-                  label="Email"
-                  placeholder="john@company.com"
+                  label={wizard.copy.email_label}
+                  placeholder={wizard.copy.email_placeholder}
                   value={formData.email}
                   onChange={(value) => patchForm({ email: value })}
                   wrapperClassName="min-w-0"
@@ -741,8 +942,8 @@ export default function ConsultWizard({
                 <Input
                   size="md"
                   name="company"
-                  label="Company"
-                  placeholder="Acme Corp"
+                  label={wizard.copy.company_label}
+                  placeholder={wizard.copy.company_placeholder}
                   value={formData.company}
                   onChange={(value) => patchForm({ company: value })}
                   wrapperClassName="min-w-0"
@@ -750,7 +951,7 @@ export default function ConsultWizard({
                 <PhoneField
                   isRequired
                   size="md"
-                  label="Phone number"
+                  label={wizard.copy.phone_label}
                   value={formData.phone}
                   onChange={(value) => patchForm({ phone: value })}
                   wrapperClassName="sm:col-span-2"
@@ -773,30 +974,29 @@ export default function ConsultWizard({
               <Checkbox
                 name="smsConsent"
                 size="md"
-                aria-label="SMS consent"
+                aria-label={wizard.copy.sms_aria_label}
                 isSelected={formData.smsConsent}
                 onChange={(value) => patchForm({ smsConsent: value })}
                 hint={
                   <>
-                    I consent to receive SMS text messages from International Computer Exchange.
-                    Message and data rates may apply. Reply STOP to opt out. See our{" "}
+                    {wizard.copy.sms_consent_prefix}{" "}
                     <Link
-                      href="/sms-consent"
+                      href={wizard.copy.sms_policy_href}
                       className="rounded-xs underline underline-offset-3 outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
                     >
-                      SMS Consent Policy
+                      {wizard.copy.sms_policy_label}
                     </Link>
-                    .
+                    {wizard.copy.sms_consent_suffix}
                   </>
                 }
               />
               <Checkbox
                 name="marketingConsent"
                 size="md"
-                aria-label="Email marketing consent"
+                aria-label={wizard.copy.marketing_aria_label}
                 isSelected={formData.marketingConsent}
                 onChange={(value) => patchForm({ marketingConsent: value })}
-                hint="Send me occasional ICE infrastructure guidance, service updates, and event announcements. I can unsubscribe at any time."
+                hint={wizard.copy.marketing_consent}
               />
               {bookingUrl && (
                 <Button
@@ -813,7 +1013,7 @@ export default function ConsultWizard({
                     })
                   }
                 >
-                  Prefer to book a calendar slot?
+                  {wizard.copy.calendar_step_label}
                 </Button>
               )}
             </div>
@@ -829,7 +1029,7 @@ export default function ConsultWizard({
               iconLeading={ArrowLeft}
               onClick={() => goToStep(step === 3 ? 2 : 1, "back")}
             >
-              Back
+              {wizard.copy.back_label}
             </Button>
           ) : (
             <span className="hidden sm:block sm:min-w-24" />
@@ -843,7 +1043,7 @@ export default function ConsultWizard({
               isDisabled={step === 1 ? !canContinueStep1 : !canContinueStep2}
               onClick={() => goToStep(step === 1 ? 2 : 3, "manual")}
             >
-              Continue
+              {wizard.copy.continue_label}
             </Button>
           ) : (
             <Button
@@ -854,12 +1054,12 @@ export default function ConsultWizard({
               showTextWhileLoading
               isDisabled={status === "loading"}
             >
-              {status === "loading" ? "Sending..." : "Submit request"}
+              {status === "loading" ? wizard.copy.sending_label : wizard.copy.submit_label}
             </Button>
           )}
         </div>
         <p className="text-center text-xs text-quaternary sm:text-right">
-          Typical reply within 1 business day. Urgent requests are prioritized.
+          {wizard.copy.reply_note}
         </p>
 
         {status === "error" && (

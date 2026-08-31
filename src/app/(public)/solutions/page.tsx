@@ -3,6 +3,8 @@ import { getSeoConfig } from "@/lib/seo/config";
 import { JsonLd, breadcrumbs } from "@/lib/seo/jsonld";
 import SolutionsClient from "./Client";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getPublishedSolutionCatalog } from "@/lib/cms/solutionCatalog";
 
 /** Trim to <=155 chars at a word boundary, appending an ellipsis when cut. */
 function clampDescription(value: string, max = 155): string {
@@ -26,7 +28,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SolutionsPage() {
-  const [page, seo] = await Promise.all([getPageContent("solutions"), getSeoConfig()]);
+  const [page, seo, catalog] = await Promise.all([
+    getPageContent("solutions"),
+    getSeoConfig(),
+    getPublishedSolutionCatalog(),
+  ]);
+  if (!page) notFound();
   return (
     <>
       <JsonLd
@@ -35,7 +42,11 @@ export default async function SolutionsPage() {
           { name: "Solutions", url: "/solutions" },
         ])}
       />
-      <SolutionsClient cmsData={page?.sections} orderedSections={page?.orderedSections} />
+      <SolutionsClient
+        cmsData={page?.sections}
+        orderedSections={page?.orderedSections}
+        catalog={catalog}
+      />
     </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import {
@@ -37,10 +37,300 @@ import { SolutionFinderPromo } from "@/components/marketing/SolutionFinder";
 import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { cx } from "@/utils/cx";
 import { experienceFor } from "@/lib/solutionExperience";
-import SolutionComparisonMatrix from "@/components/solutions/SolutionComparisonMatrix";
+import SolutionComparisonMatrix, {
+  type SolutionComparisonContent,
+} from "@/components/solutions/SolutionComparisonMatrix";
 import StickySolutionCta from "@/components/marketing/StickySolutionCta";
+import { isCmsSectionVisible } from "@/lib/cms/sectionManifest";
+import type { SolutionCatalogItem } from "@/lib/cms/solutionCatalog";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+type CatalogIcon = ComponentProps<typeof FeaturedIcon>["icon"];
+type CtaContent = { label?: string; href?: string };
+
+interface BuyerSignal {
+  value: string;
+  label: string;
+  detail: string;
+}
+
+interface CatalogServiceInput {
+  title?: string;
+  href?: string;
+  icon?: CatalogIcon | string;
+  desc?: string;
+  description?: string;
+  industries?: string[];
+  platforms?: string[];
+  outcome?: string;
+  link_label?: string;
+  hero_image?: string;
+  heroImage?: string;
+  background_image?: string;
+  backgroundImage?: string;
+  image?: string;
+  image_src?: string;
+  imageSrc?: string;
+  image_alt?: string;
+  imageAlt?: string;
+  tags?: string[];
+}
+
+interface CatalogService {
+  title: string;
+  href: string;
+  icon?: CatalogIcon;
+  desc: string;
+  industries?: string[];
+  platforms?: string[];
+  outcome?: string;
+  link_label?: string;
+  hero_image?: string;
+  heroImage?: string;
+  background_image?: string;
+  backgroundImage?: string;
+  image?: string;
+  image_src?: string;
+  imageSrc?: string;
+  image_alt?: string;
+  imageAlt?: string;
+  tags?: string[];
+  /** Live catalog rows never fall back to legacy slug metadata. */
+  authoritative?: boolean;
+}
+
+interface CatalogCategoryInput {
+  title?: string;
+  description?: string;
+  icon?: CatalogIcon | string;
+  services?: CatalogServiceInput[];
+}
+
+interface CatalogCategory {
+  title: string;
+  description: string;
+  icon?: CatalogIcon;
+  services: CatalogService[];
+}
+
+interface HeroContent {
+  eyebrow?: string;
+  badge?: string;
+  headline?: string;
+  subheadline?: string;
+  cta_primary?: CtaContent;
+  ctaPrimary?: CtaContent;
+  cta_secondary?: CtaContent;
+  ctaSecondary?: CtaContent;
+  buyer_signals?: BuyerSignal[];
+  next_steps?: string[];
+  buyer_panel?: {
+    eyebrow?: string;
+    heading?: string;
+    description?: string;
+    cta_primary?: CtaContent;
+    cta_secondary?: CtaContent;
+  };
+}
+
+interface FinderPromoContent {
+  eyebrow?: string;
+  heading?: string;
+  cta?: CtaContent;
+}
+
+interface ScopingCtaContent {
+  eyebrow?: string;
+  heading?: string;
+  description?: string;
+  cta_primary?: CtaContent;
+  cta_secondary?: CtaContent;
+}
+
+interface CatalogControlsContent {
+  eyebrow?: string;
+  heading?: string;
+  count_prefix?: string;
+  count_suffix?: string;
+  industry_label?: string;
+  industry_options?: string[];
+  platform_label?: string;
+  platform_options?: string[];
+}
+
+interface FinalCtaContent {
+  heading?: string;
+  description?: string;
+  proof_labels?: string[];
+  cta_primary?: CtaContent;
+  ctaPrimary?: CtaContent;
+  cta_secondary?: CtaContent;
+  ctaSecondary?: CtaContent;
+}
+
+interface StickyCtaContent {
+  enabled?: boolean;
+  title?: string;
+  cta?: CtaContent;
+}
+
+function objectContent<T extends object>(value: unknown): Partial<T> {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Partial<T>)
+    : {};
+}
+
+function textValue(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function stringList(value: unknown): string[] | undefined {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : undefined;
+}
+
+function normalizeService(value: unknown): CatalogService {
+  const service = objectContent<CatalogServiceInput>(value);
+  return {
+    title: textValue(service.title) ?? "",
+    href: textValue(service.href) ?? "",
+    icon:
+      typeof service.icon === "string"
+        ? resolveIcon(service.icon)
+        : service.icon,
+    desc:
+      textValue(service.desc) ?? textValue(service.description) ?? "",
+    industries: stringList(service.industries),
+    platforms: stringList(service.platforms),
+    outcome: textValue(service.outcome),
+    link_label: textValue(service.link_label),
+    hero_image: textValue(service.hero_image),
+    heroImage: textValue(service.heroImage),
+    background_image: textValue(service.background_image),
+    backgroundImage: textValue(service.backgroundImage),
+    image: textValue(service.image),
+    image_src: textValue(service.image_src),
+    imageSrc: textValue(service.imageSrc),
+    image_alt: textValue(service.image_alt),
+    imageAlt: textValue(service.imageAlt),
+    tags: stringList(service.tags),
+  };
+}
+
+function normalizeCategory(value: unknown): CatalogCategory {
+  const category = objectContent<CatalogCategoryInput>(value);
+  return {
+    title: textValue(category.title) ?? "",
+    description: textValue(category.description) ?? "",
+    icon:
+      typeof category.icon === "string"
+        ? resolveIcon(category.icon)
+        : category.icon,
+    services: Array.isArray(category.services)
+      ? category.services.map(normalizeService)
+      : [],
+  };
+}
+
+function normalizeBuyerSignals(value: unknown): BuyerSignal[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => {
+    const signal = objectContent<BuyerSignal>(item);
+    return {
+      value: textValue(signal.value) ?? "",
+      label: textValue(signal.label) ?? "",
+      detail: textValue(signal.detail) ?? "",
+    };
+  });
+}
+
+function categoryKey(value: string): string {
+  return value.trim().toLocaleLowerCase();
+}
+
+/**
+ * Group the canonical published service collection using the overview page's
+ * CMS category rows for category order/copy. Service membership and card data
+ * always come from the live catalog so unpublished or deleted pages disappear.
+ */
+function categoriesFromCatalog(
+  catalog: SolutionCatalogItem[],
+  definitions: CatalogCategoryInput[],
+): CatalogCategory[] {
+  const sortedCatalog = catalog
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title));
+  const grouped = new Map<string, { category: CatalogCategory; firstOrder: number }>();
+
+  for (const item of sortedCatalog) {
+    const title = item.category.trim() || "Solutions";
+    const key = categoryKey(title);
+    const existing = grouped.get(key);
+    const service: CatalogService = {
+      title: item.title,
+      href: item.href,
+      icon: resolveIcon(item.icon),
+      desc: item.card_description,
+      industries: item.industries,
+      platforms: item.platforms,
+      outcome: item.outcome,
+      link_label: item.link_label,
+      hero_image: item.card_image,
+      image_alt: item.card_image_alt,
+      tags: item.tags,
+      authoritative: true,
+    };
+
+    if (existing) {
+      existing.category.services.push(service);
+      continue;
+    }
+
+    grouped.set(key, {
+      firstOrder: item.sort_order,
+      category: {
+        title,
+        description: item.category_description,
+        icon: resolveIcon(item.category_icon || item.icon),
+        services: [service],
+      },
+    });
+  }
+
+  const ordered: CatalogCategory[] = [];
+  const used = new Set<string>();
+  for (const definitionValue of definitions) {
+    const definition = objectContent<CatalogCategoryInput>(definitionValue);
+    const title = textValue(definition.title) ?? "";
+    const key = categoryKey(title);
+    const match = grouped.get(key);
+    if (!match || used.has(key)) continue;
+    used.add(key);
+    ordered.push({
+      ...match.category,
+      title: title || match.category.title,
+      description:
+        textValue(definition.description) ?? match.category.description,
+      icon:
+        typeof definition.icon === "string"
+          ? resolveIcon(definition.icon)
+          : definition.icon ?? match.category.icon,
+    });
+  }
+
+  const remaining = [...grouped.entries()]
+    .filter(([key]) => !used.has(key))
+    .sort(
+      ([, a], [, b]) =>
+        a.firstOrder - b.firstOrder ||
+        a.category.title.localeCompare(b.category.title),
+    )
+    .map(([, value]) => value.category);
+
+  return [...ordered, ...remaining];
+}
 
 const AS400_SERVICE = {
   title: "AS400 Hosting",
@@ -108,42 +398,6 @@ function BrandHairline() {
   );
 }
 
-type SolutionCategoryLike = {
-  title?: string;
-  description?: string;
-  icon?: any;
-  services?: any[];
-};
-
-function ensureAs400Visible(categories: SolutionCategoryLike[]): SolutionCategoryLike[] {
-  const hasAs400 = categories.some((category) =>
-    (category.services ?? []).some((service) => service?.href === AS400_SERVICE.href),
-  );
-  if (hasAs400) return categories;
-
-  const managedIndex = categories.findIndex((category) =>
-    String(category.title ?? "").toLowerCase().includes("managed services"),
-  );
-
-  if (managedIndex >= 0) {
-    return categories.map((category, index) =>
-      index === managedIndex
-        ? { ...category, services: [AS400_SERVICE, ...(category.services ?? [])] }
-        : category,
-    );
-  }
-
-  return [
-    ...categories,
-    {
-      title: "Managed Services",
-      description: "Fully managed IT operations for IBM i, Microsoft, automation, and systems management.",
-      icon: Server01,
-      services: [AS400_SERVICE],
-    },
-  ];
-}
-
 const SOLUTIONS_CONSULT_HREF =
   "/contact?service=Solution%20Architecture%20Review&source=solutions_index";
 
@@ -174,9 +428,11 @@ const SALES_NEXT_STEPS = [
 export default function SolutionsPage({
   cmsData,
   orderedSections,
+  catalog,
 }: {
-  cmsData?: Record<string, any>;
+  cmsData?: Record<string, unknown>;
   orderedSections?: CMSRenderableSection[];
+  catalog: SolutionCatalogItem[] | null;
 }) {
   const reduceMotion = useHydratedReducedMotion();
   const [industryFilter, setIndustryFilter] = useState("All");
@@ -192,45 +448,106 @@ export default function SolutionsPage({
     return () => window.clearTimeout(timer);
   }, []);
 
-  const hero = cmsData?.hero ?? {};
-  const categories = ensureAs400Visible((cmsData?.categories?.items ?? DEFAULT_CATEGORIES).map((cat: any) => ({
-    ...cat,
-    icon: typeof cat.icon === "string" ? resolveIcon(cat.icon) : cat.icon,
-    services: (cat.services ?? []).map((svc: any) => ({
-      ...svc,
-      icon: typeof svc.icon === "string" ? resolveIcon(svc.icon) : svc.icon,
-      desc: svc.desc ?? svc.description ?? "",
-    })),
-  })));
-  const finalCta = cmsData?.final_cta ?? cmsData?.cta ?? {};
-  const extraSections = (orderedSections ?? []).filter(
-    (section) => !["hero", "categories", "final_cta", "cta"].includes(section.section_key)
+  const hero = objectContent<HeroContent>(cmsData?.hero);
+  const categorySection = objectContent<{ items?: CatalogCategoryInput[] }>(
+    cmsData?.categories,
   );
+  const categoryDefinitions = Array.isArray(categorySection.items)
+    ? categorySection.items
+    : [];
+  const categories =
+    catalog === null
+      ? (
+          Array.isArray(categorySection.items)
+            ? categorySection.items
+            : DEFAULT_CATEGORIES
+        ).map(normalizeCategory)
+      : categoriesFromCatalog(catalog, categoryDefinitions);
+  const finderPromo = objectContent<FinderPromoContent>(
+    cmsData?.finder_promo,
+  );
+  const comparison = objectContent<SolutionComparisonContent>(
+    cmsData?.comparison,
+  );
+  const scopingCta = objectContent<ScopingCtaContent>(cmsData?.scoping_cta);
+  const catalogControls = objectContent<CatalogControlsContent>(
+    cmsData?.catalog_controls,
+  );
+  const finalCta = objectContent<FinalCtaContent>(
+    cmsData?.final_cta ?? cmsData?.cta,
+  );
+  const stickyCta = objectContent<StickyCtaContent>(cmsData?.sticky_cta);
+  const extraSections = (orderedSections ?? []).filter(
+    (section) => !["hero", "finder_promo", "comparison", "scoping_cta", "catalog_controls", "categories", "final_cta", "cta", "sticky_cta"].includes(section.section_key)
+  );
+  const show = (...keys: string[]) => isCmsSectionVisible(orderedSections, ...keys);
+  const buyerSignals =
+    hero.buyer_signals !== undefined
+      ? normalizeBuyerSignals(hero.buyer_signals)
+      : BUYER_SIGNALS;
+  const salesNextSteps =
+    hero.next_steps !== undefined
+      ? (stringList(hero.next_steps) ?? [])
+      : SALES_NEXT_STEPS;
 
   const hidden = reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 };
   const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
   const filteredCategories = categories
-    .map((category: any) => ({
+    .map((category) => ({
       ...category,
-      services: category.services.filter((service: any) => {
+      services: category.services.filter((service) => {
         const slug = String(service.href ?? "").split("/").filter(Boolean).at(-1) ?? "";
         const experience = experienceFor(slug);
+        const industries = Array.isArray(service.industries)
+          ? service.industries
+          : service.authoritative
+            ? []
+            : experience.industries;
+        const platforms = Array.isArray(service.platforms)
+          ? service.platforms
+          : service.authoritative
+            ? []
+            : experience.platforms;
         return (
-          (industryFilter === "All" || experience.industries.includes(industryFilter)) &&
-          (platformFilter === "All" || experience.platforms.includes(platformFilter))
+          (industryFilter === "All" || industries.includes(industryFilter)) &&
+          (platformFilter === "All" || platforms.includes(platformFilter))
         );
       }),
     }))
-    .filter((category: any) => category.services.length > 0);
+    .filter((category) => category.services.length > 0);
   const visibleCount = filteredCategories.reduce(
-    (total: number, category: any) => total + category.services.length,
+    (total, category) => total + category.services.length,
     0,
   );
+  const industryOptions = [
+    "All",
+    ...new Set([
+      ...(catalogControls.industry_options ?? ["Manufacturing", "Finance", "Healthcare"])
+        .filter((option) => option !== "All"),
+      ...(catalog === null
+        ? []
+        : categories.flatMap((category) =>
+            category.services.flatMap((service) => service.industries ?? []),
+          )),
+    ]),
+  ];
+  const platformOptions = [
+    "All",
+    ...new Set([
+      ...(catalogControls.platform_options ?? ["IBM i", "Azure", "Hybrid"])
+        .filter((option) => option !== "All"),
+      ...(catalog === null
+        ? []
+        : categories.flatMap((category) =>
+            category.services.flatMap((service) => service.platforms ?? []),
+          )),
+    ]),
+  ];
 
   return (
     <main className="bg-primary">
       {/* Page header — distinct hero band, not flat paper */}
-      <section
+      {show("hero") && <section
         id="solutions-hero"
         className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32"
       >
@@ -266,15 +583,15 @@ export default function SolutionsPage({
                 "From cloud infrastructure to cybersecurity, we deliver end-to-end solutions engineered for reliability, performance, and scale."}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="xl" href={SOLUTIONS_CONSULT_HREF} iconTrailing={ArrowRight}>
-                Talk to an architect
+              <Button size="xl" href={hero.cta_primary?.href ?? hero.ctaPrimary?.href ?? SOLUTIONS_CONSULT_HREF} iconTrailing={ArrowRight}>
+                {hero.cta_primary?.label ?? hero.ctaPrimary?.label ?? "Talk to an architect"}
               </Button>
-              <Button color="secondary" size="xl" href="/solutions/find" iconLeading={Target04}>
-                Use guided finder
+              <Button color="secondary" size="xl" href={hero.cta_secondary?.href ?? hero.ctaSecondary?.href ?? "/solutions/find"} iconLeading={Target04}>
+                {hero.cta_secondary?.label ?? hero.ctaSecondary?.label ?? "Use guided finder"}
               </Button>
             </div>
             <div className="mt-8 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
-              {BUYER_SIGNALS.map((signal) => (
+              {buyerSignals.map((signal) => (
                 <div
                   key={signal.label}
                   className="rounded-lg bg-primary/70 p-4 ring-1 ring-secondary backdrop-blur"
@@ -303,18 +620,18 @@ export default function SolutionsPage({
               </span>
               <div>
                 <p className="text-xs font-semibold tracking-[0.2em] text-brand-secondary uppercase">
-                  Buyer-ready next step
+                  {hero.buyer_panel?.eyebrow ?? "Buyer-ready next step"}
                 </p>
                 <h2 className="mt-2 text-xl font-semibold tracking-tight text-primary">
-                  Turn requirements into a scoped service plan.
+                  {hero.buyer_panel?.heading ?? "Turn requirements into a scoped service plan."}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-tertiary">
-                  ICE architects help qualify the best-fit solution, deployment path, risk profile, and budgetary next step.
+                  {hero.buyer_panel?.description ?? "ICE architects help qualify the best-fit solution, deployment path, risk profile, and budgetary next step."}
                 </p>
               </div>
             </div>
             <ol className="mt-6 space-y-3">
-              {SALES_NEXT_STEPS.map((step, index) => (
+              {salesNextSteps.map((step: string, index: number) => (
                 <li key={step} className="flex items-center gap-3">
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-brand-secondary ring-1 ring-secondary">
                     {index + 1}
@@ -324,26 +641,26 @@ export default function SolutionsPage({
               ))}
             </ol>
             <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              <Button size="md" href={SOLUTIONS_CONSULT_HREF} iconLeading={Calendar} className="justify-center">
-                Book review
+              <Button size="md" href={hero.buyer_panel?.cta_primary?.href ?? SOLUTIONS_CONSULT_HREF} iconLeading={Calendar} className="justify-center">
+                {hero.buyer_panel?.cta_primary?.label ?? "Book review"}
               </Button>
-              <Button color="secondary" size="md" href="tel:18007869188" iconLeading={Phone01} className="justify-center">
-                Call ICE
+              <Button color="secondary" size="md" href={hero.buyer_panel?.cta_secondary?.href ?? "tel:18007869188"} iconLeading={Phone01} className="justify-center">
+                {hero.buyer_panel?.cta_secondary?.label ?? "Call ICE"}
               </Button>
             </div>
           </motion.aside>
         </div>
-      </section>
+      </section>}
 
-      <section className="border-b border-secondary bg-primary py-10 md:py-12">
+      {show("finder_promo") && <section className="border-b border-secondary bg-primary py-10 md:py-12">
         <div className="mx-auto max-w-container px-4 md:px-8">
-          <SolutionFinderPromo />
+          <SolutionFinderPromo eyebrow={finderPromo.eyebrow} heading={finderPromo.heading} cta={finderPromo.cta} />
         </div>
-      </section>
+      </section>}
 
-      <SolutionComparisonMatrix />
+      {show("comparison") && <SolutionComparisonMatrix content={comparison} />}
 
-      <section className="border-b border-secondary bg-secondary py-8 md:py-10">
+      {show("scoping_cta") && <section className="border-b border-secondary bg-secondary py-8 md:py-10">
         <div className="mx-auto grid max-w-container gap-6 px-4 md:px-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="flex items-start gap-4">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand-solid text-white ring-1 ring-brand/20">
@@ -351,42 +668,42 @@ export default function SolutionsPage({
             </span>
             <div>
               <p className="text-xs font-semibold tracking-[0.2em] text-brand-secondary uppercase">
-                Sales-ready scoping
+                {scopingCta.eyebrow ?? "Sales-ready scoping"}
               </p>
               <h2 className="mt-2 text-display-xs font-semibold tracking-tight text-primary">
-                Get a shortlist your team can actually evaluate.
+                {scopingCta.heading ?? "Get a shortlist your team can actually evaluate."}
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-tertiary">
-                Use the finder, compare solution families, or send your requirements to ICE for an architect-led recommendation with fit, risk, and budget guidance.
+                {scopingCta.description ?? "Use the finder, compare solution families, or send your requirements to ICE for an architect-led recommendation with fit, risk, and budget guidance."}
               </p>
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
-            <Button href={SOLUTIONS_CONSULT_HREF} size="lg" iconTrailing={ArrowRight}>
-              Request scoped recommendation
+            <Button href={scopingCta.cta_primary?.href ?? SOLUTIONS_CONSULT_HREF} size="lg" iconTrailing={ArrowRight}>
+              {scopingCta.cta_primary?.label ?? "Request scoped recommendation"}
             </Button>
-            <Button href="tel:18007869188" size="lg" color="secondary" iconLeading={Phone01}>
-              1-800-786-9188
+            <Button href={scopingCta.cta_secondary?.href ?? "tel:18007869188"} size="lg" color="secondary" iconLeading={Phone01}>
+              {scopingCta.cta_secondary?.label ?? "1-800-786-9188"}
             </Button>
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="border-b border-secondary bg-primary py-7 md:py-8">
+      {show("catalog_controls", "categories") && <section className="border-b border-secondary bg-primary py-7 md:py-8">
         <div className="mx-auto max-w-container px-4 md:px-8">
           <div className="grid gap-5 lg:grid-cols-[minmax(280px,0.9fr)_minmax(520px,1fr)] lg:items-start">
             <div className="max-w-xl">
-              <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Who this is for</p>
-              <h2 className="mt-2 text-display-xs font-semibold text-primary">Narrow the catalog live</h2>
+              <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">{catalogControls.eyebrow ?? "Who this is for"}</p>
+              <h2 className="mt-2 text-display-xs font-semibold text-primary">{catalogControls.heading ?? "Narrow the catalog live"}</h2>
               <p className="mt-2 text-sm text-tertiary" aria-live="polite">
-                Showing {visibleCount} solution{visibleCount === 1 ? "" : "s"} for this environment.
+                {(catalogControls.count_prefix ?? "Showing")} {visibleCount} solution{visibleCount === 1 ? "" : "s"} {catalogControls.count_suffix ?? "for this environment."}
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:w-full lg:max-w-2xl lg:justify-self-end">
               <fieldset>
-                <legend className="mb-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Industry</legend>
+                <legend className="mb-2 text-xs font-semibold tracking-wide text-quaternary uppercase">{catalogControls.industry_label ?? "Industry"}</legend>
                 <div className="flex flex-wrap gap-2">
-                  {["All", "Manufacturing", "Finance", "Healthcare"].map((filter) => (
+                  {industryOptions.map((filter: string) => (
                     <button
                       key={filter}
                       type="button"
@@ -405,9 +722,9 @@ export default function SolutionsPage({
                 </div>
               </fieldset>
               <fieldset>
-                <legend className="mb-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Platform</legend>
+                <legend className="mb-2 text-xs font-semibold tracking-wide text-quaternary uppercase">{catalogControls.platform_label ?? "Platform"}</legend>
                 <div className="flex flex-wrap gap-2">
-                  {["All", "IBM i", "Azure", "Hybrid"].map((filter) => (
+                  {platformOptions.map((filter: string) => (
                     <button
                       key={filter}
                       type="button"
@@ -428,10 +745,10 @@ export default function SolutionsPage({
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* Solution categories — alternating surfaces give the page rhythm */}
-      {filteredCategories.map((cat: any, catIdx: number) => (
+      {show("categories") && filteredCategories.map((cat, catIdx) => (
         <section
           key={cat.title}
           className={cx(
@@ -469,10 +786,22 @@ export default function SolutionsPage({
             </motion.div>
 
             <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-12 md:gap-6">
-              {cat.services.map((svc: any, i: number) => {
-                const serviceImage = serviceImageFor(svc);
+              {cat.services.map((svc, i) => {
+                const serviceImage = svc.authoritative
+                  ? (svc.hero_image?.trim() || undefined)
+                  : serviceImageFor(svc);
                 const slug = String(svc.href ?? "").split("/").filter(Boolean).at(-1) ?? "";
                 const serviceExperience = experienceFor(slug);
+                const serviceOutcome =
+                  svc.outcome ??
+                  (svc.authoritative ? "" : serviceExperience.outcome);
+                const servicePlatforms = Array.isArray(svc.platforms)
+                  ? svc.platforms
+                  : svc.authoritative
+                    ? []
+                    : serviceExperience.platforms;
+                const serviceTags = Array.isArray(svc.tags) ? svc.tags : [];
+                const serviceBadges = [...new Set([...servicePlatforms, ...serviceTags])].slice(0, 4);
 
                 return (
                   <motion.div
@@ -486,18 +815,17 @@ export default function SolutionsPage({
                   >
                     <Link
                       href={svc.href}
-                      aria-label={`${svc.title}: ${serviceExperience.outcome}`}
+                      aria-label={serviceOutcome ? `${svc.title}: ${serviceOutcome}` : svc.title}
                       className="group relative isolate flex h-full min-h-64 overflow-hidden rounded-lg border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
                     >
                       {/* Right-side hero wash — faint at rest, clearer on hover (no pan/zoom) */}
                       {serviceImage && (
                         <div
-                          aria-hidden="true"
                           className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[58%] overflow-hidden sm:w-[62%]"
                         >
                           <img
                             src={serviceImage}
-                            alt=""
+                            alt={svc.image_alt ?? svc.imageAlt ?? ""}
                             loading="lazy"
                             decoding="async"
                             className="h-full w-full translate-x-[12%] object-cover object-center opacity-[0.18] transition-opacity duration-500 ease-out group-hover:opacity-[0.55] dark:opacity-[0.22] dark:group-hover:opacity-[0.62]"
@@ -512,21 +840,23 @@ export default function SolutionsPage({
                         <FeaturedIcon icon={svc.icon} size="lg" color="brand" theme="light" />
                         <h3 className="mt-4 text-lg font-semibold text-primary">{svc.title}</h3>
                         <p className="mt-1 flex-1 text-md text-tertiary">{svc.desc}</p>
-                        <p className="mt-3 line-clamp-2 text-xs font-medium leading-5 text-brand-secondary">
-                          {serviceExperience.outcome}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-1.5">
-                          {serviceExperience.platforms.slice(0, 3).map((platform) => (
+                        {serviceOutcome && (
+                          <p className="mt-3 line-clamp-2 text-xs font-medium leading-5 text-brand-secondary">
+                            {serviceOutcome}
+                          </p>
+                        )}
+                        {serviceBadges.length > 0 && <div className="mt-4 flex flex-wrap gap-1.5">
+                          {serviceBadges.map((label: string) => (
                             <span
-                              key={platform}
+                              key={label}
                               className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-tertiary ring-1 ring-secondary"
                             >
-                              {platform}
+                              {label}
                             </span>
                           ))}
-                        </div>
+                        </div>}
                         <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
-                          Learn more
+                          {svc.link_label ?? "Learn more"}
                           <ArrowRight aria-hidden="true" className="size-4" />
                         </span>
                       </div>
@@ -544,7 +874,7 @@ export default function SolutionsPage({
       <BrandHairline />
 
       {/* CTA — soft secondary card so it never reads as a loud blue wash */}
-      <section className="bg-primary py-16 md:py-24">
+      {show("final_cta", "cta") && <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto max-w-container px-4 md:px-8">
           <motion.div
             initial={hidden}
@@ -581,7 +911,7 @@ export default function SolutionsPage({
                     "Our enterprise architects will design a tailored solution that fits your business requirements and budget."}
                 </p>
                 <ul className="mt-6 grid gap-2 text-sm text-secondary sm:grid-cols-3">
-                  {["30-minute discovery", "Budgetary fit guidance", "Clear next steps"].map((item) => (
+                  {(finalCta.proof_labels ?? ["30-minute discovery", "Budgetary fit guidance", "Clear next steps"]).map((item: string) => (
                     <li key={item} className="flex items-center gap-2">
                       <CheckCircle className="size-4 shrink-0 text-fg-brand-primary" aria-hidden="true" />
                       <span>{item}</span>
@@ -597,20 +927,20 @@ export default function SolutionsPage({
                 >
                   {finalCta.cta_primary?.label ?? finalCta.ctaPrimary?.label ?? "Contact Our Team"}
                 </Button>
-                <Button size="xl" color="secondary" href="tel:18007869188" iconLeading={Phone01}>
-                  Call 1-800-786-9188
+                <Button size="xl" color="secondary" href={finalCta.cta_secondary?.href ?? finalCta.ctaSecondary?.href ?? "tel:18007869188"} iconLeading={Phone01}>
+                  {finalCta.cta_secondary?.label ?? finalCta.ctaSecondary?.label ?? "Call 1-800-786-9188"}
                 </Button>
               </div>
             </div>
           </motion.div>
         </div>
-      </section>
-      <StickySolutionCta
-        title="Need help choosing a solution?"
-        consultHref={SOLUTIONS_CONSULT_HREF}
-        consultLabel="Book solution review"
+      </section>}
+      {show("sticky_cta") && stickyCta.enabled !== false && <StickySolutionCta
+        title={stickyCta.title ?? "Need help choosing a solution?"}
+        consultHref={stickyCta.cta?.href ?? SOLUTIONS_CONSULT_HREF}
+        consultLabel={stickyCta.cta?.label ?? "Book solution review"}
         heroId="solutions-hero"
-      />
+      />}
     </main>
   );
 }

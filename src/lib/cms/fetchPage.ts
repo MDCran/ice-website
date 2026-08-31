@@ -25,9 +25,18 @@ export async function fetchPublishedPage(slug: string): Promise<PageWithSections
 
     if (sectionsError) return null;
 
-    const visibleSections = ((pageSections || []) as PageSection[])
-      .filter((s) => s.is_visible !== false && s.section_key !== "page_seo" && s.section_type !== "seo")
+    const contentSections = ((pageSections || []) as PageSection[])
+      .filter((s) => s.section_key !== "page_seo" && s.section_type !== "seo")
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    const visibleSections = contentSections.filter((s) => s.is_visible !== false);
+
+    // Keep hidden rows in the ordered manifest so bespoke page renderers can
+    // distinguish "the editor hid this section" from "legacy CMS data is
+    // missing, use a fallback". Never send the hidden row's content to the
+    // browser: only its key/type/order/visibility are exposed.
+    const orderedSections = contentSections.map((section) =>
+      section.is_visible === false ? { ...section, content: {} } : section,
+    );
 
     const sections: Record<string, unknown> = {};
     for (const section of visibleSections) {
@@ -63,7 +72,7 @@ export async function fetchPublishedPage(slug: string): Promise<PageWithSections
         (typeof seo.favicon_url === "string" ? seo.favicon_url : null) ??
         (typeof pageRow.favicon_url === "string" ? pageRow.favicon_url : null),
       sections,
-      orderedSections: visibleSections,
+      orderedSections,
     };
   } catch {
     return null;

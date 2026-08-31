@@ -23,6 +23,7 @@ import { resolveIcon } from "@/lib/iconMap";
 import { MOTION_EASE } from "@/lib/motion";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import { isCmsSectionVisible } from "@/lib/cms/sectionManifest";
 import { cx } from "@/utils/cx";
 
 const EASE = MOTION_EASE;
@@ -32,6 +33,27 @@ const EASE = MOTION_EASE;
 /* -------------------------------------------------------------------------- */
 
 type IconComponent = FC<{ className?: string }>;
+type CmsRecord = Record<string, unknown>;
+
+interface CtaCopy {
+  label?: string;
+  href?: string;
+}
+
+interface CmsSectionCopy {
+  eyebrow?: string;
+  headline?: string;
+  subheadline?: string;
+  heading?: string;
+  description?: string;
+  items?: unknown[];
+  proof_points?: unknown[];
+  proof?: unknown[];
+  cta_primary?: CtaCopy;
+  cta_secondary?: CtaCopy;
+  ctaPrimary?: CtaCopy;
+  ctaSecondary?: CtaCopy;
+}
 
 interface Stat {
   value: number;
@@ -82,7 +104,7 @@ const DEFAULT_DIFFERENTIATORS: Differentiator[] = [
 ];
 
 interface FAQ {
-  id: string;
+  id?: string;
   question: string;
   answer: string;
 }
@@ -158,6 +180,103 @@ const DEFAULT_INDUSTRIES: Industry[] = [
       "Secure document management, reliable hosting, and IT support for law firms and professional organizations.",
   },
 ];
+
+interface ResolvedStat {
+  value: unknown;
+  suffix: string;
+  label: string;
+}
+
+function asRecord(value: unknown): CmsRecord {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as CmsRecord
+    : {};
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function normalizeCta(value: unknown): CtaCopy | undefined {
+  const cta = asRecord(value);
+  const label = optionalString(cta.label);
+  const href = optionalString(cta.href);
+  return label === undefined && href === undefined ? undefined : { label, href };
+}
+
+function normalizeSection(value: unknown): CmsSectionCopy {
+  const section = asRecord(value);
+  return {
+    eyebrow: optionalString(section.eyebrow),
+    headline: optionalString(section.headline),
+    subheadline: optionalString(section.subheadline),
+    heading: optionalString(section.heading),
+    description: optionalString(section.description),
+    items: Array.isArray(section.items) ? section.items : undefined,
+    proof_points: Array.isArray(section.proof_points) ? section.proof_points : undefined,
+    proof: Array.isArray(section.proof) ? section.proof : undefined,
+    cta_primary: normalizeCta(section.cta_primary),
+    cta_secondary: normalizeCta(section.cta_secondary),
+    ctaPrimary: normalizeCta(section.ctaPrimary),
+    ctaSecondary: normalizeCta(section.ctaSecondary),
+  };
+}
+
+function isIconComponent(value: unknown): value is IconComponent {
+  return typeof value === "function" || (
+    value !== null &&
+    typeof value === "object" &&
+    "$$typeof" in value
+  );
+}
+
+function normalizeIcon(value: unknown, fallback: IconComponent): IconComponent {
+  if (typeof value === "string") return resolveIcon(value);
+  return isIconComponent(value) ? value : fallback;
+}
+
+function normalizeStat(value: unknown): ResolvedStat {
+  const stat = asRecord(value);
+  return {
+    value: stat.value ?? 0,
+    suffix: optionalString(stat.suffix) ?? "",
+    label: optionalString(stat.label) ?? "",
+  };
+}
+
+function normalizeDifferentiator(value: unknown, index: number): Differentiator {
+  const item = asRecord(value);
+  const fallback = DEFAULT_DIFFERENTIATORS[index % DEFAULT_DIFFERENTIATORS.length];
+  return {
+    icon: normalizeIcon(item.icon, fallback?.icon ?? Award01),
+    title: optionalString(item.title) ?? "",
+    description: optionalString(item.description) ?? "",
+  };
+}
+
+function normalizeIndustry(value: unknown, index: number): Industry {
+  const item = asRecord(value);
+  const fallback = DEFAULT_INDUSTRIES[index % DEFAULT_INDUSTRIES.length];
+  return {
+    icon: normalizeIcon(item.icon, fallback?.icon ?? Building07),
+    title: optionalString(item.title) ?? "",
+    description: optionalString(item.description) ?? "",
+  };
+}
+
+function normalizeFaq(value: unknown): FAQ {
+  const faq = asRecord(value);
+  return {
+    id: optionalString(faq.id),
+    question: optionalString(faq.question) ?? "",
+    answer: optionalString(faq.answer) ?? "",
+  };
+}
+
+function normalizeProofPoint(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  return optionalString(asRecord(value).label) ?? null;
+}
 
 /* -------------------------------------------------------------------------- */
 /*  Brand hairline divider                                                     */
@@ -282,31 +401,29 @@ export default function WhyICEPage({
   cmsData,
   orderedSections,
 }: {
-  cmsData?: Record<string, any>;
+  cmsData?: Record<string, unknown>;
   orderedSections?: CMSRenderableSection[];
 }) {
   const reduceMotion = useReducedMotion();
 
-  const hero = cmsData?.hero ?? {};
-  const statsSection = cmsData?.stats ?? {};
-  const differentiatorsSection = cmsData?.differentiators ?? {};
-  const faqsSection = cmsData?.faqs ?? {};
-  const industriesSection = cmsData?.industries ?? {};
-  const finalCta = cmsData?.final_cta ?? cmsData?.cta ?? {};
-  const stats = statsSection.items ?? DEFAULT_STATS;
-  const differentiators = (differentiatorsSection.items ?? DEFAULT_DIFFERENTIATORS).map((d: any) => ({
-    ...d,
-    icon: typeof d.icon === "string" ? resolveIcon(d.icon) : d.icon,
-  }));
-  const faqs = faqsSection.items ?? DEFAULT_FAQS;
-  const industries = (industriesSection.items ?? DEFAULT_INDUSTRIES).map((d: any) => ({
-    ...d,
-    icon: typeof d.icon === "string" ? resolveIcon(d.icon) : d.icon,
-  }));
-  const proofPoints: any[] = hero.proof_points ?? hero.proof ?? DEFAULT_PROOF;
+  const hero = normalizeSection(cmsData?.hero);
+  const statsSection = normalizeSection(cmsData?.stats);
+  const differentiatorsSection = normalizeSection(cmsData?.differentiators);
+  const faqsSection = normalizeSection(cmsData?.faqs);
+  const industriesSection = normalizeSection(cmsData?.industries);
+  const finalCta = normalizeSection(cmsData?.final_cta ?? cmsData?.cta);
+  const stats = (statsSection.items ?? DEFAULT_STATS).map(normalizeStat);
+  const differentiators = (differentiatorsSection.items ?? DEFAULT_DIFFERENTIATORS)
+    .map(normalizeDifferentiator);
+  const faqs = (faqsSection.items ?? DEFAULT_FAQS).map(normalizeFaq);
+  const industries = (industriesSection.items ?? DEFAULT_INDUSTRIES).map(normalizeIndustry);
+  const proofPoints = (hero.proof_points ?? hero.proof ?? DEFAULT_PROOF)
+    .map(normalizeProofPoint)
+    .filter((point): point is string => point !== null);
   const extraSections = (orderedSections ?? []).filter(
     (section) => !["hero", "stats", "differentiators", "faqs", "industries", "final_cta", "cta"].includes(section.section_key)
   );
+  const show = (...keys: string[]) => isCmsSectionVisible(orderedSections, ...keys);
 
   const { ref: statsRef, inView: statsInView } = useInViewOnce<HTMLDListElement>({
     amount: 0.15,
@@ -338,7 +455,7 @@ export default function WhyICEPage({
       {/* ================================================================= */}
       {/*  Page Hero — gradient band + grid texture + drifting brand orbs   */}
       {/* ================================================================= */}
-      <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
+      {show("hero") && <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
         {/* Depth layers — decorative only */}
         <div
           aria-hidden="true"
@@ -380,8 +497,7 @@ export default function WhyICEPage({
                 transition={{ delay: 0.3, duration: 0.5, ease: EASE }}
                 className="mt-8 flex flex-wrap items-center justify-center gap-2.5 md:mt-10"
               >
-                {proofPoints.map((point: any) => {
-                  const label = typeof point === "string" ? point : (point?.label ?? "");
+                {proofPoints.map((label) => {
                   if (!label) return null;
                   return (
                     <li
@@ -397,12 +513,12 @@ export default function WhyICEPage({
             )}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ================================================================= */}
       {/*  Value Proposition / Stats — dark brand feature band              */}
       {/* ================================================================= */}
-      <section className="bg-primary py-16 md:py-24">
+      {show("stats") && <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto max-w-container px-4 md:px-8">
           <div className="flex flex-col gap-12 md:gap-16">
             <motion.div
@@ -415,6 +531,9 @@ export default function WhyICEPage({
               <h2 className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
                 {statsSection.eyebrow ?? "By the Numbers"}
               </h2>
+              {statsSection.heading ? (
+                <p className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">{statsSection.heading}</p>
+              ) : null}
               {statsSection.description ? (
                 <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">{statsSection.description}</p>
               ) : null}
@@ -433,15 +552,11 @@ export default function WhyICEPage({
                 ref={statsRef}
                 className="relative grid grid-cols-1 gap-x-8 gap-y-10 px-6 py-12 sm:grid-cols-2 md:grid-cols-4 md:p-16"
               >
-                {stats.map((stat: any, i: number) => {
+                {stats.map((stat, i) => {
                   const rawValue = typeof stat.value === "number"
                     ? stat.value
                     : parseFloat(String(stat.value).replace(/,/g, "").replace(/[^\d.-]/g, "")) || 0;
-                  // Force uptime SLA to 99.99 when CMS still has 100.
-                  const value =
-                    /uptime/i.test(String(stat.label ?? "")) && rawValue >= 100
-                      ? 99.99
-                      : rawValue;
+                  const value = rawValue;
                   return (
                     <div
                       key={stat.label}
@@ -463,14 +578,14 @@ export default function WhyICEPage({
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       <BrandHairline />
 
       {/* ================================================================= */}
       {/*  Key Differentiators — bordered cards over a textured backdrop    */}
       {/* ================================================================= */}
-      <ScrollChapter className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+      {show("differentiators") && <ScrollChapter className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
         <div
           aria-hidden="true"
           className="texture-grid pointer-events-none absolute inset-0 opacity-[0.45] [mask-image:radial-gradient(ellipse_at_center,black_10%,transparent_70%)]"
@@ -494,7 +609,7 @@ export default function WhyICEPage({
           </motion.div>
 
           <ul className="mt-12 grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:mt-16 lg:grid-cols-3">
-            {differentiators.map((item: any, i: number) => {
+            {differentiators.map((item, i) => {
               const Icon = item.icon;
               return (
                 <motion.li
@@ -517,12 +632,12 @@ export default function WhyICEPage({
             })}
           </ul>
         </div>
-      </ScrollChapter>
+      </ScrollChapter>}
 
       {/* ================================================================= */}
       {/*  Industries Section                                               */}
       {/* ================================================================= */}
-      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+      {show("industries") && <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
         <div
           aria-hidden="true"
           className="texture-dots pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_bottom,black_10%,transparent_70%)]"
@@ -549,7 +664,7 @@ export default function WhyICEPage({
           </motion.div>
 
           <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-16 lg:grid-cols-3">
-            {industries.map((industry: any, i: number) => {
+            {industries.map((industry, i) => {
               const Icon = industry.icon;
               return (
                 <motion.li
@@ -570,14 +685,14 @@ export default function WhyICEPage({
             })}
           </ul>
         </div>
-      </section>
+      </section>}
 
       <GenericCMSSections sections={extraSections} />
 
       {/* ================================================================= */}
       {/*  FAQ Accordion — bottom of page, before final CTA                 */}
       {/* ================================================================= */}
-      <section className="relative isolate overflow-hidden border-y border-secondary bg-secondary py-16 md:py-24">
+      {show("faqs", "faq") && <section className="relative isolate overflow-hidden border-y border-secondary bg-secondary py-16 md:py-24">
         <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04]" />
         <div
           aria-hidden="true"
@@ -613,7 +728,7 @@ export default function WhyICEPage({
           >
             <div className="rounded-2xl bg-primary p-6 shadow-sm ring-1 ring-secondary ring-inset md:p-10">
               <div className="flex flex-col gap-8">
-                {faqs.map((faq: any, i: number) => (
+                {faqs.map((faq, i) => (
                   <FAQItem
                     key={faq.id ?? faq.question ?? i}
                     faq={faq}
@@ -625,14 +740,14 @@ export default function WhyICEPage({
             </div>
           </motion.div>
         </div>
-      </section>
+      </section>}
 
       <BrandHairline />
 
       {/* ================================================================= */}
       {/*  CTA Section — icon watermark + texture + drifting orbs           */}
       {/* ================================================================= */}
-      <section className="bg-primary py-16 md:py-24">
+      {show("final_cta", "cta") && <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto max-w-container px-4 md:px-8">
           <motion.div
             initial={hidden}
@@ -683,7 +798,7 @@ export default function WhyICEPage({
             </div>
           </motion.div>
         </div>
-      </section>
+      </section>}
     </main>
   );
 }

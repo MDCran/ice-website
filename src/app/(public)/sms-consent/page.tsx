@@ -3,6 +3,7 @@ import { getSeoConfig } from "@/lib/seo/config";
 import { JsonLd, breadcrumbs } from "@/lib/seo/jsonld";
 import SmsConsentClient from "./Client";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 /** Trim to <=155 chars at a word boundary, appending an ellipsis when cut. */
 function clampDescription(value: string, max = 155): string {
@@ -27,6 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function SmsConsentPage() {
   const [page, seo] = await Promise.all([getPageContent("sms-consent"), getSeoConfig()]);
+  if (!page) notFound();
   return (
     <>
       <JsonLd
@@ -35,7 +37,7 @@ export default async function SmsConsentPage() {
           { name: "SMS Consent", url: "/sms-consent" },
         ])}
       />
-      <SmsConsentClient cmsData={page?.sections} />
+      <SmsConsentClient cmsData={page.sections} orderedSections={page.orderedSections} />
     </>
   );
 }

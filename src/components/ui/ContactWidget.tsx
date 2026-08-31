@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type HTMLAttributes, useEffect, useId, useState } from "react";
+import { type FormEvent, type HTMLAttributes, useEffect, useId, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AlertCircle, CheckCircle, MessageChatCircle, Send01, XClose } from "@untitledui/icons";
@@ -51,6 +51,104 @@ export const DEFAULT_SERVICE_GROUPS: ServiceGroup[] = [
   ...SERVICE_CATALOG,
 ];
 
+/** CMS-editable copy and service choices for the floating contact widget. */
+export interface ContactWidgetContent {
+  panel_heading?: string;
+  panel_description?: string;
+  success_heading?: string;
+  success_message?: string;
+  success_close_label?: string;
+  name_label?: string;
+  name_placeholder?: string;
+  email_label?: string;
+  email_placeholder?: string;
+  company_label?: string;
+  company_placeholder?: string;
+  phone_label?: string;
+  phone_placeholder?: string;
+  country_dial_code_aria_label?: string;
+  service_label?: string;
+  service_placeholder?: string;
+  message_label?: string;
+  message_placeholder?: string;
+  sms_consent_aria_label?: string;
+  sms_consent_prefix?: string;
+  sms_consent_link_label?: string;
+  sms_consent_link_href?: string;
+  sms_consent_suffix?: string;
+  marketing_consent_aria_label?: string;
+  marketing_consent_hint?: string;
+  phone_required_error?: string;
+  generic_error?: string;
+  sending_label?: string;
+  submit_label?: string;
+  welcome_heading?: string;
+  welcome_description?: string;
+  welcome_aria_label?: string;
+  open_form_aria_label?: string;
+  close_form_aria_label?: string;
+  /** Preferred CMS shape when group headings and option order are editorial. */
+  service_groups?: ServiceGroup[];
+  /** Optional flat alternative; recognized ICE services are grouped automatically. */
+  service_options?: string[];
+}
+
+type ResolvedContactWidgetContent = Required<Omit<ContactWidgetContent, "service_groups" | "service_options">> & {
+  service_groups: ServiceGroup[];
+};
+
+const DEFAULT_CONTACT_WIDGET_CONTENT: ResolvedContactWidgetContent = {
+  panel_heading: "Send Us a Message",
+  panel_description: "We'll get back to you within 2-3 business days.",
+  success_heading: "Message Sent",
+  success_message: "Thank you for reaching out. We'll be in touch soon.",
+  success_close_label: "Close",
+  name_label: "Name",
+  name_placeholder: "John Smith",
+  email_label: "Email",
+  email_placeholder: "john@company.com",
+  company_label: "Company",
+  company_placeholder: "Acme Corp",
+  phone_label: "Phone number",
+  phone_placeholder: "(561) 555-0100",
+  country_dial_code_aria_label: "Country dial code",
+  service_label: "Service Interested In",
+  service_placeholder: "Select a service...",
+  message_label: "Message",
+  message_placeholder: "How can we help?",
+  sms_consent_aria_label: "SMS consent",
+  sms_consent_prefix:
+    "I consent to receive SMS text messages from ICE. Message and data rates may apply. Reply STOP to opt out. See our ",
+  sms_consent_link_label: "SMS Consent Policy",
+  sms_consent_link_href: "/sms-consent",
+  sms_consent_suffix: ".",
+  marketing_consent_aria_label: "Email marketing consent",
+  marketing_consent_hint:
+    "Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time.",
+  phone_required_error: "Phone number is required.",
+  generic_error: "Something went wrong. Please try again.",
+  sending_label: "Sending...",
+  submit_label: "Send Message",
+  welcome_heading: "Need help? Schedule a free consultation!",
+  welcome_description: "Click to get started",
+  welcome_aria_label: "Need help? Schedule a free consultation. Open contact form",
+  open_form_aria_label: "Open contact form",
+  close_form_aria_label: "Close contact form",
+  service_groups: DEFAULT_SERVICE_GROUPS,
+};
+
+function cloneServiceGroups(groups: ServiceGroup[]): ServiceGroup[] {
+  return groups.map((group) => ({ label: group.label, options: [...group.options] }));
+}
+
+/** Fresh defaults for CMS templates without sharing mutable option arrays. */
+export function getDefaultContactWidgetContent(): ContactWidgetContent {
+  return {
+    ...DEFAULT_CONTACT_WIDGET_CONTENT,
+    service_groups: cloneServiceGroups(DEFAULT_CONTACT_WIDGET_CONTENT.service_groups),
+  };
+}
+
 const SERVICE_TO_PILLAR = new Map<string, string>();
 for (const group of SERVICE_CATALOG) {
   for (const option of group.options) {
@@ -61,10 +159,12 @@ for (const group of SERVICE_CATALOG) {
 /**
  * Group a flat list of service names (e.g. from the CMS `service_options.options`
  * field) into the ICE pillars. Unknown services are kept as ungrouped options so
- * CMS-managed lists keep working. With no list provided, returns the full catalog.
+ * CMS-managed lists keep working. With no list provided, returns the full catalog;
+ * an explicit empty list stays empty so editors can intentionally remove choices.
  */
 export function groupServiceOptions(options?: unknown): ServiceGroup[] {
-  if (!Array.isArray(options) || options.length === 0) return DEFAULT_SERVICE_GROUPS;
+  if (!Array.isArray(options)) return cloneServiceGroups(DEFAULT_SERVICE_GROUPS);
+  if (options.length === 0) return [];
 
   const grouped = new Map<string, string[]>();
   const ungrouped: string[] = [];
@@ -94,6 +194,54 @@ export function groupServiceOptions(options?: unknown): ServiceGroup[] {
   return result;
 }
 
+function normalizeServiceGroups(value: unknown): ServiceGroup[] {
+  if (!Array.isArray(value)) return cloneServiceGroups(DEFAULT_SERVICE_GROUPS);
+
+  return value.flatMap((candidate) => {
+    if (!candidate || typeof candidate !== "object") return [];
+    const raw = candidate as { label?: unknown; options?: unknown };
+    if (!Array.isArray(raw.options)) return [];
+
+    const options = raw.options.filter((option): option is string => typeof option === "string" && option.trim().length > 0);
+    return [{ label: typeof raw.label === "string" ? raw.label : "", options }];
+  });
+}
+
+function isSafeCmsHref(value: string) {
+  return (value.startsWith("/") && !value.startsWith("//")) || /^https?:\/\//i.test(value);
+}
+
+function resolveContactWidgetContent(content?: ContactWidgetContent): ResolvedContactWidgetContent {
+  const resolved: ResolvedContactWidgetContent = {
+    ...DEFAULT_CONTACT_WIDGET_CONTENT,
+    service_groups: cloneServiceGroups(DEFAULT_CONTACT_WIDGET_CONTENT.service_groups),
+  };
+  if (!content || typeof content !== "object") return resolved;
+
+  const source = content as Record<string, unknown>;
+  const writable = resolved as unknown as Record<string, unknown>;
+  for (const key of Object.keys(DEFAULT_CONTACT_WIDGET_CONTENT)) {
+    if (key === "service_groups") continue;
+    if (typeof source[key] === "string") writable[key] = source[key];
+  }
+
+  if (!isSafeCmsHref(resolved.sms_consent_link_href)) {
+    resolved.sms_consent_link_href = DEFAULT_CONTACT_WIDGET_CONTENT.sms_consent_link_href;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(content, "service_groups")) {
+    resolved.service_groups = normalizeServiceGroups(content.service_groups);
+  } else if (Object.prototype.hasOwnProperty.call(content, "service_options")) {
+    resolved.service_groups = groupServiceOptions(content.service_options);
+  }
+
+  return resolved;
+}
+
+function accessibleLabel(value: string, fallback: string) {
+  return value.trim() || fallback;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Grouped service select (Untitled UI Select, react-aria based)     */
 /* ------------------------------------------------------------------ */
@@ -101,7 +249,7 @@ export function groupServiceOptions(options?: unknown): ServiceGroup[] {
 interface ServiceSelectProps {
   label?: string;
   placeholder?: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   name?: string;
   value: string;
   onChange: (value: string) => void;
@@ -129,6 +277,7 @@ export function ServiceSelect({
       className="w-full"
       popoverClassName="contact-form-popover overscroll-contain"
       preventPageScroll
+      openOnLabelClick
     >
       {groups.map((group, index) =>
         group.label ? (
@@ -288,6 +437,7 @@ export function detectDefaultCountry(): string {
 interface PhoneFieldProps {
   label?: string;
   placeholder?: string;
+  countryDialCodeAriaLabel?: string;
   size?: "sm" | "md";
   isRequired?: boolean;
   wrapperClassName?: string;
@@ -305,6 +455,7 @@ interface PhoneFieldProps {
 export function PhoneField({
   label = "Phone number",
   placeholder = "(561) 555-0100",
+  countryDialCodeAriaLabel = "Country dial code",
   size = "md",
   isRequired,
   wrapperClassName,
@@ -313,18 +464,18 @@ export function PhoneField({
 }: PhoneFieldProps) {
   const id = useId();
   const inputId = `phone-field-${id}`;
-  const [countryCode, setCountryCode] = useState("US");
+  const detectedCountryCode = useSyncExternalStore(
+    () => () => undefined,
+    detectDefaultCountry,
+    () => "US",
+  );
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string | null>(null);
   const [national, setNational] = useState("");
 
-  // Default the dial code from the visitor's locale (client-only).
-  useEffect(() => {
-    setCountryCode(detectDefaultCountry());
-  }, []);
-
-  // When the parent form resets (value cleared after submit), clear the input.
-  useEffect(() => {
-    if (!value) setNational("");
-  }, [value]);
+  const countryCode = selectedCountryCode ?? detectedCountryCode;
+  // The parent owns the submitted value. Deriving an empty display from that value
+  // resets the field after submit without synchronously mirroring props in an effect.
+  const displayedNational = value ? national : "";
 
   const country = COUNTRIES.find((c) => c.code === countryCode) ?? COUNTRIES[0];
 
@@ -341,7 +492,7 @@ export function PhoneField({
       <div className="flex w-full items-stretch gap-3">
         {/* Country dial-code selector */}
         <Select
-          aria-label="Country dial code"
+          aria-label={countryDialCodeAriaLabel}
           size={size}
           className="w-[7.5rem] shrink-0 sm:w-32"
           popoverClassName="contact-form-popover w-max min-w-[16rem] overscroll-contain"
@@ -349,8 +500,8 @@ export function PhoneField({
           selectedKey={country.code}
           onSelectionChange={(key) => {
             const next = COUNTRIES.find((c) => c.code === key) ?? COUNTRIES[0];
-            setCountryCode(next.code);
-            const reformatted = formatNationalNumber(national, next.code);
+            setSelectedCountryCode(next.code);
+            const reformatted = formatNationalNumber(displayedNational, next.code);
             setNational(reformatted);
             emit(next.dial, reformatted);
           }}
@@ -382,7 +533,7 @@ export function PhoneField({
           autoComplete="tel-national"
           isRequired={isRequired}
           placeholder={placeholder}
-          value={national}
+          value={displayedNational}
           onChange={(next) => {
             const formatted = formatNationalNumber(next, country.code);
             setNational(formatted);
@@ -432,13 +583,14 @@ function hasRequiredPhone(value: string) {
 /*  Floating Contact Widget                                           */
 /* ------------------------------------------------------------------ */
 
-export default function ContactWidget() {
+export default function ContactWidget({ content }: { content?: ContactWidgetContent }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const shouldReduceMotion = useReducedMotion();
+  const widget = useMemo(() => resolveContactWidgetContent(content), [content]);
 
   const [form, setForm] = useState<ContactFormState>(INITIAL_FORM);
 
@@ -482,6 +634,11 @@ export default function ContactWidget() {
     }
   }
 
+  function openFromWelcome() {
+    dismissWelcome();
+    setIsOpen(true);
+  }
+
   /* ── Form helpers ───────────────────────────────────────────────── */
 
   function setField<K extends keyof ContactFormState>(name: K, value: ContactFormState[K]) {
@@ -492,7 +649,7 @@ export default function ContactWidget() {
     e.preventDefault();
     if (!hasRequiredPhone(form.phone)) {
       setStatus("error");
-      setErrorMessage("Phone number is required.");
+      setErrorMessage(widget.phone_required_error);
       return;
     }
     setStatus("sending");
@@ -507,7 +664,7 @@ export default function ContactWidget() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error || "Something went wrong. Please try again.");
+        throw new Error(data?.error || widget.generic_error);
       }
 
       pushEvent("contact_submitted", { form: "widget", service: form.service });
@@ -515,7 +672,7 @@ export default function ContactWidget() {
       setForm(INITIAL_FORM);
     } catch (err) {
       setStatus("error");
-      setErrorMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setErrorMessage(err instanceof Error ? err.message : widget.generic_error);
     }
   }
 
@@ -568,15 +725,22 @@ export default function ContactWidget() {
           <motion.div
             key="contact-panel"
             {...panelMotion}
+            role="dialog"
+            aria-label={accessibleLabel(widget.panel_heading, DEFAULT_CONTACT_WIDGET_CONTENT.panel_heading)}
             className="mb-4 w-95 max-w-[calc(100vw-3rem)] origin-bottom-right overflow-hidden rounded-2xl bg-primary/90 shadow-xl ring-1 ring-secondary backdrop-blur-xl dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
           >
             {/* Header */}
             <div className="flex items-start justify-between gap-2 px-5 pt-5">
               <div>
-                <h3 className="text-lg font-semibold text-primary">Send Us a Message</h3>
-                <p className="mt-1 text-sm text-tertiary">We&apos;ll get back to you within 2-3 business days.</p>
+                <h3 className="text-lg font-semibold text-primary">{widget.panel_heading}</h3>
+                <p className="mt-1 text-sm text-tertiary">{widget.panel_description}</p>
               </div>
-              <CloseButton size="sm" label="Close contact form" onPress={() => setIsOpen(false)} className="-mt-1.5 -mr-1.5" />
+              <CloseButton
+                size="sm"
+                label={accessibleLabel(widget.close_form_aria_label, DEFAULT_CONTACT_WIDGET_CONTENT.close_form_aria_label)}
+                onPress={() => setIsOpen(false)}
+                className="-mt-1.5 -mr-1.5"
+              />
             </div>
 
             {/* Brand hairline */}
@@ -596,8 +760,8 @@ export default function ContactWidget() {
                     className="flex flex-col items-center py-8 text-center"
                   >
                     <FeaturedIcon icon={CheckCircle} color="success" theme="modern" size="lg" className="mb-4" />
-                    <p className="text-md font-semibold text-primary">Message Sent</p>
-                    <p className="mt-1 text-sm text-tertiary">Thank you for reaching out. We&apos;ll be in touch soon.</p>
+                    <p className="text-md font-semibold text-primary">{widget.success_heading}</p>
+                    <p className="mt-1 text-sm text-tertiary">{widget.success_message}</p>
                     <Button
                       color="link-color"
                       size="sm"
@@ -607,7 +771,7 @@ export default function ContactWidget() {
                         setIsOpen(false);
                       }}
                     >
-                      Close
+                      {accessibleLabel(widget.success_close_label, DEFAULT_CONTACT_WIDGET_CONTENT.success_close_label)}
                     </Button>
                   </motion.div>
                 ) : (
@@ -625,8 +789,8 @@ export default function ContactWidget() {
                     <div className="grid grid-cols-2 gap-3">
                       <Input
                         size="sm"
-                        label="Name"
-                        placeholder="John Smith"
+                        label={accessibleLabel(widget.name_label, DEFAULT_CONTACT_WIDGET_CONTENT.name_label)}
+                        placeholder={widget.name_placeholder}
                         isRequired
                         validationBehavior="native"
                         value={form.name}
@@ -635,8 +799,8 @@ export default function ContactWidget() {
                       <Input
                         size="sm"
                         type="email"
-                        label="Email"
-                        placeholder="john@company.com"
+                        label={accessibleLabel(widget.email_label, DEFAULT_CONTACT_WIDGET_CONTENT.email_label)}
+                        placeholder={widget.email_placeholder}
                         isRequired
                         validationBehavior="native"
                         value={form.email}
@@ -645,26 +809,44 @@ export default function ContactWidget() {
                     </div>
 
                     {/* Company */}
-                    <Input size="sm" label="Company" placeholder="Acme Corp" value={form.company} onChange={(value) => setField("company", value)} />
+                    <Input
+                      size="sm"
+                      label={accessibleLabel(widget.company_label, DEFAULT_CONTACT_WIDGET_CONTENT.company_label)}
+                      placeholder={widget.company_placeholder}
+                      value={form.company}
+                      onChange={(value) => setField("company", value)}
+                    />
 
                     {/* Phone with country code */}
                     <PhoneField
                       isRequired
                       size="sm"
-                      label="Phone number"
+                      label={accessibleLabel(widget.phone_label, DEFAULT_CONTACT_WIDGET_CONTENT.phone_label)}
+                      placeholder={widget.phone_placeholder}
+                      countryDialCodeAriaLabel={accessibleLabel(
+                        widget.country_dial_code_aria_label,
+                        DEFAULT_CONTACT_WIDGET_CONTENT.country_dial_code_aria_label,
+                      )}
                       value={form.phone}
                       onChange={(value) => setField("phone", value)}
                     />
 
                     {/* Service */}
-                    <ServiceSelect size="sm" label="Service Interested In" value={form.service} onChange={(value) => setField("service", value)} />
+                    <ServiceSelect
+                      size="sm"
+                      label={accessibleLabel(widget.service_label, DEFAULT_CONTACT_WIDGET_CONTENT.service_label)}
+                      placeholder={widget.service_placeholder}
+                      value={form.service}
+                      onChange={(value) => setField("service", value)}
+                      groups={widget.service_groups}
+                    />
 
                     {/* Message */}
                     <TextArea
                       size="sm"
                       rows={3}
-                      label="Message"
-                      placeholder="How can we help?"
+                      label={accessibleLabel(widget.message_label, DEFAULT_CONTACT_WIDGET_CONTENT.message_label)}
+                      placeholder={widget.message_placeholder}
                       isRequired
                       validationBehavior="native"
                       value={form.message}
@@ -675,26 +857,38 @@ export default function ContactWidget() {
                     {/* SMS Consent */}
                     <Checkbox
                       size="sm"
-                      aria-label="SMS consent"
+                      aria-label={accessibleLabel(
+                        widget.sms_consent_aria_label,
+                        DEFAULT_CONTACT_WIDGET_CONTENT.sms_consent_aria_label,
+                      )}
                       isSelected={form.smsConsent}
                       onChange={(isSelected) => setField("smsConsent", isSelected)}
                       hint={
                         <>
-                          I consent to receive SMS text messages from ICE. Message and data rates may apply. Reply STOP to opt out. See our{" "}
-                          <Link href="/sms-consent" className="text-brand-secondary underline underline-offset-2 hover:text-brand-secondary_hover">
-                            SMS Consent Policy
+                          {widget.sms_consent_prefix}
+                          <Link
+                            href={widget.sms_consent_link_href}
+                            className="text-brand-secondary underline underline-offset-2 hover:text-brand-secondary_hover"
+                          >
+                            {accessibleLabel(
+                              widget.sms_consent_link_label,
+                              DEFAULT_CONTACT_WIDGET_CONTENT.sms_consent_link_label,
+                            )}
                           </Link>
-                          .
+                          {widget.sms_consent_suffix}
                         </>
                       }
                     />
 
                     <Checkbox
                       size="sm"
-                      aria-label="Email marketing consent"
+                      aria-label={accessibleLabel(
+                        widget.marketing_consent_aria_label,
+                        DEFAULT_CONTACT_WIDGET_CONTENT.marketing_consent_aria_label,
+                      )}
                       isSelected={form.marketingConsent}
                       onChange={(isSelected) => setField("marketingConsent", isSelected)}
-                      hint="Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time."
+                      hint={widget.marketing_consent_hint}
                     />
 
                     {/* Error message */}
@@ -720,7 +914,9 @@ export default function ContactWidget() {
                       showTextWhileLoading
                       isDisabled={status === "sending"}
                     >
-                      {status === "sending" ? "Sending..." : "Send Message"}
+                      {status === "sending"
+                        ? accessibleLabel(widget.sending_label, DEFAULT_CONTACT_WIDGET_CONTENT.sending_label)
+                        : accessibleLabel(widget.submit_label, DEFAULT_CONTACT_WIDGET_CONTENT.submit_label)}
                     </Button>
                   </motion.form>
                 )}
@@ -734,14 +930,19 @@ export default function ContactWidget() {
           <motion.div
             key="welcome-bubble"
             {...bubbleMotion}
-            onClick={() => {
-              dismissWelcome();
-              setIsOpen(true);
+            role="button"
+            tabIndex={0}
+            aria-label={accessibleLabel(widget.welcome_aria_label, DEFAULT_CONTACT_WIDGET_CONTENT.welcome_aria_label)}
+            onClick={openFromWelcome}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              openFromWelcome();
             }}
             className="relative mb-3 max-w-65 cursor-pointer rounded-xl bg-primary px-4 py-3 shadow-lg ring-1 ring-secondary"
           >
-            <p className="text-sm font-medium text-primary">Need help? Schedule a free consultation!</p>
-            <p className="mt-1 text-xs text-tertiary">Click to get started</p>
+            <p className="text-sm font-medium text-primary">{widget.welcome_heading}</p>
+            <p className="mt-1 text-xs text-tertiary">{widget.welcome_description}</p>
             {/* Small arrow pointing down */}
             <div className="absolute right-6 -bottom-1.5 size-3 rotate-45 border-r border-b border-secondary bg-primary" />
           </motion.div>
@@ -753,7 +954,11 @@ export default function ContactWidget() {
         color="primary"
         size="lg"
         onPress={handleToggle}
-        aria-label={isOpen ? "Close contact form" : "Open contact form"}
+        aria-label={
+          isOpen
+            ? accessibleLabel(widget.close_form_aria_label, DEFAULT_CONTACT_WIDGET_CONTENT.close_form_aria_label)
+            : accessibleLabel(widget.open_form_aria_label, DEFAULT_CONTACT_WIDGET_CONTENT.open_form_aria_label)
+        }
         className="size-14 rounded-full shadow-lg before:rounded-full dark:shadow-[0_0_40px_rgb(4_155_251/0.25)]"
         iconLeading={
           isOpen ? (

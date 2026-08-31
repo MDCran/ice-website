@@ -1,7 +1,7 @@
 "use client";
 
 import type { FC, ReactNode, Ref, RefAttributes } from "react";
-import { isValidElement } from "react";
+import { isValidElement, useRef } from "react";
 import { ChevronDown } from "@untitledui/icons";
 import type { SelectProps as AriaSelectProps } from "react-aria-components";
 import { Button as AriaButton, ListBox as AriaListBox, Select as AriaSelect, SelectValue as AriaSelectValue } from "react-aria-components";
@@ -22,6 +22,8 @@ export interface SelectProps extends Omit<AriaSelectProps<SelectItemType>, "chil
     popoverClassName?: string;
     /** Keep wheel/touch scrolling inside the open menu instead of scrolling the page. */
     preventPageScroll?: boolean;
+    /** Let pointer users open the menu by clicking its visible label. */
+    openOnLabelClick?: boolean;
     icon?: FC | ReactNode;
     children: ReactNode | ((item: SelectItemType) => ReactNode);
 }
@@ -109,20 +111,32 @@ const Select = ({
     className,
     popoverClassName,
     preventPageScroll = false,
+    openOnLabelClick = false,
     ...rest
 }: SelectProps) => {
+    const triggerRef = useRef<HTMLButtonElement>(null);
+
     return (
         <SelectContext.Provider value={{ size }}>
             <AriaSelect {...rest} className={(state) => cx("flex flex-col gap-1.5", typeof className === "function" ? className(state) : className)}>
                 {(state) => (
                     <>
                         {label && (
-                            <Label isRequired={hideRequiredIndicator ? false : state.isRequired} tooltip={tooltip}>
+                            <Label
+                                isRequired={hideRequiredIndicator ? false : state.isRequired}
+                                tooltip={tooltip}
+                                className={cx(openOnLabelClick && !state.isDisabled && "cursor-pointer")}
+                                onClick={(event) => {
+                                    if (!openOnLabelClick || state.isDisabled) return;
+                                    event.preventDefault();
+                                    triggerRef.current?.click();
+                                }}
+                            >
                                 {label}
                             </Label>
                         )}
 
-                        <SelectValue {...state} {...{ size, placeholder }} icon={icon} />
+                        <SelectValue {...state} {...{ size, placeholder }} ref={triggerRef} icon={icon} />
 
                         <Popover
                             size={size}

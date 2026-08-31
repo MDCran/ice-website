@@ -39,6 +39,10 @@ import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 import { FaqPreview } from "@/components/marketing/FaqHub";
+import { isCmsSectionVisible } from "@/lib/cms/sectionManifest";
+import { serviceImageFor } from "@/lib/solutionHeroImages";
+import { EnterpriseSalesPreview } from "@/components/marketing/EnterpriseSalesSuite";
+import type { SalesEnablementConfig } from "@/lib/salesEnablement";
 
 type IconComponent = FC<{ className?: string }>;
 
@@ -52,7 +56,27 @@ const BUSINESS_PHONE_HREF = "tel:18007869188";
    ══════════════════════════════════════════════════════════════════════════ */
 
 export interface HomePageData {
-  services_grid?: { eyebrow?: string; heading?: string; description?: string; items: { icon: string; title: string; description: string; href: string }[] };
+  decision_paths?: {
+    eyebrow?: string;
+    heading?: string;
+    description?: string;
+    cta?: { label: string; href: string };
+    items?: { eyebrow?: string; title: string; description: string; href: string; icon?: string; link_label?: string }[];
+  };
+  popular_solutions?: {
+    eyebrow?: string;
+    heading?: string;
+    description?: string;
+    view_all?: { title?: string; description?: string; label?: string; href?: string };
+    items?: { title: string; description?: string; desc?: string; href: string; icon?: string; image?: string; link_label?: string }[];
+  };
+  services_grid?: {
+    eyebrow?: string;
+    heading?: string;
+    description?: string;
+    view_all?: { title?: string; description?: string; label?: string; href?: string };
+    items?: { title: string; description?: string; desc?: string; href: string; icon?: string; image?: string; link_label?: string }[];
+  };
   stats?: { eyebrow?: string; heading?: string; description?: string; items: { value: number; suffix: string; label: string }[] };
   timeline?: { eyebrow?: string; heading?: string; items: { year: string; title: string; description: string }[] };
   industries_cta?: {
@@ -63,11 +87,13 @@ export interface HomePageData {
     cta_primary?: { label: string; href: string };
     cta_secondary?: { label: string; href: string };
     badge_note?: string;
+    items_heading?: string;
+    partner_logo_alt?: string;
   };
   partners_marquee?: {
     eyebrow?: string;
     heading?: string;
-    partners: Array<string | { name?: string; logo_src?: string; logoSrc?: string }>;
+    partners: Array<string | { name?: string; logo_src?: string; logoSrc?: string; capability?: string }>;
   };
   hero?: {
     badge?: string;
@@ -82,6 +108,8 @@ export interface HomePageData {
     cta_primary_b?: { label: string; href: string };
     cta_secondary?: { label: string; href: string };
     proof_labels?: string[];
+    scroll_label?: string;
+    scroll_aria_label?: string;
   };
   data_centers?: {
     eyebrow?: string;
@@ -90,54 +118,35 @@ export interface HomePageData {
     features: string[];
     badge_label?: string;
     badge_value?: string;
+    image?: string;
+    image_alt?: string;
     cta?: { label: string; href: string };
   };
-  infrastructure?: { eyebrow?: string; heading?: string; description?: string };
+  infrastructure?: {
+    eyebrow?: string;
+    heading?: string;
+    description?: string;
+    flow_aria_label?: string;
+    path_aria_label?: string;
+    path_label?: string;
+    active_layer_label?: string;
+    nodes?: Array<{ id: string; label: string; icon?: string; summary: string; details: string[] }>;
+  };
   trust_badges?: { eyebrow?: string; heading?: string; items: { icon: string; title: string; description: string }[] };
-  metrics?: { eyebrow?: string; heading?: string; description?: string };
+  metrics?: { eyebrow?: string; heading?: string; description?: string; items?: Array<{ value: string; suffix?: string; label: string }> };
+  faq_preview?: {
+    eyebrow?: string;
+    heading?: string;
+    link_label?: string;
+    link_href?: string;
+    items?: Array<{ id?: string; question: string; href?: string }>;
+  };
   final_cta?: { heading: string; description: string; cta_primary?: { label: string; href: string }; cta_secondary?: { label: string; href: string } };
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
    DEFAULTS (fallback when DB has no data)
    ══════════════════════════════════════════════════════════════════════════ */
-
-const DEFAULT_SERVICES = [
-  { icon: "Cloud", title: "Managed Cloud Services", description: "Scalable cloud hosting, private cloud, hybrid cloud, and seamless migration services for enterprise workloads.", href: "/solutions/managed-cloud-hosting" },
-  { icon: "Server", title: "AS400 / IBM i Services", description: "AS400 and IBM i hosting, modernization, security, backup, and managed operations under one team.", href: "/solutions/as400" },
-  { icon: "Shield", title: "Data Protection", description: "Enterprise backup, disaster recovery, high availability, and ransomware recovery to safeguard critical data.", href: "/solutions/backup-as-a-service" },
-  { icon: "Lock", title: "Managed Security", description: "IBM i security, endpoint protection, threat detection, and 24/7 security monitoring for complete coverage.", href: "/solutions/ibm-i-security" },
-  { icon: "Server", title: "Managed Services", description: "Microsoft services, automation, systems management, and IBM Power VS — fully managed by our experts.", href: "/solutions/managed-microsoft" },
-];
-
-const AS400_HOME_SERVICE = {
-  icon: "Server",
-  title: "AS400 / IBM i Services",
-  description: "AS400 and IBM i hosting, modernization, security, backup, and managed operations under one team.",
-  href: "/solutions/as400",
-};
-
-interface HomeServiceEntry {
-  icon: string;
-  title: string;
-  description: string;
-  href: string;
-}
-
-function ensureAs400OnHome(services: HomeServiceEntry[]): HomeServiceEntry[] {
-  const hasAs400 = services.some(
-    (service) =>
-      service.href === AS400_HOME_SERVICE.href ||
-      /as400|ibm i/i.test(service.title || "") ||
-      /ibm i/i.test(service.href || ""),
-  );
-
-  if (hasAs400) {
-    return services;
-  }
-
-  return [AS400_HOME_SERVICE, ...services];
-}
 
 const DEFAULT_STATS = [
   { value: 35, suffix: "+", label: "Years of Experience" },
@@ -217,14 +226,20 @@ const DECISION_PATHS = [
 ];
 
 function normalizeMarqueePartners(
-  partners: Array<string | { name?: string; logo_src?: string; logoSrc?: string }> | undefined,
-): { name: string; logo_src: string }[] {
-  if (!partners?.length) return DEFAULT_PARTNERS;
+  partners: Array<string | { name?: string; logo_src?: string; logoSrc?: string; capability?: string }> | undefined,
+): { name: string; logo_src: string; capability: string }[] {
+  if (partners === undefined) {
+    return DEFAULT_PARTNERS.map((partner) => ({
+      ...partner,
+      capability: PARTNER_CAPABILITIES[partner.name] ?? "Enterprise technology",
+    }));
+  }
   return partners.map((p, i) => {
     if (typeof p === "string") {
       return {
         name: p,
         logo_src: DEFAULT_PARTNERS[i]?.logo_src ?? `/images/v3/b_${(i % 8) + 1}.png`,
+        capability: PARTNER_CAPABILITIES[p] ?? "Enterprise technology",
       };
     }
     return {
@@ -234,6 +249,7 @@ function normalizeMarqueePartners(
         p.logoSrc ||
         DEFAULT_PARTNERS[i]?.logo_src ||
         `/images/v3/b_${(i % 8) + 1}.png`,
+      capability: p.capability ?? PARTNER_CAPABILITIES[p.name?.trim() ?? ""] ?? "Enterprise technology",
     };
   });
 }
@@ -260,14 +276,8 @@ const HERO_PROOF = [
 ];
 
 function resolveProofLabels(cms?: string[]): string[] {
-  const fromCms = (cms ?? []).map((s) => s.trim()).filter(Boolean);
-  if (fromCms.length >= 10) return fromCms;
-  const seen = new Set(fromCms.map((s) => s.toLowerCase()));
-  const merged = [...fromCms];
-  for (const item of HERO_PROOF) {
-    if (!seen.has(item.toLowerCase())) merged.push(item);
-  }
-  return merged;
+  if (cms === undefined) return HERO_PROOF;
+  return cms.map((s) => s.trim()).filter(Boolean);
 }
 
 /** Most-requested solutions — card treatment matches /solutions. */
@@ -406,9 +416,11 @@ function StatItem({
 export default function Home({
   data,
   orderedSections,
+  salesConfig,
 }: {
   data?: HomePageData;
   orderedSections?: CMSRenderableSection[];
+  salesConfig?: SalesEnablementConfig;
 }) {
   const reduceMotion = useHydratedReducedMotion();
 
@@ -452,16 +464,15 @@ export default function Home({
     cta_primary: { label: BUSINESS_PHONE_LABEL, href: BUSINESS_PHONE_HREF },
     cta_secondary: { label: "Explore Solutions", href: "/solutions" },
   };
-  const hero = {
-    ...heroDefaults,
-    ...data?.hero,
-  };
-  const normalizedHeroHeadline = hero.headline?.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  if (normalizedHeroHeadline === "enterprise technology redefined") {
-    hero.headline = heroDefaults.headline;
-    hero.headline_highlight = heroDefaults.headline_highlight;
-  }
-
+  const hero = data?.hero
+    ? {
+        ...heroDefaults,
+        ...data.hero,
+        // A highlight is optional. A legacy CMS headline should not gain a
+        // second, code-owned line merely because that field did not exist yet.
+        headline_highlight: data.hero.headline_highlight ?? "",
+      }
+    : heroDefaults;
   const experimentId = data?.hero?.experiment_id?.trim() || "";
   const abEnabled = Boolean(
     experimentId &&
@@ -486,10 +497,9 @@ export default function Home({
     abEnabled && abVariant === "b" && data?.hero?.cta_primary_b?.label
       ? data.hero.cta_primary_b
       : hero.cta_primary;
-  const displayPrimaryCta = /book\s+(a\s+)?(free\s+)?consult/i.test(requestedPrimaryCta?.label ?? "")
-    ? { label: BUSINESS_PHONE_LABEL, href: BUSINESS_PHONE_HREF }
-    : requestedPrimaryCta;
-  const servicesSection = data?.services_grid;
+  const displayPrimaryCta = requestedPrimaryCta;
+  const decisionPathsSection = data?.decision_paths;
+  const popularSolutionsSection = data?.popular_solutions ?? data?.services_grid;
   const statsSection = data?.stats;
   const dataCentersSection = data?.data_centers;
   const infrastructureSection = data?.infrastructure;
@@ -500,14 +510,36 @@ export default function Home({
   const metricsSection = data?.metrics;
   const finalCta = data?.final_cta;
 
-  const services = ensureAs400OnHome(
-    (data?.services_grid?.items?.length ? data.services_grid.items : DEFAULT_SERVICES),
-  ).map((s) => ({
-    icon: resolveIcon(s.icon) as IconComponent,
-    title: s.title,
-    description: s.description,
-    href: s.href,
+  const decisionPathItems = (decisionPathsSection?.items !== undefined ? decisionPathsSection.items : DECISION_PATHS) as Array<{
+    eyebrow?: string;
+    title: string;
+    description: string;
+    href: string;
+    icon?: string | IconComponent;
+    link_label?: string;
+  }>;
+  const decisionPaths = decisionPathItems.map((item) => ({
+    ...item,
+    icon: typeof item.icon === "string" ? (resolveIcon(item.icon) as IconComponent) : (item.icon ?? MessageChatCircle),
   }));
+  const popularSolutionItems = (popularSolutionsSection?.items !== undefined ? popularSolutionsSection.items : POPULAR_SOLUTIONS) as Array<{
+    title: string;
+    description?: string;
+    desc?: string;
+    href: string;
+    icon?: string | IconComponent;
+    image?: string;
+    link_label?: string;
+  }>;
+  const popularSolutions = popularSolutionItems.map((item) => {
+    const fallback = POPULAR_SOLUTIONS.find((candidate) => candidate.href === item.href);
+    return {
+      ...item,
+      desc: item.desc ?? item.description ?? fallback?.desc ?? "",
+      icon: typeof item.icon === "string" ? (resolveIcon(item.icon) as IconComponent) : (item.icon ?? fallback?.icon ?? Server01),
+      image: serviceImageFor(item) ?? fallback?.image ?? "/images/solutions/heroes/managed-cloud-hosting.webp",
+    };
+  });
   const stats: { value: number; suffix: string; label: string }[] = (
     data?.stats?.items ?? DEFAULT_STATS
   ).map((s) => ({
@@ -524,6 +556,11 @@ export default function Home({
     icon: resolveIcon(ind.icon) as IconComponent,
   }));
   const partnerLogos = normalizeMarqueePartners(data?.partners_marquee?.partners);
+  const performanceMetrics = metricsSection?.items ?? PERFORMANCE_METRICS;
+  const architectureNodes = infrastructureSection?.nodes?.map((node) => ({
+    ...node,
+    icon: resolveIcon(node.icon ?? "Server") as IconComponent,
+  }));
   const dataCenterFeatures = dataCentersSection?.features ?? [
     "Tier-3 data centers with guaranteed uptime",
     "PCI, HIPAA, SOX, and GDPR compliant",
@@ -540,6 +577,8 @@ export default function Home({
     (section) =>
       ![
         "hero",
+        "decision_paths",
+        "popular_solutions",
         "services_grid",
         "stats",
         "data_centers",
@@ -549,9 +588,12 @@ export default function Home({
         "industries_cta",
         "trust_badges",
         "metrics",
+        "faq_preview",
         "final_cta",
       ].includes(section.section_key)
   );
+  const show = (...keys: string[]) => isCmsSectionVisible(orderedSections, ...keys);
+  const showPopularSolutions = show("popular_solutions", "services_grid");
 
   // Plain elements so count-up visibility isn't gated by motion opacity.
   const { ref: statsRef, inView: statsInView } = useInViewOnce<HTMLDListElement>({
@@ -567,7 +609,7 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           HERO — cinematic full-bleed background video
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative flex min-h-[calc(100svh-4.5rem)] flex-col overflow-hidden border-b border-secondary">
+      {show("hero") && <section className="relative flex min-h-[calc(100svh-4.5rem)] flex-col overflow-hidden border-b border-secondary">
         {/* LCP poster + cinematic background video */}
         <div aria-hidden="true" className="absolute inset-0">
           <OptimizedHeroMedia startDelayMs={150} />
@@ -661,10 +703,10 @@ export default function Home({
         <motion.a
           {...heroReveal(MOTION_STAGGER * 6)}
           href="#services"
-          aria-label="Scroll to explore"
+          aria-label={data?.hero?.scroll_aria_label ?? "Scroll to explore"}
           className="ice-hero-scroll-cue relative z-10 mb-4 flex flex-col items-center gap-2 self-center pb-[max(0.5rem,env(safe-area-inset-bottom))] text-white/70 transition hover:text-white md:mb-6"
         >
-          <span className="text-[10px] font-medium tracking-[0.2em] uppercase">Scroll</span>
+          <span className="text-[10px] font-medium tracking-[0.2em] uppercase">{data?.hero?.scroll_label ?? "Scroll"}</span>
           <span
             aria-hidden="true"
             className="flex flex-col items-center gap-1"
@@ -675,35 +717,35 @@ export default function Home({
             <ChevronDown className="ice-hero-scroll-chevron size-6 drop-shadow-[0_0_8px_rgb(4_155_251/0.45)]" />
           </span>
         </motion.a>
-      </section>
+      </section>}
 
-      <ProofTicker items={resolveProofLabels(data?.hero?.proof_labels)} />
+      {show("hero") && <ProofTicker items={resolveProofLabels(data?.hero?.proof_labels)} />}
 
-      <section className="relative isolate overflow-hidden border-b border-secondary bg-secondary py-14 md:py-18">
+      {show("decision_paths") && <section className="relative isolate overflow-hidden border-b border-secondary bg-secondary py-14 md:py-18">
         <div
           aria-hidden="true"
           className="texture-grid pointer-events-none absolute inset-0 opacity-35 [mask-image:radial-gradient(ellipse_at_center,black_18%,transparent_72%)]"
         />
         <div className="relative mx-auto grid max-w-container gap-8 px-4 md:px-8 lg:grid-cols-[0.74fr_1.26fr] lg:items-start">
           <motion.div {...reveal()} className="max-w-xl">
-            <span className="text-xs font-semibold tracking-[0.2em] text-brand-secondary uppercase">Choose your starting point</span>
-            <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">What are you trying to solve?</h2>
+            <span className="text-xs font-semibold tracking-[0.2em] text-brand-secondary uppercase">{decisionPathsSection?.eyebrow ?? "Choose your starting point"}</span>
+            <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">{decisionPathsSection?.heading ?? "What are you trying to solve?"}</h2>
             <p className="mt-4 text-lg leading-relaxed text-tertiary">
-              Start from the business pressure you feel first. Each route narrows the services, proof points, and next steps that fit the situation.
+              {decisionPathsSection?.description ?? "Start from the business pressure you feel first. Each route narrows the services, proof points, and next steps that fit the situation."}
             </p>
             <Button
-              href="/solutions/find"
+              href={decisionPathsSection?.cta?.href ?? "/solutions/find"}
               color="secondary"
               size="lg"
               iconTrailing={ArrowRight}
               className="mt-7"
             >
-              Open guided finder
+              {decisionPathsSection?.cta?.label ?? "Open guided finder"}
             </Button>
           </motion.div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {DECISION_PATHS.map((path, i) => (
+            {decisionPaths.map((path, i) => (
               <motion.div key={path.title} {...reveal((i + 1) * MOTION_STAGGER)} className="h-full">
                 <Link
                   href={path.href}
@@ -717,11 +759,11 @@ export default function Home({
                     <FeaturedIcon icon={path.icon} size="md" color="brand" theme="light" />
                     <p className="mt-5 text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">{path.eyebrow}</p>
                     <h3 className="mt-2 text-lg font-semibold leading-snug text-primary">
-                      {path.href === "/solutions/as400" ? "I'm running AS400" : path.title}
+                      {path.title}
                     </h3>
                     <p className="mt-2 text-sm leading-relaxed text-tertiary">{path.description}</p>
                     <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-brand-secondary transition group-hover:gap-2.5">
-                      Follow this path <ArrowRight className="size-4" />
+                      {path.link_label ?? "Follow this path"} <ArrowRight className="size-4" />
                     </span>
                   </div>
                 </Link>
@@ -729,81 +771,25 @@ export default function Home({
             ))}
           </div>
         </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          SERVICES GRID
-          ═══════════════════════════════════════════════════════════════════ */}
-      {false && <section id="services" className="relative scroll-mt-20 overflow-hidden bg-primary py-16 md:py-24">
-        {/* Depth: engineering grid fading down from the hero's hard edge + grain */}
-        <div
-          aria-hidden="true"
-          className="texture-grid pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_top,black_25%,transparent_70%)]"
-        />
-        <div
-          aria-hidden="true"
-          className="texture-noise pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
-        />
-        <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
-          <SectionHeader
-            eyebrow={servicesSection?.eyebrow ?? "What We Do"}
-            heading={servicesSection?.heading ?? "Enterprise-Grade Solutions"}
-            description={
-              servicesSection?.description ??
-              "End-to-end technology solutions engineered for reliability, security, and performance across every layer of your infrastructure."
-            }
-          />
-
-          <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-16 lg:grid-cols-4 xl:grid-cols-5">
-            {services.map((s, i) => (
-              <motion.li
-                key={s.title}
-                {...reveal(i * MOTION_STAGGER)}
-                whileHover={reduceMotion ? undefined : { y: -6 }}
-                className="h-full"
-              >
-                <Link
-                  href={s.href}
-                  className="group relative flex h-full flex-col items-start gap-5 overflow-hidden rounded-2xl bg-primary p-6 ring-1 ring-secondary ring-inset outline-focus-ring transition duration-200 hover:ring-brand hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 dark:hover:shadow-[0_0_30px_rgb(4_155_251/0.12)]"
-                >
-                  {/* Subtle brand wash that fades in on hover */}
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/[0.04] to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                  />
-                  <FeaturedIcon icon={s.icon} size="lg" color="brand" theme="modern" />
-                  <div className="relative flex flex-1 flex-col gap-1.5">
-                    <h3 className="text-lg font-semibold text-primary">{s.title}</h3>
-                    <p className="text-md text-tertiary">{s.description}</p>
-                  </div>
-                  <span className="relative inline-flex items-center gap-1.5 text-sm leading-none font-semibold text-brand-secondary transition-all duration-200 group-hover:gap-2.5 group-hover:text-brand-secondary_hover">
-                    <span>Learn more</span>
-                    <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
-                  </span>
-                </Link>
-              </motion.li>
-            ))}
-          </ul>
-        </div>
       </section>}
 
       {/* ═══════════════════════════════════════════════════════════════════
           POPULAR SOLUTIONS — same card treatment as /solutions
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative isolate overflow-hidden border-y border-secondary bg-secondary py-16 md:py-24">
+      {showPopularSolutions && <section id="services" className="relative isolate scroll-mt-20 overflow-hidden border-y border-secondary bg-secondary py-16 md:py-24">
         <div
           aria-hidden="true"
           className="texture-dots pointer-events-none absolute inset-0 -z-10 opacity-50 [mask-image:radial-gradient(ellipse_at_top_left,black_10%,transparent_65%)]"
         />
         <div className="relative mx-auto w-full max-w-container px-4 md:px-8">
           <SectionHeader
-            eyebrow="Most Popular"
-            heading="Solutions Teams Ask For First"
-            description="High-demand services that keep enterprise workloads available, recoverable, and secure."
+            eyebrow={popularSolutionsSection?.eyebrow ?? "Most Popular"}
+            heading={popularSolutionsSection?.heading ?? "Solutions Teams Ask For First"}
+            description={popularSolutionsSection?.description ?? "High-demand services that keep enterprise workloads available, recoverable, and secure."}
           />
 
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-12 md:gap-6 lg:grid-cols-3">
-            {POPULAR_SOLUTIONS.map((svc, i) => (
+            {popularSolutions.map((svc, i) => (
               <motion.div key={svc.title} {...reveal(i * MOTION_STAGGER)} className="h-full">
                 <Link
                   href={svc.href}
@@ -830,7 +816,7 @@ export default function Home({
                     <h3 className="mt-4 text-lg font-semibold text-primary">{svc.title}</h3>
                     <p className="mt-1 flex-1 text-md text-tertiary">{svc.desc}</p>
                     <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
-                      Learn more
+                      {svc.link_label ?? "Learn more"}
                       <ArrowRight aria-hidden="true" className="size-4" />
                     </span>
                   </div>
@@ -840,11 +826,11 @@ export default function Home({
 
             {/* 6th tile — View All Solutions CTA */}
             <motion.div
-              {...reveal(POPULAR_SOLUTIONS.length * MOTION_STAGGER)}
+              {...reveal(popularSolutions.length * MOTION_STAGGER)}
               className="h-full sm:col-span-2 lg:col-span-3"
             >
               <Link
-                href="/solutions"
+                href={popularSolutionsSection?.view_all?.href ?? "/solutions"}
                 className="group relative isolate flex h-full min-h-56 overflow-hidden rounded-2xl border border-secondary bg-primary p-6 shadow-xs transition duration-200 ease-out hover:border-brand hover:shadow-lg motion-safe:hover:-translate-y-1 dark:hover:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
               >
                 <div
@@ -863,13 +849,13 @@ export default function Home({
                 <div className="relative z-10 flex h-full flex-col items-start justify-between">
                   <div>
                     <FeaturedIcon icon={LayersThree01} size="lg" color="brand" theme="light" />
-                    <h3 className="mt-4 text-lg font-semibold text-primary">View All Solutions</h3>
+                    <h3 className="mt-4 text-lg font-semibold text-primary">{popularSolutionsSection?.view_all?.title ?? "View All Solutions"}</h3>
                     <p className="mt-1 text-md text-tertiary">
-                      Browse the full catalog of managed cloud, security, and data protection services.
+                      {popularSolutionsSection?.view_all?.description ?? "Browse the full catalog of managed cloud, security, and data protection services."}
                     </p>
                   </div>
                   <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
-                    Explore solutions
+                    {popularSolutionsSection?.view_all?.label ?? "Explore solutions"}
                     <ArrowRight aria-hidden="true" className="size-4" />
                   </span>
                 </div>
@@ -877,12 +863,12 @@ export default function Home({
             </motion.div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ═══════════════════════════════════════════════════════════════════
           STATS
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+      {show("stats") && <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
         <SectionBloom align="left" />
         <div className="relative z-10 mx-auto w-full max-w-container px-4 md:px-8">
           <div className="flex flex-col gap-8 md:gap-16">
@@ -908,12 +894,12 @@ export default function Home({
             </dl>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ═══════════════════════════════════════════════════════════════════
           DATA CENTERS
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-primary py-16 md:py-24">
+      {show("data_centers") && <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <motion.div
@@ -924,8 +910,8 @@ export default function Home({
               className="relative"
             >
               <Image
-                src="/images/service/data_center.jpg"
-                alt="ICE high-security data center"
+                src={dataCentersSection?.image ?? "/images/service/data_center.jpg"}
+                alt={dataCentersSection?.image_alt ?? "ICE high-security data center"}
                 width={720}
                 height={480}
                 className="h-auto w-full rounded-2xl object-cover dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
@@ -973,12 +959,12 @@ export default function Home({
             </motion.div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ═══════════════════════════════════════════════════════════════════
           INFRASTRUCTURE DATA FLOW
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+      {show("infrastructure") && <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
         <SectionBloom align="right" />
         <div className="relative z-10 mx-auto w-full max-w-container px-4 md:px-8">
           <SectionHeader
@@ -991,15 +977,21 @@ export default function Home({
           />
 
           <div className="mt-12 md:mt-16">
-            <InteractiveArchitecture />
+            <InteractiveArchitecture
+              nodes={architectureNodes}
+              flowAriaLabel={infrastructureSection?.flow_aria_label}
+              pathAriaLabel={infrastructureSection?.path_aria_label}
+              pathLabel={infrastructureSection?.path_label}
+              activeLayerLabel={infrastructureSection?.active_layer_label}
+            />
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ═══════════════════════════════════════════════════════════════════
           COMPANY TIMELINE
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
+      {show("timeline") && <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
         <SectionBloom align="left" />
         <div className="relative z-10 mx-auto w-full max-w-container px-4 md:px-8">
           <SectionHeader
@@ -1011,13 +1003,13 @@ export default function Home({
             {/* Rail + beam stop at the endcap center (bottom-2.5 = half of size-5). */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute top-1 bottom-3 left-6 z-0 w-9 -translate-x-1/2 overflow-hidden rounded-full md:left-1/2"
+              className="pointer-events-none absolute top-1 bottom-3 left-6 z-0 w-10 -translate-x-1/2 overflow-hidden rounded-full md:left-1/2"
             >
               {/* Pipeline rail — a subtle brand-tinted track the beam runs along */}
               <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 rounded-full bg-gradient-to-b from-brand-500/10 via-border-brand/45 to-brand-500/10" />
               <span
                 aria-hidden="true"
-                className="ice-timeline-auto-beam absolute top-0 left-1/2 z-[2] h-28 w-[2px] -translate-x-1/2 rounded-full"
+                className="ice-timeline-auto-beam absolute top-0 left-1/2 z-[2] h-32 w-[3px] -translate-x-1/2 rounded-full"
               />
               <span
                 aria-hidden="true"
@@ -1072,14 +1064,14 @@ export default function Home({
                       delay: i * MOTION_STAGGER,
                       ease: EASE,
                     }}
-                    className={`col-start-2 row-start-1 min-w-0 md:w-full md:max-w-[430px] ${
+                    className={`relative z-[2] col-start-2 row-start-1 min-w-0 md:w-full md:max-w-[430px] ${
                       i % 2 === 0
                         ? "md:col-start-1 md:justify-self-end"
                         : "md:col-start-3 md:justify-self-start"
                     }`}
                   >
                     <div
-                      className="group relative overflow-hidden rounded-lg border border-secondary bg-primary/95 p-5 text-left shadow-[0_18px_48px_-36px_rgb(15_23_42/0.45)] backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-brand/45 hover:shadow-[0_24px_56px_-34px_rgb(4_155_251/0.55)] md:p-6 dark:bg-secondary/70"
+                      className="group relative overflow-hidden rounded-lg border border-secondary bg-primary p-5 text-left shadow-[0_18px_48px_-36px_rgb(15_23_42/0.45)] backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-brand/45 hover:shadow-[0_24px_56px_-34px_rgb(4_155_251/0.55)] md:p-6 dark:bg-secondary"
                     >
                       <motion.span
                         aria-hidden="true"
@@ -1119,12 +1111,12 @@ export default function Home({
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ═══════════════════════════════════════════════════════════════════
           TECHNOLOGY PARTNERS (social proof marquee)
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-primary py-16 md:py-24">
+      {show("partners_marquee") && <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <SectionHeader
             eyebrow={partnersSection?.eyebrow ?? "Technology Partners"}
@@ -1157,7 +1149,7 @@ export default function Home({
                       <span className="min-w-0">
                         <span className="block text-xs font-semibold text-slate-950 dark:text-primary">{partner.name}</span>
                         <span className="mt-1 block text-[11px] leading-snug text-slate-600 dark:text-tertiary">
-                          {PARTNER_CAPABILITIES[partner.name] ?? "Enterprise technology"}
+                          {partner.capability}
                         </span>
                       </span>
                     </div>
@@ -1167,12 +1159,12 @@ export default function Home({
             )}
           />
         </div>
-      </section>
+      </section>}
 
       {/* ═══════════════════════════════════════════════════════════════════
           INDUSTRIES + CTA
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-primary py-16 md:py-24">
+      {show("industries_cta") && <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <motion.div
             {...reveal()}
@@ -1207,7 +1199,7 @@ export default function Home({
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold tracking-wider text-brand-300 uppercase">Industries We Serve</h3>
+                <h3 className="text-sm font-semibold tracking-wider text-brand-300 uppercase">{industriesSection?.items_heading ?? "Industries We Serve"}</h3>
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {industries.map((ind, i) => (
                     <motion.div
@@ -1224,7 +1216,7 @@ export default function Home({
                 <div className="mt-6 flex items-center gap-4 rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
                   <Image
                     src="/images/ibm.svg"
-                    alt="IBM Business Partner"
+                    alt={industriesSection?.partner_logo_alt ?? "IBM Business Partner"}
                     width={44}
                     height={44}
                     className="h-9 w-auto brightness-0 invert"
@@ -1238,12 +1230,12 @@ export default function Home({
             </div>
           </motion.div>
         </div>
-      </section>
+      </section>}
 
       {/* ═══════════════════════════════════════════════════════════════════
           TRUST & SECURITY BADGES
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-primary py-16 md:py-24">
+      {show("trust_badges") && <section className="bg-primary py-16 md:py-24">
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <SectionHeader
             eyebrow={trustBadgesSection?.eyebrow ?? "Enterprise Trust"}
@@ -1273,12 +1265,12 @@ export default function Home({
             ))}
           </ul>
         </div>
-      </section>
+      </section>}
 
       {/* ═══════════════════════════════════════════════════════════════════
           PERFORMANCE METRICS
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+      {show("metrics") && <section className="relative overflow-hidden bg-primary py-16 md:py-24">
         {/* Depth: faint centered dot field behind the metrics panel */}
         <div
           aria-hidden="true"
@@ -1314,7 +1306,7 @@ export default function Home({
                 ref={metricsRef}
                 className="relative grid grid-cols-2 gap-x-4 gap-y-8 px-6 py-10 md:grid-cols-4 md:p-16"
               >
-                {PERFORMANCE_METRICS.map((metric, i) => (
+                {performanceMetrics.map((metric, i) => (
                   <div
                     key={metric.label}
                     className="flex flex-col-reverse gap-3 text-center transition-all duration-500 ease-out"
@@ -1344,15 +1336,25 @@ export default function Home({
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       <GenericCMSSections sections={extraSections} />
-      <FaqPreview heading="Answers before you schedule a call" />
+      {show("faq_preview") && (
+        <FaqPreview
+          eyebrow={data?.faq_preview?.eyebrow}
+          heading={data?.faq_preview?.heading ?? "Answers before you schedule a call"}
+          linkLabel={data?.faq_preview?.link_label}
+          linkHref={data?.faq_preview?.link_href}
+          items={data?.faq_preview?.items}
+        />
+      )}
+
+      {salesConfig && <EnterpriseSalesPreview config={salesConfig} />}
 
       {/* ═══════════════════════════════════════════════════════════════════
           FINAL CTA
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
+      {show("final_cta") && <section className="relative isolate overflow-hidden bg-primary py-16 md:py-24">
         <SectionBloom />
         <div className="relative z-10 mx-auto w-full max-w-container px-4 md:px-8">
           <div className="mx-auto mb-12 h-px max-w-4xl bg-gradient-to-r from-transparent via-brand-500/40 to-transparent md:mb-16" />
@@ -1391,13 +1393,18 @@ export default function Home({
               {...reveal(MOTION_STAGGER * 2)}
               className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start"
             >
+              {finalCta?.cta_secondary?.label && finalCta.cta_secondary.href && (
+                <Button size="xl" color="secondary" href={finalCta.cta_secondary.href}>
+                  {finalCta.cta_secondary.label}
+                </Button>
+              )}
               <Button size="xl" href={finalCta?.cta_primary?.href ?? "tel:18007869188"} iconTrailing={ArrowRight}>
-                {finalCta?.cta_primary?.label ?? "Call an architect now"}
+                {finalCta?.cta_primary?.label ?? "Call now"}
               </Button>
             </motion.div>
           </div>
         </div>
-      </section>
+      </section>}
     </main>
   );
 }

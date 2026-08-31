@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_SEO_CONFIG } from "@/lib/seo/config";
 import type { MetadataRoute } from "next";
+import { publicPathForCmsPage } from "@/lib/cms/pageRegistry";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SEO_CONFIG.siteUrl;
 
@@ -14,9 +15,7 @@ const STATIC_PRIORITY: Record<string, number> = {
 };
 
 function urlForPage(slug: string, pageType: string | null): string {
-  if (slug === "home") return baseUrl;
-  if (pageType === "solution") return `${baseUrl}/solutions/${slug}`;
-  return `${baseUrl}/${slug}`;
+  return `${baseUrl}${publicPathForCmsPage(slug, pageType)}`;
 }
 
 function changeFrequencyFor(
@@ -53,42 +52,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  // App Router pages that are not CMS-backed yet
-  const staticExtras: MetadataRoute.Sitemap = [
-    {
-      url: `${baseUrl}/solutions/as400`,
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/solutions/find`,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/resources`,
-      changeFrequency: "monthly",
-      priority: 0.65,
-    },
-    {
-      url: `${baseUrl}/faq`,
-      changeFrequency: "monthly",
-      priority: 0.65,
-    },
-    {
-      url: `${baseUrl}/subscribe`,
-      changeFrequency: "monthly",
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/for-ai`,
-      changeFrequency: "monthly",
-      priority: 0.4,
-    },
-  ];
-
   const seen = new Set<string>();
-  return [...entries, ...staticExtras].filter((entry) => {
+  return entries.filter((entry) => {
     if (seen.has(entry.url)) return false;
     seen.add(entry.url);
     return true;

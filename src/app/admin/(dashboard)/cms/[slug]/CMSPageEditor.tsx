@@ -1,16 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   AlertCircle,
-  ArrowDown,
-  ArrowUp,
   ChevronDown,
-  Copy01,
-  Eye,
-  EyeOff,
   File02,
   Image01,
   LayersTwo01,
@@ -41,8 +36,57 @@ import { getIconNames } from "@/lib/iconMap";
 import { presetsForPageType, type CompositionPreset } from "@/lib/cms/compositionPresets";
 import { writeAuditLog } from "@/lib/auditLog";
 import SectionCanvasBuilder from "@/components/admin/SectionCanvasBuilder";
+import { publicPathForCmsPage, SYSTEM_CMS_SLUGS } from "@/lib/cms/pageRegistry";
+import { getDefaultSolutionFinderContent } from "@/components/marketing/SolutionFinder";
+import { getDefaultConsultWizardContent } from "@/components/marketing/ConsultWizard";
+import { getDefaultContactWidgetContent } from "@/components/ui/ContactWidget";
+import llmsDefault from "../../../../../../content/llms-default.json";
 
 const PAGE_SEO_KEY = "page_seo";
+type JsonObject = Record<string, unknown>;
+
+function isJsonObject(value: unknown): value is JsonObject {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function validateJsonShape(value: unknown, schema: unknown, path = "content"): string | null {
+  if (schema === null || schema === undefined) return null;
+  if (Array.isArray(schema)) {
+    if (!Array.isArray(value)) return `${path} must be an array.`;
+    if (schema.length === 0) return null;
+    for (let index = 0; index < value.length; index += 1) {
+      const issue = validateJsonShape(value[index], schema[0], `${path}[${index}]`);
+      if (issue) return issue;
+    }
+    return null;
+  }
+  if (isJsonObject(schema)) {
+    if (!isJsonObject(value)) return `${path} must be an object.`;
+    for (const [key, childSchema] of Object.entries(schema)) {
+      if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
+      const issue = validateJsonShape(value[key], childSchema, `${path}.${key}`);
+      if (issue) return issue;
+    }
+    return null;
+  }
+  if (typeof value !== typeof schema) {
+    return `${path} must be ${typeof schema}, not ${Array.isArray(value) ? "array" : typeof value}.`;
+  }
+  return null;
+}
+
+function validateSectionContent(value: unknown, schema?: JsonObject): string | null {
+  if (!isJsonObject(value)) return "Section content must be a JSON object.";
+  return schema ? validateJsonShape(value, schema) : null;
+}
+
+function toLocalDateTimeInput(value: string | null | undefined): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 
@@ -54,6 +98,7 @@ interface PageMeta {
   meta_description: string | null;
   page_type: string;
   is_published: boolean;
+  updated_at?: string | null;
   publish_status?: string | null;
   scheduled_publish_at?: string | null;
   published_at?: string | null;
@@ -61,13 +106,14 @@ interface PageMeta {
   twitter_image_url?: string | null;
   canonical_url?: string | null;
   favicon_url?: string | null;
+  sort_order: number;
 }
 
 interface Section {
   id: string;
   section_key: string;
   section_type: string;
-  content: Record<string, any>;
+  content: JsonObject;
   sort_order: number;
   is_visible: boolean;
   _isNew?: boolean;
@@ -82,7 +128,7 @@ interface SectionTemplate {
   description: string;
   key: string;
   type: string;
-  content: Record<string, any>;
+  content: JsonObject;
   slugs?: string[];
   excludeSlugs?: string[];
   pageTypes?: string[];
@@ -154,13 +200,52 @@ const ICON_NAMES = getIconNames();
 
 const SECTION_TEMPLATES: SectionTemplate[] = [
   {
+    id: "solution-service-profile",
+    label: "Service Profile",
+    description: "Controls this service's /solutions card, category, discovery tags, finder details, image, related-service matching, and structured data.",
+    key: "service_profile",
+    type: "content",
+    pageTypes: ["solution"],
+    required: true,
+    content: {
+      listed: true,
+      category: "Managed Services",
+      category_description: "Managed technology services backed by ICE specialists.",
+      category_icon: "Server",
+      icon: "Server",
+      card_description: "A concise description shown on the solutions catalog and related-service cards.",
+      card_image: "",
+      card_image_alt: "",
+      tags: ["managed service"],
+      industries: ["Manufacturing", "Financial Services", "Healthcare"],
+      platforms: ["Hybrid"],
+      workloads: ["business-critical applications"],
+      outcome: "Simplify operations with an accountable managed service.",
+      link_label: "View service",
+      finder: {
+        enabled: true,
+        proof: "Scoped to your environment and operating requirements.",
+        outcomes: [],
+        timeline: "Assessment-led",
+        complexity: "Medium",
+        role: "A managed service aligned to the selected priorities.",
+        cta_label: "Review this service",
+        next_step: "Schedule a discovery call with an ICE specialist.",
+      },
+      schema: {
+        service_type: "Managed IT Service",
+        aliases: [],
+        offer_names: [],
+      },
+    },
+  },
+  {
     id: "hero",
     label: "Hero",
     description: "Top page headline, supporting copy, calls to action, and proof-label trust bar.",
     key: "hero",
     type: "hero",
-    excludePageTypes: ["legal", "settings"],
-    excludeSlugs: ["site-settings"],
+    pageTypes: ["solution"],
     required: true,
     content: {
       category: "Managed Cloud Services",
@@ -170,6 +255,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       subheadline:
         "Enterprise cloud hosting with 24/7 management, monitoring, and support for mission-critical workloads.",
       cta_primary: { label: "Speak to an Expert", href: "/contact" },
+      cta_secondary: { label: "Call 1-800-786-9188", href: "tel:18007869188" },
       proof_labels: ["35+ Years in Business", "SOC 2 Type II", "24/7/365 US-Based Support"],
       hero_image: "/images/solutions/heroes/managed-cloud-hosting.webp",
       image_alt: "Enterprise technology solution illustration",
@@ -181,23 +267,123 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     },
   },
   {
+    id: "solutions-overview-hero",
+    label: "Solutions Overview Hero",
+    description: "Catalog headline, proof cards, calls to action, and buyer next-step panel.",
+    key: "hero",
+    type: "hero",
+    slugs: ["solutions"],
+    required: true,
+    content: {
+      eyebrow: "Our Solutions",
+      headline: "Enterprise Technology Solutions",
+      subheadline:
+        "From cloud infrastructure to cybersecurity, we deliver end-to-end solutions engineered for reliability, performance, and scale.",
+      cta_primary: { label: "Talk to an architect", href: "/contact?service=Solution%20Architecture%20Review&source=solutions_index" },
+      cta_secondary: { label: "Use guided finder", href: "/solutions/find" },
+      buyer_signals: [
+        { value: "35+", label: "years in enterprise IT", detail: "IBM Business Partner since 1990" },
+        { value: "24/7", label: "operations coverage", detail: "NOC, SOC, escalation, and managed service ownership" },
+        { value: "99.99%", label: "target uptime SLA", detail: "Validated per service scope and architecture" },
+      ],
+      next_steps: ["Current-state and risk review", "Recommended service path", "Budgetary scope and next actions"],
+      buyer_panel: {
+        eyebrow: "Buyer-ready next step",
+        heading: "Turn requirements into a scoped service plan.",
+        description: "ICE architects help qualify the best-fit solution, deployment path, risk profile, and budgetary next step.",
+        cta_primary: { label: "Book review", href: "/contact?service=Solution%20Architecture%20Review&source=solutions_index" },
+        cta_secondary: { label: "Call ICE", href: "tel:18007869188" },
+      },
+    },
+  },
+  {
+    id: "contact-hero",
+    label: "Contact Hero",
+    description: "Contact-page eyebrow, headline, lead copy, and phone/SMS action labels.",
+    key: "hero",
+    type: "hero",
+    slugs: ["contact"],
+    required: true,
+    content: {
+      eyebrow: "Contact us",
+      headline: "Contact Us",
+      subheadline: "Talk with our enterprise architects about cloud, security, data protection, and managed services.",
+      call_label: "Call 1-800-786-9188",
+      text_label: "Text us",
+    },
+  },
+  {
+    id: "partners-hero",
+    label: "Partners Hero",
+    description: "Partners-page headline, lead copy, and calls to action.",
+    key: "hero",
+    type: "hero",
+    slugs: ["partners"],
+    required: true,
+    content: {
+      headline: "Technology Partners",
+      subheadline: "We partner with the world's leading technology companies to deliver best-in-class enterprise solutions.",
+      cta_primary: { label: "Get In Touch", href: "/contact" },
+      cta_secondary: { label: "Explore Solutions", href: "/solutions" },
+    },
+  },
+  {
+    id: "why-ice-hero",
+    label: "Why ICE Hero",
+    description: "Why ICE headline, lead copy, and trust proof chips.",
+    key: "hero",
+    type: "hero",
+    slugs: ["why-ice"],
+    required: true,
+    content: {
+      headline: "Why ICE",
+      subheadline: "Enterprise infrastructure expertise, accountable operations, and direct access to specialists who understand mission-critical environments.",
+      proof_points: [
+        "IBM Business Partner Since 1990",
+        "SOC 2 Type II Data Centers",
+        "Tier-3 Infrastructure",
+        "24/7/365 U.S. Support",
+      ],
+    },
+  },
+  {
     id: "hero-generic",
     label: "Hero (generic)",
     description: "Top page headline for non-solution pages.",
     key: "hero",
     type: "hero",
     excludePageTypes: ["legal", "settings", "solution"],
-    excludeSlugs: ["site-settings"],
+    excludeSlugs: ["site-settings", "solutions", "contact", "partners", "why-ice", "for-ai", "search", "subscribe", "solution-finder"],
     required: true,
     content: {
       eyebrow: "Trusted IBM Business Partner for over 35 years",
+      badge: "Trusted IBM Business Partner for over 35 years",
       headline: "You Know Your Business.",
-      headline_highlight: "We Know Technology.",
+      headline_highlight: "",
       subheadline:
         "Together, we create innovative solutions. We support IBM Power environments, cloud infrastructure, cybersecurity, data protection, and managed services.",
       cta_primary: { label: "Call 1-800-786-9188", href: "tel:18007869188" },
       cta_secondary: { label: "Explore Solutions", href: "/solutions" },
-      proof_labels: ["35+ Years in Business", "SOC 2 Type II", "24/7/365 US-Based Support"],
+      proof_labels: [
+        "35+ Years Enterprise IT",
+        "SOC 2 Type II Certified",
+        "99.99% Uptime SLA",
+        "24/7/365 NOC + SOC",
+        "IBM Business Partner Since 1990",
+        "US-Based Support Team",
+        "IBM Power & IBM i Specialists",
+        "Hybrid & Private Cloud",
+        "Defined RPO / RTO Targets",
+        "Tier-3 Data Centers",
+        "Zero-Trust Security",
+        "500+ Enterprise Clients",
+        "Flash Systems Storage",
+        "Boca Raton Headquarters",
+        "PCI & HIPAA Ready Environments",
+        "Dedicated Account Management",
+      ],
+      scroll_label: "Scroll",
+      scroll_aria_label: "Scroll to explore",
       experiment_id: "",
       headline_b: "",
       headline_highlight_b: "",
@@ -207,21 +393,65 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
   },
   {
     id: "home-services",
-    label: "Home Services Grid",
-    description: "Four solution cards used on the home page.",
+    label: "Popular Solutions",
+    description: "Image-backed home-page links to the services buyers request first.",
     key: "services_grid",
     type: "features",
     slugs: ["home"],
     required: true,
     content: {
-      eyebrow: "What We Do",
-      heading: "Enterprise-Grade Solutions",
-      description: "End-to-end technology solutions engineered for reliability, security, and performance.",
+      eyebrow: "Most Popular",
+      heading: "Solutions Teams Ask For First",
+      description: "High-demand services that keep enterprise workloads available, recoverable, and secure.",
       items: [
-        { icon: "Cloud", title: "Managed Cloud Services", description: "Cloud hosting, private cloud, hybrid cloud, and migration services.", href: "/solutions/managed-cloud-hosting" },
-        { icon: "Shield", title: "Data Protection", description: "Backup, disaster recovery, high availability, and ransomware recovery.", href: "/solutions/backup-as-a-service" },
-        { icon: "Lock", title: "Managed Security", description: "IBM i security, endpoint protection, threat detection, and monitoring.", href: "/solutions/ibm-i-security" },
-        { icon: "Server", title: "Managed Services", description: "Microsoft services, automation, systems management, and IBM Power VS.", href: "/solutions/managed-microsoft" },
+        { title: "Managed Cloud Services", description: "Scalable cloud, private, hybrid, and migration services for enterprise workloads.", href: "/solutions/managed-cloud-hosting", icon: "Cloud", image: "/images/solutions/heroes/managed-cloud-hosting.webp", link_label: "Learn more" },
+        { title: "Data Protection", description: "Backup, disaster recovery, high availability, and ransomware recovery.", href: "/solutions/backup-as-a-service", icon: "Shield", image: "/images/solutions/heroes/backup-as-a-service.webp", link_label: "Learn more" },
+        { title: "Managed Security", description: "IBM i security, endpoint protection, threat detection, and monitoring.", href: "/solutions/ibm-i-security", icon: "Lock", image: "/images/solutions/heroes/ibm-i-security.webp", link_label: "Learn more" },
+        { title: "Managed Services", description: "Microsoft services, automation, systems management, and IBM Power VS.", href: "/solutions/managed-microsoft", icon: "Server", image: "/images/solutions/heroes/managed-microsoft.webp", link_label: "Learn more" },
+      ],
+      view_all: { title: "View All Solutions", description: "Browse the full catalog of managed cloud, security, and data protection services.", label: "Explore solutions", href: "/solutions" },
+    },
+  },
+  {
+    id: "home-decision-paths",
+    label: "Decision Paths",
+    description: "Home-page starting points that route buyers by problem or platform.",
+    key: "decision_paths",
+    type: "features",
+    slugs: ["home"],
+    required: true,
+    content: {
+      eyebrow: "Choose your starting point",
+      heading: "What are you trying to solve?",
+      description:
+        "Start from the business pressure you feel first. Each route narrows the services, proof points, and next steps that fit the situation.",
+      cta: { label: "Open guided finder", href: "/solutions/find" },
+      items: [
+        { eyebrow: "AS400 / IBM i", title: "I’m running IBM i", description: "Modernize, secure, host, or protect AS/400 and IBM i workloads without losing platform expertise.", href: "/solutions/as400", icon: "Server", link_label: "Follow this path" },
+        { eyebrow: "Continuity", title: "I need disaster recovery", description: "Compare backup, DR, and high availability by the recovery target your business needs.", href: "/solutions/disaster-recovery", icon: "RefreshCw", link_label: "Follow this path" },
+        { eyebrow: "Cloud operations", title: "I want managed cloud", description: "Move infrastructure responsibility to a US-based team with measurable service levels.", href: "/solutions/managed-cloud-hosting", icon: "Cloud", link_label: "Follow this path" },
+        { eyebrow: "Guided path", title: "I’m not sure yet", description: "Use the interactive finder to narrow options by urgency, platform, risk, budget, and business goals.", href: "/solutions/find", icon: "MessageChatCircle", link_label: "Follow this path" },
+      ],
+    },
+  },
+  {
+    id: "home-faq-preview",
+    label: "FAQ Preview",
+    description: "Home-page FAQ links and the link to the full FAQ hub.",
+    key: "faq_preview",
+    type: "faq",
+    slugs: ["home"],
+    required: true,
+    content: {
+      eyebrow: "Buyer FAQ",
+      heading: "Answers before you schedule a call",
+      link_label: "Search all FAQs",
+      link_href: "/faq",
+      items: [
+        { id: "ibmi", question: "Does ICE support IBM i and AS/400 environments?" },
+        { id: "rpo-rto", question: "What RPO and RTO targets can ICE support?" },
+        { id: "security", question: "Does ICE provide 24/7 security and infrastructure monitoring?" },
+        { id: "start", question: "What information should I bring to the first call?" },
       ],
     },
   },
@@ -232,7 +462,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     key: "stats",
     type: "stats",
     excludePageTypes: ["solution", "legal", "settings"],
-    excludeSlugs: ["site-settings"],
+    excludeSlugs: ["site-settings", "for-ai", "search", "subscribe", "solution-finder"],
     required: true,
     content: {
       eyebrow: "By The Numbers",
@@ -258,6 +488,8 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       eyebrow: "Infrastructure",
       heading: "High-Security Data Centers",
       description: "SOC 2 Type II certified data centers for mission-critical workloads.",
+      image: "/images/service/data_center.jpg",
+      image_alt: "ICE high-security data center",
       features: ["Tier-3 data centers", "PCI, HIPAA, SOX, and GDPR compliant", "Geographically separated backup data centers"],
       badge_label: "Certified",
       badge_value: "SOC 2 Type II",
@@ -292,7 +524,16 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     content: {
       eyebrow: "Technology Partners",
       heading: "Trusted Partners",
-      partners: ["IBM", "Lenovo", "Cisco", "Dell"],
+      partners: [
+        { name: "IBM", logo_src: "/images/v3/b_1.png", capability: "Power & IBM i since 1990" },
+        { name: "Lenovo", logo_src: "/images/v3/b_2.png", capability: "Enterprise compute" },
+        { name: "Cisco", logo_src: "/images/v3/b_3.png", capability: "Secure networking" },
+        { name: "Dell", logo_src: "/images/v3/b_4.png", capability: "Servers & storage" },
+        { name: "Printronix", logo_src: "/images/v3/b_5.png", capability: "Industrial printing" },
+        { name: "Acronis", logo_src: "/images/v3/b_6.png", capability: "Cyber protection" },
+        { name: "Cybernetics", logo_src: "/images/v3/b_7.png", capability: "Backup & archive" },
+        { name: "DASCOM", logo_src: "/images/v3/b_8.png", capability: "Document infrastructure" },
+      ],
     },
   },
   {
@@ -315,6 +556,8 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       cta_primary: { label: "Get Free Assessment", href: "/contact" },
       cta_secondary: { label: "Why ICE", href: "/why-ice" },
       badge_note: "Proud IBM Business Partner, delivering enterprise solutions since 1990.",
+      items_heading: "Industries We Serve",
+      partner_logo_alt: "IBM Business Partner",
     },
   },
   {
@@ -336,7 +579,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
   {
     id: "solutions-categories",
     label: "Solutions Categories",
-    description: "Categories and service cards for the solutions overview page.",
+    description: "Category names, descriptions, icons, and order. Service cards come automatically from each published solution's Service Profile.",
     key: "categories",
     type: "features",
     slugs: ["solutions"],
@@ -347,11 +590,100 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
           title: "Managed Cloud Services",
           description: "Scalable cloud infrastructure tailored to enterprise workloads.",
           icon: "Cloud",
-          services: [
-            { title: "Managed Cloud Hosting", href: "/solutions/managed-cloud-hosting", icon: "Cloud", description: "Enterprise cloud hosting with 24/7 support." },
-          ],
         },
       ],
+    },
+  },
+  {
+    id: "solutions-finder-promo",
+    label: "Finder Promo",
+    description: "Compact guided-finder prompt on the solutions catalog.",
+    key: "finder_promo",
+    type: "cta",
+    slugs: ["solutions"],
+    required: true,
+    content: {
+      eyebrow: "Solution finder",
+      heading: "Find a clear starting solution from your workload, risk, and timing.",
+      cta: { label: "Open finder", href: "/solutions/find" },
+    },
+  },
+  {
+    id: "solutions-comparison",
+    label: "Solution Comparison",
+    description: "Editable solution-path comparison table on the catalog page.",
+    key: "comparison",
+    type: "comparison",
+    slugs: ["solutions"],
+    required: true,
+    content: {
+      eyebrow: "Shortlist faster",
+      heading: "Compare common solution paths",
+      description: "Starting ranges for planning; final commitments depend on workload discovery and design.",
+      decision_label: "Decision factor",
+      explore_label: "Explore",
+      link_label: "View solution",
+      rows: [
+        { label: "Best for", key: "bestFor" },
+        { label: "Availability", key: "sla" },
+        { label: "Typical RPO", key: "rpo" },
+        { label: "Typical RTO", key: "rto" },
+        { label: "Platforms", key: "platforms" },
+      ],
+      items: [
+        { name: "IBM i Managed Cloud", bestFor: "Modernizing Power workloads without replatforming", sla: "99.99% target", rpo: "15 min–24 hr", rto: "4–24 hr", platforms: "IBM i, AIX, Power", href: "/solutions/managed-cloud-hosting" },
+        { name: "Managed Hybrid Cloud", bestFor: "One operating model across on-prem and cloud", sla: "Workload-specific", rpo: "Policy-based", rto: "Workload-specific", platforms: "IBM i, x86, Azure", href: "/solutions/managed-hybrid-cloud" },
+        { name: "Disaster Recovery", bestFor: "Defined recovery targets and tested failover", sla: "Recovery SLA", rpo: "Near-zero–24 hr", rto: "<1–24 hr", platforms: "IBM i, AIX, Windows, Linux", href: "/solutions/disaster-recovery" },
+      ],
+    },
+  },
+  {
+    id: "solutions-scoping-cta",
+    label: "Scoping CTA",
+    description: "Architect-led recommendation prompt below the comparison table.",
+    key: "scoping_cta",
+    type: "cta",
+    slugs: ["solutions"],
+    required: true,
+    content: {
+      eyebrow: "Sales-ready scoping",
+      heading: "Get a shortlist your team can actually evaluate.",
+      description: "Use the finder, compare solution families, or send your requirements to ICE for an architect-led recommendation with fit, risk, and budget guidance.",
+      cta_primary: { label: "Request scoped recommendation", href: "/contact?source=solutions_scoping" },
+      cta_secondary: { label: "1-800-786-9188", href: "tel:18007869188" },
+    },
+  },
+  {
+    id: "solutions-catalog-controls",
+    label: "Catalog Controls",
+    description: "Labels and filter options above the live solutions catalog.",
+    key: "catalog_controls",
+    type: "content",
+    slugs: ["solutions"],
+    required: true,
+    content: {
+      eyebrow: "Who this is for",
+      heading: "Narrow the catalog live",
+      count_prefix: "Showing",
+      count_suffix: "for this environment.",
+      industry_label: "Industry",
+      industry_options: ["All", "Manufacturing", "Finance", "Healthcare"],
+      platform_label: "Platform",
+      platform_options: ["All", "IBM i", "Azure", "Hybrid"],
+    },
+  },
+  {
+    id: "solutions-sticky-cta",
+    label: "Sticky Catalog CTA",
+    description: "Optional sticky contact prompt after the solutions hero scrolls away.",
+    key: "sticky_cta",
+    type: "cta",
+    slugs: ["solutions"],
+    required: true,
+    content: {
+      enabled: true,
+      title: "Need help choosing a solution?",
+      cta: { label: "Book solution review", href: "/contact?source=solutions_sticky" },
     },
   },
   {
@@ -360,7 +692,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     description: "Short intro heading and copy for the top of a page section.",
     key: "intro",
     type: "content",
-    slugs: ["partners", "contact", "why-ice", "solutions", "home"],
+    slugs: ["partners", "why-ice", "solutions", "home"],
     content: {
       heading: "Technology Partners We Work With",
       description: "Introductory copy for this page section.",
@@ -452,6 +784,62 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     required: true,
     content: {
       options: ["Managed Cloud Services", "Managed Data Protection", "Managed Security", "Managed Services", "Other"],
+      wizard: getDefaultConsultWizardContent(),
+    },
+  },
+  {
+    id: "contact-booking",
+    label: "Contact Booking",
+    description: "Optional scheduling panel shown when a booking URL is configured.",
+    key: "booking_embed",
+    type: "content",
+    slugs: ["contact"],
+    required: true,
+    content: {
+      eyebrow: "Schedule",
+      heading: "Book a 30-minute assessment",
+      description: "Pick a time that works — talk with an ICE specialist about your environment.",
+      button_label: "Book a time",
+      embed: false,
+    },
+  },
+  {
+    id: "contact-operations",
+    label: "Contact Operations",
+    description: "US operations overview and editable proof cards.",
+    key: "operations",
+    type: "features",
+    slugs: ["contact"],
+    required: true,
+    content: {
+      eyebrow: "Boca Raton operations",
+      heading: "A US-based team behind every escalation",
+      description: "ICE supports enterprise cloud, IBM Power, data protection, and security operations from the United States, with direct access to specialists who understand the environment.",
+      items: [
+        { label: "NOC / SOC coverage", value: "24/7/365 operations", description: "Monitoring and escalation for managed clients." },
+        { label: "Business office", value: "Mon–Fri, 9–5 ET", description: "Boca Raton, Florida · US-based support." },
+      ],
+    },
+  },
+  {
+    id: "contact-faq-preview",
+    label: "Contact FAQ Preview",
+    description: "Question links and FAQ-hub action at the bottom of the contact page.",
+    key: "faq_preview",
+    type: "faq",
+    slugs: ["contact"],
+    required: true,
+    content: {
+      eyebrow: "Buyer FAQ",
+      heading: "What to expect when you contact ICE",
+      link_label: "Search all FAQs",
+      link_href: "/faq",
+      items: [
+        { id: "response", question: "How quickly will ICE respond to a new inquiry?" },
+        { id: "start", question: "What information should I bring to the first call?" },
+        { id: "ibmi", question: "Does ICE support IBM i and AS/400 environments?" },
+        { id: "security", question: "Does ICE provide 24/7 security and infrastructure monitoring?" },
+      ],
     },
   },
   /* ── Solution page spine (ordered: hero, features, banner, stats, benefits,
@@ -644,25 +1032,170 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     content: {
       heading: "Ready to Get Started?",
       description: "Contact our enterprise architects to design a solution tailored to your needs.",
+      support_note: "ICE Solutions Desk · US-based platform and recovery specialists",
       cta_primary: { label: "Contact Us", href: "/contact" },
       cta_secondary: { label: "Explore Solutions", href: "/solutions" },
+      proof_labels: ["30-minute discovery", "Budgetary fit guidance", "Clear next steps"],
+    },
+  },
+  {
+    id: "solution-metrics",
+    label: "Solution Metrics",
+    description: "Optional, fully editable metric gauges. Keep disabled until each public claim has been verified.",
+    key: "metrics",
+    type: "metrics",
+    pageTypes: ["solution"],
+    content: {
+      enabled: false,
+      eyebrow: "Measurable results",
+      heading: "Add verified service metrics",
+      description: "",
+      items: [
+        { type: "counter", value: 0, suffix: "", label: "Verified metric" },
+      ],
+    },
+  },
+  {
+    id: "faq-hub",
+    label: "FAQ Hub",
+    description: "Search labels, result copy, and questions shown on the FAQ page.",
+    key: "faqs",
+    type: "faq",
+    slugs: ["faq"],
+    required: true,
+    content: {
+      search_label: "Search frequently asked questions",
+      search_placeholder: "Search IBM i, RPO, Azure, response time…",
+      result_label_singular: "answer",
+      result_label_plural: "answers",
+      empty_message: "No answers matched that search. Try a broader term or contact ICE.",
+      items: [
+        { id: "response", question: "How quickly will ICE respond to a new inquiry?", answer: "The typical response time is within one business day. Active incidents and urgent recovery requests are prioritized." },
+        { id: "ibmi", question: "Does ICE support IBM i and AS/400 environments?", answer: "Yes. ICE supports IBM i and IBM Power across hosting, security, backup, disaster recovery, high availability, migration, and managed operations." },
+        { id: "rpo-rto", question: "What RPO and RTO targets can ICE support?", answer: "Targets range from near-zero data loss and sub-hour recovery for suitable workloads to daily backup policies. Final commitments follow discovery, design, and testing." },
+        { id: "cloud", question: "Can ICE manage hybrid and Azure environments?", answer: "Yes. ICE manages mixed environments spanning on-premises infrastructure, private cloud, Microsoft Azure, IBM Power, and hosted platforms." },
+        { id: "security", question: "Does ICE provide 24/7 security and infrastructure monitoring?", answer: "Managed offerings can include 24/7/365 monitoring, alert triage, escalation, and coordinated response through US-based operations." },
+        { id: "dr-tests", question: "Are disaster recovery tests included?", answer: "Testing cadence and scope are defined in the service design. ICE emphasizes documented runbooks, recovery exercises, and validation against agreed targets." },
+        { id: "industries", question: "Which industries does ICE work with?", answer: "ICE commonly supports manufacturing, financial services, healthcare, insurance, legal, distribution, and other infrastructure-dependent organizations." },
+        { id: "start", question: "What information should I bring to the first call?", answer: "A rough platform inventory, business priorities, pain points, compliance needs, and desired timeline are enough to begin. ICE can help structure the deeper discovery." },
+      ],
+    },
+  },
+  {
+    id: "resources-grid",
+    label: "Resource Cards",
+    description: "Resource-hub intro, cards, links, and per-card call-to-action label.",
+    key: "resources",
+    type: "features",
+    slugs: ["resources"],
+    required: true,
+    content: {
+      eyebrow: "Resource library",
+      heading: "Practical guides for infrastructure decisions",
+      description: "Focused primers for teams evaluating cloud, continuity, security, and IBM Power services.",
+      item_cta_label: "Read more",
+      items: [
+        { category: "AS400", title: "AS400 modernization assessment", summary: "How to evaluate AS/400, iSeries, and IBM i hosting, security, backup, HA, and DR options.", href: "/solutions/as400", icon: "Server" },
+        { category: "Cloud", title: "Managed cloud for IBM Power workloads", summary: "How ICE hosts IBM i and AIX with 24/7 operations, defined SLAs, and SOC 2 Type II controls.", href: "/solutions/managed-cloud-hosting", icon: "Cloud" },
+        { category: "Continuity", title: "Disaster recovery with measurable RPO/RTO", summary: "What to require from a DRaaS partner: replication, test cadence, and failover runbooks.", href: "/solutions/disaster-recovery", icon: "File" },
+        { category: "Security", title: "IBM i security hardening checklist", summary: "Exit points, object authority, encryption, and monitoring practices for AS/400 environments.", href: "/solutions/ibm-i-security", icon: "Shield" },
+      ],
+    },
+  },
+  {
+    id: "solution-buyer-tools",
+    label: "Buyer Tools",
+    description: "Proof, architecture, recovery planner, resources, and sticky CTA for a service page.",
+    key: "buyer_tools",
+    type: "custom",
+    pageTypes: ["solution"],
+    content: {
+      enabled: true,
+      module_order: ["proof_strip", "architecture", "recovery_planner", "resources", "sticky_cta"],
+      proof_strip: {
+        enabled: true,
+        outcome_label: "Representative outcome",
+        outcome: "Edit this service-specific outcome.",
+        fit_label: "Common fit",
+        fit_items: ["Manufacturing", "Financial services", "Healthcare"],
+        platforms_label: "Platforms",
+        platforms: ["IBM i", "AIX", "Windows", "Linux"],
+      },
+      architecture: {
+        enabled: true,
+        eyebrow: "Reference architecture",
+        heading: "See how the service fits together",
+        description: "Explore the operating layers ICE manages for this solution.",
+        panel_title: "Managed service path",
+        panel_description: "Select a layer to inspect the operating flow.",
+        status_label: "Operational path",
+        layers_label: "Service layers",
+        layers: ["Workloads", "Connectivity", "Protection", "Operations", "Reporting"],
+        active_state_label: "Active",
+        idle_state_label: "Select layer",
+        path_label: "Path",
+        active_layer_label: "Selected layer",
+        path_separator: "→",
+        summary: "ICE coordinates the platform, protection, monitoring, and reporting layers under one operating model.",
+        badges: [{ label: "24/7 operations", icon: "Clock" }, { label: "Named escalation", icon: "CheckCircle" }],
+      },
+      recovery_planner: {
+        enabled: true,
+        eyebrow: "Recovery planner",
+        heading: "Turn recovery expectations into a starting design",
+        description: "Choose practical targets to see the service path to discuss with an architect.",
+        rpo_label: "Recovery point objective",
+        rpo_options: [{ value: "near-zero", label: "Near zero" }, { value: "hours", label: "Within hours" }, { value: "daily", label: "Daily" }],
+        rto_label: "Recovery time objective",
+        rto_options: [{ value: "under-hour", label: "Under 1 hour" }, { value: "same-day", label: "Same day" }, { value: "next-day", label: "Next day" }],
+        data_size_label: "Protected data",
+        data_size_options: [{ value: "small", label: "Under 5 TB" }, { value: "medium", label: "5–50 TB" }, { value: "large", label: "50+ TB" }],
+        criticality_label: "Business criticality",
+        criticality_options: [{ value: "critical", label: "Mission critical" }, { value: "important", label: "Important" }, { value: "standard", label: "Standard" }],
+        default_rpo: "hours",
+        default_rto: "same-day",
+        default_data_size: "medium",
+        default_criticality: "important",
+        recommendation_label: "Starting recommendation",
+        validation_note: "Final architecture and commitments require workload discovery.",
+        button_label: "Review this recovery plan",
+        recommendations: {
+          high_availability: { title: "High availability", copy: "Best fit for the tightest recovery targets.", href: "/solutions/high-availability" },
+          disaster_recovery: { title: "Disaster recovery", copy: "A strong fit for defined failover and recovery targets.", href: "/solutions/disaster-recovery" },
+          backup: { title: "Managed backup", copy: "A practical foundation for policy-led protection and restores.", href: "/solutions/backup-as-a-service" },
+        },
+      },
+      resources: {
+        enabled: true,
+        eyebrow: "Buyer resources",
+        heading: "Continue your evaluation",
+        browse_label: "Browse all resources",
+        browse_href: "/resources",
+        items: [{ title: "Talk with an ICE specialist", kind: "Assessment", href: "/contact" }],
+      },
+      sticky_cta: {
+        enabled: true,
+        title: "Ready to review this service?",
+        phone_href: "tel:18007869188",
+        phone_label: "1-800-786-9188",
+        consult_href: "/contact",
+        consult_label: "Book a consultation",
+      },
     },
   },
   {
     id: "solution-related",
     label: "Related Services",
-    description: "Three link cards pointing to complementary services.",
+    description: "Automatically recommends published services using category and shared tags. Turn off auto to curate cards manually.",
     key: "related",
     type: "related",
     pageTypes: ["solution"],
     required: true,
     content: {
+      auto: true,
       heading: "Related Services",
-      items: [
-        { title: "Managed Cloud Hosting", description: "Enterprise cloud hosting with 24/7 support.", href: "/solutions/managed-cloud-hosting", icon: "Cloud" },
-        { title: "Backup as a Service", description: "Automated, verified backups for critical data.", href: "/solutions/backup-as-a-service", icon: "Shield" },
-        { title: "Disaster Recovery", description: "Tested recovery plans with guaranteed RTOs.", href: "/solutions/disaster-recovery", icon: "RefreshCw" },
-      ],
+      description: "Adjacent ICE services commonly evaluated with this offer.",
+      items: [],
     },
   },
   {
@@ -672,7 +1205,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     key: "final_cta",
     type: "cta",
     excludePageTypes: ["solution", "legal", "settings"],
-    excludeSlugs: ["site-settings"],
+    excludeSlugs: ["site-settings", "for-ai", "search", "subscribe", "solution-finder"],
     required: true,
     content: {
       heading: "Ready to Get Started?",
@@ -798,6 +1331,17 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       eyebrow: "Architecture",
       heading: "Built for Enterprise Workloads",
       description: "Our infrastructure spans data centers, cloud platforms, and security layers.",
+      flow_aria_label: "Enterprise data flow",
+      path_aria_label: "Live enterprise infrastructure path",
+      path_label: "Live managed path",
+      active_layer_label: "Active layer",
+      nodes: [
+        { id: "client", label: "Enterprise edge", icon: "Monitor", summary: "Workstations, ERP clients, and plant-floor systems that connect into ICE.", details: ["Desktops & thin clients", "ERP / MES apps", "Secure remote access"] },
+        { id: "firewall", label: "Firewall", icon: "Shield", summary: "Perimeter and segmentation controls.", details: ["Next-gen firewall", "Zero-trust policies", "Threat inspection"] },
+        { id: "cloud", label: "Cloud servers", icon: "Cloud", summary: "Managed compute for critical workloads.", details: ["IBM Power & x86", "Hybrid / private options", "24/7 operations"] },
+        { id: "storage", label: "Storage", icon: "Database", summary: "Enterprise storage with redundancy.", details: ["Flash systems", "Replication", "Encryption at rest"] },
+        { id: "backup", label: "Backup", icon: "RefreshCw", summary: "Protected copies with defined RPO/RTO.", details: ["Immutable options", "Geo-separated copies", "Tested recovery"] },
+      ],
     },
   },
   {
@@ -811,6 +1355,12 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       eyebrow: "Performance",
       heading: "Operational Excellence",
       description: "Real-time metrics from our managed infrastructure.",
+      items: [
+        { value: "15", suffix: " min", label: "Mean Incident Response" },
+        { value: "24/7/365", label: "Always-On Operations" },
+        { value: "14,723", label: "Threats Blocked (30d)" },
+        { value: "0", label: "Active Threats" },
+      ],
     },
   },
   {
@@ -841,6 +1391,312 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
         },
       ],
     },
+  },
+  {
+    id: "for-ai-hero",
+    label: "AI Directory Hero",
+    description: "Heading and machine-directory link for the AI systems page.",
+    key: "hero",
+    type: "hero",
+    slugs: ["for-ai"],
+    required: true,
+    content: {
+      eyebrow: "AI / LLM directory",
+      headline: "International Computer Exchange — facts for AI systems",
+      subheadline: "This page summarizes ICE for live-retrieval agents and answer engines. Prefer canonical solution URLs.",
+      directory_intro: "Full machine directory:",
+      directory_label: "/llms.txt",
+      directory_href: "/llms.txt",
+      directory_suffix: ".",
+    },
+  },
+  {
+    id: "for-ai-facts",
+    label: "Verified Facts",
+    description: "Machine-readable company facts presented to answer engines.",
+    key: "facts",
+    type: "content",
+    slugs: ["for-ai"],
+    required: true,
+    content: {
+      heading: "Verified facts",
+      items: [
+        { text: "IBM Business Partner since 1990" },
+        { text: "Headquarters: Boca Raton, Florida, USA" },
+        { text: "SOC 2 Type II certified data centers" },
+        { text: "24/7/365 US-based NOC and SOC support" },
+        { text: "Focus platforms: IBM Power, IBM i (AS/400), Microsoft, hybrid cloud" },
+      ],
+    },
+  },
+  {
+    id: "for-ai-links",
+    label: "Canonical AI Links",
+    description: "Canonical pages that AI systems should cite.",
+    key: "canonical_links",
+    type: "content",
+    slugs: ["for-ai"],
+    required: true,
+    content: {
+      heading: "Canonical service URLs",
+      items: [
+        { label: "Managed Cloud Hosting", href: "/solutions/managed-cloud-hosting" },
+        { label: "Disaster Recovery as a Service", href: "/solutions/disaster-recovery" },
+        { label: "AS400", href: "/solutions/as400" },
+        { label: "IBM i Security", href: "/solutions/ibm-i-security" },
+        { label: "Contact / consultation", href: "/contact" },
+      ],
+    },
+  },
+  {
+    id: "for-ai-contact",
+    label: "AI Directory Contact",
+    description: "Contact fact shown on the AI systems page.",
+    key: "contact",
+    type: "contact",
+    slugs: ["for-ai"],
+    required: true,
+    content: {
+      heading: "Contact",
+      text: "Phone: +1-800-786-9188 · Email: info@icesales.com · Boca Raton, FL",
+    },
+  },
+  {
+    id: "for-ai-llms-text",
+    label: "LLMs.txt Directory",
+    description: "Complete plain-text machine directory served live at /llms.txt.",
+    key: "llms_txt",
+    type: "content",
+    slugs: ["for-ai"],
+    required: true,
+    content: {
+      body: llmsDefault.lines.join("\n"),
+    },
+  },
+  {
+    id: "search-hero",
+    label: "Search Hero",
+    description: "Search-page heading and input labels.",
+    key: "hero",
+    type: "hero",
+    slugs: ["search"],
+    required: true,
+    content: {
+      eyebrow: "Search",
+      headline: "What are you looking for?",
+      subheadline: "Search solutions, partners, and resources from International Computer Exchange.",
+      search_label: "Search the site",
+      search_placeholder: "Search solutions, partners, and more...",
+    },
+  },
+  {
+    id: "search-results",
+    label: "Search Result Labels",
+    description: "Result-count sentences. Use {count} and {query} tokens.",
+    key: "results",
+    type: "content",
+    slugs: ["search"],
+    required: true,
+    content: {
+      query_status_singular: "{count} result for \"{query}\"",
+      query_status_plural: "{count} results for \"{query}\"",
+      browse_status_singular: "Browse {count} page",
+      browse_status_plural: "Browse all {count} pages",
+    },
+  },
+  {
+    id: "search-empty-state",
+    label: "Search Empty State",
+    description: "No-results message and recovery actions.",
+    key: "empty_state",
+    type: "content",
+    slugs: ["search"],
+    required: true,
+    content: {
+      headline: "No results found",
+      description: "Your search “{query}” did not match any pages. Try a different keyword, or browse our solutions.",
+      clear_label: "Clear search",
+      browse_label: "Browse solutions",
+      browse_href: "/solutions",
+    },
+  },
+  {
+    id: "subscribe-form",
+    label: "Subscription Form",
+    description: "Form heading, field labels, preference choices, and submit button.",
+    key: "form",
+    type: "form",
+    slugs: ["subscribe"],
+    required: true,
+    content: {
+      eyebrow: "ICE communications",
+      headline: "Subscribe and manage email preferences",
+      description: "Tell us where to reach you, then choose exactly which messages you want. You can unsubscribe from every category below.",
+      fields: { name_label: "Name", email_label: "Email", phone_label: "Phone number" },
+      preference_heading: "Choose your message types",
+      preference_description: "Toggle any category on or off. Required account or security notices may still be sent when needed to provide a service.",
+      preference_types: [
+        { key: "marketing_materials", label: "Marketing materials", description: "Service news, practical guides, and offers from ICE." },
+        { key: "billing", label: "Billing and account messages", description: "Balance reminders, payment confirmations, and account notices." },
+        { key: "private_messages", label: "Private messages", description: "Direct messages intended for you or your organization." },
+        { key: "special_messages", label: "Special messages", description: "Occasional company updates, seasonal notes, and invitations." },
+        { key: "service_updates", label: "Service updates", description: "Maintenance, security, and operational notices for ICE services." },
+        { key: "events", label: "Events and webinars", description: "Invitations and follow-ups for ICE events and webinars." },
+      ],
+      submit_label: "Save my preferences",
+    },
+  },
+  {
+    id: "subscribe-success",
+    label: "Subscription Success",
+    description: "Confirmation shown after preferences are saved.",
+    key: "success",
+    type: "content",
+    slugs: ["subscribe"],
+    required: true,
+    content: {
+      headline: "Your preferences are saved",
+      description: "You can change these choices at any time. We will only send the types of messages you selected.",
+      preference_link_label: "Open your preference center",
+    },
+  },
+  {
+    id: "subscribe-messages",
+    label: "Subscription Errors",
+    description: "Save and connection error messages.",
+    key: "messages",
+    type: "content",
+    slugs: ["subscribe"],
+    required: true,
+    content: {
+      save_error: "We could not save your preferences.",
+      network_error: "We could not save your preferences.",
+    },
+  },
+  {
+    id: "subscribe-consent",
+    label: "Subscription Consent",
+    description: "Consent sentence and privacy-policy link.",
+    key: "consent",
+    type: "content",
+    slugs: ["subscribe"],
+    required: true,
+    content: {
+      prefix: "By submitting, you consent to the selected communications.",
+      privacy_label: "Read our privacy notice",
+      privacy_href: "/sms-consent",
+      suffix: ".",
+    },
+  },
+  {
+    id: "preference-center",
+    label: "Preference Center",
+    description: "Copy, fields, message categories, and actions on personal unsubscribe links.",
+    key: "preference_center",
+    type: "form",
+    slugs: ["subscribe"],
+    required: true,
+    content: {
+      eyebrow: "ICE communications",
+      headline: "Manage email preferences",
+      description: "Update your details and choose which types of messages you want to receive.",
+      loading_label: "Loading your preferences…",
+      error_heading: "Email preferences",
+      fields: { name_label: "Name", email_label: "Email", phone_label: "Phone number" },
+      preference_heading: "Message types",
+      preference_types: [
+        { key: "marketing_materials", label: "Marketing materials", description: "Service news, practical guides, and offers from ICE." },
+        { key: "billing", label: "Billing and account messages", description: "Balance reminders, payment confirmations, and account notices." },
+        { key: "private_messages", label: "Private messages", description: "Direct messages intended for you or your organization." },
+        { key: "special_messages", label: "Special messages", description: "Occasional company updates, seasonal notes, and invitations." },
+        { key: "service_updates", label: "Service updates", description: "Maintenance, security, and operational notices for ICE services." },
+        { key: "events", label: "Events and webinars", description: "Invitations and follow-ups for ICE events and webinars." },
+      ],
+      save_label: "Save preferences",
+      unsubscribe_all_label: "Unsubscribe from all",
+      return_label: "Return to ICE",
+      return_href: "/",
+    },
+  },
+  {
+    id: "preference-center-success",
+    label: "Preference Center Success",
+    description: "Confirmation shown after a subscriber updates their preferences.",
+    key: "preference_center_success",
+    type: "content",
+    slugs: ["subscribe"],
+    required: true,
+    content: {
+      headline: "Preferences updated",
+      description: "Your choices are saved. Messages will follow the categories you selected.",
+    },
+  },
+  {
+    id: "preference-center-messages",
+    label: "Preference Center Errors",
+    description: "Expired-link, load, save, and network messages for personal preference links.",
+    key: "preference_center_messages",
+    type: "content",
+    slugs: ["subscribe"],
+    required: true,
+    content: {
+      expired_error: "This preference link is no longer available.",
+      load_error: "We could not load your preferences.",
+      update_error: "We could not update your preferences.",
+      network_error: "We could not update your preferences.",
+    },
+  },
+  {
+    id: "finder-breadcrumbs",
+    label: "Finder Breadcrumbs",
+    description: "Breadcrumb labels and links for the guided finder.",
+    key: "breadcrumbs",
+    type: "content",
+    slugs: ["solution-finder"],
+    required: true,
+    content: {
+      aria_label: "Breadcrumb",
+      separator: "/",
+      items: [
+        { label: "Home", href: "/" },
+        { label: "Solutions", href: "/solutions" },
+        { label: "Finder", schema_label: "Solution Finder", href: "/solutions/find" },
+      ],
+    },
+  },
+  {
+    id: "finder-hero",
+    label: "Finder Hero",
+    description: "Heading above the interactive solution finder.",
+    key: "hero",
+    type: "hero",
+    slugs: ["solution-finder"],
+    required: true,
+    content: {
+      eyebrow: "Guided recommendations",
+      headline: "Find the right ICE solution",
+      subheadline: "Choose a quick match or a detailed assessment to get one recommended starting point and two supporting options.",
+    },
+  },
+  {
+    id: "finder-content",
+    label: "Interactive Finder Copy",
+    description: "Questions, options, goals, tabs, buttons, and recommendation labels inside the finder.",
+    key: "finder",
+    type: "form",
+    slugs: ["solution-finder"],
+    required: true,
+    content: getDefaultSolutionFinderContent() as JsonObject,
+  },
+  {
+    id: "finder-catalog-cta",
+    label: "Finder Catalog Link",
+    description: "Link beneath the interactive finder.",
+    key: "catalog_cta",
+    type: "cta",
+    slugs: ["solution-finder"],
+    required: true,
+    content: { label: "Or browse the full catalog →", href: "/solutions" },
   },
   {
     id: "legal-hero",
@@ -900,6 +1756,69 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     },
   },
   {
+    id: "site-navbar",
+    label: "Navbar Copy",
+    description: "Global navigation accessibility labels and the Solutions mega-menu promotion panel.",
+    key: "navbar",
+    type: "content",
+    slugs: ["site-settings"],
+    required: true,
+    content: {
+      solutions_column_label: "Solutions",
+      promo_eyebrow: "Talk to ICE",
+      promo_heading: "Not sure which solution fits?",
+      promo_description: "Get a free infrastructure assessment — or jump into the solution finder in under a minute.",
+      promo_primary: { label: "Request a consultation", href: "/contact" },
+      promo_secondary: { label: "Find your solution", href: "/solutions/find" },
+      proof_line: "Providing Enterprise solutions since 1990.",
+      view_all_label: "View All Solutions",
+      view_all_href: "/solutions",
+      desktop_search_aria_label: "Search (Ctrl+K)",
+      mobile_search_aria_label: "Search",
+      open_menu_aria_label: "Open menu",
+      close_menu_aria_label: "Close menu",
+      home_aria_label: "ICE Home",
+      logo_alt: "International Computer Exchange",
+    },
+  },
+  {
+    id: "site-contact-widget",
+    label: "Floating Contact Widget",
+    description: "Site-wide floating contact form copy, consent text, accessibility labels, and grouped service choices.",
+    key: "contact_widget",
+    type: "form",
+    slugs: ["site-settings"],
+    required: true,
+    content: getDefaultContactWidgetContent() as unknown as JsonObject,
+  },
+  {
+    id: "site-not-found",
+    label: "404 Page",
+    description: "Global page-not-found headline, explanation, status code, and recovery actions.",
+    key: "not_found",
+    type: "content",
+    slugs: ["site-settings"],
+    required: true,
+    content: {
+      eyebrow: "Page not found",
+      status_code: "404",
+      headline: "We couldn't find that page",
+      description: "Sorry, the page you're looking for doesn't exist or has been moved. Check the URL, or head back to explore our solutions.",
+      primary_cta: { label: "Go home", href: "/" },
+      secondary_cta: { label: "View solutions", href: "/solutions" },
+    },
+  },
+  {
+    id: "site-sales-enablement",
+    label: "Sales Enablement Settings",
+    description: "Live homepage, sticky callback, and soft-lead settings. Use the dedicated Sales Enablement editor for the intuitive controls.",
+    key: "sales_enablement",
+    type: "custom",
+    slugs: ["site-settings"],
+    required: true,
+    content: {},
+  },
+  {
     id: "site-footer",
     label: "Footer Copy",
     description: "Copyright, IBM partner badge labels, and optional get-in-touch CTA.",
@@ -918,6 +1837,18 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
         "Speak with an ICE specialist about managed cloud, data protection, security, and IBM Power environments.",
       get_in_touch_cta_label: "Speak to an Expert",
       get_in_touch_cta_href: "/contact",
+      quick_links_heading: "Quick Links",
+      rights_reserved_label: "All Rights Reserved.",
+      logo_alt: "International Computer Exchange",
+      ibm_logo_alt: "IBM",
+      coretv_label: "by CoreTV",
+      coretv_url: "https://coretv.co",
+      redirect_heading: "Leaving ICE",
+      redirect_description_prefix: "You are being redirected off this page to CoreTV in",
+      redirect_second_singular: "second",
+      redirect_second_plural: "seconds",
+      redirect_cancel_label: "Cancel",
+      redirect_continue_label: "Go now",
       show_get_in_touch: true,
       show_contact_bar: true,
       show_solutions_accordion: true,
@@ -945,14 +1876,12 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
   {
     id: "site-booking",
     label: "Booking / Calendar",
-    description: "Calendly (or similar) URL for contact booking CTAs.",
+    description: "Calendly (or similar) URL used by booking CTAs. Contact-page panel copy is edited on the Contact page.",
     key: "booking",
     type: "content",
     slugs: ["site-settings"],
     content: {
       calendly_url: "",
-      title: "Book a 30-minute assessment",
-      description: "Pick a time that works — talk with an ICE specialist.",
     },
   },
 ];
@@ -985,7 +1914,7 @@ function isIllustrationKey(key: string): boolean {
   return lower === "illustration" || lower.endsWith("_illustration") || lower === "graphic";
 }
 
-function cloneContent(content: Record<string, any>): Record<string, any> {
+function cloneContent(content: JsonObject): JsonObject {
   return JSON.parse(JSON.stringify(content));
 }
 
@@ -1013,7 +1942,65 @@ function templateAppliesToPage(template: SectionTemplate, page: PageMeta): boole
   return slugMatch && slugNotExcluded && typeMatch && notExcluded;
 }
 
-function defaultContentForType(type: string): Record<string, any> {
+function contentItemIdentity(value: JsonObject): string | undefined {
+  for (const key of ["id", "key", "slug", "href", "name", "title"]) {
+    const candidate = value[key];
+    if (typeof candidate === "string" && candidate) return `${key}:${candidate}`;
+  }
+  return undefined;
+}
+
+function mergeMissingContent(defaults: JsonObject, current: JsonObject): JsonObject {
+  const merged = cloneContent(defaults);
+  for (const [key, value] of Object.entries(current)) {
+    const defaultValue = merged[key];
+    if (Array.isArray(value) && Array.isArray(defaultValue)) {
+      // An empty list is an intentional CMS choice. For non-empty object lists,
+      // surface missing editable fields without restoring removed list items.
+      merged[key] = value.map((item, index) => {
+        if (item === null || Array.isArray(item) || typeof item !== "object") return item;
+        const itemObject = item as JsonObject;
+        const identity = contentItemIdentity(itemObject);
+        const matchingDefault = defaultValue.find((candidate) => {
+          if (candidate === null || Array.isArray(candidate) || typeof candidate !== "object") return false;
+          return identity !== undefined && contentItemIdentity(candidate as JsonObject) === identity;
+        }) ?? (identity === undefined ? defaultValue[index] : undefined);
+        if (matchingDefault === null || Array.isArray(matchingDefault) || typeof matchingDefault !== "object") {
+          return item;
+        }
+        return mergeMissingContent(matchingDefault as JsonObject, itemObject);
+      });
+    } else if (
+      value !== null
+      && !Array.isArray(value)
+      && typeof value === "object"
+      && defaultValue !== null
+      && !Array.isArray(defaultValue)
+      && typeof defaultValue === "object"
+    ) {
+      merged[key] = mergeMissingContent(defaultValue as JsonObject, value as JsonObject);
+    } else {
+      // Existing values always win, including intentional blanks and empty arrays.
+      merged[key] = value;
+    }
+  }
+  return merged;
+}
+
+function hydrateSectionsFromTemplates(initialSections: Section[], page: PageMeta): Section[] {
+  return initialSections.map((section) => {
+    const template = SECTION_TEMPLATES.find(
+      (candidate) => candidate.key === section.section_key && templateAppliesToPage(candidate, page),
+    );
+    if (!template) return section;
+    return {
+      ...section,
+      content: mergeMissingContent(template.content, section.content),
+    };
+  });
+}
+
+function defaultContentForType(type: string): JsonObject {
   if (type === "hero") {
     const heroTemplate = SECTION_TEMPLATES.find((template) => template.id === "hero");
     return cloneContent(heroTemplate?.content ?? {});
@@ -1167,9 +2154,13 @@ function defaultContentForType(type: string): Record<string, any> {
 export default function CMSPageEditor({
   page,
   initialSections,
+  canPublish,
+  supportsPublishScheduling,
 }: {
   page: PageMeta;
   initialSections: Section[];
+  canPublish: boolean;
+  supportsPublishScheduling: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -1180,12 +2171,10 @@ export default function CMSPageEditor({
   const [slug, setSlug] = useState(page.slug);
   const [metaTitle, setMetaTitle] = useState(page.meta_title ?? "");
   const [metaDesc, setMetaDesc] = useState(page.meta_description ?? "");
+  const [catalogOrder, setCatalogOrder] = useState(String(page.sort_order ?? 0));
   const [isPublished, setIsPublished] = useState(page.is_published);
-  const [scheduledPublishAt, setScheduledPublishAt] = useState(
-    page.scheduled_publish_at
-      ? page.scheduled_publish_at.slice(0, 16)
-      : ""
-  );
+  const initialScheduledPublishAt = toLocalDateTimeInput(page.scheduled_publish_at);
+  const [scheduledPublishAt, setScheduledPublishAt] = useState(initialScheduledPublishAt);
   const [canonicalUrl, setCanonicalUrl] = useState(
     page.canonical_url ?? (typeof seoSeed.canonical_url === "string" ? seoSeed.canonical_url : "")
   );
@@ -1203,12 +2192,17 @@ export default function CMSPageEditor({
   const [faviconMediaOpen, setFaviconMediaOpen] = useState(false);
 
   // Sections — hide the reserved page_seo row from the section list UI
-  const [sections, setSections] = useState<Section[]>(
-    initialSections.filter((s) => s.section_key !== PAGE_SEO_KEY)
+  const [sections, setSections] = useState<Section[]>(() =>
+    hydrateSectionsFromTemplates(
+      initialSections.filter((s) => s.section_key !== PAGE_SEO_KEY),
+      page,
+    ),
   );
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [isDirty, setIsDirty] = useState(false);
+  const [invalidJsonIds, setInvalidJsonIds] = useState<Set<string>>(new Set());
 
   // Add modal
   const [addOpen, setAddOpen] = useState(false);
@@ -1222,19 +2216,47 @@ export default function CMSPageEditor({
 
   const active = sections.filter((s) => !s._deleted).sort((a, b) => a.sort_order - b.sort_order);
   const activeKeys = active.map((section) => section.section_key);
-  const pageTemplates = useMemo(
-    () => SECTION_TEMPLATES.filter((template) => templateAppliesToPage(template, page)),
-    [page.slug, page.page_type]
-  );
-  const selectedTemplate = pageTemplates.find((template) => template.id === newTemplateId);
+  const pageTemplates = SECTION_TEMPLATES.filter((template) => templateAppliesToPage(template, page));
+  const isPageOwnedTemplate = (template: SectionTemplate) =>
+    template.required === true || template.slugs?.includes(page.slug) === true;
   const missingTemplates = pageTemplates.filter(
-    (template) => template.required && !activeKeys.includes(template.key)
+    (template) => isPageOwnedTemplate(template) && !activeKeys.includes(template.key),
+  );
+  const addableTemplates = pageTemplates.filter(
+    (template) => !isPageOwnedTemplate(template) || !activeKeys.includes(template.key),
+  );
+  const selectedTemplate = addableTemplates.find((template) => template.id === newTemplateId);
+
+  const isSystemSlug = SYSTEM_CMS_SLUGS.has(page.slug);
+  const canReorderSections = !isSystemSlug || page.page_type === "solution";
+  const requiredSectionKeys = new Set(
+    pageTemplates
+      .filter(isPageOwnedTemplate)
+      .map((template) => template.key),
   );
 
-  const dirty = () => { if (saveStatus === "saved") setSaveStatus("idle"); };
+  useEffect(() => {
+    if (!isDirty) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [isDirty]);
+
+  const dirty = () => {
+    setIsDirty(true);
+    if (saveStatus === "saved" || saveStatus === "error") setSaveStatus("idle");
+  };
 
   const toggleExpand = (id: string) => {
-    setExpandedIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const updateSection = (id: string, field: keyof Section, value: unknown) => {
@@ -1242,16 +2264,27 @@ export default function CMSPageEditor({
     dirty();
   };
 
-  const updateContent = (id: string, content: Record<string, any>) => {
+  const updateContent = (id: string, content: JsonObject) => {
     updateSection(id, "content", content);
   };
 
   const deleteSection = (id: string) => {
+    const section = sections.find((item) => item.id === id);
+    if (section && requiredSectionKeys.has(section.section_key)) {
+      setSaveStatus("error");
+      setErrorMsg("This page-owned section cannot be deleted. Turn off its visibility to remove it from the live page.");
+      return;
+    }
     setSections((prev) => prev.map((s) => (s.id === id ? { ...s, _deleted: true } : s)));
+    setInvalidJsonIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     dirty();
   };
 
-  const appendSection = (key: string, type: string, content: Record<string, any>) => {
+  const appendSection = (key: string, type: string, content: JsonObject) => {
     const currentActive = sections.filter((s) => !s._deleted);
     const maxOrder = currentActive.reduce((max, s) => Math.max(max, s.sort_order), -1);
     const sectionId = `new_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -1278,6 +2311,17 @@ export default function CMSPageEditor({
   };
 
   const applyCompositionPreset = (preset: CompositionPreset) => {
+    const existingKeys = new Set(activeKeys);
+    const hasAdditions = preset.templateIds.some((templateId) => {
+      const template = SECTION_TEMPLATES.find((item) => item.id === templateId);
+      return Boolean(
+        template
+        && templateAppliesToPage(template, page)
+        && !existingKeys.has(template.key),
+      );
+    });
+    if (!hasAdditions) return;
+
     setSections((prev) => {
       const current = prev.filter((s) => !s._deleted);
       const existing = new Set(current.map((s) => s.section_key));
@@ -1342,18 +2386,6 @@ export default function CMSPageEditor({
     dirty();
   };
 
-  const moveSection = (idx: number, dir: "up" | "down") => {
-    const t = dir === "up" ? idx - 1 : idx + 1;
-    if (t < 0 || t >= active.length) return;
-    const a = active[idx], b = active[t];
-    setSections((prev) => prev.map((s) => {
-      if (s.id === a.id) return { ...s, sort_order: b.sort_order };
-      if (s.id === b.id) return { ...s, sort_order: a.sort_order };
-      return s;
-    }));
-    dirty();
-  };
-
   const reorderSections = (orderedIds: string[]) => {
     setSections((prev) =>
       prev.map((s) => {
@@ -1379,12 +2411,65 @@ export default function CMSPageEditor({
     setAddOpen(false);
   };
 
+  const openAddSection = () => {
+    setNewKey("");
+    setNewType("content");
+    setNewTemplateId("");
+    setAddOpen(true);
+  };
+
   const handleSave = async () => {
+    if (saveStatus === "saving" || !isDirty) return;
+    if (invalidJsonIds.size > 0) {
+      setSaveStatus("error");
+      setErrorMsg("Fix the invalid section JSON before saving.");
+      return;
+    }
     setSaveStatus("saving");
     setErrorMsg("");
     try {
+      const cleanTitle = title.trim();
+      const targetSlug = isSystemSlug ? page.slug : slug.trim();
+      if (!cleanTitle) throw new Error("Page title is required.");
+      if (!targetSlug) throw new Error("Page slug is required.");
+
+      const activeSectionKeys = sections
+        .filter((section) => !section._deleted)
+        .map((section) => cleanSectionKey(section.section_key));
+      if (activeSectionKeys.some((key) => !key)) throw new Error("Every section needs a valid section key.");
+      if (new Set(activeSectionKeys).size !== activeSectionKeys.length) {
+        throw new Error("Section keys must be unique on this page.");
+      }
+
+      if (page.page_type === "solution") {
+        const serviceProfile = sections.find(
+          (section) => !section._deleted && section.section_key === "service_profile",
+        )?.content;
+        if (!serviceProfile) throw new Error("Every solution needs a Service Profile section.");
+        if (typeof serviceProfile.category !== "string" || !serviceProfile.category.trim()) {
+          throw new Error("Add a category in the Service Profile before saving.");
+        }
+        if (typeof serviceProfile.card_description !== "string" || !serviceProfile.card_description.trim()) {
+          throw new Error("Add a catalog description in the Service Profile before saving.");
+        }
+        if (
+          typeof serviceProfile.card_image === "string"
+          && serviceProfile.card_image.trim()
+          && (typeof serviceProfile.card_image_alt !== "string" || !serviceProfile.card_image_alt.trim())
+        ) {
+          throw new Error("Add image alt text for the Service Profile catalog image.");
+        }
+      }
+
+      const publicationChanged =
+        isPublished !== page.is_published
+        || (supportsPublishScheduling && scheduledPublishAt !== initialScheduledPublishAt);
+      if (publicationChanged && !canPublish) {
+        throw new Error("Your role cannot change page publication settings.");
+      }
+
       const nowIso = new Date().toISOString();
-      const scheduleIso = scheduledPublishAt
+      const scheduleIso = supportsPublishScheduling && scheduledPublishAt
         ? new Date(scheduledPublishAt).toISOString()
         : null;
       const publishStatus = isPublished
@@ -1394,33 +2479,53 @@ export default function CMSPageEditor({
           : "draft";
 
       const pageUpdate: Record<string, unknown> = {
-        title: title.trim(),
-        slug: slug.trim(),
+        title: cleanTitle,
+        slug: targetSlug,
         meta_title: metaTitle.trim() || null,
         meta_description: metaDesc.trim() || null,
-        is_published: isPublished || (scheduleIso != null && Date.parse(scheduleIso) <= Date.now()),
         updated_at: nowIso,
+        sort_order: Number.isFinite(Number(catalogOrder)) ? Number(catalogOrder) : 0,
       };
 
-      // Optional columns from 20260729_cms_publish_schedule.sql — ignore if missing.
-      pageUpdate.publish_status = pageUpdate.is_published ? "published" : publishStatus;
-      pageUpdate.scheduled_publish_at = pageUpdate.is_published ? null : scheduleIso;
-      if (pageUpdate.is_published) pageUpdate.published_at = nowIso;
+      if (canPublish) {
+        pageUpdate.is_published = supportsPublishScheduling
+          ? isPublished || (scheduleIso != null && Date.parse(scheduleIso) <= Date.now())
+          : isPublished;
+        if (supportsPublishScheduling) {
+          pageUpdate.publish_status = pageUpdate.is_published ? "published" : publishStatus;
+          pageUpdate.scheduled_publish_at = pageUpdate.is_published ? null : scheduleIso;
+          if (pageUpdate.is_published) pageUpdate.published_at = nowIso;
+        }
+      }
 
-      let { error: pageErr } = await supabase.from("pages").update(pageUpdate).eq("id", page.id);
+      const { error: pageErr } = await supabase.from("pages").update(pageUpdate).eq("id", page.id);
       if (pageErr && /publish_status|scheduled_publish_at|published_at/i.test(pageErr.message)) {
-        // Migration not applied yet — fall back to classic is_published only.
-        const { error: fallbackErr } = await supabase.from("pages").update({
-          title: title.trim(),
-          slug: slug.trim(),
+        if (scheduleIso) {
+          throw new Error("Scheduled publishing is unavailable until the CMS publish-schedule migration is applied.");
+        }
+        const fallbackUpdate: Record<string, unknown> = {
+          title: cleanTitle,
+          slug: targetSlug,
           meta_title: metaTitle.trim() || null,
           meta_description: metaDesc.trim() || null,
-          is_published: Boolean(pageUpdate.is_published),
           updated_at: nowIso,
-        }).eq("id", page.id);
+          sort_order: Number.isFinite(Number(catalogOrder)) ? Number(catalogOrder) : 0,
+        };
+        if (canPublish) fallbackUpdate.is_published = Boolean(pageUpdate.is_published);
+        const { error: fallbackErr } = await supabase.from("pages").update(fallbackUpdate).eq("id", page.id);
         if (fallbackErr) throw fallbackErr;
       } else if (pageErr) {
         throw pageErr;
+      }
+
+      if (page.page_type === "solution" && targetSlug !== page.slug) {
+        const oldPath = publicPathForCmsPage(page.slug, page.page_type);
+        const newPath = publicPathForCmsPage(targetSlug, page.page_type);
+        const { error: navigationError } = await supabase
+          .from("navigation_items")
+          .update({ href: newPath, updated_at: nowIso })
+          .eq("href", oldPath);
+        if (navigationError) throw navigationError;
       }
 
       // Per-page SEO extras live in a reserved page_sections row (no schema migration required).
@@ -1507,38 +2612,63 @@ export default function CMSPageEditor({
         action: "cms.page_saved",
         entityType: "page",
         entityId: page.id,
-        summary: `Saved ${title.trim() || page.title}`,
-        metadata: { slug: slug.trim(), section_count: sections.filter((s) => !s._deleted).length },
+        summary: `Saved ${cleanTitle || page.title}`,
+        metadata: { slug: targetSlug, section_count: sections.filter((s) => !s._deleted).length },
       });
 
       // Invalidate tagged CMS cache (#31)
-      void fetch("/api/admin/revalidate", {
+      const revalidateResponse = await fetch("/api/admin/revalidate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: slug.trim() || page.slug }),
-      }).catch(() => undefined);
+        body: JSON.stringify({
+          slug: targetSlug,
+          tags: page.page_type === "solution" ? ["solution-catalog"] : [],
+          paths: [
+            ...(targetSlug === page.slug
+              ? []
+              : [publicPathForCmsPage(page.slug, page.page_type)]),
+            ...(page.page_type === "solution"
+              ? ["/solutions", "/solutions/find", "/sitemap.xml"]
+              : []),
+          ],
+        }),
+      });
+      const revalidateResult = await revalidateResponse.json().catch(() => null) as { ok?: boolean; error?: string } | null;
+      if (!revalidateResponse.ok || revalidateResult?.ok !== true) {
+        throw new Error(
+          `Content was saved, but the public page refresh failed${revalidateResult?.error ? `: ${revalidateResult.error}` : "."}`,
+        );
+      }
 
+      setIsDirty(false);
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2500);
-      router.refresh();
+      if (!isSystemSlug && targetSlug !== page.slug) {
+        router.replace(`/admin/cms/${targetSlug}`);
+      } else {
+        router.refresh();
+      }
     } catch (err: unknown) {
       setSaveStatus("error");
       setErrorMsg(err instanceof Error ? err.message : "Save failed");
     }
   };
 
-  const previewUrl = page.page_type === "solution"
-    ? `/solutions/${slug}`
-    : slug === "home" || slug === "site-settings"
-      ? "/"
-      : `/${slug}`;
+  const previewUrl = publicPathForCmsPage(
+    isSystemSlug ? page.slug : slug,
+    page.page_type,
+  );
 
   /* ═══ RENDER ═══ */
 
   return (
-    <div className={showPreview ? "flex gap-6" : ""}>
+    <div className={showPreview ? "xl:flex xl:gap-6" : ""}>
       {/* ── Editor Panel ── */}
-      <div className={showPreview ? "w-1/2 min-w-0 space-y-5" : "space-y-5"}>
+      <div
+        className={showPreview ? "space-y-5 xl:w-1/2 xl:min-w-0" : "space-y-5"}
+        aria-busy={saveStatus === "saving"}
+        inert={saveStatus === "saving" ? true : undefined}
+      >
 
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
@@ -1546,7 +2676,20 @@ export default function CMSPageEditor({
             <FeaturedIcon icon={File02} color="brand" theme="light" size="md" className="shrink-0" />
             <div className="min-w-0">
               <h1 className="truncate text-xl font-semibold text-primary">{title}</h1>
-              <p className="text-xs text-quaternary">/{slug}</p>
+              <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                <p className="text-xs text-quaternary">
+                  {publicPathForCmsPage(isSystemSlug ? page.slug : slug, page.page_type)}
+                </p>
+                <span
+                  aria-live="polite"
+                  className={cx(
+                    "text-xs font-medium",
+                    isDirty ? "text-warning-primary" : saveStatus === "saved" ? "text-success-primary" : "text-quaternary",
+                  )}
+                >
+                  {isDirty ? "Unsaved changes" : saveStatus === "saved" ? "All changes saved" : "No unsaved changes"}
+                </span>
+              </div>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -1556,12 +2699,13 @@ export default function CMSPageEditor({
               iconLeading={Monitor01}
               onClick={() => setShowPreview(!showPreview)}
             >
-              Preview
+              Section preview
             </Button>
             <Button
               size="sm"
               iconLeading={Save01}
               isLoading={saveStatus === "saving"}
+              isDisabled={!isDirty || saveStatus === "saving" || invalidJsonIds.size > 0}
               showTextWhileLoading
               onClick={handleSave}
             >
@@ -1577,6 +2721,15 @@ export default function CMSPageEditor({
           </div>
         )}
 
+        {page.page_type === "solution" && (
+          <div className="rounded-xl bg-brand-primary_alt p-4 ring-1 ring-brand-secondary_alt ring-inset">
+            <p className="text-sm font-semibold text-brand-secondary">One service, one source of truth</p>
+            <p className="mt-1 text-xs leading-5 text-tertiary">
+              Page Settings controls the public name, URL, search preview, publication, and catalog order. Service Profile controls the /solutions card, category, tags, finder matching, photo, and service schema. The remaining sections control everything on the service detail page.
+            </p>
+          </div>
+        )}
+
         {/* Page Settings */}
         <details className="group overflow-hidden rounded-xl bg-primary ring-1 ring-secondary" open>
           <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 transition-colors hover:bg-secondary">
@@ -1587,7 +2740,7 @@ export default function CMSPageEditor({
             <ChevronDown className="size-4 text-fg-quaternary transition-transform group-open:rotate-180" />
           </summary>
           <div className="space-y-4 border-t border-secondary p-5">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className={cx("grid grid-cols-1 gap-4", page.page_type === "solution" ? "md:grid-cols-4" : "md:grid-cols-3")}>
               <Input
                 label="Title"
                 value={title}
@@ -1596,7 +2749,9 @@ export default function CMSPageEditor({
               <Input
                 label="Slug"
                 value={slug}
+                isDisabled={isSystemSlug}
                 onChange={(value) => { setSlug(value.toLowerCase().replace(/[^\w-]/g, "")); dirty(); }}
+                hint={isSystemSlug ? "This system page uses a fixed route and cannot be renamed." : "Changing this updates the public page URL."}
               />
               <Input
                 label="Meta Title"
@@ -1604,6 +2759,15 @@ export default function CMSPageEditor({
                 value={metaTitle}
                 onChange={(value) => { setMetaTitle(value); dirty(); }}
               />
+              {page.page_type === "solution" && (
+                <Input
+                  label="Catalog order"
+                  type="number"
+                  value={catalogOrder}
+                  onChange={(value) => { setCatalogOrder(value); dirty(); }}
+                  hint="Lower numbers appear first within a category."
+                />
+              )}
             </div>
             <TextArea
               label="Meta Description"
@@ -1683,18 +2847,28 @@ export default function CMSPageEditor({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
               <Toggle
                 size="sm"
-                label={isPublished ? "Published" : scheduledPublishAt ? "Scheduled" : "Draft"}
+                label={isPublished ? "Published" : supportsPublishScheduling && scheduledPublishAt ? "Scheduled" : "Draft"}
                 isSelected={isPublished}
+                isDisabled={!canPublish}
+                hint={!canPublish ? "Your role cannot change publication settings." : undefined}
                 onChange={(value) => { setIsPublished(value); dirty(); }}
               />
-              {!isPublished && (
+              {!isPublished && supportsPublishScheduling && (
                 <Input
                   label="Schedule publish"
                   type="datetime-local"
                   value={scheduledPublishAt}
+                  isDisabled={!canPublish}
                   onChange={(value) => { setScheduledPublishAt(value); dirty(); }}
-                  hint="Requires DB migration. Leave blank for draft-only."
+                  hint={canPublish ? "Leave blank to keep this page as a draft." : "Your role cannot change the schedule."}
                 />
+              )}
+              {!isPublished && !supportsPublishScheduling && (
+                <p className="max-w-sm text-xs text-tertiary">
+                  Scheduling requires the CMS publish-schedule migration. {canPublish
+                    ? "You can still publish now or keep this page as a draft."
+                    : "Publication settings are read-only for your role."}
+                </p>
               )}
             </div>
             <MediaBrowserModal
@@ -1771,7 +2945,7 @@ export default function CMSPageEditor({
             <LayersTwo01 className="size-4 text-fg-quaternary" />
             Sections ({active.length})
           </h2>
-          <Button size="sm" color="secondary" iconLeading={Plus} onClick={() => setAddOpen(true)}>
+          <Button size="sm" color="secondary" iconLeading={Plus} onClick={openAddSection}>
             Add Section
           </Button>
         </div>
@@ -1812,6 +2986,10 @@ export default function CMSPageEditor({
               if (section) duplicateSection(section);
             }}
             onDelete={deleteSection}
+            canReorder={canReorderSections}
+            lockedSectionIds={active
+              .filter((section) => requiredSectionKeys.has(section.section_key))
+              .map((section) => section.id)}
             renderExpanded={(id) => {
               const section = active.find((s) => s.id === id);
               if (!section) return null;
@@ -1822,19 +3000,31 @@ export default function CMSPageEditor({
                       label="Section Key"
                       size="sm"
                       value={section.section_key}
+                      isDisabled={requiredSectionKeys.has(section.section_key)}
                       onChange={(value) => updateSection(section.id, "section_key", value)}
                     />
                     <NativeSelect
                       label="Type"
                       size="sm"
                       value={section.section_type}
+                      disabled={requiredSectionKeys.has(section.section_key)}
                       onChange={(e) => updateSection(section.id, "section_type", e.target.value)}
                       options={SECTION_TYPES}
                     />
                   </div>
                   <ContentEditor
                     content={section.content}
+                    schema={pageTemplates.find((template) => template.key === section.section_key)?.content}
                     onChange={(c) => updateContent(section.id, c)}
+                    onValidityChange={(isValid) => {
+                      setInvalidJsonIds((prev) => {
+                        const next = new Set(prev);
+                        if (isValid) next.delete(section.id);
+                        else next.add(section.id);
+                        return next;
+                      });
+                      if (!isValid) dirty();
+                    }}
                   />
                 </div>
               );
@@ -1854,16 +3044,19 @@ export default function CMSPageEditor({
                     value={newTemplateId}
                     onChange={(e) => {
                       const templateId = e.target.value;
-                      const template = pageTemplates.find((item) => item.id === templateId);
+                      const template = addableTemplates.find((item) => item.id === templateId);
                       setNewTemplateId(templateId);
                       if (template) {
                         setNewKey(template.key);
                         setNewType(template.type);
+                      } else {
+                        setNewKey("");
+                        setNewType("content");
                       }
                     }}
                     options={[
                       { label: "Blank section", value: "" },
-                      ...pageTemplates.map((template) => ({
+                      ...addableTemplates.map((template) => ({
                         label: `${template.label} — ${getTypeLabel(template.type)}${template.required ? " (recommended)" : ""}`,
                         value: template.id,
                       })),
@@ -1873,9 +3066,10 @@ export default function CMSPageEditor({
                   <Input
                     label="Section Name"
                     value={newKey}
+                    isDisabled={Boolean(selectedTemplate)}
                     onChange={setNewKey}
                     placeholder="e.g. Hero Banner, Features, Call to Action"
-                    hint={newKey ? (
+                    hint={selectedTemplate ? "The selected template controls this section key." : newKey ? (
                       <span>
                         Key: {newKey.toLowerCase().replace(/\s+/g, "_").replace(/[^\w]/g, "")}
                       </span>
@@ -1884,8 +3078,10 @@ export default function CMSPageEditor({
                   <NativeSelect
                     label="Section Type"
                     value={newType}
+                    disabled={Boolean(selectedTemplate)}
                     onChange={(e) => setNewType(e.target.value)}
                     options={SECTION_TYPES}
+                    hint={selectedTemplate ? "The selected template controls this section type." : undefined}
                   />
                   <div className="flex gap-3 pt-2">
                     <Button
@@ -1906,15 +3102,15 @@ export default function CMSPageEditor({
         </ModalOverlay>
       </div>
 
-      {/* ── Live Preview Panel (updates as you edit) ── */}
+      {/* ── Section Preview Panel (updates as you edit) ── */}
       {showPreview && (
-        <div className="sticky top-0 h-[calc(100vh-8rem)] w-1/2 shrink-0">
+        <div className="mt-6 h-[70vh] w-full xl:sticky xl:top-0 xl:mt-0 xl:h-[calc(100vh-8rem)] xl:w-1/2 xl:shrink-0">
           <div className="flex h-full flex-col overflow-hidden rounded-xl bg-primary ring-1 ring-secondary">
             <div className="flex shrink-0 items-center justify-between border-b border-secondary px-4 py-2.5">
               <div className="flex items-center gap-2">
                 <Monitor01 className="size-4 text-fg-quaternary" />
-                <span className="text-xs font-medium text-tertiary">Live Preview</span>
-                <Badge size="sm" color="gray">Draft</Badge>
+                <span className="text-xs font-medium text-tertiary">Section preview</span>
+                <Badge size="sm" color="gray">Approximation</Badge>
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex rounded-lg bg-secondary p-0.5 ring-1 ring-secondary">
@@ -1957,7 +3153,7 @@ export default function CMSPageEditor({
               <div
                 className={cx(
                   "origin-top overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary transition-all",
-                  previewDevice === "mobile" ? "w-[390px]" : "w-full",
+                  previewDevice === "mobile" ? "w-[390px] max-w-full" : "w-full",
                 )}
               >
                 <div
@@ -1990,16 +3186,43 @@ export default function CMSPageEditor({
    CONTENT EDITOR
    ═══════════════════════════════════════════════════════════════════════ */
 
-function ContentEditor({ content, onChange }: { content: Record<string, any>; onChange: (c: Record<string, any>) => void }) {
+function ContentEditor({
+  content,
+  schema,
+  onChange,
+  onValidityChange,
+}: {
+  content: JsonObject;
+  schema?: JsonObject;
+  onChange: (c: JsonObject) => void;
+  onValidityChange?: (isValid: boolean) => void;
+}) {
   const [jsonMode, setJsonMode] = useState(false);
   const [jsonText, setJsonText] = useState(JSON.stringify(content, null, 2));
   const [jsonValid, setJsonValid] = useState(true);
+  const [jsonError, setJsonError] = useState("");
 
   const toggleJson = () => {
     if (jsonMode) {
-      try { const parsed = JSON.parse(jsonText); onChange(parsed); setJsonMode(false); } catch { /* stay in json */ }
+      try {
+        const parsed: unknown = JSON.parse(jsonText);
+        const validationError = validateSectionContent(parsed, schema);
+        if (validationError) throw new Error(validationError);
+        onChange(parsed as JsonObject);
+        setJsonValid(true);
+        setJsonError("");
+        onValidityChange?.(true);
+        setJsonMode(false);
+      } catch (error) {
+        setJsonValid(false);
+        setJsonError(error instanceof Error ? error.message : "Invalid JSON");
+        onValidityChange?.(false);
+      }
     } else {
       setJsonText(JSON.stringify(content, null, 2));
+      setJsonValid(true);
+      setJsonError("");
+      onValidityChange?.(true);
       setJsonMode(true);
     }
   };
@@ -2015,7 +3238,23 @@ function ContentEditor({ content, onChange }: { content: Record<string, any>; on
         </div>
         <TextAreaBase
           value={jsonText}
-          onChange={(e) => { setJsonText(e.target.value); try { JSON.parse(e.target.value); setJsonValid(true); onChange(JSON.parse(e.target.value)); } catch { setJsonValid(false); } }}
+          onChange={(e) => {
+            const value = e.target.value;
+            setJsonText(value);
+            try {
+              const parsed: unknown = JSON.parse(value);
+              const validationError = validateSectionContent(parsed, schema);
+              if (validationError) throw new Error(validationError);
+              setJsonValid(true);
+              setJsonError("");
+              onValidityChange?.(true);
+              onChange(parsed as JsonObject);
+            } catch (error) {
+              setJsonValid(false);
+              setJsonError(error instanceof Error ? error.message : "Invalid JSON");
+              onValidityChange?.(false);
+            }
+          }}
           spellCheck={false}
           size="sm"
           className={cx(
@@ -2025,7 +3264,7 @@ function ContentEditor({ content, onChange }: { content: Record<string, any>; on
         />
         {!jsonValid && (
           <p className="flex items-center gap-1 text-xs text-error-primary">
-            <AlertCircle className="size-3" /> Invalid JSON
+            <AlertCircle className="size-3" /> {jsonError || "Invalid JSON"}
           </p>
         )}
       </div>
@@ -2280,13 +3519,41 @@ function FieldEditor({ fieldKey, value, onChange, onDelete }: {
             <div key={i} className="rounded-lg bg-secondary p-3 ring-1 ring-secondary ring-inset">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs text-quaternary">Item {i + 1}</span>
-                <Button
-                  size="sm"
-                  color="link-destructive"
-                  onClick={() => onChange(value.filter((_: any, j: number) => j !== i))}
-                >
-                  Remove
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    color="link-color"
+                    isDisabled={i === 0}
+                    onClick={() => {
+                      if (i === 0) return;
+                      const next = [...value];
+                      [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                      onChange(next);
+                    }}
+                  >
+                    Move up
+                  </Button>
+                  <Button
+                    size="sm"
+                    color="link-color"
+                    isDisabled={i === value.length - 1}
+                    onClick={() => {
+                      if (i === value.length - 1) return;
+                      const next = [...value];
+                      [next[i], next[i + 1]] = [next[i + 1], next[i]];
+                      onChange(next);
+                    }}
+                  >
+                    Move down
+                  </Button>
+                  <Button
+                    size="sm"
+                    color="link-destructive"
+                    onClick={() => onChange(value.filter((_: unknown, j: number) => j !== i))}
+                  >
+                    Remove
+                  </Button>
+                </div>
               </div>
               {typeof item === "object" && item !== null ? (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -2298,6 +3565,16 @@ function FieldEditor({ fieldKey, value, onChange, onDelete }: {
                       onChange={(newVal) => { const n = [...value]; n[i] = { ...n[i], [k]: newVal }; onChange(n); }}
                     />
                   ))}
+                  <div className="sm:col-span-2">
+                    <AddFieldButton
+                      existingKeys={Object.keys(item)}
+                      onAdd={(key, nextValue) => {
+                        const next = [...value];
+                        next[i] = { ...next[i], [key]: nextValue };
+                        onChange(next);
+                      }}
+                    />
+                  </div>
                 </div>
               ) : (
                 <InputBase
@@ -2316,7 +3593,7 @@ function FieldEditor({ fieldKey, value, onChange, onDelete }: {
 
   // Nested object
   if (typeof value === "object" && value !== null) {
-    const obj = value as Record<string, any>;
+    const obj = value as JsonObject;
     return (
       <div className="rounded-lg bg-secondary p-3 ring-1 ring-secondary ring-inset">
         <div className="mb-2 flex items-center justify-between">
@@ -2345,6 +3622,10 @@ function FieldEditor({ fieldKey, value, onChange, onDelete }: {
               </div>
             </div>
           ))}
+          <AddFieldButton
+            existingKeys={Object.keys(obj)}
+            onAdd={(key, nextValue) => onChange({ ...obj, [key]: nextValue })}
+          />
         </div>
       </div>
     );
@@ -2385,6 +3666,20 @@ function SubFieldInput({ fieldKey, value, onChange }: {
     return (
       <div className="sm:col-span-2">
         <FieldEditor fieldKey={fieldKey} value={value} onChange={onChange} onDelete={() => {}} />
+      </div>
+    );
+  }
+
+  if (typeof value === "boolean") {
+    return (
+      <div className="flex items-center justify-between gap-3 py-1">
+        <span className="text-xs text-tertiary">{label}</span>
+        <Toggle
+          size="sm"
+          aria-label={label}
+          isSelected={value}
+          onChange={onChange}
+        />
       </div>
     );
   }
@@ -2461,9 +3756,10 @@ function SubFieldInput({ fieldKey, value, onChange }: {
 /* ── Add Field ── */
 
 function AddFieldButton({ onAdd, existingKeys }: { onAdd: (k: string, v: unknown) => void; existingKeys: string[] }) {
+  type FieldType = "text" | "number" | "boolean" | "icon" | "image" | "illustration" | "list" | "items" | "object";
   const [open, setOpen] = useState(false);
   const [key, setKey] = useState("");
-  const [type, setType] = useState<"text" | "number" | "boolean" | "icon" | "image" | "illustration" | "list" | "items" | "object">("text");
+  const [type, setType] = useState<FieldType>("text");
 
   const handleAdd = () => {
     const cleanKey = key.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^\w]/g, "");
@@ -2501,7 +3797,7 @@ function AddFieldButton({ onAdd, existingKeys }: { onAdd: (k: string, v: unknown
           aria-label="Field type"
           size="sm"
           value={type}
-          onChange={(e) => setType(e.target.value as any)}
+          onChange={(e) => setType(e.target.value as FieldType)}
           options={[
             { label: "Text", value: "text" },
             { label: "Number", value: "number" },

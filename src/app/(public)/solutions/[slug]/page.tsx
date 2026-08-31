@@ -11,64 +11,16 @@ import {
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import DynamicSolutionPage from "./DynamicSolutionPage";
-import { getSolutionFallback } from "@/lib/solutionFallbacks";
+import {
+  buildSolutionCatalogItem,
+  getPublishedSolutionCatalog,
+  relatedCatalogItemsForCms,
+  type SolutionCatalogItem,
+} from "@/lib/cms/solutionCatalog";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
-
-/** serviceType / category badge — matches navbar mega-menu groupings. */
-const SERVICE_TYPE: Record<string, string> = {
-  "managed-cloud-hosting": "Managed Cloud Services",
-  "managed-private-cloud": "Managed Cloud Services",
-  "managed-hybrid-cloud": "Managed Cloud Services",
-  "cloud-migration": "Managed Cloud Services",
-  "backup-as-a-service": "Managed Data Protection",
-  "disaster-recovery": "Managed Data Protection",
-  "high-availability": "Managed Data Protection",
-  "ransomware-recovery": "Managed Data Protection",
-  "as400": "Managed Services",
-  "ibm-i-security": "Managed Security",
-  "protection-suite": "Managed Security",
-  "security-monitoring": "Managed Security",
-  "threat-detection": "Managed Security",
-  "endpoint-security": "Managed Security",
-  "managed-microsoft": "Managed Services",
-  "automation-suite": "Managed Services",
-  "systems-management": "Managed Services",
-  "ibm-power-vs": "Managed Services",
-};
-
-const AS400_META_TITLE = "AS400 Hosting | AS/400 IBM i Cloud Hosting & Support | ICE";
-const AS400_META_DESCRIPTION =
-  "AS400 hosting, AS/400 support, IBM i cloud hosting, iSeries managed services, security, backup, HA, and disaster recovery from ICE.";
-const AS400_KEYWORDS = [
-  "AS400",
-  "AS400 hosting",
-  "AS/400",
-  "AS/400 hosting",
-  "IBM i hosting",
-  "IBM i cloud hosting",
-  "iSeries hosting",
-  "iSeries managed services",
-  "IBM Power hosting",
-  "AS400 support",
-  "AS400 security",
-  "AS400 backup",
-  "AS400 disaster recovery",
-  "IBM i high availability",
-];
-const AS400_ALIASES = ["AS/400", "iSeries", "IBM i", "IBM Power Systems", "OS/400"];
-const AS400_OFFER_NAMES = [
-  "AS400 hosting",
-  "AS/400 support",
-  "IBM i cloud hosting",
-  "iSeries managed services",
-  "AS400 security",
-  "AS400 backup",
-  "AS400 high availability",
-  "AS400 disaster recovery",
-];
 
 /** Strip HTML tags and collapse whitespace. */
 function plain(value: unknown): string {
@@ -87,15 +39,24 @@ function clampDescription(value: string, max = 155): string {
 type PageLike = PageWithSections;
 
 /** Human-readable service name for schema/metadata — prefer CMS page title. */
-function serviceName(page: PageLike): string {
-  return plain(page.title) || plain((page.sections?.hero as any)?.headline) || "Managed IT Service";
+function serviceName(page: PageLike, profile?: SolutionCatalogItem): string {
+  return (
+    plain(profile?.title) ||
+    plain(page.title) ||
+    plain((page.sections?.hero as Record<string, unknown> | undefined)?.headline) ||
+    "Managed IT Service"
+  );
 }
 
 /** Service description from CMS content. */
-function serviceDescription(page: PageLike): string {
-  const hero = page.sections?.hero as Record<string, any> | undefined;
+function serviceDescription(
+  page: PageLike,
+  profile?: Pick<SolutionCatalogItem, "card_description">,
+): string {
+  const hero = page.sections?.hero as Record<string, unknown> | undefined;
   return (
     plain(page.meta_description) ||
+    plain(profile?.card_description) ||
     plain(hero?.subheadline) ||
     plain(hero?.headline) ||
     ""
@@ -108,113 +69,109 @@ function serviceDescription(page: PageLike): string {
  */
 async function resolvePage(slug: string): Promise<PageLike | null> {
   const page = await getCachedPageContent(slug);
-  if (page) return page;
+  return page?.page_type === "solution" ? page : null;
+}
 
-  const fallback = getSolutionFallback(slug);
-  if (!fallback) return null;
-
-  return {
-    id: `fallback-${slug}`,
-    slug,
-    title: fallback.title,
-    meta_title: fallback.meta_title,
-    meta_description: fallback.meta_description,
-    page_type: "solution",
-    is_published: true,
-    updated_at: null,
-    sections: fallback.sections,
-    orderedSections: fallback.orderedSections.map((section, index) => ({
-      id: `fallback-${slug}-${section.section_key}`,
-      ...section,
-      sort_order: section.sort_order ?? index,
-    })),
-  };
+function detailProfileForPage(page: PageLike): SolutionCatalogItem {
+  return buildSolutionCatalogItem(
+    {
+      id: page.id,
+      slug: page.slug,
+      title: page.title,
+      meta_title: page.meta_title,
+      meta_description: page.meta_description,
+      sort_order: 0,
+      updated_at: page.updated_at,
+    },
+    page.sections?.service_profile,
+    page.sections?.hero,
+  );
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const page = await resolvePage(slug);
+  const [page, catalog] = await Promise.all([
+    resolvePage(slug),
+    getPublishedSolutionCatalog(),
+  ]);
   if (!page) return {};
+  const profile =
+    catalog?.find((item) => item.slug === slug) ?? detailProfileForPage(page);
 
   const { buildPageMetadata } = await import("@/lib/seo/pageMetadata");
-  const description = clampDescription(serviceDescription(page) || serviceName(page));
+  const description = clampDescription(
+    serviceDescription(page, profile) || serviceName(page, profile),
+  );
   const rawTitle = (page.meta_title ?? page.title ?? "").trim();
   const cleanTitle = rawTitle
     .replace(/\s*[|\-–]\s*International Computer Exchange\s*$/i, "")
     .trim();
 
   const metadata = await buildPageMetadata(page, {
-    fallbackTitle: cleanTitle || rawTitle || serviceName(page),
+    fallbackTitle: cleanTitle || rawTitle || serviceName(page, profile),
     fallbackDescription: description,
     defaultPath: `/solutions/${slug}`,
-    absoluteTitle: slug === "as400",
   });
 
-  if (slug === "as400") {
-    metadata.title = { absolute: AS400_META_TITLE };
-    metadata.description = AS400_META_DESCRIPTION;
-    metadata.keywords = AS400_KEYWORDS;
-    metadata.alternates = { canonical: "/solutions/as400" };
-    metadata.openGraph = {
-      ...metadata.openGraph,
-      title: AS400_META_TITLE,
-      description: AS400_META_DESCRIPTION,
-    };
-    metadata.twitter = {
-      ...metadata.twitter,
-      title: AS400_META_TITLE,
-      description: AS400_META_DESCRIPTION,
-    };
-  }
+  if (profile.tags.length) metadata.keywords = profile.tags;
 
   return metadata;
 }
 
 export default async function SolutionPage({ params }: PageProps) {
   const { slug } = await params;
-  const [page, seo] = await Promise.all([resolvePage(slug), getSeoConfig()]);
+  const [page, seo, catalog] = await Promise.all([
+    resolvePage(slug),
+    getSeoConfig(),
+    getPublishedSolutionCatalog(),
+  ]);
 
   if (!page) {
     notFound();
   }
 
-  const url = `/solutions/${slug}`;
-  const name = serviceName(page);
+  const profile =
+    catalog?.find((item) => item.slug === slug) ?? detailProfileForPage(page);
+  const relatedItems = catalog
+    ? relatedCatalogItemsForCms(slug, catalog, 3)
+    : [];
+  const url = profile?.href || `/solutions/${slug}`;
+  const name = serviceName(page, profile);
 
   const faqItems: FaqItem[] = (page.orderedSections ?? [])
-    .filter((s: any) => s.section_type === "faq")
-    .flatMap((s: any) => (Array.isArray(s.content?.items) ? s.content.items : []))
-    .map((item: any) => ({
-      question: plain(item?.question),
-      answer: plain(item?.answer),
-    }))
-    .filter((item: FaqItem) => item.question && item.answer);
+    .filter((section) => section.section_type === "faq")
+    .flatMap((section) => {
+      const items: unknown = section.content?.items;
+      return Array.isArray(items) ? (items as unknown[]) : [];
+    })
+    .flatMap((item): FaqItem[] => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+      const record = item as Record<string, unknown>;
+      const question = plain(record.question);
+      const answer = plain(record.answer);
+      return question && answer ? [{ question, answer }] : [];
+    });
 
   return (
     <>
       <JsonLd
         data={service(seo, {
-          name: slug === "as400" ? "AS400 Hosting and IBM i Managed Services" : name,
-          description: slug === "as400" ? AS400_META_DESCRIPTION : serviceDescription(page) || name,
+          name,
+          description: serviceDescription(page, profile) || name,
           url,
-          serviceType: SERVICE_TYPE[slug],
-          ...(slug === "as400"
+          serviceType: profile.schema.service_type || profile.category,
+          alternateName: profile.schema.aliases,
+          keywords: profile.tags,
+          hasOfferCatalog: profile.schema.offer_names.length
             ? {
-                alternateName: AS400_ALIASES,
-                keywords: AS400_KEYWORDS,
-                hasOfferCatalog: {
-                  "@type": "OfferCatalog",
-                  name: "AS400 hosting and IBM i services",
-                  itemListElement: AS400_OFFER_NAMES.map((offerName) => ({
-                    "@type": "Offer",
-                    itemOffered: {
-                      "@type": "Service",
-                      name: offerName,
-                    },
-                  })),
-                },
+                "@type": "OfferCatalog",
+                name: `${name} services`,
+                itemListElement: profile.schema.offer_names.map((offerName) => ({
+                  "@type": "Offer",
+                  itemOffered: { "@type": "Service", name: offerName },
+                })),
               }
-            : {}),
+            : undefined,
         })}
       />
       <JsonLd
@@ -227,9 +184,11 @@ export default async function SolutionPage({ params }: PageProps) {
       {faqItems.length > 0 && <JsonLd data={faqPage(faqItems)} />}
       <DynamicSolutionPage
         slug={slug}
-        pageTitle={plain(page.title) || name}
+        pageTitle={name}
         sections={page.sections ?? {}}
         orderedSections={page.orderedSections}
+        profile={profile}
+        autoRelatedItems={relatedItems}
       />
     </>
   );

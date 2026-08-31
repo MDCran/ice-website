@@ -27,6 +27,8 @@ import { Button } from "@/components/base/buttons/button";
 import { SOLUTION_HERO_IMAGE_BY_SLUG } from "@/lib/solutionHeroImages";
 import { pushEvent } from "@/lib/analytics";
 import { cx } from "@/utils/cx";
+import { resolveIcon } from "@/lib/iconMap";
+import type { SolutionCatalogItem } from "@/lib/cms/solutionCatalog";
 
 type IconComponent = FC<{ className?: string }>;
 type AnswerKey = "industry" | "workload" | "pain" | "continuity" | "compliance" | "team" | "timeline";
@@ -63,6 +65,93 @@ interface Goal {
   tags: string[];
 }
 
+interface ProblemStarter {
+  id: string;
+  label: string;
+  detail: string;
+  answers: Answers;
+  goals: GoalId[];
+}
+
+interface FinderQuestionCopy {
+  key: AnswerKey;
+  eyebrow?: string;
+  prompt?: string;
+  options?: Array<{
+    id: string;
+    label?: string;
+    detail?: string;
+  }>;
+}
+
+interface FinderGoalCopy {
+  id: GoalId;
+  label?: string;
+  detail?: string;
+}
+
+interface FinderStarterCopy {
+  id: string;
+  label?: string;
+  detail?: string;
+}
+
+interface FinderSolutionCopy {
+  slug: string;
+  title?: string;
+  category?: string;
+  summary?: string;
+  proof?: string;
+  timeline?: string;
+  complexity?: "Low" | "Medium" | "High";
+  role?: string;
+  cta_label?: string;
+  next_step?: string;
+}
+
+interface FinderStageCopy {
+  label?: string;
+  start: number;
+  end: number;
+}
+
+interface FinderModeCopy {
+  label?: string;
+  detail?: string;
+}
+
+type TextOverrides<T> = {
+  [Key in keyof T]?: string;
+};
+
+type TextValues<T> = {
+  [Key in keyof T]: string;
+};
+
+export interface SolutionFinderContent {
+  questions?: FinderQuestionCopy[];
+  goals?: FinderGoalCopy[];
+  problem_starters?: FinderStarterCopy[];
+  solution_copy?: FinderSolutionCopy[];
+  modes?: {
+    quick?: FinderModeCopy;
+    advanced?: FinderModeCopy;
+  };
+  stages?: {
+    quick?: FinderStageCopy[];
+    advanced?: FinderStageCopy[];
+  };
+  chooser?: TextOverrides<typeof DEFAULT_FINDER_COPY.chooser>;
+  shortcut?: TextOverrides<typeof DEFAULT_FINDER_COPY.shortcut>;
+  questionnaire?: TextOverrides<typeof DEFAULT_FINDER_COPY.questionnaire>;
+  situation?: TextOverrides<typeof DEFAULT_FINDER_COPY.situation>;
+  fine_tune?: TextOverrides<typeof DEFAULT_FINDER_COPY.fineTune>;
+  results?: TextOverrides<typeof DEFAULT_FINDER_COPY.results>;
+  cards?: TextOverrides<typeof DEFAULT_FINDER_COPY.cards>;
+  reasons?: TextOverrides<typeof DEFAULT_FINDER_COPY.reasons>;
+  weight_labels?: Partial<Record<WeightKey, string>>;
+}
+
 interface SolutionProfile {
   slug: string;
   title: string;
@@ -80,6 +169,8 @@ interface SolutionProfile {
   role: string;
   ctaLabel: string;
   nextStep: string;
+  image?: string;
+  imageConfigured?: boolean;
 }
 
 interface RankedSolution extends SolutionProfile {
@@ -89,6 +180,7 @@ interface RankedSolution extends SolutionProfile {
 }
 
 type View = "recommendations" | "stack" | "compare" | "plan";
+type FinderMode = "quick" | "advanced";
 
 const DEFAULT_WEIGHTS: Record<WeightKey, number> = {
   cost: 45,
@@ -98,6 +190,109 @@ const DEFAULT_WEIGHTS: Record<WeightKey, number> = {
   compliance: 55,
   scalability: 55,
   operations: 65,
+};
+
+const DEFAULT_FINDER_COPY = {
+  chooser: {
+    eyebrow: "Choose your path",
+    heading: "How much guidance do you want?",
+    reset_label: "Start over",
+  },
+  shortcut: {
+    eyebrow: "Optional shortcut",
+    heading: "Start from the pressure",
+    description: "Choose a common situation to pre-fill two answers, then confirm the details below.",
+  },
+  questionnaire: {
+    answered_template: "{answered}/{total} answered",
+    stage_questions_template: "Questions {start}-{end}",
+    back_label: "Back",
+    continue_label: "Continue",
+    recommendations_label: "View recommendations",
+    no_questions_heading: "No questions are configured",
+    no_questions_description: "Add at least one valid question to the finder section in the CMS.",
+  },
+  situation: {
+    eyebrow: "Your situation",
+    fit_found_template: "{fit_label} found",
+    remaining_singular_template: "Answer {count} more question",
+    remaining_plural_template: "Answer {count} more questions",
+    ready_description:
+      "This is questionnaire alignment, not a technical guarantee. ICE will validate architecture, risk, and scope.",
+    waiting_description: "We’ll wait for at least three answers before suggesting a solution.",
+    edit_label: "Edit",
+    empty_answers: "Your answers will stay visible here as you go.",
+  },
+  fineTune: {
+    eyebrow: "Optional",
+    heading: "Fine-tune recommendations",
+    description: "Add outcomes and adjust priorities only if they matter to your decision.",
+  },
+  results: {
+    empty_heading: "Your recommendation will appear here",
+    empty_description:
+      "Answer at least three questions so the finder has enough context to identify a useful starting point.",
+    eyebrow: "Your shortlist",
+    heading: "Start here, then explore two supporting options",
+    description:
+      "Fit labels show alignment with your answers. They are directional and should be validated in discovery.",
+    contact_label: "Talk with a specialist",
+    supporting_heading: "Supporting options",
+    supporting_description:
+      "These can complement the starting solution or fit a different delivery preference.",
+  },
+  cards: {
+    strong_fit: "Strong fit",
+    good_fit: "Good fit",
+    potential_fit: "Potential fit",
+    featured_eyebrow: "Recommended starting point",
+    why_heading: "Why it fits",
+    explore_template: "Explore {title}",
+  },
+  reasons: {
+    matches_template: "Matches {label}",
+    strict_recovery: "Built for strict recovery tolerance",
+    recovery_window: "Fits recovery-window planning",
+    regulated: "Supports regulated environments",
+    operating_load: "Reduces internal operating load",
+    stabilization: "Fast path to stabilization",
+    role_template: "Fits the {role} need",
+    timeline_template: "Supports a {timeline} planning window",
+    broad_discovery: "Broad discovery fit",
+  },
+} as const;
+
+const DEFAULT_MODE_COPY: Record<FinderMode, Required<FinderModeCopy>> = {
+  quick: {
+    label: "Quick match",
+    detail: "Four plain-language questions. Best when you want a clear place to start.",
+  },
+  advanced: {
+    label: "Detailed assessment",
+    detail: "Seven questions plus optional goals and priority controls.",
+  },
+};
+
+const DEFAULT_STAGE_COPY: Record<FinderMode, FinderStageCopy[]> = {
+  quick: [
+    { label: "Your environment", start: 0, end: 1 },
+    { label: "Business risk", start: 2, end: 3 },
+  ],
+  advanced: [
+    { label: "Your environment", start: 0, end: 1 },
+    { label: "Business risk", start: 2, end: 4 },
+    { label: "Timing and resources", start: 5, end: 6 },
+  ],
+};
+
+const DEFAULT_WEIGHT_LABELS: Record<WeightKey, string> = {
+  cost: "Cost",
+  uptime: "Uptime",
+  security: "Security",
+  speed: "Speed",
+  compliance: "Compliance",
+  scalability: "Scalability",
+  operations: "Operations",
 };
 
 const QUESTIONS: Question[] = [
@@ -196,34 +391,34 @@ const GOALS: Goal[] = [
   { id: "scale", label: "Scale capacity", detail: "Flexible hosting and hybrid architecture.", weight: "scalability", tags: ["hybrid", "cloud", "year"] },
 ];
 
-const PROBLEM_STARTERS = [
+const PROBLEM_STARTERS: ProblemStarter[] = [
   {
     id: "risky-backups",
     label: "Backups are unreliable",
     detail: "Validate recoverability and shorten restore windows.",
     answers: { pain: "backup", continuity: "hours" },
-    goals: ["downtime", "ransomware"] as GoalId[],
+    goals: ["downtime", "ransomware"],
   },
   {
     id: "ransomware-ready",
     label: "Ransomware readiness",
     detail: "Harden endpoints, detect threats, and recover cleanly.",
     answers: { pain: "ransomware", compliance: "customer" },
-    goals: ["ransomware", "security"] as GoalId[],
+    goals: ["ransomware", "security"],
   },
   {
     id: "ibm-modernization",
     label: "IBM i modernization",
     detail: "Plan cloud, Power VS, security, and managed operations.",
     answers: { workload: "ibm-i", pain: "migration" },
-    goals: ["modernize", "operations"] as GoalId[],
+    goals: ["modernize", "operations"],
   },
   {
     id: "lean-it",
     label: "Lean IT team",
     detail: "Shift monitoring, patching, and operations to ICE.",
     answers: { team: "lean", pain: "manual" },
-    goals: ["operations", "cost"] as GoalId[],
+    goals: ["operations", "cost"],
   },
 ];
 
@@ -554,16 +749,329 @@ const SOLUTIONS: SolutionProfile[] = [
   },
 ];
 
+/**
+ * Complete editable copy used by the live finder. Scoring identifiers and
+ * matching weights stay code-owned; every user-facing label and description
+ * is returned here for the CMS editor template.
+ */
+export function getDefaultSolutionFinderContent(): SolutionFinderContent {
+  return {
+    chooser: { ...DEFAULT_FINDER_COPY.chooser },
+    modes: {
+      quick: { ...DEFAULT_MODE_COPY.quick },
+      advanced: { ...DEFAULT_MODE_COPY.advanced },
+    },
+    shortcut: { ...DEFAULT_FINDER_COPY.shortcut },
+    problem_starters: PROBLEM_STARTERS.map(({ id, label, detail }) => ({ id, label, detail })),
+    questions: QUESTIONS.map(({ key, eyebrow, prompt, options }) => ({
+      key,
+      eyebrow,
+      prompt,
+      options: options.map(({ id, label, detail }) => ({ id, label, detail })),
+    })),
+    questionnaire: { ...DEFAULT_FINDER_COPY.questionnaire },
+    stages: {
+      quick: DEFAULT_STAGE_COPY.quick.map((stage) => ({ ...stage })),
+      advanced: DEFAULT_STAGE_COPY.advanced.map((stage) => ({ ...stage })),
+    },
+    situation: { ...DEFAULT_FINDER_COPY.situation },
+    fine_tune: { ...DEFAULT_FINDER_COPY.fineTune },
+    goals: GOALS.map(({ id, label, detail }) => ({ id, label, detail })),
+    weight_labels: { ...DEFAULT_WEIGHT_LABELS },
+    results: { ...DEFAULT_FINDER_COPY.results },
+    cards: { ...DEFAULT_FINDER_COPY.cards },
+    reasons: { ...DEFAULT_FINDER_COPY.reasons },
+    solution_copy: SOLUTIONS.map((solution) => ({
+      slug: solution.slug,
+      title: solution.title,
+      category: solution.category,
+      summary: solution.summary,
+      proof: solution.proof,
+      timeline: solution.timeline,
+      complexity: solution.complexity,
+      role: solution.role,
+      cta_label: solution.ctaLabel,
+      next_step: solution.nextStep,
+    })),
+  };
+}
+
+function textOverride(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function mergeTextGroup<T extends Record<string, string>>(
+  defaults: T,
+  overrides: unknown,
+): T {
+  const merged = { ...defaults } as Record<keyof T, string>;
+  if (!overrides || typeof overrides !== "object" || Array.isArray(overrides)) return merged as T;
+  const values = overrides as Record<string, unknown>;
+  for (const key of Object.keys(defaults) as Array<keyof T>) {
+    const value = values[String(key)];
+    if (typeof value === "string") merged[key] = value;
+  }
+  return merged as T;
+}
+
+function fillFinderTemplate(
+  template: string,
+  values: Record<string, string | number>,
+): string {
+  return template.replace(/\{([a-z_]+)\}/gi, (token, key: string) =>
+    Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : token,
+  );
+}
+
+function resolveFinderCopy(content: SolutionFinderContent) {
+  return {
+    chooser: mergeTextGroup(DEFAULT_FINDER_COPY.chooser, content.chooser),
+    shortcut: mergeTextGroup(DEFAULT_FINDER_COPY.shortcut, content.shortcut),
+    questionnaire: mergeTextGroup(DEFAULT_FINDER_COPY.questionnaire, content.questionnaire),
+    situation: mergeTextGroup(DEFAULT_FINDER_COPY.situation, content.situation),
+    fineTune: mergeTextGroup(DEFAULT_FINDER_COPY.fineTune, content.fine_tune),
+    results: mergeTextGroup(DEFAULT_FINDER_COPY.results, content.results),
+    cards: mergeTextGroup(DEFAULT_FINDER_COPY.cards, content.cards),
+    reasons: mergeTextGroup(DEFAULT_FINDER_COPY.reasons, content.reasons),
+    weightLabels: mergeTextGroup(DEFAULT_WEIGHT_LABELS, content.weight_labels),
+  };
+}
+
+function resolveQuestions(value: unknown): Question[] {
+  if (value === undefined) return QUESTIONS;
+  if (!Array.isArray(value)) return QUESTIONS;
+
+  const seen = new Set<AnswerKey>();
+  return value.flatMap((candidate) => {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return [];
+    const override = candidate as Record<string, unknown>;
+    const original = QUESTIONS.find((question) => question.key === override.key);
+    if (!original || seen.has(original.key)) return [];
+    seen.add(original.key);
+
+    let options = original.options;
+    if (Array.isArray(override.options)) {
+      const seenOptions = new Set<string>();
+      options = override.options.flatMap((optionCandidate) => {
+        if (!optionCandidate || typeof optionCandidate !== "object" || Array.isArray(optionCandidate)) return [];
+        const optionOverride = optionCandidate as Record<string, unknown>;
+        const defaultOption = original.options.find((option) => option.id === optionOverride.id);
+        if (!defaultOption || seenOptions.has(defaultOption.id)) return [];
+        seenOptions.add(defaultOption.id);
+        return [{
+          ...defaultOption,
+          label: textOverride(optionOverride.label, defaultOption.label),
+          detail: textOverride(optionOverride.detail, defaultOption.detail),
+        }];
+      });
+    }
+
+    return [{
+      ...original,
+      eyebrow: textOverride(override.eyebrow, original.eyebrow),
+      prompt: textOverride(override.prompt, original.prompt),
+      options,
+    }];
+  });
+}
+
+function resolveGoals(value: unknown): Goal[] {
+  if (value === undefined) return GOALS;
+  if (!Array.isArray(value)) return GOALS;
+
+  const seen = new Set<GoalId>();
+  return value.flatMap((candidate) => {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return [];
+    const override = candidate as Record<string, unknown>;
+    const original = GOALS.find((goal) => goal.id === override.id);
+    if (!original || seen.has(original.id)) return [];
+    seen.add(original.id);
+    return [{
+      ...original,
+      label: textOverride(override.label, original.label),
+      detail: textOverride(override.detail, original.detail),
+    }];
+  });
+}
+
+function resolveProblemStarters(value: unknown): ProblemStarter[] {
+  if (value === undefined) return PROBLEM_STARTERS;
+  if (!Array.isArray(value)) return PROBLEM_STARTERS;
+
+  const seen = new Set<string>();
+  return value.flatMap((candidate) => {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return [];
+    const override = candidate as Record<string, unknown>;
+    const original = PROBLEM_STARTERS.find((starter) => starter.id === override.id);
+    if (!original || seen.has(original.id)) return [];
+    seen.add(original.id);
+    return [{
+      ...original,
+      label: textOverride(override.label, original.label),
+      detail: textOverride(override.detail, original.detail),
+    }];
+  });
+}
+
+function finderRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function finderStrings(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function validOutcomes(value: unknown): GoalId[] {
+  const allowed = new Set<GoalId>([
+    "downtime",
+    "modernize",
+    "security",
+    "cost",
+    "ransomware",
+    "operations",
+    "compliance",
+    "scale",
+  ]);
+  return finderStrings(value).filter((item): item is GoalId => allowed.has(item as GoalId));
+}
+
+function resolveSolutions(
+  value: unknown,
+  catalog?: SolutionCatalogItem[] | null,
+): SolutionProfile[] {
+  const overrides = Array.isArray(value) ? value : [];
+  const legacySolutions = SOLUTIONS.map((solution) => {
+    const candidate = overrides.find(
+      (item) => item && typeof item === "object" && !Array.isArray(item) && item.slug === solution.slug,
+    );
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return solution;
+    const override = candidate as Record<string, unknown>;
+    const complexity = ["Low", "Medium", "High"].includes(String(override.complexity))
+      ? (override.complexity as SolutionProfile["complexity"])
+      : solution.complexity;
+    return {
+      ...solution,
+      title: textOverride(override.title, solution.title),
+      category: textOverride(override.category, solution.category),
+      summary: textOverride(override.summary, solution.summary),
+      proof: textOverride(override.proof, solution.proof),
+      timeline: textOverride(override.timeline, solution.timeline),
+      complexity,
+      role: textOverride(override.role, solution.role),
+      ctaLabel: textOverride(override.cta_label, solution.ctaLabel),
+      nextStep: textOverride(override.next_step, solution.nextStep),
+    };
+  });
+
+  // A null catalog means the public catalog query failed, so retain the
+  // legacy finder as a resilience fallback. An empty array is authoritative:
+  // no published/listed services should be recommended.
+  if (catalog == null) return legacySolutions;
+
+  const legacyBySlug = new Map(legacySolutions.map((solution) => [solution.slug, solution]));
+  return catalog.flatMap((item) => {
+    const legacy = legacyBySlug.get(item.slug);
+    const copyOverride = finderRecord(
+      overrides.find(
+        (candidate) =>
+          candidate &&
+          typeof candidate === "object" &&
+          !Array.isArray(candidate) &&
+          candidate.slug === item.slug,
+      ),
+    );
+    if (item.finder?.enabled === false) return [];
+    const finder = finderRecord(item.finder);
+    const complexityValue = textOverride(
+      finder.complexity ?? copyOverride.complexity,
+      legacy?.complexity ?? "Medium",
+    );
+    const complexity = (["Low", "Medium", "High"] as const).includes(
+      complexityValue as "Low" | "Medium" | "High",
+    )
+      ? (complexityValue as SolutionProfile["complexity"])
+      : (legacy?.complexity ?? "Medium");
+    const outcomes = validOutcomes(finder.outcomes);
+
+    return [{
+      slug: item.slug,
+      title: item.title,
+      category: item.category,
+      href: item.href,
+      icon: resolveIcon(item.icon),
+      summary: item.card_description,
+      proof: textOverride(
+        finder.proof ?? copyOverride.proof,
+        legacy?.proof ?? item.outcome,
+      ),
+      tags: item.tags.map((tag) => tag.toLocaleLowerCase()),
+      outcomes: outcomes.length > 0 ? outcomes : (legacy?.outcomes ?? []),
+      industries: item.industries.map((industry) => industry.toLocaleLowerCase()),
+      workloads: item.workloads.map((workload) => workload.toLocaleLowerCase()),
+      complexity,
+      timeline: textOverride(
+        finder.timeline ?? copyOverride.timeline,
+        legacy?.timeline ?? "Discovery-led",
+      ),
+      role: textOverride(
+        finder.role ?? copyOverride.role,
+        legacy?.role ?? item.category,
+      ),
+      ctaLabel: textOverride(
+        finder.cta_label ?? copyOverride.cta_label,
+        legacy?.ctaLabel ?? item.link_label,
+      ),
+      nextStep: textOverride(
+        finder.next_step ?? copyOverride.next_step,
+        legacy?.nextStep ?? item.outcome,
+      ),
+      image: item.card_image || undefined,
+      imageConfigured: true,
+    }];
+  });
+}
+
+function resolveModeCopy(value: unknown): Record<FinderMode, Required<FinderModeCopy>> {
+  const modes = value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  return {
+    quick: mergeTextGroup(DEFAULT_MODE_COPY.quick, modes.quick),
+    advanced: mergeTextGroup(DEFAULT_MODE_COPY.advanced, modes.advanced),
+  };
+}
+
+function resolveStages(value: unknown, mode: FinderMode): FinderStageCopy[] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return DEFAULT_STAGE_COPY[mode];
+  const candidate = (value as Record<string, unknown>)[mode];
+  if (candidate === undefined) return DEFAULT_STAGE_COPY[mode];
+  if (!Array.isArray(candidate)) return DEFAULT_STAGE_COPY[mode];
+  return candidate.flatMap((stage) => {
+    if (!stage || typeof stage !== "object" || Array.isArray(stage)) return [];
+    const record = stage as Record<string, unknown>;
+    if (!Number.isFinite(record.start) || !Number.isFinite(record.end)) return [];
+    const start = Math.max(0, Math.floor(Number(record.start)));
+    const end = Math.max(start, Math.floor(Number(record.end)));
+    return [{ label: typeof record.label === "string" ? record.label : "", start, end }];
+  });
+}
+
 function imageFor(solution: SolutionProfile) {
-  return SOLUTION_HERO_IMAGE_BY_SLUG[solution.slug];
+  return solution.imageConfigured
+    ? solution.image
+    : solution.image ?? SOLUTION_HERO_IMAGE_BY_SLUG[solution.slug];
 }
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.min(max, Math.max(min, value));
 }
 
-function getAnswerLabels(answers: Answers) {
-  return QUESTIONS.flatMap((question) => {
+function getAnswerLabels(answers: Answers, questions: Question[] = QUESTIONS) {
+  return questions.flatMap((question) => {
     const value = answers[question.key];
     const option = question.options.find((item) => item.id === value);
     return option ? [option.label] : [];
@@ -573,8 +1081,11 @@ function getAnswerLabels(answers: Answers) {
 function scoreSolution(
   solution: SolutionProfile,
   answers: Answers,
-  goals: GoalId[],
+  selectedGoals: GoalId[],
   weights: Record<WeightKey, number>,
+  questions: Question[] = QUESTIONS,
+  goals: Goal[] = GOALS,
+  reasonCopy: TextValues<typeof DEFAULT_FINDER_COPY.reasons> = DEFAULT_FINDER_COPY.reasons,
 ): RankedSolution {
   let score = 18;
   const reasons: string[] = [];
@@ -583,14 +1094,19 @@ function scoreSolution(
   for (const value of answerValues) {
     if (solution.tags.includes(value) || solution.workloads.includes(value) || solution.industries.includes(value)) {
       score += 14;
-      const label = QUESTIONS.flatMap((q) => q.options).find((option) => option.id === value)?.label;
-      if (label) reasons.push(`Matches ${label.toLowerCase()}`);
+      const label = questions.flatMap((q) => q.options).find((option) => option.id === value)?.label;
+      if (label) {
+        reasons.push(fillFinderTemplate(reasonCopy.matches_template, {
+          label: label.toLowerCase(),
+          label_original: label,
+        }));
+      }
     }
   }
 
-  for (const goal of goals) {
+  for (const goal of selectedGoals) {
     if (solution.outcomes.includes(goal)) {
-      const goalConfig = GOALS.find((item) => item.id === goal);
+      const goalConfig = goals.find((item) => item.id === goal);
       score += 18;
       if (goalConfig) reasons.push(goalConfig.label);
     }
@@ -598,23 +1114,23 @@ function scoreSolution(
 
   if (answers.continuity === "minutes" && solution.tags.some((tag) => ["minutes", "uptime", "dr", "outages"].includes(tag))) {
     score += 16;
-    reasons.push("Built for strict recovery tolerance");
+    reasons.push(reasonCopy.strict_recovery);
   }
   if (answers.continuity === "hours" && solution.tags.some((tag) => ["backup", "dr", "ransomware"].includes(tag))) {
     score += 12;
-    reasons.push("Fits recovery-window planning");
+    reasons.push(reasonCopy.recovery_window);
   }
   if (answers.compliance === "regulated" && solution.tags.some((tag) => ["regulated", "compliance", "security", "private"].includes(tag))) {
     score += 16;
-    reasons.push("Supports regulated environments");
+    reasons.push(reasonCopy.regulated);
   }
   if ((answers.team === "lean" || answers.team === "outsourced") && solution.outcomes.includes("operations")) {
     score += 14;
-    reasons.push("Reduces internal operating load");
+    reasons.push(reasonCopy.operating_load);
   }
   if (answers.timeline === "now" && solution.tags.some((tag) => ["now", "monitoring", "backup", "managed"].includes(tag))) {
     score += 9;
-    reasons.push("Fast path to stabilization");
+    reasons.push(reasonCopy.stabilization);
   }
 
   const weightMap: Record<WeightKey, GoalId[]> = {
@@ -633,7 +1149,7 @@ function scoreSolution(
     if (matches) score += Math.round((value - 45) / 4);
   }
 
-  const uniqueReasons = Array.from(new Set(reasons)).slice(0, 4);
+  const uniqueReasons = Array.from(new Set(reasons.filter(Boolean))).slice(0, 4);
   return { ...solution, score, fit: clamp(Math.round(score)), reasons: uniqueReasons };
 }
 
@@ -794,10 +1310,13 @@ function LegacySolutionFinder({ className }: { className?: string }) {
   useEffect(() => {
     const state = decodeFinderState(new URLSearchParams(window.location.search).get("finder"));
     if (!state) return;
-    if (state.answers) setAnswers(state.answers);
-    if (state.goals) setSelectedGoals(state.goals.filter((goal): goal is GoalId => GOALS.some((item) => item.id === goal)));
-    if (state.weights) setWeights({ ...DEFAULT_WEIGHTS, ...state.weights });
-    if (state.stack) setStack(state.stack.filter((slug) => SOLUTIONS.some((solution) => solution.slug === slug)));
+    const timeout = window.setTimeout(() => {
+      if (state.answers) setAnswers(state.answers);
+      if (state.goals) setSelectedGoals(state.goals.filter((goal): goal is GoalId => GOALS.some((item) => item.id === goal)));
+      if (state.weights) setWeights({ ...DEFAULT_WEIGHTS, ...state.weights });
+      if (state.stack) setStack(state.stack.filter((slug) => SOLUTIONS.some((solution) => solution.slug === slug)));
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const ranked = useMemo(
@@ -1302,34 +1821,48 @@ function LegacySolutionFinder({ className }: { className?: string }) {
   );
 }
 
-type FinderMode = "quick" | "advanced";
-
 const QUICK_QUESTIONS = QUESTIONS.slice(0, 4);
 
-function getFitLabel(fit: number) {
-  if (fit >= 75) return "Strong fit";
-  if (fit >= 55) return "Good fit";
-  return "Potential fit";
+function getFitLabel(
+  fit: number,
+  copy: TextValues<typeof DEFAULT_FINDER_COPY.cards> = DEFAULT_FINDER_COPY.cards,
+) {
+  if (fit >= 75) return copy.strong_fit;
+  if (fit >= 55) return copy.good_fit;
+  return copy.potential_fit;
 }
 
-function getResultReasons(solution: RankedSolution) {
+function getResultReasons(
+  solution: RankedSolution,
+  reasonCopy: TextValues<typeof DEFAULT_FINDER_COPY.reasons> = DEFAULT_FINDER_COPY.reasons,
+) {
   const fallbacks = [
-    `Fits the ${solution.role.toLowerCase()} need`,
-    `Supports a ${solution.timeline} planning window`,
+    fillFinderTemplate(reasonCopy.role_template, {
+      role: solution.role.toLowerCase(),
+      role_original: solution.role,
+    }),
+    fillFinderTemplate(reasonCopy.timeline_template, { timeline: solution.timeline }),
     solution.proof,
   ];
-  return Array.from(new Set([...solution.reasons, ...fallbacks])).slice(0, 3);
+  const reasons = Array.from(new Set([...solution.reasons, ...fallbacks].filter(Boolean))).slice(0, 3);
+  return reasons.length > 0 || !reasonCopy.broad_discovery
+    ? reasons
+    : [reasonCopy.broad_discovery];
 }
 
 function FinderResultCard({
   solution,
   featured = false,
+  cardCopy,
+  reasonCopy,
 }: {
   solution: RankedSolution;
   featured?: boolean;
+  cardCopy: TextValues<typeof DEFAULT_FINDER_COPY.cards>;
+  reasonCopy: TextValues<typeof DEFAULT_FINDER_COPY.reasons>;
 }) {
   const image = imageFor(solution);
-  const reasons = getResultReasons(solution);
+  const reasons = getResultReasons(solution, reasonCopy);
 
   return (
     <article
@@ -1361,11 +1894,11 @@ function FinderResultCard({
         <div className="flex items-start justify-between gap-4">
           <IconBadge icon={solution.icon} />
           <span className="rounded-full bg-brand-primary px-3 py-1 text-xs font-semibold text-brand-secondary ring-1 ring-brand">
-            {getFitLabel(solution.fit)}
+            {getFitLabel(solution.fit, cardCopy)}
           </span>
         </div>
         <p className={cx("text-xs font-medium tracking-[0.18em] text-brand-secondary uppercase", featured ? "mt-24" : "mt-14")}>
-          {featured ? "Recommended starting point" : solution.category}
+          {featured ? cardCopy.featured_eyebrow : solution.category}
         </p>
         <h3 className={cx("mt-2 font-semibold text-primary", featured ? "text-display-xs md:text-display-sm" : "text-xl")}>
           {solution.title}
@@ -1373,7 +1906,9 @@ function FinderResultCard({
         <p className="mt-2 text-sm text-tertiary">{solution.summary}</p>
 
         <div className="mt-5">
-          <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Why it fits</p>
+          {cardCopy.why_heading && (
+            <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{cardCopy.why_heading}</p>
+          )}
           <ul className="mt-3 space-y-2">
             {reasons.map((reason) => (
               <li key={reason} className="flex items-start gap-2 text-sm text-secondary">
@@ -1391,7 +1926,7 @@ function FinderResultCard({
             iconTrailing={ArrowRight}
             onClick={() => pushEvent("solution_finder_result_clicked", { href: solution.href })}
           >
-            Explore {solution.title}
+            {fillFinderTemplate(cardCopy.explore_template, { title: solution.title })}
           </Button>
         </div>
       </div>
@@ -1399,54 +1934,92 @@ function FinderResultCard({
   );
 }
 
-export default function SolutionFinder({ className }: { className?: string }) {
+const EMPTY_FINDER_CONTENT: SolutionFinderContent = {};
+
+export default function SolutionFinder({
+  className,
+  content = EMPTY_FINDER_CONTENT,
+  catalog,
+}: {
+  className?: string;
+  content?: SolutionFinderContent;
+  catalog?: SolutionCatalogItem[] | null;
+}) {
   const [mode, setMode] = useState<FinderMode>("quick");
   const [answers, setAnswers] = useState<Answers>({});
   const [step, setStep] = useState(0);
   const [selectedGoals, setSelectedGoals] = useState<GoalId[]>([]);
   const [weights, setWeights] = useState<Record<WeightKey, number>>(DEFAULT_WEIGHTS);
+  const copy = useMemo(() => resolveFinderCopy(content), [content]);
+  const questions = useMemo(() => resolveQuestions(content.questions), [content.questions]);
+  const quickQuestions = useMemo(
+    () => questions.filter((question) => QUICK_QUESTIONS.some((item) => item.key === question.key)),
+    [questions],
+  );
+  const goals = useMemo(() => resolveGoals(content.goals), [content.goals]);
+  const problemStarters = useMemo(
+    () => resolveProblemStarters(content.problem_starters),
+    [content.problem_starters],
+  );
+  const solutions = useMemo(
+    () => resolveSolutions(content.solution_copy, catalog),
+    [catalog, content.solution_copy],
+  );
+  const modeCopy = useMemo(() => resolveModeCopy(content.modes), [content.modes]);
 
   useEffect(() => {
     const state = decodeFinderState(new URLSearchParams(window.location.search).get("finder"));
     if (!state) return;
-    if (state.answers) setAnswers(state.answers);
-    if (state.goals) setSelectedGoals(state.goals.filter((goal): goal is GoalId => GOALS.some((item) => item.id === goal)));
-    if (state.weights) setWeights({ ...DEFAULT_WEIGHTS, ...state.weights });
-  }, []);
+    const timeout = window.setTimeout(() => {
+      if (state.answers) setAnswers(state.answers);
+      if (state.goals) setSelectedGoals(state.goals.filter((goal): goal is GoalId => goals.some((item) => item.id === goal)));
+      if (state.weights) setWeights({ ...DEFAULT_WEIGHTS, ...state.weights });
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [goals]);
 
-  const activeQuestions = mode === "quick" ? QUICK_QUESTIONS : QUESTIONS;
-  const currentStep = Math.min(step, activeQuestions.length - 1);
+  const activeQuestions = mode === "quick" ? quickQuestions : questions;
+  const currentStep = activeQuestions.length > 0 ? Math.min(step, activeQuestions.length - 1) : 0;
   const current = activeQuestions[currentStep];
   const answeredCount = activeQuestions.filter((question) => answers[question.key]).length;
-  const totalAnswered = QUESTIONS.filter((question) => answers[question.key]).length;
+  const totalAnswered = questions.filter((question) => answers[question.key]).length;
   const hasEnoughAnswers = totalAnswered >= 3;
   const ranked = useMemo(
     () =>
-      SOLUTIONS.map((solution) => scoreSolution(solution, answers, selectedGoals, weights)).sort(
+      solutions.map((solution) => scoreSolution(
+        solution,
+        answers,
+        selectedGoals,
+        weights,
+        questions,
+        goals,
+        copy.reasons,
+      )).sort(
         (a, b) => b.score - a.score,
       ),
-    [answers, selectedGoals, weights],
+    [answers, copy.reasons, goals, questions, selectedGoals, solutions, weights],
   );
   const primary = hasEnoughAnswers ? ranked[0] : undefined;
   const supporting = hasEnoughAnswers ? ranked.slice(1, 3) : [];
-  const answerItems = QUESTIONS.flatMap((question, index) => {
+  const answerItems = questions.flatMap((question, index) => {
     const selected = question.options.find((option) => option.id === answers[question.key]);
     return selected ? [{ question, selected, index }] : [];
   });
   const contactHref = `/contact?service=${encodeURIComponent(primary?.title ?? "Solution Finder")}&source=solution_finder&summary=${encodeURIComponent(
-    [...getAnswerLabels(answers), ...selectedGoals.map((goal) => GOALS.find((item) => item.id === goal)?.label).filter(Boolean)].join(", "),
+    [...getAnswerLabels(answers, questions), ...selectedGoals.map((goal) => goals.find((item) => item.id === goal)?.label).filter(Boolean)].join(", "),
   )}`;
-  const stages =
-    mode === "quick"
-      ? [
-          { label: "Your environment", start: 0, end: 1 },
-          { label: "Business risk", start: 2, end: 3 },
-        ]
-      : [
-          { label: "Your environment", start: 0, end: 1 },
-          { label: "Business risk", start: 2, end: 4 },
-          { label: "Timing and resources", start: 5, end: 6 },
-        ];
+  const stages = useMemo(() => resolveStages(content.stages, mode), [content.stages, mode]);
+  const remainingAnswers = Math.max(0, 3 - totalAnswered);
+  const situationHeading = hasEnoughAnswers
+    ? fillFinderTemplate(copy.situation.fit_found_template, {
+        fit_label: getFitLabel(primary?.fit ?? 0, copy.cards),
+      })
+    : fillFinderTemplate(
+        remainingAnswers === 1
+          ? copy.situation.remaining_singular_template
+          : copy.situation.remaining_plural_template,
+        { count: remainingAnswers },
+      );
 
   const changeMode = (nextMode: FinderMode) => {
     setMode(nextMode);
@@ -1459,6 +2032,7 @@ export default function SolutionFinder({ className }: { className?: string }) {
   };
 
   const continueFinder = () => {
+    if (!current) return;
     if (currentStep < activeQuestions.length - 1) {
       setStep(currentStep + 1);
       return;
@@ -1466,7 +2040,7 @@ export default function SolutionFinder({ className }: { className?: string }) {
     window.setTimeout(() => document.getElementById("finder-results")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   };
 
-  const applyStarter = (starter: (typeof PROBLEM_STARTERS)[number]) => {
+  const applyStarter = (starter: ProblemStarter) => {
     setAnswers((currentAnswers) => ({ ...currentAnswers, ...starter.answers }));
     setSelectedGoals((currentGoals) => Array.from(new Set([...currentGoals, ...starter.goals])));
     setStep(0);
@@ -1492,8 +2066,14 @@ export default function SolutionFinder({ className }: { className?: string }) {
       <section className="rounded-2xl bg-primary p-5 ring-1 ring-secondary md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Choose your path</p>
-            <h2 className="mt-2 text-display-xs font-semibold text-primary">How much guidance do you want?</h2>
+            {copy.chooser.eyebrow && (
+              <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+                {copy.chooser.eyebrow}
+              </p>
+            )}
+            {copy.chooser.heading && (
+              <h2 className="mt-2 text-display-xs font-semibold text-primary">{copy.chooser.heading}</h2>
+            )}
           </div>
           <button
             type="button"
@@ -1501,42 +2081,50 @@ export default function SolutionFinder({ className }: { className?: string }) {
             className="inline-flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm font-semibold text-secondary ring-1 ring-secondary transition hover:text-brand-secondary hover:ring-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
             <RefreshCw01 className="size-4" />
-            Start over
+            {copy.chooser.reset_label}
           </button>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          {([
-            ["quick", "Quick match", "Four plain-language questions. Best when you want a clear place to start."],
-            ["advanced", "Detailed assessment", "Seven questions plus optional goals and priority controls."],
-          ] as const).map(([id, label, detail]) => (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={mode === id}
-              onClick={() => changeMode(id)}
-              className={cx(
-                "rounded-xl p-4 text-left ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                mode === id ? "bg-brand-solid text-white ring-transparent" : "bg-secondary ring-secondary hover:ring-brand",
-              )}
-            >
-              <span className={cx("font-semibold", mode === id ? "text-white" : "text-primary")}>{label}</span>
-              <span className={cx("mt-1 block text-sm", mode === id ? "text-white/75" : "text-tertiary")}>{detail}</span>
-            </button>
-          ))}
+          {(["quick", "advanced"] as const).map((id) => {
+            const item = modeCopy[id];
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={mode === id}
+                onClick={() => changeMode(id)}
+                className={cx(
+                  "rounded-xl p-4 text-left ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                  mode === id ? "bg-brand-solid text-white ring-transparent" : "bg-secondary ring-secondary hover:ring-brand",
+                )}
+              >
+                {item.label && (
+                  <span className={cx("font-semibold", mode === id ? "text-white" : "text-primary")}>{item.label}</span>
+                )}
+                {item.detail && (
+                  <span className={cx("mt-1 block text-sm", mode === id ? "text-white/75" : "text-tertiary")}>{item.detail}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      <section className="rounded-2xl bg-secondary p-5 ring-1 ring-secondary md:p-6">
+      {problemStarters.length > 0 && <section className="rounded-2xl bg-secondary p-5 ring-1 ring-secondary md:p-6">
         <div className="flex items-center gap-3">
           <IconBadge icon={Zap} className="size-9 rounded-lg" />
           <div>
-            <p className="text-xs font-medium tracking-[0.18em] text-brand-secondary uppercase">Optional shortcut</p>
-            <h2 className="text-lg font-semibold text-primary">Start from the pressure</h2>
+            {copy.shortcut.eyebrow && (
+              <p className="text-xs font-medium tracking-[0.18em] text-brand-secondary uppercase">
+                {copy.shortcut.eyebrow}
+              </p>
+            )}
+            {copy.shortcut.heading && <h2 className="text-lg font-semibold text-primary">{copy.shortcut.heading}</h2>}
           </div>
         </div>
-        <p className="mt-2 text-sm text-tertiary">Choose a common situation to pre-fill two answers, then confirm the details below.</p>
+        {copy.shortcut.description && <p className="mt-2 text-sm text-tertiary">{copy.shortcut.description}</p>}
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {PROBLEM_STARTERS.map((starter) => (
+          {problemStarters.map((starter) => (
             <button
               key={starter.id}
               type="button"
@@ -1548,97 +2136,146 @@ export default function SolutionFinder({ className }: { className?: string }) {
             </button>
           ))}
         </div>
-      </section>
+      </section>}
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="rounded-2xl bg-primary p-5 ring-1 ring-secondary md:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">{current.eyebrow}</p>
-              <h2 className="mt-2 text-display-xs font-semibold text-primary md:text-display-sm">{current.prompt}</h2>
+          {current ? (
+            <>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  {current.eyebrow && (
+                    <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+                      {current.eyebrow}
+                    </p>
+                  )}
+                  {current.prompt && (
+                    <h2 className="mt-2 text-display-xs font-semibold text-primary md:text-display-sm">
+                      {current.prompt}
+                    </h2>
+                  )}
+                </div>
+                {copy.questionnaire.answered_template && (
+                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary ring-1 ring-secondary">
+                    {fillFinderTemplate(copy.questionnaire.answered_template, {
+                      answered: answeredCount,
+                      total: activeQuestions.length,
+                    })}
+                  </span>
+                )}
+              </div>
+
+              {stages.length > 0 && (
+                <div className="mt-6 grid gap-2 sm:grid-cols-3">
+                  {stages.map((stage, stageIndex) => {
+                    const complete = activeQuestions
+                      .slice(stage.start, stage.end + 1)
+                      .every((question) => answers[question.key]);
+                    const active = currentStep >= stage.start && currentStep <= stage.end;
+                    return (
+                      <button
+                        key={`${stage.start}-${stage.end}-${stageIndex}`}
+                        type="button"
+                        onClick={() => setStep(Math.min(stage.start, Math.max(0, activeQuestions.length - 1)))}
+                        className={cx(
+                          "rounded-xl px-3 py-3 text-left text-xs font-semibold ring-1 transition",
+                          active
+                            ? "bg-brand-solid text-white ring-transparent"
+                            : complete
+                              ? "bg-brand-primary text-brand-secondary ring-brand"
+                              : "bg-secondary text-tertiary ring-secondary hover:ring-brand",
+                        )}
+                      >
+                        {stage.label && <span className="block">{stage.label}</span>}
+                        {copy.questionnaire.stage_questions_template && (
+                          <span className={cx("mt-1 block font-normal", active ? "text-white/70" : "text-quaternary")}>
+                            {fillFinderTemplate(copy.questionnaire.stage_questions_template, {
+                              start: stage.start + 1,
+                              end: stage.end + 1,
+                            })}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {current.options.length > 0 && (
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {current.options.map((option) => {
+                    const selected = answers[current.key] === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        data-testid={`finder-option-${current.key}-${option.id}`}
+                        aria-pressed={selected}
+                        onClick={() => selectAnswer(current.key, option.id)}
+                        className={cx(
+                          "group min-h-28 rounded-xl bg-secondary p-4 text-left ring-1 ring-secondary transition duration-150 hover:-translate-y-0.5 hover:ring-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                          selected && "bg-brand-solid text-white ring-transparent",
+                        )}
+                      >
+                        {option.label && (
+                          <span className={cx("inline-flex items-center gap-2 text-md font-semibold", selected ? "text-white" : "text-primary")}>
+                            {option.label}
+                            {selected && <CheckCircle className="size-4" />}
+                          </span>
+                        )}
+                        {option.detail && (
+                          <span className={cx("mt-2 block text-sm", selected ? "text-white/75" : "text-tertiary")}>
+                            {option.detail}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-5 flex items-center justify-between gap-3">
+                <Button size="sm" color="secondary" isDisabled={currentStep === 0} onClick={() => setStep(Math.max(0, currentStep - 1))}>
+                  {copy.questionnaire.back_label}
+                </Button>
+                <Button
+                  size="sm"
+                  isDisabled={!answers[current.key]}
+                  onClick={continueFinder}
+                  iconTrailing={ChevronRight}
+                >
+                  {currentStep === activeQuestions.length - 1
+                    ? copy.questionnaire.recommendations_label
+                    : copy.questionnaire.continue_label}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="py-8 text-center">
+              {copy.questionnaire.no_questions_heading && (
+                <h2 className="text-xl font-semibold text-primary">{copy.questionnaire.no_questions_heading}</h2>
+              )}
+              {copy.questionnaire.no_questions_description && (
+                <p className="mx-auto mt-2 max-w-lg text-sm text-tertiary">
+                  {copy.questionnaire.no_questions_description}
+                </p>
+              )}
             </div>
-            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary ring-1 ring-secondary">
-              {answeredCount}/{activeQuestions.length} answered
-            </span>
-          </div>
-
-          <div className="mt-6 grid gap-2 sm:grid-cols-3">
-            {stages.map((stage) => {
-              const complete = activeQuestions.slice(stage.start, stage.end + 1).every((question) => answers[question.key]);
-              const active = currentStep >= stage.start && currentStep <= stage.end;
-              return (
-                <button
-                  key={stage.label}
-                  type="button"
-                  onClick={() => setStep(stage.start)}
-                  className={cx(
-                    "rounded-xl px-3 py-3 text-left text-xs font-semibold ring-1 transition",
-                    active
-                      ? "bg-brand-solid text-white ring-transparent"
-                      : complete
-                        ? "bg-brand-primary text-brand-secondary ring-brand"
-                        : "bg-secondary text-tertiary ring-secondary hover:ring-brand",
-                  )}
-                >
-                  <span className="block">{stage.label}</span>
-                  <span className={cx("mt-1 block font-normal", active ? "text-white/70" : "text-quaternary")}>
-                    Questions {stage.start + 1}-{stage.end + 1}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {current.options.map((option) => {
-              const selected = answers[current.key] === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  data-testid={`finder-option-${current.key}-${option.id}`}
-                  aria-pressed={selected}
-                  onClick={() => selectAnswer(current.key, option.id)}
-                  className={cx(
-                    "group min-h-28 rounded-xl bg-secondary p-4 text-left ring-1 ring-secondary transition duration-150 hover:-translate-y-0.5 hover:ring-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                    selected && "bg-brand-solid text-white ring-transparent",
-                  )}
-                >
-                  <span className={cx("inline-flex items-center gap-2 text-md font-semibold", selected ? "text-white" : "text-primary")}>
-                    {option.label}
-                    {selected && <CheckCircle className="size-4" />}
-                  </span>
-                  <span className={cx("mt-2 block text-sm", selected ? "text-white/75" : "text-tertiary")}>{option.detail}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-5 flex items-center justify-between gap-3">
-            <Button size="sm" color="secondary" isDisabled={currentStep === 0} onClick={() => setStep(Math.max(0, currentStep - 1))}>
-              Back
-            </Button>
-            <Button
-              size="sm"
-              isDisabled={!answers[current.key]}
-              onClick={continueFinder}
-              iconTrailing={ChevronRight}
-            >
-              {currentStep === activeQuestions.length - 1 ? "View recommendations" : "Continue"}
-            </Button>
-          </div>
+          )}
         </div>
 
         <aside className="self-start rounded-2xl bg-secondary p-5 ring-1 ring-secondary lg:sticky lg:top-24 md:p-6">
-          <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Your situation</p>
-          <h2 className="mt-2 text-xl font-semibold text-primary">
-            {hasEnoughAnswers ? `${getFitLabel(primary?.fit ?? 0)} found` : `Answer ${Math.max(0, 3 - totalAnswered)} more question${3 - totalAnswered === 1 ? "" : "s"}`}
-          </h2>
-          <p className="mt-2 text-sm text-tertiary">
-            {hasEnoughAnswers
-              ? "This is questionnaire alignment, not a technical guarantee. ICE will validate architecture, risk, and scope."
-              : "We’ll wait for at least three answers before suggesting a solution."}
-          </p>
+          {copy.situation.eyebrow && (
+            <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+              {copy.situation.eyebrow}
+            </p>
+          )}
+          {situationHeading && <h2 className="mt-2 text-xl font-semibold text-primary">{situationHeading}</h2>}
+          {(hasEnoughAnswers ? copy.situation.ready_description : copy.situation.waiting_description) && (
+            <p className="mt-2 text-sm text-tertiary">
+              {hasEnoughAnswers ? copy.situation.ready_description : copy.situation.waiting_description}
+            </p>
+          )}
 
           {answerItems.length > 0 ? (
             <dl className="mt-5 space-y-3">
@@ -1650,21 +2287,28 @@ export default function SolutionFinder({ className }: { className?: string }) {
                     <button
                       type="button"
                       onClick={() => {
-                        if (index >= QUICK_QUESTIONS.length) setMode("advanced");
-                        setStep(index);
+                        const quickIndex = quickQuestions.findIndex((item) => item.key === question.key);
+                        if (mode === "quick" && quickIndex >= 0) {
+                          setStep(quickIndex);
+                        } else {
+                          setMode("advanced");
+                          setStep(index);
+                        }
                       }}
                       className="text-xs font-semibold text-brand-secondary hover:underline"
                     >
-                      Edit
+                      {copy.situation.edit_label}
                     </button>
                   </dd>
                 </div>
               ))}
             </dl>
           ) : (
-            <div className="mt-5 rounded-xl border border-dashed border-secondary p-4 text-sm text-quaternary">
-              Your answers will stay visible here as you go.
-            </div>
+            copy.situation.empty_answers && (
+              <div className="mt-5 rounded-xl border border-dashed border-secondary p-4 text-sm text-quaternary">
+                {copy.situation.empty_answers}
+              </div>
+            )
           )}
         </aside>
       </section>
@@ -1673,15 +2317,23 @@ export default function SolutionFinder({ className }: { className?: string }) {
         <details className="group rounded-2xl bg-primary ring-1 ring-secondary">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 md:p-6">
             <div>
-              <p className="text-xs font-medium tracking-[0.18em] text-brand-secondary uppercase">Optional</p>
-              <h2 className="mt-1 text-lg font-semibold text-primary">Fine-tune recommendations</h2>
-              <p className="mt-1 text-sm text-tertiary">Add outcomes and adjust priorities only if they matter to your decision.</p>
+              {copy.fineTune.eyebrow && (
+                <p className="text-xs font-medium tracking-[0.18em] text-brand-secondary uppercase">
+                  {copy.fineTune.eyebrow}
+                </p>
+              )}
+              {copy.fineTune.heading && (
+                <h2 className="mt-1 text-lg font-semibold text-primary">{copy.fineTune.heading}</h2>
+              )}
+              {copy.fineTune.description && (
+                <p className="mt-1 text-sm text-tertiary">{copy.fineTune.description}</p>
+              )}
             </div>
             <ChevronRight className="size-5 shrink-0 text-tertiary transition group-open:rotate-90" />
           </summary>
           <div className="border-t border-secondary p-5 md:p-6">
             <div className="flex flex-wrap gap-2">
-              {GOALS.map((goal) => {
+              {goals.map((goal) => {
                 const selected = selectedGoals.includes(goal.id);
                 return (
                   <button
@@ -1704,7 +2356,7 @@ export default function SolutionFinder({ className }: { className?: string }) {
               {(Object.keys(weights) as WeightKey[]).map((key) => (
                 <label key={key} className="block rounded-xl bg-secondary p-4 ring-1 ring-secondary">
                   <span className="flex items-center justify-between gap-3 text-sm font-semibold text-primary">
-                    <span className="capitalize">{key}</span>
+                    <span>{copy.weightLabels[key]}</span>
                     <span className="text-brand-secondary">{weights[key]}</span>
                   </span>
                   <input
@@ -1726,20 +2378,32 @@ export default function SolutionFinder({ className }: { className?: string }) {
         {!hasEnoughAnswers || !primary ? (
           <div className="rounded-2xl border border-dashed border-secondary bg-secondary p-8 text-center md:p-12">
             <IconBadge icon={Target04} className="mx-auto" />
-            <h2 className="mt-4 text-xl font-semibold text-primary">Your recommendation will appear here</h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm text-tertiary">
-              Answer at least three questions so the finder has enough context to identify a useful starting point.
-            </p>
+            {copy.results.empty_heading && (
+              <h2 className="mt-4 text-xl font-semibold text-primary">{copy.results.empty_heading}</h2>
+            )}
+            {copy.results.empty_description && (
+              <p className="mx-auto mt-2 max-w-xl text-sm text-tertiary">
+                {copy.results.empty_description}
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Your shortlist</p>
-                <h2 className="mt-2 text-display-xs font-semibold text-primary md:text-display-sm">Start here, then explore two supporting options</h2>
-                <p className="mt-2 max-w-2xl text-sm text-tertiary">
-                  Fit labels show alignment with your answers. They are directional and should be validated in discovery.
-                </p>
+                {copy.results.eyebrow && (
+                  <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
+                    {copy.results.eyebrow}
+                  </p>
+                )}
+                {copy.results.heading && (
+                  <h2 className="mt-2 text-display-xs font-semibold text-primary md:text-display-sm">
+                    {copy.results.heading}
+                  </h2>
+                )}
+                {copy.results.description && (
+                  <p className="mt-2 max-w-2xl text-sm text-tertiary">{copy.results.description}</p>
+                )}
               </div>
               <Button
                 size="md"
@@ -1747,18 +2411,32 @@ export default function SolutionFinder({ className }: { className?: string }) {
                 iconTrailing={ArrowRight}
                 onClick={() => pushEvent("consultation_cta_clicked", { location: "solution_finder_results" })}
               >
-                Talk with a specialist
+                {copy.results.contact_label}
               </Button>
             </div>
 
-            <FinderResultCard solution={primary} featured />
+            <FinderResultCard
+              solution={primary}
+              featured
+              cardCopy={copy.cards}
+              reasonCopy={copy.reasons}
+            />
 
             <div>
-              <h3 className="text-lg font-semibold text-primary">Supporting options</h3>
-              <p className="mt-1 text-sm text-tertiary">These can complement the starting solution or fit a different delivery preference.</p>
+              {copy.results.supporting_heading && (
+                <h3 className="text-lg font-semibold text-primary">{copy.results.supporting_heading}</h3>
+              )}
+              {copy.results.supporting_description && (
+                <p className="mt-1 text-sm text-tertiary">{copy.results.supporting_description}</p>
+              )}
               <div className="mt-4 grid gap-5 md:grid-cols-2">
                 {supporting.map((solution) => (
-                  <FinderResultCard key={solution.slug} solution={solution} />
+                  <FinderResultCard
+                    key={solution.slug}
+                    solution={solution}
+                    cardCopy={copy.cards}
+                    reasonCopy={copy.reasons}
+                  />
                 ))}
               </div>
             </div>
@@ -1769,13 +2447,23 @@ export default function SolutionFinder({ className }: { className?: string }) {
   );
 }
 
-export function SolutionFinderPromo({ className }: { className?: string }) {
+export function SolutionFinderPromo({
+  className,
+  eyebrow = "Solution finder",
+  heading = "Find a clear starting solution from your workload, risk, and timing.",
+  cta = { label: "Open finder", href: "/solutions/find" },
+}: {
+  className?: string;
+  eyebrow?: string;
+  heading?: string;
+  cta?: { label?: string; href?: string };
+}) {
   return (
     <div className={cx("rounded-2xl bg-secondary p-6 ring-1 ring-secondary", className)}>
-      <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Solution finder</p>
-      <p className="mt-2 text-lg font-semibold text-primary">Find a clear starting solution from your workload, risk, and timing.</p>
-      <Button href="/solutions/find" size="md" className="mt-4" iconTrailing={ArrowRight}>
-        Open finder
+      <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">{eyebrow}</p>
+      <p className="mt-2 text-lg font-semibold text-primary">{heading}</p>
+      <Button href={cta.href ?? "/solutions/find"} size="md" className="mt-4" iconTrailing={ArrowRight}>
+        {cta.label ?? "Open finder"}
       </Button>
     </div>
   );

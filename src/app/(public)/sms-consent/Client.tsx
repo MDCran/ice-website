@@ -8,6 +8,8 @@ import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
 import { cx } from "@/utils/cx";
+import { isCmsSectionVisible } from "@/lib/cms/sectionManifest";
+import type { CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -78,18 +80,69 @@ const DEFAULT_HERO = {
   related_href: "/terms-of-service",
 };
 
-export default function SmsConsentPage({ cmsData }: { cmsData?: Record<string, any> }) {
-  const hero = { ...DEFAULT_HERO, ...(cmsData?.hero ?? {}) };
-  const sections: { id: string; title: string; content: string }[] = useMemo(
-    () => cmsData?.sections?.items ?? DEFAULT_SECTIONS,
-    [cmsData],
-  );
-  const [activeId, setActiveId] = useState(sections[0]?.id ?? DEFAULT_SECTIONS[0].id);
-  const shouldReduceMotion = useReducedMotion();
+type CmsRecord = Record<string, unknown>;
 
-  useEffect(() => {
-    if (sections[0]?.id) setActiveId(sections[0].id);
-  }, [sections]);
+interface LegalSection {
+  id: string;
+  title: string;
+  content: string;
+}
+
+function asRecord(value: unknown): CmsRecord {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as CmsRecord
+    : {};
+}
+
+function stringValue(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function normalizeHero(value: unknown): typeof DEFAULT_HERO {
+  const hero = asRecord(value);
+  return {
+    eyebrow: stringValue(hero.eyebrow, DEFAULT_HERO.eyebrow),
+    headline: stringValue(hero.headline, DEFAULT_HERO.headline),
+    subheadline: stringValue(hero.subheadline, DEFAULT_HERO.subheadline),
+    last_updated: stringValue(hero.last_updated, DEFAULT_HERO.last_updated),
+    badge_note: stringValue(hero.badge_note, DEFAULT_HERO.badge_note),
+    document_title: stringValue(hero.document_title, DEFAULT_HERO.document_title),
+    document_intro: stringValue(hero.document_intro, DEFAULT_HERO.document_intro),
+    related_label: stringValue(hero.related_label, DEFAULT_HERO.related_label),
+    related_href: stringValue(hero.related_href, DEFAULT_HERO.related_href),
+  };
+}
+
+function normalizeSections(value: unknown): LegalSection[] {
+  const items = asRecord(value).items;
+  if (items === undefined) return DEFAULT_SECTIONS;
+  if (!Array.isArray(items)) return DEFAULT_SECTIONS;
+  return items.flatMap((item) => {
+    const section = asRecord(item);
+    if (
+      typeof section.id !== "string" ||
+      typeof section.title !== "string" ||
+      typeof section.content !== "string"
+    ) {
+      return [];
+    }
+    return [{ id: section.id, title: section.title, content: section.content }];
+  });
+}
+
+export default function SmsConsentPage({ cmsData, orderedSections }: { cmsData?: Record<string, unknown>; orderedSections?: CMSRenderableSection[] }) {
+  const showHero = isCmsSectionVisible(orderedSections, "hero");
+  const showSections = isCmsSectionVisible(orderedSections, "sections");
+  const hero = normalizeHero(cmsData?.hero);
+  const sections = useMemo(
+    () => showSections ? normalizeSections(cmsData?.sections) : [],
+    [cmsData, showSections],
+  );
+  const [selectedActiveId, setActiveId] = useState(sections[0]?.id ?? DEFAULT_SECTIONS[0].id);
+  const activeId = sections.some((section) => section.id === selectedActiveId)
+    ? selectedActiveId
+    : sections[0]?.id ?? "";
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     const ids = sections.map((s) => s.id);
@@ -130,7 +183,7 @@ export default function SmsConsentPage({ cmsData }: { cmsData?: Record<string, a
 
   return (
     <main className="bg-primary">
-      <section className="relative overflow-hidden border-b border-secondary">
+      {showHero && <section className="relative overflow-hidden border-b border-secondary">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           <BackgroundPattern
             pattern="grid"
@@ -169,9 +222,9 @@ export default function SmsConsentPage({ cmsData }: { cmsData?: Record<string, a
             </div>
           </motion.div>
         </div>
-      </section>
+      </section>}
 
-      <section className="py-12 md:py-16">
+      {showSections && <section className="py-12 md:py-16">
         <div className="mx-auto max-w-container px-4 md:px-8">
           <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[240px_1fr] lg:gap-14">
             <aside className="hidden lg:block print:hidden">
@@ -252,7 +305,7 @@ export default function SmsConsentPage({ cmsData }: { cmsData?: Record<string, a
             </div>
           </div>
         </div>
-      </section>
+      </section>}
     </main>
   );
 }

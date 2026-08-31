@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import { useRef, type ComponentProps, type ReactNode } from "react";
 import Link from "next/link";
 import { motion, useInView, useReducedMotion } from "motion/react";
 import { ArrowRight, Check, CheckCircle, Minus, Plus, XClose, Zap } from "@untitledui/icons";
@@ -19,12 +19,14 @@ import { cx } from "@/utils/cx";
 
 /** Shared vertical rhythm for CMS section bands on solution (and other) pages. */
 const SECTION_Y = "py-16 md:py-24";
+type CMSValue = ReturnType<typeof JSON.parse>;
+type CMSRecord = Record<string, CMSValue>;
 
 export interface CMSRenderableSection {
   id?: string;
   section_key: string;
   section_type: string;
-  content: Record<string, any>;
+  content: CMSRecord;
   sort_order?: number;
   is_visible?: boolean;
 }
@@ -38,7 +40,7 @@ function text(value: unknown, fallback = ""): string {
   return typeof value === "string" && value.trim() ? value : fallback;
 }
 
-function list(value: unknown): any[] {
+function list(value: unknown): CMSValue[] {
   return Array.isArray(value) ? value : [];
 }
 
@@ -72,16 +74,6 @@ function Reveal({
     >
       {children}
     </motion.div>
-  );
-}
-
-/** Thin brand gradient hairline. */
-function Hairline({ className }: { className?: string }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={cx("h-px w-full bg-gradient-to-r from-transparent via-brand-500/40 to-transparent", className)}
-    />
   );
 }
 
@@ -130,47 +122,6 @@ function AmbientOrb({
   );
 }
 
-/** Small brand dot emitting a slow sonar ping. */
-function PulseDot({ className, delay = 0 }: { className?: string; delay?: number }) {
-  const reduceMotion = useReducedMotion();
-
-  return (
-    <span aria-hidden="true" className={cx("relative inline-flex size-2 shrink-0", className)}>
-      {!reduceMotion && (
-        <motion.span
-          className="absolute inset-0 rounded-full bg-brand-solid"
-          animate={{ scale: [1, 2.4], opacity: [0.45, 0] }}
-          transition={{ duration: 4, delay, repeat: Infinity, ease: "easeOut" }}
-        />
-      )}
-      <span className="relative inline-flex size-2 rounded-full bg-brand-solid/80" />
-    </span>
-  );
-}
-
-/** Gentle continuous float for decorative graphics (kept for legacy call sites). */
-function FloatWrap({
-  children,
-  className,
-  duration = MOTION_DURATION.ambientShort,
-}: {
-  children: ReactNode;
-  className?: string;
-  duration?: number;
-}) {
-  const reduceMotion = useReducedMotion();
-
-  return (
-    <motion.div
-      className={className}
-      animate={reduceMotion ? undefined : { y: [0, -8, 0] }}
-      transition={{ duration, repeat: Infinity, ease: "easeInOut" }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 type FeaturedIconProps = ComponentProps<typeof FeaturedIcon>;
 
 /** FeaturedIcon wrapped with a slow ambient brand glow. */
@@ -197,7 +148,7 @@ function AmbientIcon({
 
 const DEFAULT_PROCESS_ICONS = ["Radar", "Cloud", "Monitor", "RefreshCw"];
 
-function RoiMetricsGrid({ sectionKey, metrics }: { sectionKey: string; metrics: any[] }) {
+function RoiMetricsGrid({ sectionKey, metrics }: { sectionKey: string; metrics: CMSValue[] }) {
   const gridRef = useRef<HTMLDListElement>(null);
   const inView = useInView(gridRef, { once: true, amount: 0.25 });
   const reduceMotion = useHydratedReducedMotion();
@@ -260,8 +211,8 @@ function StatsSection({
   content,
 }: {
   section: CMSRenderableSection;
-  items: any[];
-  content: Record<string, any>;
+  items: CMSValue[];
+  content: CMSRecord;
 }) {
   const gridRef = useRef<HTMLDListElement>(null);
   const inView = useInView(gridRef, { once: true, amount: 0.25 });
@@ -592,7 +543,7 @@ function renderRelated(section: CMSRenderableSection) {
                       </h3>
                       {desc && <p className="mt-1 flex-1 text-md text-tertiary">{desc}</p>}
                       <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-secondary transition duration-150 ease-linear group-hover:gap-2.5">
-                        Learn more
+                        {text(item.link_label ?? content.link_label, "Learn more")}
                         <ArrowRight aria-hidden="true" className="size-4" />
                       </span>
                     </div>
@@ -694,16 +645,16 @@ function renderFeatureGrid(section: CMSRenderableSection) {
                 <Reveal
                   delay={index * 0.06}
                   className={cx(
-                    "flex flex-col items-center gap-4 text-center",
+                    "flex h-full w-full flex-col items-center gap-4 rounded-2xl bg-secondary/45 p-5 text-center ring-1 ring-secondary ring-inset md:p-6",
                     items.length === 4 ? "max-w-xs" : "max-w-sm",
                   )}
                 >
                   <AmbientIcon icon={Icon} size="lg" delay={(index % 3) * 1.1} />
                   <div className="w-full min-w-0">
-                    <h3 className="truncate text-lg font-semibold whitespace-nowrap text-primary">
+                    <h3 className="line-clamp-2 text-lg leading-snug font-semibold text-primary text-balance">
                       {text(item.title, `Item ${index + 1}`)}
                     </h3>
-                    <p className="mt-1 text-md text-tertiary">
+                    <p className="mt-2 line-clamp-3 text-md leading-relaxed text-tertiary">
                       {text(item.description ?? item.desc)}
                     </p>
                     {proof && (

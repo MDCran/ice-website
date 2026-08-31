@@ -13,6 +13,7 @@ import { Toggle } from "@/components/base/toggle/toggle";
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import { writeAuditLog } from "@/lib/auditLog";
 import { can } from "@/lib/admin/permissions";
+import { publicPathForCmsPage, SYSTEM_CMS_SLUGS } from "@/lib/cms/pageRegistry";
 
 interface PageData {
   id: string;
@@ -35,6 +36,43 @@ const PAGE_TYPES = [
 function solutionStarterSections(title: string) {
   const serviceName = title.trim() || "New Solution";
   return [
+    {
+      section_key: "service_profile",
+      section_type: "content",
+      sort_order: -1,
+      is_visible: true,
+      content: {
+        listed: true,
+        category: "Managed Services",
+        category_description: "Managed technology services for enterprise environments.",
+        category_icon: "Server",
+        icon: "Server",
+        card_description: "Describe this service for the solutions catalog.",
+        card_image: "",
+        card_image_alt: `${serviceName} service`,
+        tags: [],
+        industries: [],
+        platforms: [],
+        workloads: [],
+        outcome: "",
+        link_label: "Learn more",
+        finder: {
+          enabled: true,
+          proof: "",
+          outcomes: [],
+          timeline: "",
+          complexity: "Medium",
+          role: "",
+          cta_label: "Explore solution",
+          next_step: "",
+        },
+        schema: {
+          service_type: "Managed Services",
+          aliases: [],
+          offer_names: [],
+        },
+      },
+    },
     {
       section_key: "hero",
       section_type: "hero",
@@ -68,18 +106,17 @@ function solutionStarterSections(title: string) {
       },
     },
     {
-      section_key: "stats",
-      section_type: "stats",
+      section_key: "metrics",
+      section_type: "metrics",
       sort_order: 2,
       is_visible: true,
       content: {
-        eyebrow: "By The Numbers",
-        heading: "Proof Points",
-        description: "Update these metrics to match the offer.",
+        enabled: false,
+        eyebrow: "Measurable results",
+        heading: "Add verified service metrics",
+        description: "",
         items: [
-          { value: 35, suffix: "+", label: "Years of Experience", source_note: "" },
-          { value: 24, suffix: "/7", label: "US-Based Support", source_note: "" },
-          { value: 15, suffix: " min", label: "Response Target", source_note: "Example placeholder" },
+          { type: "counter", value: 0, suffix: "", label: "Verified metric" },
         ],
       },
     },
@@ -140,54 +177,82 @@ function slugify(text: string): string {
     .substring(0, 80);
 }
 
+async function revalidateSolutionCatalog(slug: string, publicPath?: string) {
+  const response = await fetch("/api/admin/revalidate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      slug,
+      tags: ["solution-catalog"],
+      paths: [
+        "/solutions",
+        "/solutions/find",
+        "/sitemap.xml",
+        ...(publicPath ? [publicPath] : []),
+      ],
+    }),
+  });
+  const result = await response.json().catch(() => null) as { ok?: boolean; error?: string } | null;
+  if (!response.ok || result?.ok !== true) {
+    throw new Error(result?.error || `Public refresh failed (${response.status}).`);
+  }
+}
+
 export default function CMSPageActions({
   mode,
   page,
+  canPublish = false,
+  canDelete = false,
+  defaultPageType = "static",
+  lockPageType = false,
+  createLabel = "Create Page",
 }: {
   mode: "create" | "row";
   page?: PageData;
+  canPublish?: boolean;
+  canDelete?: boolean;
+  defaultPageType?: string;
+  lockPageType?: boolean;
+  createLabel?: string;
 }) {
   const router = useRouter();
   const importInputRef = useRef<HTMLInputElement>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit" | "delete">("create");
   const [error, setError] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form fields
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
-  const [pageType, setPageType] = useState("static");
+  const [pageType, setPageType] = useState(defaultPageType);
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
-  const [isPublished, setIsPublished] = useState(true);
+  const [isPublished, setIsPublished] = useState(false);
+  const isSystemPage = Boolean(page && SYSTEM_CMS_SLUGS.has(page.slug));
 
   const openCreate = () => {
     setTitle("");
     setSlug("");
-    setPageType("static");
+    setPageType(defaultPageType);
     setMetaTitle("");
     setMetaDescription("");
-    setIsPublished(true);
+    setIsPublished(false);
     setError("");
     setModalType("create");
     setModalOpen(true);
   };
 
-  const openEdit = () => {
-    if (!page) return;
-    setTitle(page.title);
-    setSlug(page.slug);
-    setPageType(page.page_type);
-    setMetaTitle(page.meta_title ?? "");
-    setMetaDescription(page.meta_description ?? "");
-    setIsPublished(page.is_published);
-    setError("");
-    setModalType("edit");
-    setModalOpen(true);
-  };
-
   const openDelete = () => {
+    if (!canDelete) {
+      setError("Your role cannot delete CMS pages.");
+      return;
+    }
+    if (isSystemPage) {
+      setError("System pages cannot be deleted.");
+      return;
+    }
     setError("");
     setModalType("delete");
     setModalOpen(true);
@@ -195,6 +260,7 @@ export default function CMSPageActions({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
     setError("");
 
     if (!title.trim()) {
@@ -202,148 +268,255 @@ export default function CMSPageActions({
       return;
     }
 
-    const supabase = createClient();
-    const finalSlug = slug.trim() || slugify(title);
+    setIsSaving(true);
+    try {
+      const supabase = createClient();
+      const finalSlug = slug.trim() || slugify(title);
+      const publishValue = canPublish ? isPublished : (page?.is_published ?? false);
 
-    if (modalType === "create") {
-      const { data: insertedPage, error: insertError } = await supabase.from("pages").insert({
-        title: title.trim(),
-        slug: finalSlug,
-        page_type: pageType,
-        meta_title: metaTitle.trim() || null,
-        meta_description: metaDescription.trim() || null,
-        is_published: isPublished,
-      }).select("id").single();
-      if (insertError) {
-        setError(insertError.message);
-        return;
-      }
-      if (pageType === "solution" && insertedPage?.id) {
-        const { error: sectionsError } = await supabase.from("page_sections").insert(
-          solutionStarterSections(title).map((section) => ({
-            ...section,
-            page_id: insertedPage.id,
-          })),
-        );
-        if (sectionsError) {
-          setError(sectionsError.message);
-          return;
+      if (modalType === "create") {
+        let nextSortOrder: number | undefined;
+        if (pageType === "solution") {
+          const { data: lastSolution, error: orderError } = await supabase
+            .from("pages")
+            .select("sort_order")
+            .eq("page_type", "solution")
+            .order("sort_order", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (orderError) {
+            setError(orderError.message);
+            return;
+          }
+          nextSortOrder = lastSolution ? (Number(lastSolution.sort_order) || 0) + 1 : 0;
         }
-      }
-      setModalOpen(false);
-      startTransition(() => router.push(`/admin/cms/${finalSlug}`));
-      return;
-    } else if (modalType === "edit" && page) {
-      const { error: updateError } = await supabase
-        .from("pages")
-        .update({
+
+        const { data: insertedPage, error: insertError } = await supabase.from("pages").insert({
           title: title.trim(),
           slug: finalSlug,
           page_type: pageType,
           meta_title: metaTitle.trim() || null,
           meta_description: metaDescription.trim() || null,
-          is_published: isPublished,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", page.id);
-      if (updateError) {
-        setError(updateError.message);
+          is_published: publishValue,
+          ...(nextSortOrder !== undefined ? { sort_order: nextSortOrder } : {}),
+        }).select("id").single();
+        if (insertError) {
+          setError(insertError.message);
+          return;
+        }
+        if (pageType === "solution" && insertedPage?.id) {
+          const { error: sectionsError } = await supabase.from("page_sections").insert(
+            solutionStarterSections(title).map((section) => ({
+              ...section,
+              page_id: insertedPage.id,
+            })),
+          );
+          if (sectionsError) {
+            const { error: rollbackError } = await supabase.from("pages").delete().eq("id", insertedPage.id);
+            setError(
+              rollbackError
+                ? `${sectionsError.message} The empty draft page could not be removed automatically.`
+                : `${sectionsError.message} No page was created.`,
+            );
+            return;
+          }
+          if (publishValue) {
+            try {
+              await revalidateSolutionCatalog(finalSlug);
+            } catch (revalidateError) {
+              const { error: rollbackError } = await supabase.from("pages").delete().eq("id", insertedPage.id);
+              const reason = revalidateError instanceof Error ? revalidateError.message : "Public refresh failed.";
+              setError(
+                rollbackError
+                  ? `${reason} The published service could not be removed automatically.`
+                  : `${reason} No service was created. Please try again.`,
+              );
+              return;
+            }
+          }
+        }
+        await writeAuditLog(supabase, {
+          action: "cms.page_created",
+          entityType: "page",
+          entityId: insertedPage?.id,
+          summary: `Created ${title.trim()} as ${publishValue ? "published" : "a draft"}`,
+          metadata: { slug: finalSlug, page_type: pageType },
+        });
+        setModalOpen(false);
+        startTransition(() => router.push(`/admin/cms/${finalSlug}`));
         return;
       }
-    }
 
-    setModalOpen(false);
-    startTransition(() => router.refresh());
+      if (modalType === "edit" && page) {
+        const { error: updateError } = await supabase
+          .from("pages")
+          .update({
+            title: title.trim(),
+            slug: finalSlug,
+            page_type: pageType,
+            meta_title: metaTitle.trim() || null,
+            meta_description: metaDescription.trim() || null,
+            is_published: publishValue,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", page.id);
+        if (updateError) {
+          setError(updateError.message);
+          return;
+        }
+      }
+
+      setModalOpen(false);
+      startTransition(() => router.refresh());
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async () => {
-    if (!page) return;
+    if (!page || isSaving) return;
+    if (!canDelete || SYSTEM_CMS_SLUGS.has(page.slug)) {
+      setError(SYSTEM_CMS_SLUGS.has(page.slug) ? "System pages cannot be deleted." : "Your role cannot delete CMS pages.");
+      return;
+    }
     setError("");
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const { data: profile } = user
-      ? await supabase.from("admin_profiles").select("role").eq("id", user.id).single()
-      : { data: null };
-    if (!can(profile?.role, "cms.delete")) {
-      setError("Your role cannot delete CMS pages.");
-      return;
+    setIsSaving(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const { data: profile } = user
+        ? await supabase.from("admin_profiles").select("role").eq("id", user.id).single()
+        : { data: null };
+      if (!can(profile?.role, "cms.delete")) {
+        setError("Your role cannot delete CMS pages.");
+        return;
+      }
+
+      const { error: deleteError } = await supabase
+        .from("pages")
+        .delete()
+        .eq("id", page.id);
+
+      if (deleteError) {
+        setError(deleteError.message);
+        return;
+      }
+
+      const publicPath = publicPathForCmsPage(page.slug, page.page_type);
+      let postDeleteError = "";
+      if (page.page_type === "solution") {
+        const { error: navigationError } = await supabase
+          .from("navigation_items")
+          .delete()
+          .eq("href", publicPath);
+        if (navigationError) {
+          postDeleteError = `Its navigation link could not be removed: ${navigationError.message}`;
+        }
+      }
+
+      await writeAuditLog(supabase, {
+        action: "cms.page_deleted",
+        entityType: "page",
+        entityId: page.id,
+        summary: `Deleted ${page.title}`,
+      });
+
+      if (page.page_type === "solution") {
+        try {
+          await revalidateSolutionCatalog(page.slug, publicPath);
+        } catch (revalidateError) {
+          const reason = revalidateError instanceof Error ? revalidateError.message : "Public refresh failed.";
+          postDeleteError = [postDeleteError, `The public solutions catalog could not be refreshed: ${reason}`]
+            .filter(Boolean)
+            .join(" ");
+        }
+      }
+
+      if (postDeleteError) {
+        setError(`The service was deleted. ${postDeleteError}`);
+        return;
+      }
+
+      setModalOpen(false);
+      startTransition(() => router.refresh());
+    } finally {
+      setIsSaving(false);
     }
-
-    const { error: deleteError } = await supabase
-      .from("pages")
-      .delete()
-      .eq("id", page.id);
-
-    if (deleteError) {
-      setError(deleteError.message);
-      return;
-    }
-
-    await writeAuditLog(supabase, {
-      action: "cms.page_deleted",
-      entityType: "page",
-      entityId: page.id,
-      summary: `Deleted ${page.title}`,
-    });
-
-    setModalOpen(false);
-    startTransition(() => router.refresh());
   };
 
   const handleClone = async () => {
-    if (!page) return;
+    if (!page || isSaving) return;
     setError("");
-    const supabase = createClient();
-    const cloneSlug = `${page.slug}-copy-${Date.now().toString(36).slice(-4)}`;
+    setIsSaving(true);
+    try {
+      const supabase = createClient();
+      const cloneSlug = `${page.slug}-copy-${Date.now().toString(36).slice(-4)}`;
 
-    const { data: created, error: createError } = await supabase
-      .from("pages")
-      .insert({
-        title: `${page.title} (Copy)`,
-        slug: cloneSlug,
-        page_type: page.page_type,
-        meta_title: page.meta_title,
-        meta_description: page.meta_description,
-        is_published: false,
-        sort_order: page.sort_order + 1,
-      })
-      .select("id")
-      .single();
+      const { data: created, error: createError } = await supabase
+        .from("pages")
+        .insert({
+          title: `${page.title} (Copy)`,
+          slug: cloneSlug,
+          page_type: page.page_type,
+          meta_title: page.meta_title,
+          meta_description: page.meta_description,
+          is_published: false,
+          sort_order: page.sort_order + 1,
+        })
+        .select("id")
+        .single();
 
-    if (createError || !created) {
-      setError(createError?.message || "Clone failed");
-      return;
-    }
-
-    const { data: sections } = await supabase
-      .from("page_sections")
-      .select("section_key, section_type, content, sort_order, is_visible")
-      .eq("page_id", page.id);
-
-    if (sections?.length) {
-      const { error: secError } = await supabase.from("page_sections").insert(
-        sections.map((s) => ({
-          ...s,
-          page_id: created.id,
-        })),
-      );
-      if (secError) {
-        setError(secError.message);
+      if (createError || !created) {
+        setError(createError?.message || "Clone failed");
         return;
       }
+
+      const { data: sections, error: sectionsReadError } = await supabase
+        .from("page_sections")
+        .select("section_key, section_type, content, sort_order, is_visible")
+        .eq("page_id", page.id);
+      if (sectionsReadError) {
+        const { error: rollbackError } = await supabase.from("pages").delete().eq("id", created.id);
+        setError(
+          rollbackError
+            ? `${sectionsReadError.message} The empty clone could not be removed automatically.`
+            : `${sectionsReadError.message} No clone was created.`,
+        );
+        return;
+      }
+
+      if (sections?.length) {
+        const { error: secError } = await supabase.from("page_sections").insert(
+          sections.map((s) => ({
+            ...s,
+            page_id: created.id,
+          })),
+        );
+        if (secError) {
+          const { error: rollbackError } = await supabase.from("pages").delete().eq("id", created.id);
+          setError(
+            rollbackError
+              ? `${secError.message} The partial clone could not be removed automatically.`
+              : `${secError.message} No clone was created.`,
+          );
+          return;
+        }
+      }
+
+      await writeAuditLog(supabase, {
+        action: "cms.page_cloned",
+        entityType: "page",
+        entityId: created.id,
+        summary: `Cloned ${page.title} → ${cloneSlug}`,
+        metadata: { source_id: page.id },
+      });
+
+      startTransition(() => router.push(`/admin/cms/${cloneSlug}`));
+    } finally {
+      setIsSaving(false);
     }
-
-    await writeAuditLog(supabase, {
-      action: "cms.page_cloned",
-      entityType: "page",
-      entityId: created.id,
-      summary: `Cloned ${page.title} → ${cloneSlug}`,
-      metadata: { source_id: page.id },
-    });
-
-    startTransition(() => router.push(`/admin/cms/${cloneSlug}`));
   };
 
   const handleExport = async () => {
@@ -385,7 +558,9 @@ export default function CMSPageActions({
   };
 
   const handleImportFile = async (file: File) => {
+    if (isSaving) return;
     setError("");
+    setIsSaving(true);
     try {
       const text = await file.text();
       const payload = JSON.parse(text) as {
@@ -406,6 +581,10 @@ export default function CMSPageActions({
       };
       if (!payload.page?.title) {
         setError("Invalid ICE page JSON (missing page.title).");
+        return;
+      }
+      if (payload.page.page_type && !PAGE_TYPES.some((type) => type.value === payload.page?.page_type)) {
+        setError("Invalid ICE page JSON (unsupported page.page_type).");
         return;
       }
 
@@ -433,7 +612,7 @@ export default function CMSPageActions({
       }
 
       if (payload.sections?.length) {
-        await supabase.from("page_sections").insert(
+        const { error: sectionsError } = await supabase.from("page_sections").insert(
           payload.sections.map((s, i) => ({
             page_id: created.id,
             section_key: s.section_key,
@@ -443,6 +622,15 @@ export default function CMSPageActions({
             is_visible: s.is_visible !== false,
           })),
         );
+        if (sectionsError) {
+          const { error: rollbackError } = await supabase.from("pages").delete().eq("id", created.id);
+          setError(
+            rollbackError
+              ? `${sectionsError.message} The partial import could not be removed automatically.`
+              : `${sectionsError.message} No page was imported.`,
+          );
+          return;
+        }
       }
 
       await writeAuditLog(supabase, {
@@ -453,8 +641,10 @@ export default function CMSPageActions({
       });
 
       startTransition(() => router.push(`/admin/cms/${importSlug}`));
-    } catch {
-      setError("Could not parse import file.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not parse import file.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -479,12 +669,14 @@ export default function CMSPageActions({
               size="md"
               color="secondary"
               iconLeading={Upload01}
+              isLoading={isSaving}
+              isDisabled={isSaving}
               onClick={() => importInputRef.current?.click()}
             >
-              Import JSON
+              {isSaving ? "Importing..." : "Import JSON"}
             </Button>
-            <Button size="md" iconLeading={Plus} onClick={openCreate}>
-              Create Page
+            <Button size="md" iconLeading={Plus} isDisabled={isSaving} onClick={openCreate}>
+              {createLabel}
             </Button>
           </div>
           {error && <p className="text-sm text-error-primary">{error}</p>}
@@ -497,35 +689,41 @@ export default function CMSPageActions({
   // Row actions
   return (
     <>
-      <div className="flex items-center gap-1">
-        <ButtonUtility
-          size="xs"
-          color="tertiary"
-          icon={Pencil01}
-          tooltip="Edit page"
-          href={`/admin/cms/${page?.slug}`}
-        />
-        <ButtonUtility
-          size="xs"
-          color="tertiary"
-          icon={Copy01}
-          tooltip="Clone page"
-          onClick={() => void handleClone()}
-        />
-        <ButtonUtility
-          size="xs"
-          color="tertiary"
-          icon={Download01}
-          tooltip="Export JSON"
-          onClick={() => void handleExport()}
-        />
-        <ButtonUtility
-          size="xs"
-          color="tertiary"
-          icon={Trash01}
-          tooltip="Delete page"
-          onClick={openDelete}
-        />
+      <div>
+        <div className="flex items-center gap-1">
+          <ButtonUtility
+            size="xs"
+            color="tertiary"
+            icon={Pencil01}
+            tooltip="Edit page"
+            href={`/admin/cms/${page?.slug}`}
+          />
+          <ButtonUtility
+            size="xs"
+            color="tertiary"
+            icon={Copy01}
+            tooltip="Clone page"
+            isDisabled={isSaving}
+            onClick={() => void handleClone()}
+          />
+          <ButtonUtility
+            size="xs"
+            color="tertiary"
+            icon={Download01}
+            tooltip="Export JSON"
+            isDisabled={isSaving}
+            onClick={() => void handleExport()}
+          />
+          <ButtonUtility
+            size="xs"
+            color="tertiary"
+            icon={Trash01}
+            tooltip={isSystemPage ? "System pages cannot be deleted" : canDelete ? "Delete page" : "Your role cannot delete pages"}
+            isDisabled={isSaving || !canDelete || isSystemPage}
+            onClick={openDelete}
+          />
+        </div>
+        {error && !modalOpen && <p className="mt-1 max-w-56 text-xs text-error-primary">{error}</p>}
       </div>
       {modalOpen && renderModal()}
     </>
@@ -534,7 +732,7 @@ export default function CMSPageActions({
   function renderModal() {
     if (modalType === "delete") {
       return (
-        <ModalOverlay isDismissable isOpen onOpenChange={(open) => !open && setModalOpen(false)}>
+        <ModalOverlay isDismissable={!isSaving} isOpen onOpenChange={(open) => !open && !isSaving && setModalOpen(false)}>
           <Modal className="w-full max-w-sm">
             <Dialog aria-label="Delete page">
               <div className="p-6">
@@ -554,13 +752,13 @@ export default function CMSPageActions({
                   <Button
                     color="primary-destructive"
                     className="flex-1"
-                    isLoading={isPending}
+                    isLoading={isSaving}
                     showTextWhileLoading
                     onClick={handleDelete}
                   >
-                    {isPending ? "Deleting..." : "Delete"}
+                    {isSaving ? "Deleting..." : "Delete"}
                   </Button>
-                  <Button color="secondary" className="flex-1" onClick={() => setModalOpen(false)}>
+                  <Button color="secondary" className="flex-1" isDisabled={isSaving} onClick={() => setModalOpen(false)}>
                     Cancel
                   </Button>
                 </div>
@@ -572,19 +770,20 @@ export default function CMSPageActions({
     }
 
     return (
-      <ModalOverlay isDismissable isOpen onOpenChange={(open) => !open && setModalOpen(false)}>
+      <ModalOverlay isDismissable={!isSaving} isOpen onOpenChange={(open) => !open && !isSaving && setModalOpen(false)}>
         <Modal className="w-full max-w-lg">
-          <Dialog aria-label={modalType === "create" ? "Create page" : "Edit page"}>
+          <Dialog aria-label={modalType === "create" ? createLabel : "Edit page"}>
             <div className="p-6">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-primary">
-                  {modalType === "create" ? "Create Page" : "Edit Page"}
+                  {modalType === "create" ? createLabel : "Edit Page"}
                 </h2>
                 <ButtonUtility
                   size="sm"
                   color="tertiary"
                   icon={XClose}
                   tooltip="Close"
+                  isDisabled={isSaving}
                   onClick={() => setModalOpen(false)}
                 />
               </div>
@@ -619,8 +818,10 @@ export default function CMSPageActions({
                 <NativeSelect
                   label="Page Type"
                   value={pageType}
+                  disabled={lockPageType}
                   onChange={(e) => setPageType(e.target.value)}
                   options={PAGE_TYPES}
+                  hint={lockPageType ? "This entry will be created as a solution service." : undefined}
                 />
 
                 <Input
@@ -640,8 +841,10 @@ export default function CMSPageActions({
 
                 <Toggle
                   size="sm"
-                  label="Published"
+                  label={isPublished ? "Published" : "Draft"}
+                  hint={canPublish ? "New pages start as drafts." : "Your role cannot publish pages."}
                   isSelected={isPublished}
+                  isDisabled={!canPublish || isSaving}
                   onChange={setIsPublished}
                 />
 
@@ -649,18 +852,18 @@ export default function CMSPageActions({
                   <Button
                     type="submit"
                     className="flex-1"
-                    isLoading={isPending}
+                    isLoading={isSaving}
                     showTextWhileLoading
                   >
-                    {isPending
+                    {isSaving
                       ? modalType === "create"
                         ? "Creating..."
                         : "Saving..."
                       : modalType === "create"
-                        ? "Create Page"
+                        ? createLabel
                         : "Save Changes"}
                   </Button>
-                  <Button color="secondary" onClick={() => setModalOpen(false)}>
+                  <Button color="secondary" isDisabled={isSaving} onClick={() => setModalOpen(false)}>
                     Cancel
                   </Button>
                 </div>

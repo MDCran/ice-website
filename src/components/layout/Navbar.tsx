@@ -25,6 +25,7 @@ import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { resolveIcon } from "@/lib/iconMap";
 import { Grid as GridPattern } from "@/components/shared-assets/background-patterns/grid";
+import type { NavigationItem } from "@/lib/cms";
 
 /* ─── Data ─────────────────────────────────────────────────────────────── */
 
@@ -146,6 +147,7 @@ const openSearch = () =>
 const DEFAULT_TOP_INFO_HEIGHT = 35;
 
 export interface NavbarCompanyInfo {
+  name?: string;
   address?: string;
   city?: string;
   phone?: string;
@@ -153,37 +155,103 @@ export interface NavbarCompanyInfo {
   logo?: string;
 }
 
+export interface NavbarCMSContent {
+  solutions_column_label?: string;
+  promo_eyebrow?: string;
+  promo_heading?: string;
+  promo_description?: string;
+  promo_primary?: { label?: string; href?: string };
+  promo_secondary?: { label?: string; href?: string };
+  proof_line?: string;
+  view_all_label?: string;
+  view_all_href?: string;
+  desktop_search_aria_label?: string;
+  mobile_search_aria_label?: string;
+  open_menu_aria_label?: string;
+  close_menu_aria_label?: string;
+  home_aria_label?: string;
+  logo_alt?: string;
+}
+
+const DEFAULT_NAVBAR_CONTENT = {
+  solutions_column_label: "Solutions",
+  promo_eyebrow: "Talk to ICE",
+  promo_heading: "Not sure which solution fits?",
+  promo_description: "Get a free infrastructure assessment — or jump into the solution finder in under a minute.",
+  promo_primary: { label: "Request a consultation", href: "/contact" },
+  promo_secondary: { label: "Find your solution", href: "/solutions/find" },
+  proof_line: "Providing Enterprise solutions since 1990.",
+  view_all_label: "View All Solutions",
+  view_all_href: "/solutions",
+  desktop_search_aria_label: "Search (Ctrl+K)",
+  mobile_search_aria_label: "Search",
+  open_menu_aria_label: "Open menu",
+  close_menu_aria_label: "Close menu",
+  home_aria_label: "ICE Home",
+  logo_alt: "International Computer Exchange",
+};
+
 /* ─── Component ────────────────────────────────────────────────────────── */
 
 export default function Navbar({
   navItems,
   companyInfo,
+  content,
+  cmsNavigationManaged,
 }: {
-  navItems?: any[];
+  navItems?: NavigationItem[];
   companyInfo?: NavbarCompanyInfo;
+  content?: NavbarCMSContent;
+  cmsNavigationManaged?: boolean;
 }) {
+  const stringOr = (value: unknown, fallback: string) =>
+    typeof value === "string" ? value : fallback;
+  const navbarContent = {
+    solutions_column_label: stringOr(content?.solutions_column_label, DEFAULT_NAVBAR_CONTENT.solutions_column_label),
+    promo_eyebrow: stringOr(content?.promo_eyebrow, DEFAULT_NAVBAR_CONTENT.promo_eyebrow),
+    promo_heading: stringOr(content?.promo_heading, DEFAULT_NAVBAR_CONTENT.promo_heading),
+    promo_description: stringOr(content?.promo_description, DEFAULT_NAVBAR_CONTENT.promo_description),
+    promo_primary: {
+      label: stringOr(content?.promo_primary?.label, DEFAULT_NAVBAR_CONTENT.promo_primary.label),
+      href: stringOr(content?.promo_primary?.href, DEFAULT_NAVBAR_CONTENT.promo_primary.href),
+    },
+    promo_secondary: {
+      label: stringOr(content?.promo_secondary?.label, DEFAULT_NAVBAR_CONTENT.promo_secondary.label),
+      href: stringOr(content?.promo_secondary?.href, DEFAULT_NAVBAR_CONTENT.promo_secondary.href),
+    },
+    proof_line: stringOr(content?.proof_line, DEFAULT_NAVBAR_CONTENT.proof_line),
+    view_all_label: stringOr(content?.view_all_label, DEFAULT_NAVBAR_CONTENT.view_all_label),
+    view_all_href: stringOr(content?.view_all_href, DEFAULT_NAVBAR_CONTENT.view_all_href),
+    desktop_search_aria_label: stringOr(content?.desktop_search_aria_label, DEFAULT_NAVBAR_CONTENT.desktop_search_aria_label),
+    mobile_search_aria_label: stringOr(content?.mobile_search_aria_label, DEFAULT_NAVBAR_CONTENT.mobile_search_aria_label),
+    open_menu_aria_label: stringOr(content?.open_menu_aria_label, DEFAULT_NAVBAR_CONTENT.open_menu_aria_label),
+    close_menu_aria_label: stringOr(content?.close_menu_aria_label, DEFAULT_NAVBAR_CONTENT.close_menu_aria_label),
+    home_aria_label: stringOr(content?.home_aria_label, DEFAULT_NAVBAR_CONTENT.home_aria_label),
+    logo_alt: stringOr(content?.logo_alt, DEFAULT_NAVBAR_CONTENT.logo_alt),
+  };
   const addressLine = [
-    companyInfo?.address ?? "1279 W Palmetto Park Rd #272415",
-    companyInfo?.city ?? "Boca Raton, FL 33427",
+    stringOr(companyInfo?.address, "1279 W Palmetto Park Rd #272415"),
+    stringOr(companyInfo?.city, "Boca Raton, FL 33427"),
   ]
     .filter(Boolean)
     .join(", ");
-  const phone = companyInfo?.phone ?? "1-800-786-9188";
-  const email = companyInfo?.email ?? "info@icesales.com";
+  const phone = stringOr(companyInfo?.phone, "1-800-786-9188");
+  const email = stringOr(companyInfo?.email, "info@icesales.com");
   const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`;
-  const logoSrc = companyInfo?.logo ?? "/images/logo/ice-logo.jpg";
+  const logoSrc = stringOr(companyInfo?.logo, "/images/logo/ice-logo.jpg");
 
   // Resolve nav links from CMS or fallback
   // Seed data uses location "navbar"; older rows may use "navbar_top" — accept both.
-  const navbarTopItems = navItems?.filter((i: any) => (i.location === "navbar_top" || i.location === "navbar") && i.is_visible)
-    .sort((a: any, b: any) => a.sort_order - b.sort_order) ?? [];
-  const resolvedNavLinks = navbarTopItems.length > 0
-    ? navbarTopItems.map((i: any) => ({
-        label: i.label,
-        href: i.href,
+  const hasCmsNavigation = cmsNavigationManaged ?? (Array.isArray(navItems) && navItems.length > 0);
+  const navbarTopItems = navItems?.filter((item) => (item.location === "navbar_top" || item.location === "navbar") && item.is_visible)
+    .sort((a, b) => a.sort_order - b.sort_order) ?? [];
+  const resolvedNavLinks = hasCmsNavigation
+    ? navbarTopItems.map((item) => ({
+        label: item.label,
+        href: item.href,
         // Fall back to href detection so the Solutions mega menu survives
         // environments where the has_mega_menu column doesn't exist yet.
-        hasMega: i.has_mega_menu ?? i.href === "/solutions",
+        hasMega: item.has_mega_menu ?? item.href === "/solutions",
       }))
     : NAV_LINKS;
   const navLinks = resolvedNavLinks.filter((item) => {
@@ -196,13 +264,13 @@ export default function Navbar({
     );
   });
 
-  const megaItems = navItems?.filter((i: any) => i.location === "navbar_mega" && i.is_visible)
-    .sort((a: any, b: any) => a.sort_order - b.sort_order) ?? [];
-  const rawSolutionsMega: MegaColumn[] = megaItems.length > 0
+  const megaItems = navItems?.filter((item) => item.location === "navbar_mega" && item.is_visible)
+    .sort((a, b) => a.sort_order - b.sort_order) ?? [];
+  const rawSolutionsMega: MegaColumn[] = hasCmsNavigation
     ? (() => {
         const columnMap = new Map<string, MegaColumn>();
         for (const item of megaItems) {
-          const col = item.mega_column_title || "Solutions";
+          const col = item.mega_column_title || navbarContent.solutions_column_label;
           if (!columnMap.has(col)) {
             columnMap.set(col, { heading: col, icon: resolveIcon(item.mega_column_icon), links: [] });
           }
@@ -211,7 +279,7 @@ export default function Navbar({
         return Array.from(columnMap.values());
       })()
     : SOLUTIONS_MEGA;
-  const solutionsMega = ensureAs400MegaLink(rawSolutionsMega);
+  const solutionsMega = hasCmsNavigation ? rawSolutionsMega : ensureAs400MegaLink(rawSolutionsMega);
 
   const pathname = usePathname();
   const prefersReducedMotion = useReducedMotion();
@@ -334,9 +402,12 @@ export default function Navbar({
   }, [mobileOpen]);
 
   useEffect(() => {
-    setMobileOpen(false);
-    closeMegaNow();
-    setMobileSolutionsOpen(false);
+    const frame = window.requestAnimationFrame(() => {
+      setMobileOpen(false);
+      closeMegaNow();
+      setMobileSolutionsOpen(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [pathname, closeMegaNow]);
 
   const isActive = (href: string) => {
@@ -406,13 +477,13 @@ export default function Navbar({
           {/* Logo — same asset on mobile and desktop (white plate for JPG contrast). */}
           <Link
             href="/"
-            aria-label="ICE Home"
+            aria-label={navbarContent.home_aria_label}
             className="shrink-0 rounded-lg outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <span className="flex items-center rounded-lg bg-white px-2.5 py-1.5 lg:px-3 lg:py-2">
               <Image
                 src={logoSrc}
-                alt="International Computer Exchange"
+                alt={navbarContent.logo_alt || companyInfo?.name || "International Computer Exchange"}
                 width={220}
                 height={66}
                 className="h-8 w-auto lg:h-12"
@@ -562,30 +633,30 @@ export default function Navbar({
                                       aria-hidden="true"
                                       className="size-1.5 rounded-full bg-brand-solid shadow-[0_0_8px_rgb(4_155_251/0.65)]"
                                     />
-                                    Talk to ICE
+                                    {navbarContent.promo_eyebrow}
                                   </span>
                                   <p className="mt-3 text-lg font-semibold tracking-tight text-primary dark:text-white">
-                                    Not sure which solution fits?
+                                    {navbarContent.promo_heading}
                                   </p>
                                   <p className="mt-2 text-sm leading-relaxed text-tertiary dark:text-white/65">
-                                    Get a free infrastructure assessment — or jump into the solution finder in under a minute.
+                                    {navbarContent.promo_description}
                                   </p>
                                 </div>
 
                                 <div className="relative mt-6 flex flex-col gap-3">
                                   <Button
-                                    href="/contact"
+                                    href={navbarContent.promo_primary.href}
                                     size="md"
                                     className="w-full justify-center shadow-sm dark:shadow-[0_0_24px_rgb(4_155_251/0.35)]"
                                     iconTrailing={ArrowRight}
                                   >
-                                    Request a consultation
+                                    {navbarContent.promo_primary.label}
                                   </Button>
                                   <Link
-                                    href="/solutions/find"
+                                    href={navbarContent.promo_secondary.href}
                                     className="group inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold text-brand-secondary outline-focus-ring transition hover:text-brand-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-brand-300 dark:hover:text-white"
                                   >
-                                    Find your solution
+                                    {navbarContent.promo_secondary.label}
                                     <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
                                   </Link>
                                 </div>
@@ -595,10 +666,10 @@ export default function Navbar({
                             {/* Bottom bar */}
                             <div className="flex items-center justify-between border-t border-secondary bg-secondary/50 px-6 py-3">
                               <span className="text-xs text-quaternary">
-                                Providing Enterprise solutions since 1990.
+                                {navbarContent.proof_line}
                               </span>
-                              <Button href="/solutions" color="link-color" size="sm" iconTrailing={ArrowRight}>
-                                View All Solutions
+                              <Button href={navbarContent.view_all_href} color="link-color" size="sm" iconTrailing={ArrowRight}>
+                                {navbarContent.view_all_label}
                               </Button>
                             </div>
                           </div>
@@ -630,7 +701,7 @@ export default function Navbar({
                 size="sm"
                 icon={SearchLg}
                 onClick={openSearch}
-                aria-label="Search (Ctrl+K)"
+                aria-label={navbarContent.desktop_search_aria_label}
               />
 
               {/* Theme Toggle */}
@@ -645,14 +716,14 @@ export default function Navbar({
               size="sm"
               icon={SearchLg}
               onClick={openSearch}
-              aria-label="Search"
+              aria-label={navbarContent.mobile_search_aria_label}
             />
             <ButtonUtility
               color="tertiary"
               size="sm"
               icon={mobileOpen ? XClose : Menu02}
               onClick={() => setMobileOpen((prev) => !prev)}
-              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-label={mobileOpen ? navbarContent.close_menu_aria_label : navbarContent.open_menu_aria_label}
               aria-expanded={mobileOpen}
             />
           </div>
@@ -684,13 +755,13 @@ export default function Navbar({
                 <Link
                   href="/"
                   onClick={() => setMobileOpen(false)}
-                  aria-label="ICE Home"
+                  aria-label={navbarContent.home_aria_label}
                   className="rounded-lg outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   <span className="flex items-center rounded-lg bg-white px-2.5 py-1.5">
                     <Image
                       src={logoSrc}
-                      alt="International Computer Exchange"
+                      alt={navbarContent.logo_alt || companyInfo?.name || "International Computer Exchange"}
                       width={220}
                       height={66}
                       className="h-8 w-auto"
@@ -704,7 +775,7 @@ export default function Navbar({
                     size="sm"
                     icon={XClose}
                     onClick={() => setMobileOpen(false)}
-                    aria-label="Close menu"
+                    aria-label={navbarContent.close_menu_aria_label}
                   />
                 </div>
               </div>
@@ -744,7 +815,7 @@ export default function Navbar({
                           >
                             <div className="mt-2 flex flex-col gap-4 pb-2 pl-4">
                               <Link
-                                href="/solutions"
+                                href={navbarContent.view_all_href}
                                 onClick={() => setMobileOpen(false)}
                                 aria-current={pathname === "/solutions" ? "page" : undefined}
                                 className={cx(
@@ -754,7 +825,7 @@ export default function Navbar({
                                     : "text-brand-secondary hover:bg-primary_hover hover:text-brand-secondary_hover"
                                 )}
                               >
-                                View All Solutions
+                                {navbarContent.view_all_label}
                               </Link>
                               {solutionsMega.map((col) => (
                                 <div key={col.heading}>

@@ -71,9 +71,17 @@ const DEFAULT_NODES: ArchitectureNode[] = [
 export default function InteractiveArchitecture({
   nodes = DEFAULT_NODES,
   className,
+  flowAriaLabel = "Enterprise data flow",
+  pathAriaLabel = "Live enterprise infrastructure path",
+  pathLabel = "Live managed path",
+  activeLayerLabel = "Active layer",
 }: {
   nodes?: ArchitectureNode[];
   className?: string;
+  flowAriaLabel?: string;
+  pathAriaLabel?: string;
+  pathLabel?: string;
+  activeLayerLabel?: string;
 }) {
   const reduceMotion = useHydratedReducedMotion();
   const firstNode = nodes[0];
@@ -126,7 +134,7 @@ export default function InteractiveArchitecture({
           <ol
             className="relative grid gap-3"
             style={{ gridTemplateColumns: `repeat(${nodes.length}, minmax(0, 1fr))` }}
-            aria-label="Enterprise data flow"
+            aria-label={flowAriaLabel}
           >
             {nodes.map((node, index) => {
               const Icon = node.icon;
@@ -188,7 +196,7 @@ export default function InteractiveArchitecture({
             )}
           />
         </div>
-        <ol className="flex flex-wrap justify-center gap-2" aria-label="Enterprise data flow">
+        <ol className="flex flex-wrap justify-center gap-2" aria-label={flowAriaLabel}>
           {nodes.map((node, index) => {
             const Icon = node.icon;
 
@@ -213,7 +221,7 @@ export default function InteractiveArchitecture({
       <div
         className="ice-arch-layer-card relative mx-auto mt-8 max-w-4xl overflow-hidden rounded-2xl border border-brand/20 bg-primary/80 p-5 shadow-[0_20px_50px_rgb(15_23_42/0.08)] ring-1 ring-white/60 md:mt-10 md:p-6 dark:ring-white/[0.04]"
         role="region"
-        aria-label="Live enterprise infrastructure path"
+        aria-label={pathAriaLabel}
       >
         <div
           aria-hidden="true"
@@ -226,10 +234,10 @@ export default function InteractiveArchitecture({
         <div className="grid gap-5 md:grid-cols-[0.9fr_1.1fr] md:items-center">
           <div className="min-w-0">
             <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
-              Live managed path
+              {pathLabel}
             </p>
               <div key={activeNode.id} className={!reduceMotion ? "ice-arch-detail-enter" : undefined}>
-                <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">Active layer · {activeNode.label}</p>
+                <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">{activeLayerLabel} · {activeNode.label}</p>
                 <h3 className="mt-2 text-display-xs font-semibold text-primary">
                   {firstNode.label} to {activeNode.label}
                 </h3>

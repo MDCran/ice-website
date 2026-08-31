@@ -128,9 +128,9 @@ export default function SalesEnablementEditor({
           <div>
             <h1 className="text-display-xs font-semibold text-primary">Sales Enablement</h1>
             <p className="mt-1 max-w-2xl text-sm text-tertiary">
-              This is the control center for the enterprise buyer experience: the content,
-              proof, tools, forms, and calls to action that help a serious buyer decide to
-              contact ICE.
+              Control the live homepage preview, sticky buyer bar, callback dialog, and
+              soft-lead form. A clearly labeled draft library preserves the retired buyer-center
+              content without presenting it as a live page.
             </p>
             <p className="mt-2 text-xs text-quaternary">
               {sectionId ? `CMS section ${sectionId.slice(0, 8)} · ` : ""}
@@ -162,19 +162,19 @@ export default function SalesEnablementEditor({
         <section className="overflow-hidden rounded-xl bg-brand-primary_alt/60 ring-1 ring-brand/20">
           <div className="border-b border-brand/15 px-5 py-4">
             <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">What this controls</p>
-            <h2 className="mt-1 text-lg font-semibold text-primary">Build and publish the buyer journey</h2>
+            <h2 className="mt-1 text-lg font-semibold text-primary">Manage live conversion surfaces</h2>
             <p className="mt-1 max-w-3xl text-sm text-tertiary">
               Sales Enablement is not your CRM or a lead list. It controls what enterprise
-              prospects see, what proof they can evaluate, and which actions invite them into
-              a conversation with your team.
+              prospects see in the homepage preview and global conversion prompts. The larger
+              buyer-center module set below is retained as an unpublished draft library.
             </p>
           </div>
           <div className="grid gap-px bg-brand/15 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ["1", "Choose what is live", "Turn the entire experience or individual modules on and off."],
-              ["2", "Shape the story", "Order the modules so the page follows your preferred buying narrative."],
-              ["3", "Edit the content", "Update headlines, proof, personas, tools, FAQs, forms, and CTAs."],
-              ["4", "Save and publish", "Save changes to revalidate the public sales surfaces and homepage placements."],
+              ["1", "Choose live placements", "Control the homepage preview, sticky buyer bar, and soft-lead form."],
+              ["2", "Edit conversion copy", "Update callback, field, consent, confirmation, and CTA wording."],
+              ["3", "Maintain drafts", "Keep retired buyer-center content available without implying it is public."],
+              ["4", "Save and publish", "Save changes to revalidate the live public placements."],
             ].map(([number, title, description]) => (
               <div key={number} className="bg-primary/70 p-4">
                 <span className="flex size-7 items-center justify-center rounded-full bg-brand-solid text-xs font-bold text-white">{number}</span>
@@ -184,8 +184,8 @@ export default function SalesEnablementEditor({
             ))}
           </div>
           <div className="flex flex-col gap-2 border-t border-brand/15 px-5 py-3 text-xs text-tertiary sm:flex-row sm:items-center sm:justify-between">
-            <span><strong className="font-semibold text-secondary">Recommended first visit:</strong> enable the experience, choose your modules, then edit the hero and CTAs.</span>
-            <a href="#sales-enterprise-positioning" className="font-semibold text-brand-secondary hover:underline">Jump to first content section →</a>
+            <span><strong className="font-semibold text-secondary">Recommended first visit:</strong> choose live placements, edit their copy, then save.</span>
+            <a href="#sales-global-conversion-surfaces" className="font-semibold text-brand-secondary hover:underline">Jump to live conversion copy →</a>
           </div>
         </section>
       )}
@@ -211,8 +211,8 @@ export default function SalesEnablementEditor({
       <div className="flex items-start gap-2.5 rounded-lg bg-secondary p-3.5 text-sm text-tertiary ring-1 ring-secondary ring-inset">
         <InfoCircle className="mt-0.5 size-4 shrink-0 text-fg-quaternary" />
         <span>
-          The master switch can pause every sales surface. Individual visibility and
-          module controls let teams stage content without deleting it.
+          Live surfaces are the homepage preview, sticky buyer bar, callback dialog, and
+          soft-lead form. Buyer-center modules are an unpublished draft library.
         </span>
       </div>
 
@@ -220,8 +220,7 @@ export default function SalesEnablementEditor({
         <span className="px-2 py-1.5 text-xs font-semibold text-tertiary">Jump to:</span>
         {[
           ["Controls", "#sales-publication-controls"],
-          ["Arrange story", "#sales-module-order-and-visibility"],
-          ["Edit content", "#sales-enterprise-positioning"],
+          ["Draft library", "#sales-module-order-and-visibility"],
           ["Edit CTAs", "#sales-global-conversion-surfaces"],
         ].map(([label, href]) => (
           <a key={href} href={href} className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary ring-1 ring-secondary transition hover:ring-brand">
@@ -239,23 +238,15 @@ export default function SalesEnablementEditor({
           <Toggle
             size="md"
             label="Enable sales enablement"
-            hint="Master switch for the configured sales experience."
+            hint="Master switch for the live homepage and global conversion surfaces."
             isSelected={config.enabled}
             onChange={(value) => setTopLevel("enabled", value)}
           />
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <Toggle
-            label="Show enterprise page"
-            hint="Publish the full buyer center."
-            isSelected={config.visibility.showEnterprisePage}
-            onChange={(value) =>
-              setSection("visibility", { ...config.visibility, showEnterprisePage: value })
-            }
-          />
-          <Toggle
             label="Show home preview"
-            hint="Promote the buyer center on the homepage."
+            hint="Show the enterprise decision-support preview on the homepage."
             isSelected={config.visibility.showHomePreview}
             onChange={(value) =>
               setSection("visibility", { ...config.visibility, showHomePreview: value })
@@ -282,8 +273,8 @@ export default function SalesEnablementEditor({
 
       <Panel
         id="sales-module-order-and-visibility"
-        title="Module order and visibility"
-        description={`${enabledModuleCount} of ${config.sectionOrder.length} modules enabled. Reorder the page to match the story you want buyers to follow.`}
+        title="Unpublished buyer-center draft order"
+        description={`${enabledModuleCount} of ${config.sectionOrder.length} draft modules retained. These modules are not attached to a public route.`}
       >
         <ol className="space-y-2">
           {config.sectionOrder.map((moduleId, index) => (
@@ -327,12 +318,12 @@ export default function SalesEnablementEditor({
       </Panel>
 
       <Panel
-        title="20 live revenue capabilities"
-        description="A read-only health check showing which buyer capabilities are currently live. Each follows its parent module switch."
+        title="Draft buyer capabilities"
+        description="A read-only inventory of the retained buyer-center draft. These statuses do not represent live public placements."
       >
         <div className="grid gap-2 sm:grid-cols-2">
           {SALES_UPGRADE_CATALOG.map((capability, index) => {
-            const isLive = config.enabled && config.modules[capability.module];
+            const isLive = config.modules[capability.module];
             return (
               <div
                 key={capability.id}
@@ -350,7 +341,7 @@ export default function SalesEnablementEditor({
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-primary">{capability.label}</p>
                   <p className="mt-0.5 text-xs text-quaternary">
-                    {isLive ? "Live" : "Paused"} · {SALES_MODULE_LABELS[capability.module]}
+                    {isLive ? "Included in draft" : "Paused in draft"} · {SALES_MODULE_LABELS[capability.module]}
                   </p>
                 </div>
               </div>
@@ -358,6 +349,15 @@ export default function SalesEnablementEditor({
           })}
         </div>
       </Panel>
+
+      <section className="space-y-6 rounded-2xl border border-dashed border-secondary bg-secondary/30 p-4 sm:p-5" aria-labelledby="buyer-center-draft-heading">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.16em] text-quaternary uppercase">Not published</p>
+          <h2 id="buyer-center-draft-heading" className="mt-1 text-lg font-semibold text-primary">Buyer-center draft library</h2>
+          <p className="mt-1 max-w-3xl text-sm text-tertiary">
+            This content is retained for reuse but has no public route. Editing it will not change the live site unless a future page explicitly consumes it.
+          </p>
+        </div>
 
       <EditorSection title="Search appearance" moduleId={null} enabled>
         <div className="grid gap-4">
@@ -768,32 +768,164 @@ export default function SalesEnablementEditor({
         />
       </EditorSection>
 
+      </section>
+
       <EditorSection title="Global conversion surfaces" moduleId={null} enabled>
-        <CopyFields
-          value={config.global}
-          onChange={(global) => setSection("global", global)}
-          fields={[
-            ["stickyTitle", "Sticky CTA title", "text"],
-            ["stickyDescription", "Sticky CTA description", "textarea"],
-            ["softLeadHeadline", "Soft lead headline", "text"],
-            ["softLeadDescription", "Soft lead description", "textarea"],
-            ["homePreviewEyebrow", "Home preview eyebrow", "text"],
-            ["homePreviewHeading", "Home preview heading", "text"],
-            ["homePreviewDescription", "Home preview description", "textarea"],
-          ]}
-        />
-        <CtaFields
-          title="Sticky primary CTA"
-          value={config.global.stickyPrimaryCta}
-          onChange={(stickyPrimaryCta) =>
-            setSection("global", { ...config.global, stickyPrimaryCta })
-          }
-        />
+        <div className="space-y-5 rounded-xl bg-secondary p-4 ring-1 ring-secondary ring-inset">
+          <div>
+            <h3 className="text-sm font-semibold text-primary">Sticky buyer bar</h3>
+            <p className="mt-1 text-xs leading-5 text-tertiary">
+              The standard title and description appear on general pages. Solution templates
+              appear on service pages; use the literal token {"{solution}"} wherever the
+              service name should be inserted.
+            </p>
+          </div>
+          <CopyFields
+            value={config.global}
+            onChange={(global) => setSection("global", global)}
+            fields={[
+              ["stickyTitle", "General-page title", "text"],
+              ["stickyDescription", "General-page description", "textarea"],
+              ["stickySolutionTitleTemplate", "Solution-page title template", "text"],
+              [
+                "stickySolutionDescriptionTemplate",
+                "Solution-page description template",
+                "textarea",
+              ],
+              ["stickyBrandLabel", "Brand badge label", "text"],
+              ["stickySupportNote", "Support note", "text"],
+              ["buyerActionsAriaLabel", "Buyer actions accessibility label", "text"],
+            ]}
+          />
+          <CtaFields
+            title="Primary call CTA"
+            value={config.global.stickyPrimaryCta}
+            onChange={(stickyPrimaryCta) =>
+              setSection("global", { ...config.global, stickyPrimaryCta })
+            }
+          />
+        </div>
+
+        <div className="space-y-5 border-t border-secondary pt-5">
+          <div>
+            <h3 className="text-sm font-semibold text-primary">Callback dialog</h3>
+            <p className="mt-1 text-xs leading-5 text-tertiary">
+              Controls the callback button, dialog, form labels, confirmation, error message,
+              and the context sent when the visitor is not on a recognized solution page.
+            </p>
+          </div>
+          <CopyFields
+            value={config.global}
+            onChange={(global) => setSection("global", global)}
+            fields={[
+              ["callbackTriggerLabel", "Open-dialog button label", "text"],
+              ["callbackDialogAriaLabel", "Dialog accessibility label", "text"],
+              ["callbackTitle", "Dialog title", "text"],
+              ["callbackDescription", "Dialog description", "textarea"],
+              ["callbackPhoneLabel", "Phone field label", "text"],
+              ["callbackPhonePlaceholder", "Phone field placeholder", "text"],
+              ["callbackPreferredTimeLabel", "Preferred-time field label", "text"],
+              ["callbackSubmitLabel", "Submit button label", "text"],
+              ["callbackSuccessHeading", "Success heading", "text"],
+              ["callbackSuccessDescription", "Success description", "textarea"],
+              ["callbackErrorMessage", "Error message", "textarea"],
+              ["callbackContextFallback", "General-page request context", "text"],
+            ]}
+          />
+          <CollectionEditor
+            title="Callback time choices"
+            singular="time choice"
+            items={config.global.callbackTimeOptions}
+            fields={[
+              { key: "id", label: "Submitted value" },
+              { key: "label", label: "Menu label" },
+            ]}
+            createItem={() => ({ id: "", label: "" })}
+            onChange={(callbackTimeOptions) =>
+              setSection("global", { ...config.global, callbackTimeOptions })
+            }
+          />
+        </div>
+
+        <div className="space-y-5 border-t border-secondary pt-5">
+          <div>
+            <h3 className="text-sm font-semibold text-primary">Other conversion surfaces</h3>
+            <p className="mt-1 text-xs leading-5 text-tertiary">
+              Copy for the soft lead prompt and enterprise preview on the homepage.
+            </p>
+          </div>
+          <CopyFields
+            value={config.global}
+            onChange={(global) => setSection("global", global)}
+            fields={[
+              ["softLeadHeadline", "Soft lead headline", "text"],
+              ["softLeadDescription", "Soft lead description", "textarea"],
+              ["homePreviewEyebrow", "Home preview eyebrow", "text"],
+              ["homePreviewHeading", "Home preview heading", "text"],
+              ["homePreviewDescription", "Home preview description", "textarea"],
+            ]}
+          />
+          <div className="border-t border-secondary pt-5">
+            <h4 className="text-sm font-semibold text-primary">Soft lead form details</h4>
+            <p className="mt-1 text-xs leading-5 text-tertiary">
+              Image, fields, consent, submission, confirmation, errors, and lead classification for the delayed assessment prompt.
+            </p>
+            <div className="mt-4">
+              <CopyFields
+                value={config.global.softLead}
+                onChange={(softLead) => setSection("global", { ...config.global, softLead })}
+                fields={[
+                  ["image_src", "Image URL", "text"],
+                  ["image_alt", "Image alt text", "text"],
+                  ["dismiss_aria_label", "Dismiss accessibility label", "text"],
+                  ["close_aria_label", "Close accessibility label", "text"],
+                  ["name_label", "Name label", "text"],
+                  ["name_placeholder", "Name placeholder", "text"],
+                  ["email_label", "Email label", "text"],
+                  ["email_placeholder", "Email placeholder", "text"],
+                  ["phone_label", "Phone label", "text"],
+                  ["phone_placeholder", "Phone placeholder", "text"],
+                  ["company_label", "Company label", "text"],
+                  ["company_placeholder", "Company placeholder", "text"],
+                  ["marketing_consent_aria_label", "Consent accessibility label", "text"],
+                  ["marketing_consent_text", "Consent text", "textarea"],
+                  ["sending_label", "Sending label", "text"],
+                  ["submit_label", "Submit label", "text"],
+                  ["phone_error", "Phone validation error", "text"],
+                  ["submit_error", "Submission error", "text"],
+                  ["generic_error", "Generic error", "text"],
+                  ["success_heading", "Success heading", "text"],
+                  ["success_description", "Success description", "textarea"],
+                  ["success_close_label", "Success close label", "text"],
+                  ["lead_service", "Submitted service", "text"],
+                  ["lead_message", "Submitted lead message", "textarea"],
+                  ["lead_form_key", "Submitted form key", "text"],
+                  ["lead_source", "Submitted source", "text"],
+                  ["analytics_form", "Analytics form key", "text"],
+                ]}
+              />
+            </div>
+          </div>
+        </div>
         <CtaFields
           title="Homepage preview CTA"
           value={config.global.homePreviewCta}
           onChange={(homePreviewCta) =>
             setSection("global", { ...config.global, homePreviewCta })
+          }
+        />
+        <CollectionEditor
+          title="Homepage preview proof cards"
+          singular="proof card"
+          items={config.global.homePreviewMetrics}
+          fields={[
+            { key: "value", label: "Value" },
+            { key: "label", label: "Label" },
+            { key: "detail", label: "Detail", kind: "textarea" },
+          ]}
+          createItem={() => ({ value: "", label: "", detail: "" })}
+          onChange={(homePreviewMetrics) =>
+            setSection("global", { ...config.global, homePreviewMetrics })
           }
         />
       </EditorSection>

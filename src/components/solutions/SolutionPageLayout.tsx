@@ -3,24 +3,25 @@
 import { Fragment, type FC, type ReactNode } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronRight, MessageChatCircle, Phone01 } from "@untitledui/icons";
+import {
+  ArrowRight,
+  Check,
+  ChevronRight,
+  MessageChatCircle,
+  Phone01,
+} from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { BrandOrbs, FloatY, PulseGlow } from "@/components/effects/AmbientMotion";
-import StickySolutionCta from "@/components/marketing/StickySolutionCta";
+import {
+  BrandOrbs,
+  FloatY,
+  PulseGlow,
+} from "@/components/effects/AmbientMotion";
 import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { resolveIcon } from "@/lib/iconMap";
 import { MOTION_EASE } from "@/lib/motion";
 import { cx } from "@/utils/cx";
-import SolutionMetrics, { type MetricPreset } from "./SolutionMetrics";
-import {
-  RpoRtoCalculator,
-  SolutionArchitecture,
-  SolutionProofStrip,
-  SolutionResourceTeaser,
-} from "./SolutionBuyerTools";
-import { experienceFor } from "@/lib/solutionExperience";
 
 const EASE = MOTION_EASE;
 
@@ -65,7 +66,12 @@ function SectionIntroBlock({
         {heading}
       </h2>
       {description && (
-        <p className={cx("mt-4 text-lg text-tertiary md:mt-5", align === "center" && "max-w-3xl")}>
+        <p
+          className={cx(
+            "mt-4 text-base leading-relaxed text-tertiary md:mt-5 md:text-lg",
+            align === "center" && "max-w-3xl",
+          )}
+        >
           {description}
         </p>
       )}
@@ -86,20 +92,24 @@ interface CtaLink {
 }
 
 interface SolutionPageLayoutProps {
-  solutionSlug: string;
   title: string;
   subtitle: string;
   categoryBadge: { label: string; icon: ReactNode };
   heroVisualization?: ReactNode;
+  showHero?: boolean;
   features: Array<{
     icon: FC<{ className?: string }> | ReactNode;
     title: string;
     description: string;
     proof?: string;
   }>;
-  process: Array<{ step?: string; title: string; description: string; icon?: string }>;
+  process: Array<{
+    step?: string;
+    title: string;
+    description: string;
+    icon?: string;
+  }>;
   benefits: string[];
-  metricsPreset?: MetricPreset;
   extraSections?: ReactNode;
   ctaTitle: string;
   ctaSubtitle: string;
@@ -108,6 +118,7 @@ interface SolutionPageLayoutProps {
   /* ── Optional CMS pass-through (all additive) ──────────────────────── */
   heroEyebrow?: string;
   heroProofLabels?: string[];
+  heroTags?: string[];
   heroCtaPrimary?: CtaLink;
   heroCtaSecondary?: CtaLink;
   featuresIntro?: SectionIntro;
@@ -115,6 +126,7 @@ interface SolutionPageLayoutProps {
   benefitsIntro?: SectionIntro;
   ctaPrimaryHref?: string;
   ctaSecondary?: CtaLink;
+  ctaSupportNote?: string;
   /**
    * CMS section keys in sort order. When provided, the known blocks
    * (features/process/benefits/cta) and `orderedExtras` nodes are rendered
@@ -126,24 +138,31 @@ interface SolutionPageLayoutProps {
   orderedExtras?: Record<string, ReactNode>;
 }
 
-const KNOWN_SECTION_KEYS = new Set(["hero", "features", "process", "benefits", "cta"]);
+const KNOWN_SECTION_KEYS = new Set([
+  "hero",
+  "features",
+  "process",
+  "benefits",
+  "cta",
+]);
 
 export default function SolutionPageLayout({
-  solutionSlug,
   title,
   subtitle,
   categoryBadge,
   heroVisualization,
+  showHero = true,
   features,
   process,
   benefits,
-  metricsPreset,
   extraSections,
   ctaTitle,
   ctaSubtitle,
   ctaButtonLabel = "Speak to an Expert",
   breadcrumbLabel,
   heroEyebrow,
+  heroProofLabels,
+  heroTags,
   heroCtaPrimary,
   heroCtaSecondary,
   featuresIntro,
@@ -151,17 +170,22 @@ export default function SolutionPageLayout({
   benefitsIntro,
   ctaPrimaryHref,
   ctaSecondary,
+  ctaSupportNote,
   sectionOrder,
   orderedExtras,
 }: SolutionPageLayoutProps) {
   const reduceMotion = useHydratedReducedMotion();
-  const experience = experienceFor(solutionSlug);
-
   const hidden = reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 };
   const visible = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
   const viewportOnce = { once: true, margin: "-80px" } as const;
 
-  const primaryConsultHref = ctaPrimaryHref ?? heroCtaPrimary?.href ?? "/contact";
+  const primaryConsultHref =
+    ctaPrimaryHref ?? heroCtaPrimary?.href ?? "/contact";
+  const proofItems = (
+    heroProofLabels === undefined
+      ? ["Architecture fit", "Risk targets", "Budgetary next step"]
+      : heroProofLabels
+  ).slice(0, 3);
 
   /* ── Features Grid ─────────────────────────────────────────────────── */
   const featuresBlock =
@@ -176,25 +200,27 @@ export default function SolutionPageLayout({
             className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
           >
             <SectionIntroBlock
-              eyebrow={featuresIntro?.eyebrow ?? "Key capabilities"}
-              heading={featuresIntro?.heading ?? "Comprehensive features"}
+              eyebrow={featuresIntro?.eyebrow ?? "What you get"}
+              heading={featuresIntro?.heading ?? "The parts that matter"}
               description={
                 featuresIntro?.description ??
-                "Purpose-built capabilities designed to deliver measurable results for your enterprise."
+                "The practical pieces of the service, kept together under one accountable team."
               }
             />
           </motion.div>
 
-          <ul className={cx(
-            "mt-12 grid w-full justify-items-center gap-x-8 gap-y-10 md:mt-16 md:gap-y-12",
-            features.length === 4
-              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-              : features.length === 3
-                ? "grid-cols-1 sm:grid-cols-3"
-                : features.length === 2
-                  ? "grid-cols-1 sm:grid-cols-2"
-                  : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
-          )}>
+          <ul
+            className={cx(
+              "mt-12 grid w-full justify-items-center gap-x-8 gap-y-10 md:mt-16 md:gap-y-12",
+              features.length === 4
+                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                : features.length === 3
+                  ? "grid-cols-1 sm:grid-cols-3"
+                  : features.length === 2
+                    ? "grid-cols-1 sm:grid-cols-2"
+                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+            )}
+          >
             {features.map((feature, i) => (
               <motion.li
                 key={feature.title}
@@ -203,13 +229,22 @@ export default function SolutionPageLayout({
                 viewport={viewportOnce}
                 transition={{ duration: 0.5, delay: i * 0.06, ease: EASE }}
                 className={cx(
-                  "flex flex-col items-center text-center",
+                  "flex h-full w-full flex-col items-center rounded-2xl bg-secondary/45 p-5 text-center ring-1 ring-secondary ring-inset md:p-6",
                   features.length === 4 ? "max-w-xs" : "max-w-sm",
                 )}
               >
-                <FeaturedIcon icon={feature.icon} size="lg" color="brand" theme="light" />
-                <h3 className="mt-4 truncate text-lg font-semibold whitespace-nowrap text-primary">{feature.title}</h3>
-                <p className="mt-1 text-md text-tertiary">{feature.description}</p>
+                <FeaturedIcon
+                  icon={feature.icon}
+                  size="lg"
+                  color="brand"
+                  theme="light"
+                />
+                <h3 className="mt-4 line-clamp-2 text-lg leading-snug font-semibold text-primary text-balance">
+                  {feature.title}
+                </h3>
+                <p className="mt-2 line-clamp-3 text-md leading-relaxed text-tertiary">
+                  {feature.description}
+                </p>
                 {feature.proof && (
                   <p className="mt-3 text-xs font-medium tracking-wide text-brand-secondary">
                     {feature.proof}
@@ -248,13 +283,19 @@ export default function SolutionPageLayout({
                   ? step.step.trim()
                   : String(i + 1).padStart(2, "0");
               const defaultIcons = ["Radar", "Cloud", "Monitor", "RefreshCw"];
-              const StepIcon = resolveIcon(step.icon || defaultIcons[i % defaultIcons.length]);
+              const StepIcon = resolveIcon(
+                step.icon || defaultIcons[i % defaultIcons.length],
+              );
 
               return (
                 <motion.li
                   key={`${stepLabel}-${step.title}`}
-                  initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
-                  whileInView={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+                  initial={
+                    reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }
+                  }
+                  whileInView={
+                    reduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }
+                  }
                   viewport={viewportOnce}
                   transition={{ duration: 0.55, delay: i * 0.1, ease: EASE }}
                   className="relative flex flex-col items-center text-center"
@@ -266,13 +307,22 @@ export default function SolutionPageLayout({
                     />
                   )}
                   <div className="relative">
-                    <FeaturedIcon icon={StepIcon} size="lg" color="brand" theme="light" />
+                    <FeaturedIcon
+                      icon={StepIcon}
+                      size="lg"
+                      color="brand"
+                      theme="light"
+                    />
                     <span className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full bg-brand-solid text-[10px] font-bold text-white ring-2 ring-secondary">
                       {stepLabel.replace(/^0/, "")}
                     </span>
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold text-primary">{step.title}</h3>
-                  <p className="mt-1 text-md text-tertiary">{step.description}</p>
+                  <h3 className="mt-4 text-lg font-semibold text-primary">
+                    {step.title}
+                  </h3>
+                  <p className="mt-2 line-clamp-3 max-w-xs text-md leading-relaxed text-tertiary">
+                    {step.description}
+                  </p>
                 </motion.li>
               );
             })}
@@ -288,36 +338,48 @@ export default function SolutionPageLayout({
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
             <motion.div
-              initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -16 }}
-              whileInView={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
+              initial={
+                reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -16 }
+              }
+              whileInView={
+                reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }
+              }
               viewport={viewportOnce}
               transition={{ duration: 0.6, ease: EASE }}
             >
               <SectionIntroBlock
                 align="left"
-                eyebrow={benefitsIntro?.eyebrow ?? "Why choose ICE"}
-                heading={benefitsIntro?.heading ?? "The benefits"}
+                eyebrow={benefitsIntro?.eyebrow ?? "What gets easier"}
+                heading={
+                  benefitsIntro?.heading ?? "Less to chase. More under control."
+                }
                 description={
                   benefitsIntro?.description ??
-                  "With over three decades of experience as an IBM Business Partner, ICE delivers enterprise-grade solutions backed by proven expertise and dedicated support."
+                  "ICE brings the people, operating discipline, and guardrails needed to keep critical work moving."
                 }
               />
             </motion.div>
 
-            <ul className="flex flex-col gap-4">
+            <ul className="grid gap-3 sm:grid-cols-2">
               {benefits.map((benefit, i) => (
                 <motion.li
                   key={i}
-                  initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: 16 }}
-                  whileInView={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
+                  initial={
+                    reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: 16 }
+                  }
+                  whileInView={
+                    reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }
+                  }
                   viewport={viewportOnce}
                   transition={{ duration: 0.5, delay: i * 0.06, ease: EASE }}
-                  className="flex items-start gap-3"
+                  className="flex items-start gap-3 rounded-xl bg-secondary/60 p-4 ring-1 ring-secondary ring-inset"
                 >
                   <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-solid">
                     <Check className="size-4 text-white" aria-hidden="true" />
                   </div>
-                  <span className="text-md text-tertiary">{benefit}</span>
+                  <span className="text-md leading-relaxed text-secondary">
+                    {benefit}
+                  </span>
                 </motion.li>
               ))}
             </ul>
@@ -325,15 +387,6 @@ export default function SolutionPageLayout({
         </div>
       </section>
     ) : null;
-
-  /* ── Metrics Dashboard ─────────────────────────────────────────────── */
-  const metricsBlock = metricsPreset ? (
-    <section className={cx("bg-primary", SECTION_Y)}>
-      <div className="mx-auto w-full max-w-container px-4 md:px-8">
-        <SolutionMetrics preset={metricsPreset} />
-      </div>
-    </section>
-  ) : null;
 
   /* ── CTA Banner — contained brand card (not a full-bleed blue wash) ── */
   const ctaBlock = (
@@ -373,23 +426,34 @@ export default function SolutionPageLayout({
                   className="text-display-sm font-semibold tracking-tight text-primary md:text-display-md"
                   dangerouslySetInnerHTML={{ __html: ctaTitle }}
                 />
-                <p className="mt-4 text-lg text-tertiary md:mt-5">{ctaSubtitle}</p>
-                <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-brand-secondary">
-                  <Check className="size-4" aria-hidden="true" /> ICE Solutions Desk · US-based platform and recovery specialists
+                <p className="mt-4 text-lg text-tertiary md:mt-5">
+                  {ctaSubtitle}
                 </p>
+                {ctaSupportNote !== "" && (
+                  <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-brand-secondary">
+                    <Check className="size-4" aria-hidden="true" />
+                    {ctaSupportNote ?? "ICE Solutions Desk · US-based platform and recovery specialists"}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start">
-                <Button href={primaryConsultHref} size="xl" iconTrailing={ArrowRight}>
+                <Button
+                  href={primaryConsultHref}
+                  size="xl"
+                  iconTrailing={ArrowRight}
+                >
                   {ctaButtonLabel ?? `Review my ${breadcrumbLabel} plan`}
                 </Button>
-                <Button
-                  href={ctaSecondary?.href ?? "tel:18007869188"}
-                  size="xl"
-                  color="secondary"
-                  iconLeading={Phone01}
-                >
-                  {ctaSecondary?.label ?? "Call 1-800-786-9188"}
-                </Button>
+                {ctaSecondary && (
+                  <Button
+                    href={ctaSecondary.href ?? "tel:18007869188"}
+                    size="xl"
+                    color="secondary"
+                    iconLeading={Phone01}
+                  >
+                    {ctaSecondary.label ?? "Call 1-800-786-9188"}
+                  </Button>
+                )}
               </div>
             </div>
           </motion.div>
@@ -403,15 +467,35 @@ export default function SolutionPageLayout({
     features: featuresBlock,
     process: processBlock,
     benefits: benefitsBlock,
+    cta: ctaBlock,
   };
 
-  const orderedKeys = (sectionOrder ?? []).filter((key, index, arr) => arr.indexOf(key) === index);
-  const useOrderedFlow = orderedKeys.length > 0;
+  const orderedKeys = (sectionOrder ?? []).filter(
+    (key, index, arr) => arr.indexOf(key) === index,
+  );
+  const useOrderedFlow = sectionOrder !== undefined;
+  const heroOrderIndex = orderedKeys.indexOf("hero");
+  const keysBeforeHero =
+    heroOrderIndex > 0 ? orderedKeys.slice(0, heroOrderIndex) : [];
+  const keysAfterHero =
+    heroOrderIndex >= 0
+      ? orderedKeys.slice(heroOrderIndex + 1)
+      : orderedKeys;
+  const renderOrderedKeys = (keys: string[]) =>
+    keys.map((key) => {
+      if (key === "hero") return null;
+      if (KNOWN_SECTION_KEYS.has(key)) {
+        return <Fragment key={key}>{knownBlocks[key] ?? null}</Fragment>;
+      }
+      const node = orderedExtras?.[key];
+      return node ? <Fragment key={key}>{node}</Fragment> : null;
+    });
 
   return (
     <main className="bg-primary">
+      {useOrderedFlow && renderOrderedKeys(keysBeforeHero)}
       {/* ── Hero (split: text + solution visualization) ───────────────── */}
-      <section
+      {showHero && <section
         id="solution-hero"
         className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32"
       >
@@ -443,8 +527,13 @@ export default function SolutionPageLayout({
             >
               Solutions
             </Link>
-            <ChevronRight className="size-4 text-fg-quaternary" aria-hidden="true" />
-            <span className="font-medium text-secondary">{breadcrumbLabel}</span>
+            <ChevronRight
+              className="size-4 text-fg-quaternary"
+              aria-hidden="true"
+            />
+            <span className="font-medium text-secondary">
+              {breadcrumbLabel}
+            </span>
           </motion.nav>
 
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
@@ -454,14 +543,22 @@ export default function SolutionPageLayout({
               transition={{ duration: 0.6, ease: EASE }}
               className="flex flex-col items-start"
             >
-              <Badge size="lg" type="pill-color" color="brand" className="gap-1.5">
+              <Badge
+                size="lg"
+                type="pill-color"
+                color="brand"
+                className="gap-1.5"
+              >
                 {categoryBadge.icon}
                 {categoryBadge.label}
               </Badge>
 
               {heroEyebrow && (
                 <span className="mt-4 flex items-center gap-2.5 text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
-                  <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-solid" />
+                  <span
+                    aria-hidden="true"
+                    className="size-1.5 rounded-full bg-brand-solid"
+                  />
                   {heroEyebrow}
                 </span>
               )}
@@ -471,37 +568,68 @@ export default function SolutionPageLayout({
                 dangerouslySetInnerHTML={{ __html: title }}
               />
 
-              <p className="mt-4 max-w-xl text-lg text-tertiary line-clamp-3 md:mt-6 md:text-xl">{subtitle}</p>
+              <p className="mt-4 max-w-xl text-lg leading-relaxed text-tertiary line-clamp-3 md:mt-6 md:text-xl">
+                {subtitle}
+              </p>
+
+              {heroTags && heroTags.length > 0 && (
+                <ul className="mt-5 flex max-w-xl flex-wrap gap-2" aria-label="Service tags">
+                  {heroTags.map((tag) => (
+                    <li
+                      key={tag}
+                      className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-tertiary ring-1 ring-secondary"
+                    >
+                      {tag}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               <div className="mt-8 flex flex-col-reverse items-stretch gap-3 self-stretch sm:flex-row sm:items-start sm:self-auto md:mt-10">
-                <Button href={heroCtaPrimary?.href ?? primaryConsultHref} size="xl" iconTrailing={ArrowRight}>
+                <Button
+                  href={heroCtaPrimary?.href ?? primaryConsultHref}
+                  size="xl"
+                  iconTrailing={ArrowRight}
+                >
                   {heroCtaPrimary?.label ?? `Review my ${breadcrumbLabel} plan`}
                 </Button>
-                <Button
-                  color="secondary"
-                  href={heroCtaSecondary?.href ?? "tel:18007869188"}
-                  size="xl"
-                  iconLeading={Phone01}
-                >
-                  {heroCtaSecondary?.label ?? "Call 1-800-786-9188"}
-                </Button>
+                {heroCtaSecondary && (
+                  <Button
+                    color="secondary"
+                    href={heroCtaSecondary.href ?? "tel:18007869188"}
+                    size="xl"
+                    iconLeading={Phone01}
+                  >
+                    {heroCtaSecondary.label ?? "Call 1-800-786-9188"}
+                  </Button>
+                )}
               </div>
 
               <ul className="mt-6 grid max-w-xl gap-2 text-sm text-secondary sm:grid-cols-3">
-                {["Architecture fit", "Risk targets", "Budgetary next step"].map((item) => (
+                {proofItems.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <Check className="size-4 shrink-0 text-fg-brand-primary" aria-hidden="true" />
-                    <span>{item}</span>
+                    <Check
+                      className="size-4 shrink-0 text-fg-brand-primary"
+                      aria-hidden="true"
+                    />
+                    <span className="line-clamp-2">{item}</span>
                   </li>
                 ))}
               </ul>
-
             </motion.div>
 
             {heroVisualization && (
               <motion.div
-                initial={reduceMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
-                animate={reduceMotion ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
+                initial={
+                  reduceMotion
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 0, scale: 0.95 }
+                }
+                animate={
+                  reduceMotion
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 1, scale: 1 }
+                }
                 transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
                 className="relative flex min-h-[18rem] w-full items-center justify-center lg:min-h-[22rem]"
               >
@@ -535,54 +663,20 @@ export default function SolutionPageLayout({
             )}
           </div>
         </div>
-      </section>
-      <SolutionProofStrip slug={solutionSlug} />
-      <SolutionArchitecture slug={solutionSlug} />
+      </section>}
 
       {useOrderedFlow ? (
         <>
-          {orderedKeys.map((key) => {
-            // Pin FAQ, related, and CTA after measurable results (see below).
-            if (
-              key === "hero" ||
-              key === "cta" ||
-              key === "related" ||
-              key === "faq" ||
-              key === "faqs"
-            ) {
-              return null;
-            }
-            if (KNOWN_SECTION_KEYS.has(key)) {
-              return <Fragment key={key}>{knownBlocks[key] ?? null}</Fragment>;
-            }
-            const node = orderedExtras?.[key];
-            return node ? <Fragment key={key}>{node}</Fragment> : null;
-          })}
+          {renderOrderedKeys(keysAfterHero)}
           {/*
-            Safety net: any CMS extras not listed in sectionOrder still render
-            (except faq/related which are pinned below). Nothing from the CMS
-            should be silently dropped.
+            Safety net: any CMS extras not listed in sectionOrder still render.
+            Nothing from the CMS should be silently dropped.
           */}
           {Object.entries(orderedExtras ?? {})
-            .filter(
-              ([key]) =>
-                !orderedKeys.includes(key) &&
-                key !== "faq" &&
-                key !== "faqs" &&
-                key !== "related" &&
-                key !== "cta" &&
-                key !== "hero",
-            )
+            .filter(([key]) => !orderedKeys.includes(key) && key !== "hero")
             .map(([key, node]) => (
               <Fragment key={`extra-${key}`}>{node}</Fragment>
             ))}
-          {/* Bottom stack: metrics → FAQ → related services → CTA */}
-          {metricsBlock}
-          {orderedExtras?.faq ?? orderedExtras?.faqs ?? null}
-          {orderedExtras?.related ?? null}
-          <RpoRtoCalculator slug={solutionSlug} />
-          <SolutionResourceTeaser slug={solutionSlug} />
-          {ctaBlock}
         </>
       ) : (
         <>
@@ -590,17 +684,8 @@ export default function SolutionPageLayout({
           {processBlock}
           {benefitsBlock}
           {extraSections}
-          {metricsBlock}
-          <RpoRtoCalculator slug={solutionSlug} />
-          <SolutionResourceTeaser slug={solutionSlug} />
-          {ctaBlock}
         </>
       )}
-      <StickySolutionCta
-        title={`Talk about ${breadcrumbLabel}`}
-        consultHref={primaryConsultHref}
-        consultLabel={ctaButtonLabel}
-      />
     </main>
   );
 }

@@ -187,13 +187,68 @@ export interface SalesEnablementConfig {
   global: {
     stickyTitle: string;
     stickyDescription: string;
+    stickySolutionTitleTemplate: string;
+    stickySolutionDescriptionTemplate: string;
+    stickyBrandLabel: string;
+    stickySupportNote: string;
+    buyerActionsAriaLabel: string;
     stickyPrimaryCta: SalesCta;
+    callbackTriggerLabel: string;
+    callbackDialogAriaLabel: string;
+    callbackTitle: string;
+    callbackDescription: string;
+    callbackSuccessHeading: string;
+    callbackSuccessDescription: string;
+    callbackPhoneLabel: string;
+    callbackPhonePlaceholder: string;
+    callbackPreferredTimeLabel: string;
+    callbackSubmitLabel: string;
+    callbackErrorMessage: string;
+    callbackContextFallback: string;
+    callbackTimeOptions: Array<{
+      id: string;
+      label: string;
+    }>;
     softLeadHeadline: string;
     softLeadDescription: string;
+    softLead: {
+      image_src: string;
+      image_alt: string;
+      dismiss_aria_label: string;
+      close_aria_label: string;
+      name_label: string;
+      name_placeholder: string;
+      email_label: string;
+      email_placeholder: string;
+      phone_label: string;
+      phone_placeholder: string;
+      company_label: string;
+      company_placeholder: string;
+      marketing_consent_aria_label: string;
+      marketing_consent_text: string;
+      sending_label: string;
+      submit_label: string;
+      phone_error: string;
+      submit_error: string;
+      generic_error: string;
+      success_heading: string;
+      success_description: string;
+      success_close_label: string;
+      lead_service: string;
+      lead_message: string;
+      lead_form_key: string;
+      lead_source: string;
+      analytics_form: string;
+    };
     homePreviewEyebrow: string;
     homePreviewHeading: string;
     homePreviewDescription: string;
     homePreviewCta: SalesCta;
+    homePreviewMetrics: Array<{
+      value: string;
+      label: string;
+      detail: string;
+    }>;
   };
 }
 
@@ -801,13 +856,69 @@ export const DEFAULT_SALES_ENABLEMENT: SalesEnablementConfig = {
   global: {
     stickyTitle: "Planning a major infrastructure decision?",
     stickyDescription: "Talk it through with a US-based IBM Power and cloud infrastructure specialist.",
+    stickySolutionTitleTemplate: "Questions about {solution}? Talk with a specialist.",
+    stickySolutionDescriptionTemplate:
+      "Get a practical review from ICE’s US-based infrastructure team—without starting with a generic sales presentation.",
+    stickyBrandLabel: "ICE",
+    stickySupportNote: "ICE Solutions Desk · US-based infrastructure specialists",
+    buyerActionsAriaLabel: "Enterprise buyer actions",
     stickyPrimaryCta: {
-      label: "Call an architect now",
+      label: "Call now",
       href: "tel:18007869188",
     },
+    callbackTriggerLabel: "Request a callback",
+    callbackDialogAriaLabel: "Request a callback",
+    callbackTitle: "Request a callback",
+    callbackDescription:
+      "Share your number and the most convenient time. No long form required.",
+    callbackSuccessHeading: "Callback requested",
+    callbackSuccessDescription:
+      "An ICE specialist will use the timing you selected.",
+    callbackPhoneLabel: "Phone number",
+    callbackPhonePlaceholder: "(555) 123-4567",
+    callbackPreferredTimeLabel: "Preferred time",
+    callbackSubmitLabel: "Request my callback",
+    callbackErrorMessage:
+      "We couldn’t save the request. Please call 1-800-786-9188.",
+    callbackContextFallback: "Enterprise infrastructure planning",
+    callbackTimeOptions: [
+      { id: "Today", label: "Today · Any time" },
+      { id: "Tomorrow morning", label: "Tomorrow · Morning" },
+      { id: "Tomorrow afternoon", label: "Tomorrow · Afternoon" },
+      { id: "This week", label: "This week · Flexible" },
+    ],
     softLeadHeadline: "Want an executive infrastructure assessment?",
     softLeadDescription:
       "Share your contact details and an ICE specialist will help frame the business, technical, and risk questions.",
+    softLead: {
+      image_src: "/images/marketing/executive-infrastructure-assessment.webp",
+      image_alt: "",
+      dismiss_aria_label: "Dismiss assessment request",
+      close_aria_label: "Close assessment request",
+      name_label: "Name",
+      name_placeholder: "",
+      email_label: "Work email",
+      email_placeholder: "",
+      phone_label: "Phone",
+      phone_placeholder: "(561) 555-0100",
+      company_label: "Company",
+      company_placeholder: "",
+      marketing_consent_aria_label: "Email marketing consent",
+      marketing_consent_text: "Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time.",
+      sending_label: "Sending…",
+      submit_label: "Request assessment",
+      phone_error: "Please enter a valid 10-digit phone number.",
+      submit_error: "Unable to submit. Please try again.",
+      generic_error: "Something went wrong.",
+      success_heading: "Thanks — we got it.",
+      success_description: "An ICE specialist will follow up shortly.",
+      success_close_label: "Close",
+      lead_service: "Free Assessment",
+      lead_message: "Soft lead capture — requested a free infrastructure assessment.",
+      lead_form_key: "soft_lead",
+      lead_source: "soft_lead_capture",
+      analytics_form: "soft_lead",
+    },
     homePreviewEyebrow: "For enterprise buying teams",
     homePreviewHeading: "Make the next infrastructure decision easier to defend.",
     homePreviewDescription:
@@ -816,6 +927,12 @@ export const DEFAULT_SALES_ENABLEMENT: SalesEnablementConfig = {
       label: "Plan an executive briefing",
       href: "/contact?service=Enterprise%20Infrastructure%20Planning&source=home_sales_preview",
     },
+    homePreviewMetrics: [
+      { value: "35+", label: "Years in enterprise IT", detail: "IBM Business Partner since 1990." },
+      { value: "24/7/365", label: "Operations coverage", detail: "Monitoring and support for mission-critical environments." },
+      { value: "99.99%", label: "Target uptime SLA", detail: "Service-specific commitments are finalized in the agreement." },
+      { value: "US-based", label: "Support organization", detail: "Direct access to infrastructure specialists and account ownership." },
+    ],
   },
 };
 
@@ -859,6 +976,22 @@ function safeCta(candidate: SalesCta, fallback: SalesCta): SalesCta {
 function clamp(value: number, minimum: number, maximum: number): number {
   if (!Number.isFinite(value)) return minimum;
   return Math.min(maximum, Math.max(minimum, value));
+}
+
+function safeCallbackTimeOptions(
+  candidate: SalesEnablementConfig["global"]["callbackTimeOptions"],
+  fallback: SalesEnablementConfig["global"]["callbackTimeOptions"],
+): SalesEnablementConfig["global"]["callbackTimeOptions"] {
+  const seen = new Set<string>();
+  const options = candidate
+    .map((item) => ({ id: item.id.trim(), label: item.label.trim() }))
+    .filter((item) => {
+      if (!item.id || !item.label || seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+
+  return options.length > 0 ? options : fallback;
 }
 
 function deepMerge<T>(fallback: T, candidate: unknown): T {
@@ -992,6 +1125,10 @@ export function resolveSalesEnablement(raw: unknown): SalesEnablementConfig {
     },
     global: {
       ...merged.global,
+      callbackTimeOptions: safeCallbackTimeOptions(
+        merged.global.callbackTimeOptions,
+        DEFAULT_SALES_ENABLEMENT.global.callbackTimeOptions,
+      ),
       stickyPrimaryCta: safeCta(
         merged.global.stickyPrimaryCta,
         DEFAULT_SALES_ENABLEMENT.global.stickyPrimaryCta,

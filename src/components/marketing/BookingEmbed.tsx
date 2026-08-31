@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Calendar } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { pushEvent } from "@/lib/analytics";
@@ -12,15 +11,19 @@ import { cx } from "@/utils/cx";
  */
 export default function BookingEmbed({
   url,
+  eyebrow = "Schedule",
   title = "Book a 30-minute assessment",
   description = "Pick a time that works — talk with an ICE specialist about your environment.",
+  buttonLabel = "Book a time",
   embed = false,
   location = "booking_embed",
   className,
 }: {
   url?: string | null;
+  eyebrow?: string;
   title?: string;
   description?: string;
+  buttonLabel?: string;
   embed?: boolean;
   location?: string;
   className?: string;
@@ -36,7 +39,7 @@ export default function BookingEmbed({
     <div className={cx("rounded-2xl bg-secondary p-6 ring-1 ring-secondary md:p-8", className)}>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="max-w-xl">
-          <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">Schedule</p>
+          <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">{eyebrow}</p>
           <h2 className="mt-2 text-display-xs font-semibold text-primary">{title}</h2>
           <p className="mt-2 text-md text-tertiary">{description}</p>
         </div>
@@ -48,7 +51,7 @@ export default function BookingEmbed({
           iconLeading={Calendar}
           onClick={() => pushEvent("consultation_cta_clicked", { location, href: bookingUrl })}
         >
-          Book a time
+          {buttonLabel}
         </Button>
       </div>
       {embed && (

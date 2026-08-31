@@ -1,7 +1,9 @@
-import { getPageContent } from "@/lib/cms";
+import { getPageContent, getSiteSettings, isSiteSettingVisible } from "@/lib/cms";
+import { resolveSalesEnablement } from "@/lib/salesEnablement";
 import HomeClient from "./HomeClient";
 import type { HomePageData } from "./HomeClient";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageContent("home");
@@ -15,8 +17,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const page = await getPageContent("home");
+  const [page, settings] = await Promise.all([getPageContent("home"), getSiteSettings()]);
+  if (!page) notFound();
   const data: HomePageData | undefined = page?.sections;
+  const salesConfig = isSiteSettingVisible(settings, "sales_enablement")
+    ? resolveSalesEnablement(settings.sales_enablement)
+    : undefined;
 
-  return <HomeClient data={data} orderedSections={page?.orderedSections} />;
+  return <HomeClient data={data} orderedSections={page?.orderedSections} salesConfig={salesConfig} />;
 }

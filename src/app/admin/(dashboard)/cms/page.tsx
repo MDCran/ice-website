@@ -1,9 +1,12 @@
 import type { ComponentType } from "react";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { File02, Globe01, LayersTwo01, Scales01 } from "@untitledui/icons";
 import { Badge, BadgeWithDot, type BadgeColor } from "@/components/base/badges/badges";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { can } from "@/lib/admin/permissions";
+import { publicPathForCmsPage } from "@/lib/cms/pageRegistry";
 import CMSPageActions from "./CMSPageActions";
 
 const typeConfig: Record<
@@ -29,6 +32,18 @@ export default async function CMSPagesPage({
   searchParams?: Promise<{ q?: string; status?: string }>;
 }) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/admin/login");
+
+  const { data: profile } = await supabase
+    .from("admin_profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!profile || !can(profile.role, "cms.edit")) redirect("/admin");
+
   const { q = "", status = "all" } = (await searchParams) ?? {};
   const { data: pages, error } = await supabase
     .from("pages")
@@ -63,7 +78,7 @@ export default async function CMSPagesPage({
         </div>
         <div className="flex items-center gap-2">
           <span className="hidden text-xs text-tertiary sm:inline">{filteredPages.length} of {pages?.length ?? 0} pages</span>
-          <CMSPageActions mode="create" />
+          <CMSPageActions mode="create" canPublish={can(profile.role, "cms.publish")} />
         </div>
       </div>
 
@@ -116,7 +131,7 @@ export default async function CMSPagesPage({
                     Title
                   </th>
                   <th className="px-6 py-3 text-xs font-semibold text-quaternary">
-                    Slug
+                    Public path
                   </th>
                   <th className="px-6 py-3 text-xs font-semibold text-quaternary">
                     Type
@@ -156,7 +171,7 @@ export default async function CMSPagesPage({
                         )}
                       </td>
                       <td className="px-6 py-4 font-mono text-xs text-tertiary">
-                        /{page.slug}
+                        {publicPathForCmsPage(page.slug, page.page_type)}
                       </td>
                       <td className="px-6 py-4">
                         <Badge size="sm" color={config.color}>
@@ -201,6 +216,7 @@ export default async function CMSPagesPage({
                             is_published: page.is_published,
                             sort_order: page.sort_order,
                           }}
+                          canDelete={can(profile.role, "cms.delete")}
                         />
                       </td>
                     </tr>

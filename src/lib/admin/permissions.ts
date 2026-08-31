@@ -103,6 +103,7 @@ export function capabilitiesFor(role: string | null | undefined): AdminCapabilit
 export const NAV_CAPABILITY: Record<string, AdminCapability | undefined> = {
   "/admin": undefined,
   "/admin/cms": "cms.edit",
+  "/admin/solutions": "cms.edit",
   "/admin/sales": "cms.edit",
   "/admin/navigation": "nav.edit",
   "/admin/seo": "seo.edit",

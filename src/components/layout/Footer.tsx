@@ -15,24 +15,33 @@ const AS400_FOOTER_LINK = { label: "AS400 Hosting", href: "/solutions/as400" };
 function CoreTvRedirectModal({
   isOpen,
   onClose,
+  url,
+  heading,
+  descriptionPrefix,
+  singularLabel,
+  pluralLabel,
+  cancelLabel,
+  continueLabel,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  url: string;
+  heading: string;
+  descriptionPrefix: string;
+  singularLabel: string;
+  pluralLabel: string;
+  cancelLabel: string;
+  continueLabel: string;
 }) {
   const [seconds, setSeconds] = useState(5);
 
   useEffect(() => {
-    if (!isOpen) {
-      setSeconds(5);
-      return;
-    }
-
-    setSeconds(5);
+    if (!isOpen) return;
     const interval = window.setInterval(() => {
       setSeconds((prev) => {
         if (prev <= 1) {
           window.clearInterval(interval);
-          window.location.assign(CORETV_URL);
+          window.location.assign(url);
           return 0;
         }
         return prev - 1;
@@ -40,7 +49,7 @@ function CoreTvRedirectModal({
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, url]);
 
   return (
     <ModalOverlay
@@ -54,19 +63,19 @@ function CoreTvRedirectModal({
       <Modal className="mx-auto w-full max-w-md">
         <Dialog className="p-6 md:p-8">
           <h2 slot="title" className="text-display-xs font-semibold text-primary">
-            Leaving ICE
+            {heading}
           </h2>
           <p className="mt-3 text-md text-tertiary">
-            You are being redirected off this page to CoreTV in{" "}
+            {descriptionPrefix}{" "}
             <span className="font-semibold text-brand-secondary tabular-nums">{seconds}</span>{" "}
-            {seconds === 1 ? "second" : "seconds"}.
+            {seconds === 1 ? singularLabel : pluralLabel}.
           </p>
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button color="secondary" size="md" onClick={onClose}>
-              Cancel
+              {cancelLabel}
             </Button>
-            <Button size="md" onClick={() => window.location.assign(CORETV_URL)}>
-              Go now
+            <Button size="md" onClick={() => window.location.assign(url)}>
+              {continueLabel}
             </Button>
           </div>
         </Dialog>
@@ -174,6 +183,7 @@ export interface FooterCMSData {
   solutionCategories?: { heading: string; links: { label: string; href: string }[] }[];
   legalLinks?: { label: string; href: string }[];
   companyInfo?: {
+    name?: string;
     address?: string;
     city?: string;
     phone?: string;
@@ -191,6 +201,19 @@ export interface FooterCMSData {
     get_in_touch_description?: string;
     get_in_touch_cta_label?: string;
     get_in_touch_cta_href?: string;
+    quick_links_heading?: string;
+    rights_reserved_label?: string;
+    logo_alt?: string;
+    ibm_logo_alt?: string;
+    coretv_label?: string;
+    coretv_url?: string;
+    redirect_heading?: string;
+    redirect_description_prefix?: string;
+    redirect_second_singular?: string;
+    redirect_second_plural?: string;
+    redirect_cancel_label?: string;
+    redirect_continue_label?: string;
+    social_links?: Array<{ label: string; href: string }>;
   };
   showSolutionsAccordion?: boolean;
   showGetInTouch?: boolean;
@@ -200,32 +223,63 @@ export interface FooterCMSData {
 const footerLinkClass =
   "rounded-xs text-sm font-semibold text-tertiary outline-brand transition duration-100 ease-linear hover:text-tertiary_hover focus-visible:outline-2 focus-visible:outline-offset-2";
 
+function stringOr(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function normalizeSocialLinks(value: unknown): Array<{ label: string; href: string }> {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const candidate = item as Record<string, unknown>;
+    if (typeof candidate.label !== "string" || typeof candidate.href !== "string") return [];
+    return [{ label: candidate.label, href: candidate.href }];
+  });
+}
+
 export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   const [coreTvOpen, setCoreTvOpen] = useState(false);
   const quickLinks = cmsData?.quickLinks ?? DEFAULT_QUICK_LINKS;
-  const solutionCategories = ensureAs400FooterLink(cmsData?.solutionCategories ?? DEFAULT_SOLUTION_CATEGORIES);
+  const solutionCategories = cmsData?.solutionCategories === undefined
+    ? ensureAs400FooterLink(DEFAULT_SOLUTION_CATEGORIES)
+    : cmsData.solutionCategories;
   const legalLinks = cmsData?.legalLinks ?? DEFAULT_LEGAL_LINKS;
   const company = cmsData?.companyInfo;
   const footerCopy = cmsData?.footerCopy;
 
   const showSolutionsAccordion = cmsData?.showSolutionsAccordion ?? true;
-  const showGetInTouch = false;
+  const showGetInTouch = cmsData?.showGetInTouch ?? false;
   const showContactBar = cmsData?.showContactBar ?? true;
 
-  const logoSrc = company?.logo ?? "/images/logo/ice-logo.jpg";
-  const copyrightName = footerCopy?.copyright ?? "International Computer Exchange, Inc.";
-  const ibmLabel = footerCopy?.ibm_partner_label ?? "IBM Business Partner";
-  const ibmSublabel = footerCopy?.ibm_partner_sublabel ?? "Since 1990";
-  const getInTouchHeading = footerCopy?.get_in_touch_heading ?? "Get in touch";
+  const logoSrc = stringOr(company?.logo, "/images/logo/ice-logo.jpg");
+  const companyName = stringOr(company?.name, "International Computer Exchange");
+  const companyTagline = stringOr(company?.tagline, "");
+  const companyAddress = stringOr(company?.address, "1279 W Palmetto Park Rd #272415");
+  const companyCity = stringOr(company?.city, "Boca Raton, FL 33427");
+  const companyPhone = stringOr(company?.phone, "1-800-786-9188");
+  const companyEmail = stringOr(company?.email, "info@icesales.com");
+  const companyHours = stringOr(company?.hours, "Mon – Fri, 9–5 ET");
+  const copyrightName = stringOr(footerCopy?.copyright, "International Computer Exchange, Inc.");
+  const ibmLabel = stringOr(footerCopy?.ibm_partner_label, "IBM Business Partner");
+  const ibmSublabel = stringOr(footerCopy?.ibm_partner_sublabel, "Since 1990");
+  const ibmPartnerText = stringOr(footerCopy?.ibm_partner_text, "");
+  const getInTouchHeading = stringOr(footerCopy?.get_in_touch_heading, "Get in touch");
   const getInTouchDescription =
-    footerCopy?.get_in_touch_description ??
-    "Ready to modernize your IT infrastructure? Our experts are here to help.";
-  const getInTouchCtaLabel = footerCopy?.get_in_touch_cta_label ?? "Contact Us";
-  const getInTouchCtaHref = footerCopy?.get_in_touch_cta_href ?? "/contact";
+    stringOr(
+      footerCopy?.get_in_touch_description,
+      "Ready to modernize your IT infrastructure? Our experts are here to help.",
+    );
+  const getInTouchCtaLabel = stringOr(footerCopy?.get_in_touch_cta_label, "Contact Us");
+  const getInTouchCtaHref = stringOr(footerCopy?.get_in_touch_cta_href, "/contact");
+  const quickLinksHeading = stringOr(footerCopy?.quick_links_heading, "Quick Links");
+  const rightsReservedLabel = stringOr(footerCopy?.rights_reserved_label, "All Rights Reserved.");
+  const coreTvLabel = stringOr(footerCopy?.coretv_label, "by CoreTV");
+  const coreTvUrl = stringOr(footerCopy?.coretv_url, CORETV_URL);
+  const socialLinks = normalizeSocialLinks(footerCopy?.social_links);
 
   const navColumns = [
     ...(showSolutionsAccordion ? solutionCategories : []),
-    { heading: "Quick Links", links: quickLinks },
+    ...(quickLinks.length > 0 ? [{ heading: quickLinksHeading, links: quickLinks }] : []),
   ];
 
   return (
@@ -260,10 +314,10 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
                 <Button
                   color="secondary"
                   size="xl"
-                  href={`tel:${(company?.phone ?? "1-800-786-9188").replace(/[^\d+]/g, "")}`}
+                  href={`tel:${companyPhone.replace(/[^\d+]/g, "")}`}
                   iconLeading={Phone01}
                 >
-                  {company?.phone ?? "1-800-786-9188"}
+                  {companyPhone}
                 </Button>
                 <Button size="xl" href={getInTouchCtaHref} iconTrailing={ArrowRight}>
                   {getInTouchCtaLabel}
@@ -282,56 +336,59 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
             >
               <Image
                 src={logoSrc}
-                alt="International Computer Exchange"
+                alt={stringOr(footerCopy?.logo_alt, companyName)}
                 width={220}
                 height={66}
                 className="h-12 w-auto"
               />
             </Link>
 
+            {companyTagline && <p className="text-sm text-tertiary">{companyTagline}</p>}
+
             {showContactBar && (
               <ul className="flex flex-col gap-4">
                 <li className="flex gap-3">
                   <MarkerPin02 className="mt-0.5 size-5 shrink-0 text-fg-quaternary" aria-hidden="true" />
                   <p className="text-sm text-tertiary">
-                    {company?.address ?? "1279 W Palmetto Park Rd #272415"}
+                    {companyAddress}
                     <br />
-                    {company?.city ?? "Boca Raton, FL 33427"}
+                    {companyCity}
                   </p>
                 </li>
                 <li>
                   <a
-                    href={`tel:${(company?.phone ?? "1-800-786-9188").replace(/[^\d+]/g, "")}`}
+                    href={`tel:${companyPhone.replace(/[^\d+]/g, "")}`}
                     className="flex w-max gap-3 rounded-xs text-sm text-tertiary outline-brand transition duration-100 ease-linear hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2"
                   >
                     <Phone01 className="mt-0.5 size-5 shrink-0 text-fg-quaternary" aria-hidden="true" />
-                    {company?.phone ?? "1-800-786-9188"}
+                    {companyPhone}
                   </a>
                 </li>
                 <li>
                   <a
-                    href={`mailto:${company?.email ?? "info@icesales.com"}`}
+                    href={`mailto:${companyEmail}`}
                     className="flex w-max gap-3 rounded-xs text-sm text-tertiary outline-brand transition duration-100 ease-linear hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2"
                   >
                     <Mail01 className="mt-0.5 size-5 shrink-0 text-fg-quaternary" aria-hidden="true" />
-                    {company?.email ?? "info@icesales.com"}
+                    {companyEmail}
                   </a>
                 </li>
                 <li className="flex gap-3">
                   <Clock className="mt-0.5 size-5 shrink-0 text-fg-quaternary" aria-hidden="true" />
-                  <p className="text-sm text-tertiary">{company?.hours ?? "Mon – Fri, 9–5 ET"}</p>
+                  <p className="text-sm text-tertiary">{companyHours}</p>
                 </li>
               </ul>
             )}
 
             <div className="flex w-max items-center gap-3 rounded-xl border border-secondary px-4 py-3">
-              <Image src="/images/ibm.svg" alt="IBM" width={48} height={20} className="h-5 w-auto shrink-0" />
+              <Image src="/images/ibm.svg" alt={stringOr(footerCopy?.ibm_logo_alt, "IBM")} width={48} height={20} className="h-5 w-auto shrink-0" />
               <p className="text-sm font-medium text-secondary">
                 {ibmLabel}
                 <br />
                 <span className="font-normal text-quaternary">{ibmSublabel}</span>
               </p>
             </div>
+            {ibmPartnerText && <p className="text-xs leading-5 text-quaternary">{ibmPartnerText}</p>}
           </div>
 
           <nav className="flex-1">
@@ -363,7 +420,7 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
         {/* Bottom bar */}
         <div className="flex flex-col-reverse justify-between gap-3 pt-4 md:flex-row md:items-center md:pt-5">
           <p className="text-sm text-quaternary">
-            &copy; {new Date().getFullYear()} {copyrightName}. All Rights Reserved.
+            &copy; {new Date().getFullYear()} {copyrightName}. {rightsReservedLabel}
           </p>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             {legalLinks.map((link) => (
@@ -375,12 +432,23 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
                 {link.label}
               </Link>
             ))}
+            {socialLinks.map((link) => (
+              <a
+                key={`${link.label}-${link.href}`}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xs text-sm text-quaternary outline-brand transition duration-100 ease-linear hover:text-tertiary focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                {link.label}
+              </a>
+            ))}
             <button
               type="button"
               onClick={() => setCoreTvOpen(true)}
               className="rounded-xs text-sm text-quaternary outline-brand transition duration-100 ease-linear hover:text-tertiary focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-              by CoreTV
+              {coreTvLabel}
             </button>
           </div>
         </div>
@@ -391,7 +459,20 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
         />
       </div>
 
-      <CoreTvRedirectModal isOpen={coreTvOpen} onClose={() => setCoreTvOpen(false)} />
+      {coreTvOpen && <CoreTvRedirectModal
+        isOpen={coreTvOpen}
+        onClose={() => setCoreTvOpen(false)}
+        url={coreTvUrl}
+        heading={stringOr(footerCopy?.redirect_heading, "Leaving ICE")}
+        descriptionPrefix={stringOr(
+          footerCopy?.redirect_description_prefix,
+          "You are being redirected off this page to CoreTV in",
+        )}
+        singularLabel={stringOr(footerCopy?.redirect_second_singular, "second")}
+        pluralLabel={stringOr(footerCopy?.redirect_second_plural, "seconds")}
+        cancelLabel={stringOr(footerCopy?.redirect_cancel_label, "Cancel")}
+        continueLabel={stringOr(footerCopy?.redirect_continue_label, "Go now")}
+      />}
     </footer>
   );
 }

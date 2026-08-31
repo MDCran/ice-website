@@ -10,6 +10,7 @@ import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-ic
 import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
 import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import { isCmsSectionVisible } from "@/lib/cms/sectionManifest";
 import { cx } from "@/utils/cx";
 
 /* -------------------------------------------------------------------------- */
@@ -23,6 +24,86 @@ interface Partner {
     specializations: string[];
     partnerSince?: string;
     fullWidth?: boolean;
+}
+
+type CmsRecord = Record<string, unknown>;
+
+interface CtaCopy {
+    label?: string;
+    href?: string;
+}
+
+interface CmsSectionCopy {
+    eyebrow?: string;
+    headline?: string;
+    subheadline?: string;
+    heading?: string;
+    description?: string;
+    image?: string;
+    image_alt?: string;
+    logo_src?: string;
+    logo_alt?: string;
+    stat_value?: string | number;
+    stat_label?: string;
+    stat_note?: string;
+    cta_primary?: CtaCopy;
+    cta_secondary?: CtaCopy;
+    ctaPrimary?: CtaCopy;
+    ctaSecondary?: CtaCopy;
+    partners?: unknown[];
+    items?: unknown[];
+    benefits?: unknown[];
+}
+
+interface Benefit {
+    title: string;
+    description: string;
+    icon: (typeof BENEFIT_ICONS)[number];
+}
+
+function asRecord(value: unknown): CmsRecord {
+    return value !== null && typeof value === "object" && !Array.isArray(value)
+        ? value as CmsRecord
+        : {};
+}
+
+function optionalString(value: unknown): string | undefined {
+    return typeof value === "string" ? value : undefined;
+}
+
+function normalizeCta(value: unknown): CtaCopy | undefined {
+    const cta = asRecord(value);
+    const label = optionalString(cta.label);
+    const href = optionalString(cta.href);
+    return label === undefined && href === undefined ? undefined : { label, href };
+}
+
+function normalizeSection(value: unknown): CmsSectionCopy {
+    const section = asRecord(value);
+    const statValue = typeof section.stat_value === "string" || typeof section.stat_value === "number"
+        ? section.stat_value
+        : undefined;
+    return {
+        eyebrow: optionalString(section.eyebrow),
+        headline: optionalString(section.headline),
+        subheadline: optionalString(section.subheadline),
+        heading: optionalString(section.heading),
+        description: optionalString(section.description),
+        image: optionalString(section.image),
+        image_alt: optionalString(section.image_alt),
+        logo_src: optionalString(section.logo_src),
+        logo_alt: optionalString(section.logo_alt),
+        stat_value: statValue,
+        stat_label: optionalString(section.stat_label),
+        stat_note: optionalString(section.stat_note),
+        cta_primary: normalizeCta(section.cta_primary),
+        cta_secondary: normalizeCta(section.cta_secondary),
+        ctaPrimary: normalizeCta(section.ctaPrimary),
+        ctaSecondary: normalizeCta(section.ctaSecondary),
+        partners: Array.isArray(section.partners) ? section.partners : undefined,
+        items: Array.isArray(section.items) ? section.items : undefined,
+        benefits: Array.isArray(section.benefits) ? section.benefits : undefined,
+    };
 }
 
 /* Fallback mirrors the CMS `partners_grid` rows (same logo_src per partner)
@@ -155,11 +236,12 @@ function Eyebrow({ children }: { children: ReactNode }) {
 }
 
 /** Correct known partner name/logo mismatches from CMS or legacy data. */
-function normalizePartner(p: any): Partner {
-    let name = typeof p.name === "string" ? p.name.trim() : "";
+function normalizePartner(value: unknown): Partner {
+    const partner = asRecord(value);
+    let name = optionalString(partner.name)?.trim() ?? "";
     if (/^acronix$/i.test(name)) name = "Acronis";
 
-    let logoSrc: string | undefined = p.logo_src ?? p.logoSrc;
+    let logoSrc = optionalString(partner.logo_src) ?? optionalString(partner.logoSrc);
     const key = name.toLowerCase();
     if (key === "acronis") logoSrc = "/images/v3/b_6.png";
     else if (key === "cybernetics") logoSrc = "/images/v3/b_7.png";
@@ -167,12 +249,26 @@ function normalizePartner(p: any): Partner {
 
     return {
         name,
-        description: p.description,
+        description: optionalString(partner.description) ?? "",
         logoSrc,
-        specializations: p.specializations ?? [],
-        partnerSince: p.partner_since ?? p.partnerSince,
+        specializations: Array.isArray(partner.specializations)
+            ? partner.specializations.filter((item): item is string => typeof item === "string")
+            : [],
+        partnerSince:
+            optionalString(partner.partner_since) ??
+            optionalString(partner.partnerSince) ??
+            (typeof partner.partner_since === "number" ? String(partner.partner_since) : undefined),
         // Keep every partner card the same size — never span full row.
         fullWidth: false,
+    };
+}
+
+function normalizeBenefit(value: unknown, index: number): Benefit {
+    const benefit = asRecord(value);
+    return {
+        title: optionalString(benefit.title) ?? optionalString(benefit.heading) ?? "",
+        description: optionalString(benefit.description) ?? optionalString(benefit.text) ?? "",
+        icon: BENEFIT_ICONS[index % BENEFIT_ICONS.length],
     };
 }
 
@@ -188,7 +284,7 @@ export default function PartnersPage({
     cmsData,
     orderedSections,
 }: {
-    cmsData?: Record<string, any>;
+    cmsData?: Record<string, unknown>;
     orderedSections?: CMSRenderableSection[];
 }) {
     const reduceMotion = useReducedMotion();
@@ -208,28 +304,25 @@ export default function PartnersPage({
         transition: { duration: reduceMotion ? 0 : 0.6, ease: EASE, delay: reduceMotion ? 0 : delay },
     });
 
-    const hero = cmsData?.hero ?? {};
-    const intro = cmsData?.intro ?? {};
-    const benefitsSection = cmsData?.benefits ?? {};
-    const finalCta = cmsData?.final_cta ?? cmsData?.cta ?? {};
-    const partners = (cmsData?.partners_grid?.partners ?? DEFAULT_PARTNERS).map(normalizePartner);
-    const benefits = (benefitsSection.items ?? benefitsSection.benefits ?? DEFAULT_BENEFITS).map(
-        (b: any, i: number) => ({
-            title: b.title ?? b.heading,
-            description: b.description ?? b.text,
-            icon: BENEFIT_ICONS[i % BENEFIT_ICONS.length],
-        }),
-    );
+    const hero = normalizeSection(cmsData?.hero);
+    const intro = normalizeSection(cmsData?.intro);
+    const partnersSection = normalizeSection(cmsData?.partners_grid);
+    const benefitsSection = normalizeSection(cmsData?.benefits);
+    const finalCta = normalizeSection(cmsData?.final_cta ?? cmsData?.cta);
+    const partners = (partnersSection.partners ?? DEFAULT_PARTNERS).map(normalizePartner);
+    const benefits = (benefitsSection.items ?? benefitsSection.benefits ?? DEFAULT_BENEFITS)
+        .map(normalizeBenefit);
     const extraSections = (orderedSections ?? []).filter(
         (section) => !["hero", "intro", "partners_grid", "benefits", "final_cta", "cta"].includes(section.section_key),
     );
+    const show = (...keys: string[]) => isCmsSectionVisible(orderedSections, ...keys);
 
     return (
         <main className="min-h-screen bg-primary">
             {/* ================================================================= */}
             {/*  Hero — gradient band with layered depth                          */}
             {/* ================================================================= */}
-            <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
+            {show("hero") && <section className="relative isolate overflow-hidden border-b border-secondary bg-gradient-to-b from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-primary)] py-20 md:py-28 lg:py-32">
                 {/* Depth layers */}
                 <div
                     aria-hidden="true"
@@ -273,12 +366,12 @@ export default function PartnersPage({
 
                     {/* Quiet proof row removed — keep hero focused on headline + CTAs */}
                 </div>
-            </section>
+            </section>}
 
             {/* ================================================================= */}
             {/*  Intro                                                            */}
             {/* ================================================================= */}
-            <section className="bg-primary py-16 md:py-24">
+            {show("intro") && <section className="bg-primary py-16 md:py-24">
                 <div className="mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-12 px-4 md:px-8 lg:grid-cols-2 lg:gap-16">
                     <motion.div {...reveal()} className="relative">
                         <BackgroundPattern
@@ -288,8 +381,8 @@ export default function PartnersPage({
                             className="pointer-events-none absolute -top-10 -left-10 opacity-70"
                         />
                         <Image
-                            src="/images/a6a39917-78d3-4c8b-a0f1-f967819a7b01.png"
-                            alt="ICE Technology Partners"
+                            src={intro.image ?? "/images/a6a39917-78d3-4c8b-a0f1-f967819a7b01.png"}
+                            alt={intro.image_alt ?? "ICE Technology Partners"}
                             width={640}
                             height={480}
                             className="relative h-auto w-full rounded-2xl object-cover ring-1 ring-secondary dark:shadow-[0_0_40px_rgb(4_155_251/0.12)]"
@@ -297,7 +390,7 @@ export default function PartnersPage({
                     </motion.div>
 
                     <motion.div {...reveal(0.1)}>
-                        <Eyebrow>Who We Work With</Eyebrow>
+                        <Eyebrow>{intro.eyebrow ?? "Who We Work With"}</Eyebrow>
                         <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary">
                             {intro.heading ?? "Technology Partners We Work With"}
                         </h2>
@@ -307,20 +400,20 @@ export default function PartnersPage({
                         </p>
                     </motion.div>
                 </div>
-            </section>
+            </section>}
 
-            <section className="bg-primary pb-16 pt-16 md:py-24">
+            {show("partners_grid") && <section className="bg-primary pb-16 pt-16 md:py-24">
                 <div className="mx-auto w-full max-w-5xl px-4 md:px-8">
                     <motion.div {...reveal()} className="mx-auto flex max-w-2xl flex-col items-center text-center">
-                        <Eyebrow>Strategic Alliances</Eyebrow>
-                        <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary">Our Partners</h2>
+                        <Eyebrow>{partnersSection.eyebrow ?? "Strategic Alliances"}</Eyebrow>
+                        <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary">{partnersSection.heading ?? "Our Partners"}</h2>
                         <p className="mt-4 text-lg text-tertiary md:mt-5">
-                            We partner with industry leaders to deliver enterprise-grade solutions tailored to your business.
+                            {partnersSection.description ?? "We partner with industry leaders to deliver enterprise-grade solutions tailored to your business."}
                         </p>
                     </motion.div>
 
                     <ul className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-16 md:gap-6">
-                        {partners.map((partner: any, i: number) => (
+                        {partners.map((partner, i) => (
                             <motion.li
                                 key={partner.name}
                                 initial={{ opacity: 0, y: reduceMotion ? 0 : 24 }}
@@ -380,7 +473,7 @@ export default function PartnersPage({
                                         </p>
                                         {partner.specializations.length > 0 && (
                                             <div className="mt-4 flex flex-wrap gap-1.5">
-                                                {partner.specializations.slice(0, 4).map((spec: string) => (
+                                                {partner.specializations.slice(0, 4).map((spec) => (
                                                     <Badge key={spec} size="sm" color="brand">
                                                         {spec}
                                                     </Badge>
@@ -393,15 +486,15 @@ export default function PartnersPage({
                         ))}
                     </ul>
                 </div>
-            </section>
+            </section>}
 
             {/* ================================================================= */}
             {/*  Partnership benefits                                             */}
             {/* ================================================================= */}
-            <section className="bg-primary pb-16 md:pb-24">
+            {show("benefits") && <section className="bg-primary pb-16 md:pb-24">
                 <div className="mx-auto w-full max-w-5xl px-4 md:px-8">
                     <motion.div {...reveal()} className="mx-auto flex max-w-2xl flex-col items-center text-center">
-                        <Eyebrow>Why It Matters</Eyebrow>
+                        <Eyebrow>{benefitsSection.eyebrow ?? "Why It Matters"}</Eyebrow>
                         <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary">
                             {benefitsSection.heading ?? "Why Partner-Backed Solutions"}
                         </h2>
@@ -412,7 +505,7 @@ export default function PartnersPage({
                     </motion.div>
 
                     <ul className="mt-12 grid grid-cols-1 gap-x-8 gap-y-10 md:mt-16 md:grid-cols-3">
-                        {benefits.map((benefit: any, i: number) => (
+                        {benefits.map((benefit, i) => (
                             <motion.li key={benefit.title} {...reveal(i * 0.08)} className="flex flex-col items-start gap-4">
                                 <FeaturedIcon icon={benefit.icon} size="lg" color="brand" theme="modern" />
                                 <div>
@@ -423,14 +516,14 @@ export default function PartnersPage({
                         ))}
                     </ul>
                 </div>
-            </section>
+            </section>}
 
             <GenericCMSSections sections={extraSections} />
 
             {/* ================================================================= */}
             {/*  IBM partnership spotlight + CTA — textured band with watermark   */}
             {/* ================================================================= */}
-            <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
+            {show("final_cta", "cta") && <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
                 <Hairline className="absolute inset-x-0 top-0" />
                 <Hairline className="absolute inset-x-0 bottom-0" />
 
@@ -451,8 +544,8 @@ export default function PartnersPage({
                 <div className="relative mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-12 px-4 md:px-8 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
                     <motion.div {...reveal()} className="flex flex-col items-start">
                         <Image
-                            src="/images/ibm.svg"
-                            alt="IBM Business Partner"
+                            src={finalCta.logo_src ?? "/images/ibm.svg"}
+                            alt={finalCta.logo_alt ?? "IBM Business Partner"}
                             width={160}
                             height={64}
                             className="h-12 w-auto md:h-14"
@@ -503,20 +596,20 @@ export default function PartnersPage({
                             />
                             <div className="relative flex flex-col items-center">
                                 <span className="bg-gradient-to-br from-brand-400 via-brand-500 to-brand-700 bg-clip-text font-mono text-display-xl font-semibold text-transparent md:text-display-2xl dark:from-brand-300 dark:via-brand-400 dark:to-brand-600">
-                                    35+
+                                    {finalCta.stat_value ?? "35+"}
                                 </span>
                                 <span className="mt-2 text-md font-medium text-primary md:text-lg">
-                                    Years as an IBM Business Partner
+                                    {finalCta.stat_label ?? "Years as an IBM Business Partner"}
                                 </span>
                                 <Hairline className="my-6 max-w-60" />
                                 <span className="text-xs font-medium tracking-[0.2em] text-quaternary uppercase">
-                                    Partnership est. 1990
+                                    {finalCta.stat_note ?? "Partnership est. 1990"}
                                 </span>
                             </div>
                         </div>
                     </motion.div>
                 </div>
-            </section>
+            </section>}
         </main>
     );
 }

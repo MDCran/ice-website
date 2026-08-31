@@ -8,8 +8,6 @@ import { cx } from "@/utils/cx";
 
 const DEFAULT_PHONE = "1-800-786-9188";
 const DEFAULT_TEL = "tel:18007869188";
-const DEFAULT_SMS = "sms:18007869188";
-
 function digitsOnly(phone: string) {
   return phone.replace(/[^\d+]/g, "");
 }
@@ -43,11 +41,15 @@ export function TrackedTelLink({
 
 export function PhoneSmsCtaGroup({
   phone = DEFAULT_PHONE,
+  callLabel,
+  textLabel = "Text us",
   location = "contact",
   className,
   showSms = true,
 }: {
   phone?: string;
+  callLabel?: string;
+  textLabel?: string;
   location?: string;
   className?: string;
   showSms?: boolean;
@@ -65,7 +67,7 @@ export function PhoneSmsCtaGroup({
         className="justify-center"
         onClick={() => pushEvent("phone_cta_clicked", { location, channel: "voice" })}
       >
-        Call {phone}
+        {callLabel ?? `Call ${phone}`}
       </Button>
       {showSms && (
         <Button
@@ -76,7 +78,7 @@ export function PhoneSmsCtaGroup({
           className="justify-center"
           onClick={() => pushEvent("phone_cta_clicked", { location, channel: "sms" })}
         >
-          Text us
+          {textLabel}
         </Button>
       )}
     </div>

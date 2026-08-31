@@ -12,7 +12,13 @@ import { EnterpriseStickyCta } from "@/components/marketing/EnterpriseSalesWidge
 import Analytics from "@/components/analytics/Analytics";
 import PageViewTracker from "@/components/analytics/PageViewTracker";
 import WebVitalsReporter from "@/components/analytics/WebVitalsReporter";
-import { getSiteSettings, getNavigation, getSearchIndex } from "@/lib/cms";
+import {
+  getSiteSettings,
+  getNavigation,
+  getSearchIndex,
+  hasSiteSetting,
+  isSiteSettingVisible,
+} from "@/lib/cms";
 import { resolveSalesEnablement } from "@/lib/salesEnablement";
 import { getSeoConfig } from "@/lib/seo/config";
 import { JsonLd, organization, webSite } from "@/lib/seo/jsonld";
@@ -52,37 +58,45 @@ export default async function PublicLayout({
     }
   }
 
-  // Quick links from footer_quick nav items
+  const hasCmsNavigation =
+    (Array.isArray(navItems) && navItems.length > 0) || hasSiteSetting(settings, "navbar");
+  const navbarVisible = isSiteSettingVisible(settings, "navbar");
+  const footerVisible = isSiteSettingVisible(settings, "footer");
+  const contactWidgetVisible = isSiteSettingVisible(settings, "contact_widget");
+  const salesEnablementVisible = isSiteSettingVisible(settings, "sales_enablement");
+
+  // Quick links from footer_quick nav items. Once navigation rows exist,
+  // an empty visible group is intentional and must not resurrect defaults.
   const quickLinks = navItems
-    .filter((i: any) => i.location === "footer_quick" && i.is_visible)
-    .sort((a: any, b: any) => a.sort_order - b.sort_order)
-    .map((i: any) => ({ label: i.label, href: i.href }));
-  if (quickLinks.length > 0) footerData.quickLinks = quickLinks;
+    .filter((item) => item.location === "footer_quick" && item.is_visible)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((item) => ({ label: item.label, href: item.href }));
+  if (hasCmsNavigation) footerData.quickLinks = quickLinks;
 
   // Legal links from footer_legal nav items
   const legalLinks = navItems
-    .filter((i: any) => i.location === "footer_legal" && i.is_visible)
-    .sort((a: any, b: any) => a.sort_order - b.sort_order)
-    .map((i: any) => ({ label: i.label, href: i.href }));
-  if (legalLinks.length > 0) footerData.legalLinks = legalLinks;
+    .filter((item) => item.location === "footer_legal" && item.is_visible)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((item) => ({ label: item.label, href: item.href }));
+  if (hasCmsNavigation) footerData.legalLinks = legalLinks;
 
   // Mega-menu parents excluded from footer dropdown
   const megaExcludeIds = new Set(
     navItems
-      .filter((i: any) => i.location === "footer_mega_exclude")
-      .map((i: any) => i.href)
+      .filter((item) => item.location === "footer_mega_exclude")
+      .map((item) => item.href)
   );
 
   // Solution categories from navbar_mega items (grouped by column title)
   const megaItems = navItems
     .filter(
-      (i: any) =>
-        i.location === "navbar_mega" &&
-        i.is_visible &&
-        !megaExcludeIds.has(i.parent_id)
+      (item) =>
+        item.location === "navbar_mega" &&
+        item.is_visible &&
+        !megaExcludeIds.has(item.parent_id ?? "")
     )
-    .sort((a: any, b: any) => a.sort_order - b.sort_order);
-  if (megaItems.length > 0) {
+    .sort((a, b) => a.sort_order - b.sort_order);
+  if (hasCmsNavigation) {
     const columnMap = new Map<string, { label: string; href: string }[]>();
     for (const item of megaItems) {
       const col = item.mega_column_title || "Solutions";
@@ -110,22 +124,31 @@ export default async function PublicLayout({
       <SkipToContent />
       <AnnouncementBanner content={announcement} />
       <SearchModal items={searchItems} />
-      <Navbar navItems={navItems} companyInfo={settings?.company_info} />
+      {navbarVisible && (
+        <Navbar
+          navItems={navItems}
+          companyInfo={settings?.company_info}
+          content={settings?.navbar}
+          cmsNavigationManaged={hasCmsNavigation}
+        />
+      )}
       <PageTransition>
         <div id="main-content">{children}</div>
       </PageTransition>
-      <Footer cmsData={footerData} />
-      <ContactWidget />
-      {salesConfig.enabled && salesConfig.visibility.showStickyCta && (
+      {footerVisible && <Footer cmsData={footerData} />}
+      {contactWidgetVisible && <ContactWidget content={settings?.contact_widget} />}
+      {salesEnablementVisible && salesConfig.enabled && salesConfig.visibility.showStickyCta && (
         <EnterpriseStickyCta config={salesConfig} />
       )}
       <SoftLeadCapture
         enabled={
+          salesEnablementVisible &&
           salesConfig.enabled &&
           salesConfig.visibility.showSoftLeadCapture
         }
         headline={salesConfig.global.softLeadHeadline}
         description={salesConfig.global.softLeadDescription}
+        content={salesConfig.global.softLead}
       />
     </>
   );

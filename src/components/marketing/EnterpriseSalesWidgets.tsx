@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ArrowRight, Calculator, Calendar, CheckCircle, ChevronDown, Phone01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
 import { pushEvent } from "@/lib/analytics";
 import type { SalesEnablementConfig } from "@/lib/salesEnablement";
@@ -17,12 +18,41 @@ const currency = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-const CALLBACK_TIME_OPTIONS = [
-  { id: "Today", label: "Today · Any time" },
-  { id: "Tomorrow morning", label: "Tomorrow · Morning" },
-  { id: "Tomorrow afternoon", label: "Tomorrow · Afternoon" },
-  { id: "This week", label: "This week · Flexible" },
-];
+const SOLUTION_NAMES: Record<string, string> = {
+  "managed-cloud-hosting": "managed cloud hosting",
+  "managed-private-cloud": "managed private cloud",
+  "managed-hybrid-cloud": "hybrid cloud",
+  "cloud-migration": "cloud migration",
+  "backup-as-a-service": "backup as a service",
+  "managed-backup": "backup and restore",
+  "disaster-recovery": "disaster recovery",
+  "high-availability": "high availability",
+  "ransomware-recovery": "ransomware recovery",
+  as400: "AS400 and IBM i",
+  "ibm-i-services": "IBM i",
+  "ibm-i-security": "IBM i security",
+  "security-monitoring": "security monitoring",
+  "threat-detection": "threat detection and response",
+  "endpoint-security": "endpoint security",
+  "protection-suite": "protection suite",
+  "managed-microsoft": "managed Microsoft services",
+  "automation-suite": "automation suite",
+  "systems-management": "systems management",
+  "ibm-power-vs": "IBM Power Virtual Server",
+  cybersecurity: "cybersecurity",
+};
+
+function renderSolutionTemplate(template: string, solution: string): string {
+  return template.split("{solution}").join(solution);
+}
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  if (digits.length === 0) return "";
+  if (digits.length <= 3) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
 
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(Math.max(value, minimum), maximum);
@@ -146,10 +176,14 @@ export function EnterpriseStickyCta({
   const [isVisible, setIsVisible] = useState(false);
   const [callbackOpen, setCallbackOpen] = useState(false);
   const [callbackPhone, setCallbackPhone] = useState("");
-  const [callbackTime, setCallbackTime] = useState("Today");
+  const [callbackTime, setCallbackTime] = useState(
+    config.global.callbackTimeOptions[0]?.id ?? "Today",
+  );
   const [callbackStatus, setCallbackStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const isSuppressed =
     pathname === "/contact" ||
+    pathname === "/subscribe" ||
+    pathname?.startsWith("/unsubscribe/") ||
     pathname === "/sms-consent" ||
     pathname === "/terms-of-service";
 
@@ -174,37 +208,39 @@ export function EnterpriseStickyCta({
   if (!config.enabled || !config.visibility.showStickyCta || isSuppressed) return null;
 
   const solutionSlug = pathname.startsWith("/solutions/") ? pathname.split("/").filter(Boolean)[1] ?? "" : "";
-  const solutionNames: Record<string, string> = {
-    "disaster-recovery": "disaster recovery",
-    "managed-backup": "backup and restore",
-    "high-availability": "high availability",
-    "ransomware-recovery": "ransomware recovery",
-    "ibm-i-services": "IBM i",
-    "ibm-i-security": "IBM i security",
-    "ibm-power-vs": "IBM Power Virtual Server",
-    "managed-cloud-hosting": "managed cloud hosting",
-    "managed-hybrid-cloud": "hybrid cloud",
-    "cloud-migration": "cloud migration",
-    cybersecurity: "cybersecurity",
-  };
-  const solutionName = solutionNames[solutionSlug];
-  const title = solutionName ? `Questions about ${solutionName}? Talk with a specialist.` : config.global.stickyTitle;
+  const solutionName = SOLUTION_NAMES[solutionSlug];
+  const title = solutionName
+    ? renderSolutionTemplate(config.global.stickySolutionTitleTemplate, solutionName)
+    : config.global.stickyTitle;
   const description = solutionName
-    ? `Get a practical review from ICE’s US-based infrastructure team—without starting with a generic sales presentation.`
+    ? renderSolutionTemplate(config.global.stickySolutionDescriptionTemplate, solutionName)
     : config.global.stickyDescription;
+  const callbackTimeOptions = config.global.callbackTimeOptions;
+  const selectedCallbackTime = callbackTimeOptions.some((item) => item.id === callbackTime)
+    ? callbackTime
+    : callbackTimeOptions[0].id;
   const submitCallback = async () => {
     setCallbackStatus("sending");
-    const response = await fetch("/api/callback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: callbackPhone, preferredTime: callbackTime, context: solutionName || "Enterprise infrastructure planning", pagePath: pathname }),
-    });
-    setCallbackStatus(response.ok ? "success" : "error");
+    try {
+      const response = await fetch("/api/callback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: callbackPhone,
+          preferredTime: selectedCallbackTime,
+          context: solutionName || config.global.callbackContextFallback,
+          pagePath: pathname,
+        }),
+      });
+      setCallbackStatus(response.ok ? "success" : "error");
+    } catch {
+      setCallbackStatus("error");
+    }
   };
 
   return (
     <aside
-      aria-label="Enterprise buyer actions"
+      aria-label={config.global.buyerActionsAriaLabel}
       aria-hidden={!isVisible}
       className={cx(
         "pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center p-3 transition duration-300 motion-reduce:transition-none md:p-4",
@@ -215,11 +251,16 @@ export function EnterpriseStickyCta({
       <div className="pointer-events-auto relative grid w-full max-w-7xl gap-3 rounded-xl border border-secondary bg-primary/95 p-3 shadow-[0_18px_60px_-32px_rgb(15_23_42/0.55)] ring-1 ring-white/50 backdrop-blur-xl sm:p-4 lg:grid-cols-[minmax(20rem,1fr)_auto] lg:items-center lg:px-5 dark:ring-secondary">
         <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-solid/55 to-transparent" />
         <div className="flex min-w-0 items-center gap-3 px-1">
-          <span className="hidden size-10 shrink-0 items-center justify-center rounded-full bg-brand-solid text-xs font-bold text-white shadow-[0_14px_30px_-18px_rgb(4_155_251/0.9)] sm:flex">ICE</span>
+          <span className="hidden size-10 shrink-0 items-center justify-center rounded-full bg-brand-solid text-xs font-bold text-white shadow-[0_14px_30px_-18px_rgb(4_155_251/0.9)] sm:flex">
+            {config.global.stickyBrandLabel}
+          </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-primary">{title}</p>
             <p className="mt-0.5 hidden text-xs text-tertiary sm:block">{description}</p>
-            <p className="mt-1 hidden items-center gap-1.5 text-xs font-medium text-brand-secondary md:flex"><CheckCircle className="size-3.5" /> ICE Solutions Desk · US-based infrastructure specialists</p>
+            <p className="mt-1 hidden items-center gap-1.5 text-xs font-medium text-brand-secondary md:flex">
+              <CheckCircle aria-hidden="true" className="size-3.5" />
+              {config.global.stickySupportNote}
+            </p>
           </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:flex-nowrap lg:items-center lg:justify-end lg:[&>*]:shrink-0">
@@ -241,6 +282,7 @@ export function EnterpriseStickyCta({
             type="button"
             aria-expanded={callbackOpen}
             aria-haspopup="dialog"
+            aria-controls="enterprise-callback-dialog"
             onClick={() => {
               setCallbackOpen((value) => !value);
               setCallbackStatus("idle");
@@ -250,46 +292,93 @@ export function EnterpriseStickyCta({
               callbackOpen && "border-brand/45 bg-brand-primary_alt text-brand-secondary",
             )}
           >
-            <span className="whitespace-nowrap">Request a callback</span>
-            <ChevronDown className={cx("size-4 shrink-0 transition", callbackOpen && "rotate-180")} />
+            <span className="whitespace-nowrap">{config.global.callbackTriggerLabel}</span>
+            <ChevronDown
+              aria-hidden="true"
+              className={cx("size-4 shrink-0 transition", callbackOpen && "rotate-180")}
+            />
           </button>
         </div>
         {callbackOpen && (
-          <div className="absolute right-3 bottom-[calc(100%+10px)] z-20 w-[min(26rem,calc(100vw-24px))] max-w-[calc(100vw-24px)] rounded-xl border border-secondary bg-primary p-4 shadow-2xl ring-1 ring-secondary">
+          <div
+            id="enterprise-callback-dialog"
+            role="dialog"
+            aria-label={config.global.callbackDialogAriaLabel}
+            className="absolute right-0 bottom-[calc(100%+10px)] z-20 w-[min(30rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-secondary bg-primary p-4 shadow-2xl ring-1 ring-secondary sm:p-5 lg:right-5"
+          >
             {callbackStatus === "success" ? (
-              <div className="flex items-start gap-3"><CheckCircle className="mt-0.5 size-5 text-fg-success-primary" /><div><p className="text-sm font-semibold text-primary">Callback requested</p><p className="mt-1 text-xs text-tertiary">An ICE specialist will use the timing you selected.</p></div></div>
+              <div className="flex items-start gap-3" role="status" aria-live="polite">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-success-primary text-fg-success-primary ring-1 ring-success_subtle">
+                  <CheckCircle aria-hidden="true" className="size-5" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-primary">
+                    {config.global.callbackSuccessHeading}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-tertiary">
+                    {config.global.callbackSuccessDescription}
+                  </p>
+                </div>
+              </div>
             ) : (
               <>
-                <p className="text-sm font-semibold text-primary">Request a callback</p>
-                <p className="mt-1 text-xs text-tertiary">Share your number and the most convenient time. No long form required.</p>
-                <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_12rem]">
-                  <input
-                    type="tel"
-                    value={callbackPhone}
-                    onChange={(event) => setCallbackPhone(event.target.value)}
-                    placeholder="Phone number"
-                    className="h-11 min-w-0 rounded-xl border border-secondary bg-secondary/60 px-3 text-sm font-medium text-primary outline-none transition placeholder:text-placeholder hover:border-brand/35 focus:border-brand focus:ring-4 focus:ring-brand-solid/12"
-                  />
-                  <div className="min-w-0">
-                    <span className="mb-1.5 block text-[11px] font-semibold tracking-[0.12em] text-tertiary uppercase">
-                      Preferred time
-                    </span>
-                    <Select
-                      aria-label="Preferred callback time"
-                      size="md"
-                      className="w-full"
-                      popoverClassName="w-[12rem]"
-                      icon={Calendar}
-                      items={CALLBACK_TIME_OPTIONS}
-                      selectedKey={callbackTime}
-                      onSelectionChange={(key) => setCallbackTime(String(key))}
-                    >
-                      {(item) => <Select.Item id={item.id} label={item.label} />}
-                    </Select>
+                <div className="flex items-start gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-primary_alt text-fg-brand-primary ring-1 ring-brand/20">
+                    <Phone01 aria-hidden="true" className="size-5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-primary">
+                      {config.global.callbackTitle}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-tertiary">
+                      {config.global.callbackDescription}
+                    </p>
                   </div>
                 </div>
-                <Button size="sm" className="mt-3 w-full justify-center" isLoading={callbackStatus === "sending"} isDisabled={callbackPhone.replace(/\D/g, "").length < 7} onClick={submitCallback}>Request my callback</Button>
-                {callbackStatus === "error" && <p className="mt-2 text-xs text-error-primary">We couldn’t save the request. Please call 1-800-786-9188.</p>}
+
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <Input
+                    id="callback-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    maxLength={14}
+                    size="md"
+                    label={config.global.callbackPhoneLabel}
+                    icon={Phone01}
+                    value={callbackPhone}
+                    onChange={(value) => setCallbackPhone(formatPhone(value))}
+                    placeholder={config.global.callbackPhonePlaceholder}
+                    className="min-w-0"
+                  />
+                  <Select
+                    label={config.global.callbackPreferredTimeLabel}
+                    size="md"
+                    className="min-w-0"
+                    popoverClassName="w-[13.5rem]"
+                    icon={Calendar}
+                    items={callbackTimeOptions}
+                    selectedKey={selectedCallbackTime}
+                    onSelectionChange={(key) => setCallbackTime(String(key))}
+                  >
+                    {(item) => <Select.Item id={item.id} label={item.label} />}
+                  </Select>
+                </div>
+
+                <Button
+                  size="md"
+                  className="mt-4 w-full justify-center"
+                  isLoading={callbackStatus === "sending"}
+                  isDisabled={callbackPhone.replace(/\D/g, "").length < 7}
+                  onClick={submitCallback}
+                >
+                  {config.global.callbackSubmitLabel}
+                </Button>
+                {callbackStatus === "error" && (
+                  <p className="mt-2 text-xs text-error-primary" role="alert">
+                    {config.global.callbackErrorMessage}
+                  </p>
+                )}
               </>
             )}
           </div>

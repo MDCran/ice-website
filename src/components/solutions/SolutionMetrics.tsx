@@ -439,6 +439,27 @@ const PRESET_ALIAS: Partial<Record<MetricPreset, MetricPreset>> = {
 
 interface PageConfig { heading: string; subtitle: string }
 
+export interface CMSMetricItem {
+  type?: string;
+  label?: string;
+  value?: number;
+  suffix?: string;
+  prefix?: string;
+  unit?: string;
+  max?: number;
+  color?: string;
+  items?: string[];
+  bars?: { label?: string; before?: number; after?: number }[];
+}
+
+export interface CMSMetricsContent {
+  enabled?: boolean;
+  eyebrow?: string;
+  heading?: string;
+  description?: string;
+  items?: CMSMetricItem[];
+}
+
 function getPageConfig(preset: MetricPreset): PageConfig {
   const configs: Record<string, PageConfig> = {
     "managed-cloud-hosting": { heading: "Cloud hosting by the numbers", subtitle: "Real-world performance metrics from Tier-3 data center infrastructure." },
@@ -607,19 +628,84 @@ function getMetrics(preset: MetricPreset, inView: boolean): ReactNode[] {
       <DonutGauge key="e" inView={inView} percent={80} label="Lower DR Costs" color="emerald" />,
     ],
   };
-  return m[p] || m["managed-cloud-hosting"]!;
+  return m[p] ?? [];
+}
+
+function renderCmsMetric(item: CMSMetricItem, index: number, inView: boolean): ReactNode {
+  const type = String(item.type ?? "counter").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const label = String(item.label ?? `Metric ${index + 1}`);
+  const value = Number.isFinite(Number(item.value)) ? Number(item.value) : 0;
+  const key = `${type}-${index}-${label}`;
+
+  if (type === "donut" || type === "donut_gauge") {
+    return <DonutGauge key={key} inView={inView} percent={value} label={label} suffix={item.suffix} color={item.color} />;
+  }
+  if (type === "speedometer" || type === "score") {
+    return <Speedometer key={key} inView={inView} value={value} max={Number(item.max) || 100} label={label} />;
+  }
+  if (type === "uptime" || type === "uptime_bar") {
+    return <UptimeBar key={key} inView={inView} sla={value} label={label} />;
+  }
+  if (type === "timer" || type === "timer_minutes") {
+    return <TimerDisplay key={key} inView={inView} minutes={value} label={label} />;
+  }
+  if (type === "shield") {
+    return <ShieldMetric key={key} inView={inView} value={value} unit={String(item.unit ?? item.suffix ?? "%")} label={label} />;
+  }
+  if (type === "radar" || type === "radar_scan") {
+    return <RadarScan key={key} inView={inView} count={value} label={label} />;
+  }
+  if (type === "comparison" || type === "comparison_bars") {
+    return (
+      <ComparisonBars
+        key={key}
+        inView={inView}
+        label={label}
+        bars={(item.bars ?? []).map((bar) => ({
+          label: String(bar.label ?? "Comparison"),
+          before: Number(bar.before) || 0,
+          after: Number(bar.after) || 0,
+        }))}
+      />
+    );
+  }
+  if (type === "checklist" || type === "list") {
+    return <Checklist key={key} inView={inView} label={label} items={(item.items ?? []).map(String)} />;
+  }
+  if (type === "scale" || type === "scale_blocks") {
+    return <ScaleBlocks key={key} inView={inView} label={label} />;
+  }
+  if (type === "clock" || type === "clock_hours") {
+    return <ClockWidget key={key} inView={inView} hours={value} label={label} />;
+  }
+  return <BigCounter key={key} inView={inView} value={value} suffix={item.suffix} prefix={item.prefix} label={label} />;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN EXPORT
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export default function SolutionMetrics({ preset }: { preset: MetricPreset }) {
+export default function SolutionMetrics({
+  preset,
+  content,
+}: {
+  preset?: MetricPreset;
+  content?: CMSMetricsContent;
+}) {
   const { ref, inView } = useInView(0.15);
   const reduceMotion = useHydratedReducedMotion();
-  const resolved = PRESET_ALIAS[preset] || preset;
-  const config = getPageConfig(resolved);
-  const metrics = getMetrics(preset, inView);
+  const resolved = preset ? PRESET_ALIAS[preset] || preset : undefined;
+  const config = resolved
+    ? getPageConfig(resolved)
+    : { heading: "Measurable results", subtitle: "Service outcomes and operating targets." };
+  const cmsItems = Array.isArray(content?.items) ? content.items : [];
+  const metrics = cmsItems.length > 0
+    ? cmsItems.map((item, index) => renderCmsMetric(item, index, inView))
+    : preset
+      ? getMetrics(preset, inView)
+      : [];
+
+  if (content?.enabled === false || metrics.length === 0) return null;
 
   const hidden = reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 };
   const shown = reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 };
@@ -634,10 +720,14 @@ export default function SolutionMetrics({ preset }: { preset: MetricPreset }) {
         className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
       >
         <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
-          Measurable results
+          {content?.eyebrow?.trim() || "Measurable results"}
         </span>
-        <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">{config.heading}</h2>
-        <p className="mt-4 text-lg text-tertiary md:mt-5">{config.subtitle}</p>
+        <h2 className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+          {content?.heading?.trim() || config.heading}
+        </h2>
+        <p className="mt-4 text-lg text-tertiary md:mt-5">
+          {content?.description?.trim() || config.subtitle}
+        </p>
       </motion.div>
 
       <div className="mt-12 rounded-2xl bg-secondary px-6 py-10 ring-1 ring-secondary ring-inset md:mt-16 md:p-12">

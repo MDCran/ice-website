@@ -102,9 +102,9 @@ export function EnterpriseSalesPreview({
             {config.global.homePreviewCta.label}
           </Button>
         </div>
-        {config.modules.proof && (
+        {config.global.homePreviewMetrics.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2">
-            {config.proof.metrics.slice(0, 4).map((metric) => (
+            {config.global.homePreviewMetrics.slice(0, 4).map((metric) => (
             <div key={metric.label} className="rounded-lg bg-primary p-5 ring-1 ring-secondary">
               <p className="text-display-xs font-semibold text-brand-secondary">{metric.value}</p>
               <p className="mt-2 text-sm font-semibold text-primary">{metric.label}</p>

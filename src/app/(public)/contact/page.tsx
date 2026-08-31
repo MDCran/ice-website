@@ -4,6 +4,7 @@ import { JsonLd, breadcrumbs, localBusiness } from "@/lib/seo/jsonld";
 import ContactClient from "./Client";
 import { bookingUrlFromSettings } from "@/lib/booking";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 /** Trim to <=155 chars at a word boundary, appending an ellipsis when cut. */
 function clampDescription(value: string, max = 155): string {
@@ -32,6 +33,7 @@ export default async function ContactPage() {
     getSeoConfig(),
     getSiteSettings(),
   ]);
+  if (!page) notFound();
   return (
     <>
       <JsonLd data={localBusiness(seo)} />

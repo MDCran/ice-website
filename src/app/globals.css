@@ -94,30 +94,15 @@ body.menu-open [data-contact-widget] {
    Keep the sticky site header above contact-form dropdowns only; other modal
    overlays retain their intended full-screen stacking behavior. */
 body:has(.contact-form-popover) [data-site-navbar] {
-  position: fixed;
-  top: 0;
-  right: 0;
-  left: 0;
   z-index: 100001;
   opacity: 1 !important;
   visibility: visible !important;
   pointer-events: auto;
 }
 
-body:has(.contact-form-popover) {
-  --ice-contact-popover-nav-offset: 4.5625rem;
-  padding-top: var(--ice-contact-popover-nav-offset);
-}
-
 .contact-form-popover {
   overscroll-behavior: contain;
   isolation: isolate;
-}
-
-@media (max-width: 1023px) {
-  body:has(.contact-form-popover) {
-    --ice-contact-popover-nav-offset: 4rem;
-  }
 }
 
 /* Homepage partner marquee — dedicated keyframe (the generic `marquee` name

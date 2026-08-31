@@ -24,6 +24,7 @@ import { useSidebar } from "./AdminSidebarContext";
 const PAGE_NAMES: Record<string, string> = {
   "/admin": "Dashboard",
   "/admin/cms": "CMS Pages",
+  "/admin/solutions": "Solutions",
   "/admin/sales": "Sales Enablement",
   "/admin/navigation": "Navigation",
   "/admin/seo": "SEO & Analytics",

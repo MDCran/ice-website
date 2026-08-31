@@ -49,6 +49,8 @@ function SortableRow({
   onToggleVisible,
   onDuplicate,
   onDelete,
+  canReorder,
+  isStructureLocked,
 }: {
   section: BuilderSection;
   label: string;
@@ -60,9 +62,12 @@ function SortableRow({
   onToggleVisible: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  canReorder: boolean;
+  isStructureLocked: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
+    disabled: !canReorder,
   });
 
   return (
@@ -79,16 +84,18 @@ function SortableRow({
         className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary"
         onClick={onToggle}
       >
-        <button
-          type="button"
-          className="cursor-grab touch-none rounded p-1 text-fg-quaternary hover:text-fg-quaternary_hover active:cursor-grabbing"
-          aria-label={`Drag ${label}`}
-          onClick={(e) => e.stopPropagation()}
-          {...attributes}
-          {...listeners}
-        >
-          <DotsGrid className="size-4" />
-        </button>
+        {canReorder && (
+          <button
+            type="button"
+            className="cursor-grab touch-none rounded p-1 text-fg-quaternary hover:text-fg-quaternary_hover active:cursor-grabbing"
+            aria-label={`Drag ${label}`}
+            onClick={(e) => e.stopPropagation()}
+            {...attributes}
+            {...listeners}
+          >
+            <DotsGrid className="size-4" />
+          </button>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -96,6 +103,7 @@ function SortableRow({
             <Badge size="sm" color={badgeColor}>
               {typeLabel}
             </Badge>
+            {isStructureLocked && <Badge size="sm" color="gray">Layout</Badge>}
           </div>
           <span className="text-xs text-quaternary">{section.section_key}</span>
         </div>
@@ -108,8 +116,12 @@ function SortableRow({
             tooltip={section.is_visible ? "Hide section" : "Show section"}
             onClick={onToggleVisible}
           />
-          <ButtonUtility size="xs" color="tertiary" icon={Copy01} tooltip="Duplicate section" onClick={onDuplicate} />
-          <ButtonUtility size="xs" color="tertiary" icon={Trash01} tooltip="Delete section" onClick={onDelete} />
+          {!isStructureLocked && (
+            <>
+              <ButtonUtility size="xs" color="tertiary" icon={Copy01} tooltip="Duplicate section" onClick={onDuplicate} />
+              <ButtonUtility size="xs" color="tertiary" icon={Trash01} tooltip="Delete section" onClick={onDelete} />
+            </>
+          )}
         </div>
         <ChevronDown
           className={cx("size-4 shrink-0 text-fg-quaternary transition-transform", isExpanded && "rotate-180")}
@@ -136,6 +148,8 @@ export default function SectionCanvasBuilder({
   onDuplicate,
   onDelete,
   renderExpanded,
+  canReorder = true,
+  lockedSectionIds = [],
 }: {
   sections: BuilderSection[];
   expandedIds: Set<string>;
@@ -148,6 +162,8 @@ export default function SectionCanvasBuilder({
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
   renderExpanded: (id: string) => React.ReactNode;
+  canReorder?: boolean;
+  lockedSectionIds?: string[];
 }) {
   const ids = useMemo(() => sections.map((s) => s.id), [sections]);
   const sensors = useSensors(
@@ -156,6 +172,7 @@ export default function SectionCanvasBuilder({
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!canReorder) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const oldIndex = ids.indexOf(String(active.id));
@@ -169,7 +186,9 @@ export default function SectionCanvasBuilder({
       <div className="rounded-xl bg-secondary p-3 ring-1 ring-secondary">
         <div className="mb-2 flex items-center justify-between gap-2 px-1">
           <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">
-            Canvas · click to expand · drag rows below to reorder
+            {canReorder
+              ? "Canvas · click to expand · drag rows below to reorder"
+              : "Canvas · click to expand · this page uses a designed section order"}
           </p>
           <p className="text-xs text-quaternary">{sections.length} blocks</p>
         </div>
@@ -220,6 +239,8 @@ export default function SectionCanvasBuilder({
                 onToggleVisible={() => onToggleVisible(section.id)}
                 onDuplicate={() => onDuplicate(section.id)}
                 onDelete={() => onDelete(section.id)}
+                canReorder={canReorder}
+                isStructureLocked={lockedSectionIds.includes(section.id)}
               >
                 {expandedIds.has(section.id) ? renderExpanded(section.id) : null}
               </SortableRow>

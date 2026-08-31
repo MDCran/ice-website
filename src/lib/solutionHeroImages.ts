@@ -8,7 +8,7 @@ export const SOLUTION_HERO_IMAGE_BY_SLUG: Record<string, string> = {
   "disaster-recovery": "/images/solutions/heroes/disaster-recovery.webp",
   "high-availability": "/images/solutions/heroes/high-availability.webp",
   "ransomware-recovery": "/images/solutions/heroes/ransomware-recovery.webp",
-  "as400": "/images/solutions/heroes/ibm-i-security.webp",
+  "as400": "/images/solutions/heroes/as400-ibmi.png",
   "ibm-i-security": "/images/solutions/heroes/ibm-i-security.webp",
   "protection-suite": "/images/solutions/heroes/protection-suite.webp",
   "security-monitoring": "/images/solutions/heroes/security-monitoring.webp",

@@ -2,6 +2,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { can } from "@/lib/admin/permissions";
+import { publicPathForCmsPage } from "@/lib/cms/pageRegistry";
 
 /**
  * Admin-triggered cache invalidation for CMS pages (#31).
@@ -45,13 +46,25 @@ export async function POST(request: Request) {
     } catch {
       /* ignore */
     }
-    const path =
-      slug === "home" ? "/" : slug === "site-settings" ? "/" : `/${slug}`;
-    const solutionPath = `/solutions/${slug}`;
-    for (const p of [path, solutionPath, ...paths]) {
+    const { data: cmsPage } = await supabase
+      .from("pages")
+      .select("page_type")
+      .eq("slug", slug)
+      .maybeSingle();
+    const path = publicPathForCmsPage(slug, cmsPage?.page_type);
+    const derivedPaths = slug === "for-ai" ? [path, "/llms.txt", ...paths] : [path, ...paths];
+    for (const p of Array.from(new Set(derivedPaths))) {
       try {
         revalidatePath(p);
         applied.push(`path:${p}`);
+      } catch {
+        /* ignore */
+      }
+    }
+    if (slug === "site-settings") {
+      try {
+        revalidatePath("/", "layout");
+        applied.push("layout:/");
       } catch {
         /* ignore */
       }

@@ -3,6 +3,7 @@ import { getSeoConfig } from "@/lib/seo/config";
 import { JsonLd, breadcrumbs } from "@/lib/seo/jsonld";
 import PartnersClient from "./Client";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 /** Trim to <=155 chars at a word boundary, appending an ellipsis when cut. */
 function clampDescription(value: string, max = 155): string {
@@ -27,6 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PartnersPage() {
   const [page, seo] = await Promise.all([getPageContent("partners"), getSeoConfig()]);
+  if (!page) notFound();
   return (
     <>
       <JsonLd

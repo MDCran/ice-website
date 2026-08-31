@@ -154,9 +154,8 @@ export default async function SalesEnablementAdminPage() {
 
     revalidateTag("cms-pages", "max");
     revalidateTag(`cms-page:${SETTINGS_SLUG}`, "max");
-    revalidatePath("/site-settings");
+    revalidatePath("/", "layout");
     revalidatePath("/admin/sales");
-    revalidatePath("/");
 
     return {
       ok: true as const,
