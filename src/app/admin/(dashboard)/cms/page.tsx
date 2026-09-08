@@ -50,6 +50,11 @@ export default async function CMSPagesPage({
     .select("*")
     .order("sort_order", { ascending: true });
 
+  const { data: accessMarkers } = await supabase
+    .from("page_sections")
+    .select("page_id")
+    .eq("section_key", "access_settings");
+
   if (error) {
     return (
       <div className="text-sm text-error-primary">
@@ -59,7 +64,9 @@ export default async function CMSPagesPage({
   }
 
   const query = q.trim().toLowerCase();
-  const filteredPages = (pages ?? []).filter((page) => {
+  const accessPageIds = new Set((accessMarkers ?? []).map((row) => row.page_id));
+  const cmsPages = (pages ?? []).filter((page) => !accessPageIds.has(page.id));
+  const filteredPages = cmsPages.filter((page) => {
     const matchesQuery = !query || [page.title, page.slug, page.page_type].some((value) =>
       String(value ?? "").toLowerCase().includes(query),
     );
@@ -77,7 +84,7 @@ export default async function CMSPagesPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="hidden text-xs text-tertiary sm:inline">{filteredPages.length} of {pages?.length ?? 0} pages</span>
+          <span className="hidden text-xs text-tertiary sm:inline">{filteredPages.length} of {cmsPages.length} pages</span>
           <CMSPageActions mode="create" canPublish={can(profile.role, "cms.publish")} />
         </div>
       </div>
@@ -108,7 +115,7 @@ export default async function CMSPagesPage({
         {(q || status !== "all") && <Link href="/admin/cms" className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-semibold text-tertiary hover:bg-secondary">Clear</Link>}
       </form>
 
-      {!pages || pages.length === 0 ? (
+      {cmsPages.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-16 text-center ring-1 ring-secondary">
           <FeaturedIcon icon={File02} color="gray" theme="modern" size="lg" />
           <p className="mt-4 text-md font-semibold text-primary">No pages yet</p>

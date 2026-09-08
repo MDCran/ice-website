@@ -476,7 +476,8 @@ export default function CMSPageActions({
       const { data: sections, error: sectionsReadError } = await supabase
         .from("page_sections")
         .select("section_key, section_type, content, sort_order, is_visible")
-        .eq("page_id", page.id);
+        .eq("page_id", page.id)
+        .neq("section_key", "access_settings");
       if (sectionsReadError) {
         const { error: rollbackError } = await supabase.from("pages").delete().eq("id", created.id);
         setError(
@@ -526,6 +527,7 @@ export default function CMSPageActions({
       .from("page_sections")
       .select("section_key, section_type, content, sort_order, is_visible")
       .eq("page_id", page.id)
+      .neq("section_key", "access_settings")
       .order("sort_order", { ascending: true });
 
     const payload = {
@@ -585,6 +587,10 @@ export default function CMSPageActions({
       }
       if (payload.page.page_type && !PAGE_TYPES.some((type) => type.value === payload.page?.page_type)) {
         setError("Invalid ICE page JSON (unsupported page.page_type).");
+        return;
+      }
+      if (payload.sections?.some((section) => section.section_key === "access_settings")) {
+        setError("Protected access pages must be created or duplicated from Access Pages.");
         return;
       }
 

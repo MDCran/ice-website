@@ -21,7 +21,8 @@ export type AdminCapability =
   | "settings.manage"
   | "audit.view"
   | "performance.view"
-  | "admins.manage";
+  | "admins.manage"
+  | "access.manage";
 
 const ROLE_CAPS: Record<string, AdminCapability[]> = {
   super_admin: [
@@ -41,6 +42,7 @@ const ROLE_CAPS: Record<string, AdminCapability[]> = {
     "audit.view",
     "performance.view",
     "admins.manage",
+    "access.manage",
   ],
   admin: [
     "cms.edit",
@@ -58,6 +60,7 @@ const ROLE_CAPS: Record<string, AdminCapability[]> = {
     "settings.manage",
     "audit.view",
     "performance.view",
+    "access.manage",
   ],
   editor: [
     "cms.edit",
@@ -65,6 +68,7 @@ const ROLE_CAPS: Record<string, AdminCapability[]> = {
     "nav.edit",
     "media.manage",
     "performance.view",
+    "access.manage",
   ],
   marketer: [
     "cms.edit",
@@ -74,6 +78,7 @@ const ROLE_CAPS: Record<string, AdminCapability[]> = {
     "performance.view",
     "leads.manage",
     "marketing.manage",
+    "access.manage",
   ],
   sales_ops: [
     "leads.manage",
@@ -81,6 +86,7 @@ const ROLE_CAPS: Record<string, AdminCapability[]> = {
     "clients.provision",
     "surveys.manage",
     "audit.view",
+    "access.manage",
   ],
 };
 
@@ -103,6 +109,7 @@ export function capabilitiesFor(role: string | null | undefined): AdminCapabilit
 export const NAV_CAPABILITY: Record<string, AdminCapability | undefined> = {
   "/admin": undefined,
   "/admin/cms": "cms.edit",
+  "/admin/access-pages": "access.manage",
   "/admin/solutions": "cms.edit",
   "/admin/sales": "cms.edit",
   "/admin/navigation": "nav.edit",

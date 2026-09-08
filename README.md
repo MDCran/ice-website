@@ -42,6 +42,22 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 Public routes live under `src/app/(public)`. The page auto-updates as you edit the source files.
 
+## Admin access
+
+The deployed admin login is [sandbox.icesales.com/admin/login](https://sandbox.icesales.com/admin/login). To safely reset the demo administrator from a trusted local checkout, run:
+
+```bash
+npm run admin:reset-password -- --email admin-demo@icesales.com
+```
+
+The command reads the local Supabase configuration from `.env.local`, generates a strong temporary password, verifies it, and prints it once. It does not delete administrators or store the password. Change the temporary password immediately under **Admin Center → Settings**.
+
+Resetting any other address is blocked; manage personal administrators in the Admin Center instead. Omit `--password` whenever possible so a chosen password is not retained in shell history.
+
+### Client access pages
+
+Open **Admin Center → Access Pages** to create or duplicate a client proposal, edit every section, choose its hero media, attach a PDF from private storage, and set the page to Draft, Active, or Archived. Each recipient can have a separately revocable link with an optional password, expiration, and maximum-open limit. Raw link secrets, passwords, and client documents must never be committed to this repository.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

@@ -1,5 +1,5 @@
 /**
- * Legacy password-gated proposal pages (e.g. /access/carico-iaas-2026).
+ * Password-gated client proposal pages.
  * Client account documents belong in the portal: admin uploads via
  * /admin/clients/[id]/resources → clients view them at /portal/resources when logged in.
  */

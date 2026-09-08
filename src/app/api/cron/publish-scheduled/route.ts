@@ -47,6 +47,47 @@ export async function GET(request: Request) {
     return NextResponse.json({ published: 0, pages: [] });
   }
 
+  // Access pages deliberately remain unpublished: their hidden settings row
+  // contains credential hashes and the /access runtime authorizes every read.
+  // Fail closed if we cannot prove which scheduled rows are ordinary CMS pages.
+  const { data: accessMarkers, error: markerError } = await supabase
+    .from("page_sections")
+    .select("page_id")
+    .in("page_id", ids)
+    .eq("section_key", "access_settings");
+  if (markerError) {
+    return NextResponse.json({ error: markerError.message }, { status: 500 });
+  }
+
+  const protectedIds = new Set((accessMarkers ?? []).map((row) => row.page_id));
+  const protectedPages = (duePages ?? []).filter((page) => protectedIds.has(page.id));
+  const publishablePages = (duePages ?? []).filter((page) => !protectedIds.has(page.id));
+
+  if (protectedPages.length) {
+    const { error: hardeningError } = await supabase
+      .from("pages")
+      .update({
+        is_published: false,
+        publish_status: "draft",
+        scheduled_publish_at: null,
+        published_at: null,
+        updated_at: now,
+      })
+      .in("id", protectedPages.map((page) => page.id));
+    if (hardeningError) {
+      return NextResponse.json({ error: hardeningError.message }, { status: 500 });
+    }
+  }
+
+  const publishableIds = publishablePages.map((page) => page.id);
+  if (publishableIds.length === 0) {
+    return NextResponse.json({
+      published: 0,
+      pages: [],
+      skippedProtected: protectedPages.map((page) => page.slug),
+    });
+  }
+
   const { error: updateError } = await supabase
     .from("pages")
     .update({
@@ -56,7 +97,7 @@ export async function GET(request: Request) {
       published_at: now,
       updated_at: now,
     })
-    .in("id", ids)
+    .in("id", publishableIds)
     .eq("publish_status", "scheduled");
 
   if (updateError) {
@@ -69,7 +110,7 @@ export async function GET(request: Request) {
     // Dynamic reads remain correct even on runtimes without tag invalidation.
   }
 
-  for (const page of duePages ?? []) {
+  for (const page of publishablePages) {
     try {
       revalidateTag(`cms-page:${page.slug}`, "max");
     } catch {
@@ -79,7 +120,8 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    published: ids.length,
-    pages: (duePages ?? []).map((page) => page.slug),
+    published: publishableIds.length,
+    pages: publishablePages.map((page) => page.slug),
+    skippedProtected: protectedPages.map((page) => page.slug),
   });
 }

@@ -12,6 +12,7 @@ import {
   Clock,
   File02,
   Folder,
+  FileLock02,
   LayersTwo01,
   Mail01,
   NavigationPointer01,
@@ -37,6 +38,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: BarChartSquare02, group: "Build" },
   { label: "CMS Pages", href: "/admin/cms", icon: File02, group: "Build" },
+  { label: "Access Pages", href: "/admin/access-pages", icon: FileLock02, group: "Build" },
   { label: "Solutions", href: "/admin/solutions", icon: Server01, group: "Build" },
   { label: "Sales Enablement", href: "/admin/sales", icon: Target04, group: "Build" },
   { label: "Marketing Center", href: "/admin/marketing", icon: Send01, group: "Build" },

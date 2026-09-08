@@ -1,13 +1,3 @@
-@keyframes slide-deck-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes slide-deck-rotate {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(90deg); }
-}
-
 @theme {
   --color-ev-950: #030303;
   --color-ev-900: #0a1020;

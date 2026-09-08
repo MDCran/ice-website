@@ -49,6 +49,11 @@ export default async function CMSSectionEditorPage({ params }: PageProps) {
     );
   }
 
+  if ((sections ?? []).some((section) => section.section_key === "access_settings")) {
+    if (!can(profile.role, "access.manage")) redirect("/admin");
+    redirect(`/admin/access-pages/${page.id}`);
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center gap-4">
