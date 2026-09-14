@@ -255,6 +255,14 @@ export const searchIndex: SearchItem[] = [
 
   // Legal
   {
+    title: "Privacy Policy",
+    description:
+      "How International Computer Exchange collects, uses, shares, and protects personal information and SMS opt-in records.",
+    url: "/privacy-policy",
+    category: "Legal",
+    keywords: ["privacy", "personal information", "data", "sms", "consent"],
+  },
+  {
     title: "Terms of Service",
     description:
       "Website terms and conditions for International Computer Exchange.",

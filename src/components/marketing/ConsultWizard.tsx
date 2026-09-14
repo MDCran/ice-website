@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import Link from "next/link";
+import { SmsConsentDisclosure } from "@/components/legal/SmsConsentDisclosure";
 import {
   AlertCircle,
   ArrowLeft,
@@ -350,10 +350,10 @@ const DEFAULT_WIZARD_COPY = {
   company_label: "Company",
   company_placeholder: "Acme Corp",
   phone_label: "Phone number",
-  sms_aria_label: "SMS consent",
-  sms_consent_prefix: "I consent to receive SMS text messages from International Computer Exchange. Message and data rates may apply. Reply STOP to opt out. See our",
-  sms_policy_label: "SMS Consent Policy",
-  sms_policy_href: "/sms-consent",
+  sms_aria_label: "Optional SMS consent",
+  sms_consent_prefix: "By checking this optional box, you agree to receive text messages from International Computer Exchange. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our",
+  sms_policy_label: "Privacy Policy",
+  sms_policy_href: "/privacy-policy",
   sms_consent_suffix: ".",
   marketing_aria_label: "Email marketing consent",
   marketing_consent: "Send me occasional ICE infrastructure guidance, service updates, and event announcements. I can unsubscribe at any time.",
@@ -977,18 +977,7 @@ export default function ConsultWizard({
                 aria-label={wizard.copy.sms_aria_label}
                 isSelected={formData.smsConsent}
                 onChange={(value) => patchForm({ smsConsent: value })}
-                hint={
-                  <>
-                    {wizard.copy.sms_consent_prefix}{" "}
-                    <Link
-                      href={wizard.copy.sms_policy_href}
-                      className="rounded-xs underline underline-offset-3 outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
-                    >
-                      {wizard.copy.sms_policy_label}
-                    </Link>
-                    {wizard.copy.sms_consent_suffix}
-                  </>
-                }
+                hint={<SmsConsentDisclosure />}
               />
               <Checkbox
                 name="marketingConsent"

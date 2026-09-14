@@ -173,7 +173,8 @@ function ensureAs400FooterLink(
 }
 
 const DEFAULT_LEGAL_LINKS = [
-  { label: "Terms of Service", href: "/terms-of-service" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Terms of Service & Conditions", href: "/terms-of-service" },
   { label: "SMS Consent", href: "/sms-consent" },
   { label: "Email preferences", href: "/subscribe" },
 ];

@@ -13,21 +13,44 @@ import type { CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-const DEFAULT_HERO = {
+export interface LegalHero {
+  eyebrow: string;
+  headline: string;
+  subheadline: string;
+  last_updated: string;
+  badge_note: string;
+  document_title: string;
+  document_intro: string;
+  related_label: string;
+  related_href: string;
+}
+
+export interface LegalSection {
+  id: string;
+  title: string;
+  content: string;
+}
+
+export interface LegalPolicyDefaults {
+  hero: LegalHero;
+  sections: LegalSection[];
+}
+
+const DEFAULT_HERO: LegalHero = {
   eyebrow: "Legal · Website Terms",
   headline: "Terms of Service",
   subheadline:
     "Please read these terms and conditions carefully before using the International Computer Exchange, Inc. website.",
   last_updated: "March 2026",
   badge_note: "Applies to icesales.com",
-  document_title: "Website Terms and Conditions",
+  document_title: "Terms of Service & Conditions",
   document_intro:
     "These Terms govern your access to and use of the International Computer Exchange, Inc. website. By using the site, you agree to be bound by the sections below.",
   related_label: "SMS Consent Policy",
   related_href: "/sms-consent",
 };
 
-const DEFAULT_SECTIONS = [
+const DEFAULT_SECTIONS: LegalSection[] = [
   {
     id: "acceptance",
     title: "1. Acceptance of Terms",
@@ -78,15 +101,22 @@ THE FOREGOING DOES NOT AFFECT ANY LIABILITY WHICH CANNOT BE EXCLUDED OR LIMITED 
 If you decide to access any of the third-party websites linked to the Site, you do so entirely at your own risk and subject to the terms and conditions of use for such websites.`,
   },
   {
+    id: "sms-terms",
+    title: "7. SMS Terms",
+    content: `If you separately and affirmatively opt in to receive text messages from ICE, you agree to receive conversational, service and support, project or appointment scheduling, account updates, and promotional messages at the mobile number you provide. Consent is not a condition of purchase. Message frequency varies, and message and data rates may apply.
+
+Reply STOP to any ICE text message to opt out. You will receive the following confirmation: "International Computer Exchange: You will no longer receive messages from us. Reply START to opt back in." Reply HELP for help. You will receive: "International Computer Exchange: Reply STOP to cancel. For support, call 1-800-786-9188 or email info@icesales.com." Our SMS Consent Policy and Privacy Policy describe the program and how we handle information. You may opt in only through a method that clearly requests SMS consent; providing a phone number alone does not opt you in to marketing text messages.`,
+  },
+  {
     id: "changes-to-terms",
-    title: "7. Changes to Terms",
+    title: "8. Changes to Terms",
     content: `We may revise and update these Terms from time to time in our sole discretion. All changes are effective immediately when we post them and apply to all access to and use of the Site thereafter.
 
 Your continued use of the Site following the posting of revised Terms means that you accept and agree to the changes. You are expected to check this page frequently so you are aware of any changes, as they are binding on you.`,
   },
   {
     id: "contact",
-    title: "8. Contact",
+    title: "9. Contact",
     content: `If you have any questions about these Terms of Service, please contact us:
 
 International Computer Exchange, Inc.
@@ -98,12 +128,6 @@ Phone: 1-800-786-9188`,
 
 type CmsRecord = Record<string, unknown>;
 
-interface LegalSection {
-  id: string;
-  title: string;
-  content: string;
-}
-
 function asRecord(value: unknown): CmsRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? value as CmsRecord
@@ -114,25 +138,25 @@ function stringValue(value: unknown, fallback: string): string {
   return typeof value === "string" ? value : fallback;
 }
 
-function normalizeHero(value: unknown): typeof DEFAULT_HERO {
+function normalizeHero(value: unknown, defaults: LegalHero): LegalHero {
   const hero = asRecord(value);
   return {
-    eyebrow: stringValue(hero.eyebrow, DEFAULT_HERO.eyebrow),
-    headline: stringValue(hero.headline, DEFAULT_HERO.headline),
-    subheadline: stringValue(hero.subheadline, DEFAULT_HERO.subheadline),
-    last_updated: stringValue(hero.last_updated, DEFAULT_HERO.last_updated),
-    badge_note: stringValue(hero.badge_note, DEFAULT_HERO.badge_note),
-    document_title: stringValue(hero.document_title, DEFAULT_HERO.document_title),
-    document_intro: stringValue(hero.document_intro, DEFAULT_HERO.document_intro),
-    related_label: stringValue(hero.related_label, DEFAULT_HERO.related_label),
-    related_href: stringValue(hero.related_href, DEFAULT_HERO.related_href),
+    eyebrow: stringValue(hero.eyebrow, defaults.eyebrow),
+    headline: stringValue(hero.headline, defaults.headline),
+    subheadline: stringValue(hero.subheadline, defaults.subheadline),
+    last_updated: stringValue(hero.last_updated, defaults.last_updated),
+    badge_note: stringValue(hero.badge_note, defaults.badge_note),
+    document_title: stringValue(hero.document_title, defaults.document_title),
+    document_intro: stringValue(hero.document_intro, defaults.document_intro),
+    related_label: stringValue(hero.related_label, defaults.related_label),
+    related_href: stringValue(hero.related_href, defaults.related_href),
   };
 }
 
-function normalizeSections(value: unknown): LegalSection[] {
+function normalizeSections(value: unknown, defaults: LegalSection[]): LegalSection[] {
   const items = asRecord(value).items;
-  if (items === undefined) return DEFAULT_SECTIONS;
-  if (!Array.isArray(items)) return DEFAULT_SECTIONS;
+  if (items === undefined) return defaults;
+  if (!Array.isArray(items)) return defaults;
   return items.flatMap((item) => {
     const section = asRecord(item);
     if (
@@ -146,15 +170,24 @@ function normalizeSections(value: unknown): LegalSection[] {
   });
 }
 
-export default function TermsOfServicePage({ cmsData, orderedSections }: { cmsData?: Record<string, unknown>; orderedSections?: CMSRenderableSection[] }) {
+export default function LegalPolicyPage({
+  cmsData,
+  orderedSections,
+  defaults,
+}: {
+  cmsData?: Record<string, unknown>;
+  orderedSections?: CMSRenderableSection[];
+  defaults?: LegalPolicyDefaults;
+}) {
+  const activeDefaults = defaults ?? { hero: DEFAULT_HERO, sections: DEFAULT_SECTIONS };
   const showHero = isCmsSectionVisible(orderedSections, "hero");
   const showSections = isCmsSectionVisible(orderedSections, "sections");
-  const hero = normalizeHero(cmsData?.hero);
+  const hero = normalizeHero(cmsData?.hero, activeDefaults.hero);
   const sections = useMemo(
-    () => showSections ? normalizeSections(cmsData?.sections) : [],
-    [cmsData, showSections],
+    () => showSections ? normalizeSections(cmsData?.sections, activeDefaults.sections) : [],
+    [cmsData, showSections, activeDefaults.sections],
   );
-  const [selectedActiveId, setActiveId] = useState(sections[0]?.id ?? DEFAULT_SECTIONS[0].id);
+  const [selectedActiveId, setActiveId] = useState(sections[0]?.id ?? activeDefaults.sections[0]?.id ?? "");
   const activeId = sections.some((section) => section.id === selectedActiveId)
     ? selectedActiveId
     : sections[0]?.id ?? "";
@@ -304,7 +337,7 @@ export default function TermsOfServicePage({ cmsData, orderedSections }: { cmsDa
                   >
                     <h3 className="text-lg font-semibold text-primary">{section.title}</h3>
                     <div className="prose mt-4 whitespace-pre-line">
-                      {section.content}
+                      {section.content.replace(/\\n/g, "\n")}
                     </div>
                   </div>
                 ))}

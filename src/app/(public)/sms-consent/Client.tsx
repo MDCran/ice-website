@@ -15,50 +15,59 @@ const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const DEFAULT_SECTIONS = [
   {
-    id: "default-opt-in",
-    title: "Default Opt-In",
-    content: `By providing your phone number through our website contact form, during a phone call with our sales or support team, or by texting us directly, you are giving International Computer Exchange consent to send you SMS text messages related to your inquiry, account, services, and promotional information. Message and data rates may apply depending on your carrier plan. You may opt out at any time using any of the methods described below.`,
+    id: "website-opt-in",
+    title: "1. Website Opt-In",
+    content: `You opt in to SMS messages on our website only by selecting the separate, optional SMS consent checkbox beside the disclosure. Providing a phone number alone does not opt you in to promotional text messages. Consent is not a condition of purchase.
+
+By selecting that checkbox, you acknowledge that you consent to receive text messages from International Computer Exchange, Inc. ("ICE") about conversations, service and support, project or appointment scheduling, account updates, and promotions at the number you provide; message frequency varies; message and data rates may apply; you can reply STOP to opt out; and you can reply HELP for help.`,
   },
   {
     id: "opting-out",
-    title: "Opting Out",
+    title: "2. Opting Out",
     content: `You can opt out of receiving SMS text messages from ICE at any time:
 
 • Reply STOP to any SMS message you receive from us.
 • Send an email to info@icesales.com with the subject "SMS Opt-Out".
 • Call 1-800-786-9188 during business hours (9:00 AM – 5:00 PM ET).
 
-After opting out, you will receive a confirmation message and will no longer receive SMS communications from us unless you opt in again.`,
+After opting out, you will receive this confirmation message: "International Computer Exchange: You will no longer receive messages from us. Reply START to opt back in."`,
   },
   {
-    id: "sign-up",
-    title: "How You Can Sign Up",
-    content: `You can opt in to SMS messaging from ICE in any of the following ways:
+    id: "help",
+    title: "3. HELP and STOP Keyword Responses",
+    content: `HELP message: If you text HELP, you will receive: "International Computer Exchange: Reply STOP to cancel. For support, call 1-800-786-9188 or email info@icesales.com."
 
-• By phone: Provide verbal consent during a phone call with our team.
-• By texting us: Send a text message to our business number to initiate communication.
-• Via our website: Check the SMS consent checkbox on our contact form or footer subscription form.`,
+STOP message: If you text STOP, you will receive: "International Computer Exchange: You will no longer receive messages from us. Reply START to opt back in."
+
+You can also contact us at info@icesales.com or 1-800-786-9188 for assistance.`,
   },
   {
     id: "frequency",
-    title: "Frequency & Types of Messages",
+    title: "4. Message Frequency, Types, and Charges",
     content: `Message frequency varies. You may receive:
 
 • Responses to your inquiries or support requests
-• Service updates, appointment confirmations, or account notifications
+• Service updates, project or appointment scheduling, or account notifications
 • Promotional offers, product announcements, or newsletters
 • Follow-up communications related to ongoing projects
 
 Standard message and data rates may apply. Carriers are not liable for delayed or undelivered messages.`,
   },
   {
-    id: "carrier",
-    title: "Carrier Compliance",
-    content: `Our SMS messaging program is compliant with carrier requirements and industry best practices. We use RingCentral as our messaging platform. Carriers supported include but are not limited to AT&T, Verizon, T-Mobile, Sprint, and other major US carriers.`,
+    id: "consent-records",
+    title: "5. Consent Records and Privacy",
+    content: `When you opt in through our website, ICE may retain your phone number, the date and method of consent, the form or source, the disclosure version, and message or opt-out records to operate the messaging program, honor your choices, and document consent.
+
+No mobile opt-in or text message consent will be shared with third parties or affiliates for their marketing or promotional purposes. See our Privacy Policy at /privacy-policy for more detail.`,
+  },
+  {
+    id: "program-availability",
+    title: "6. Program Availability",
+    content: `ICE uses a communications provider, including RingCentral, to deliver messages. Delivery depends on carrier availability and other factors. We will register and operate messaging campaigns as required by applicable provider and carrier rules; registration or carrier approval is not represented by this policy alone.`,
   },
   {
     id: "questions",
-    title: "Questions?",
+    title: "7. Questions?",
     content: `If you have any questions about our SMS messaging practices, please contact us:
 
 International Computer Exchange, Inc.
@@ -71,13 +80,13 @@ const DEFAULT_HERO = {
   eyebrow: "Legal · Messaging Policy",
   headline: "SMS Consent",
   subheadline: "SMS / Text messaging – opt-in & opt-out policy.",
-  last_updated: "March 2026",
+  last_updated: "September 14, 2026",
   badge_note: "Reply STOP to opt out at any time",
   document_title: "SMS / Text Messaging – Opt-In & Opt-Out",
   document_intro:
-    'International Computer Exchange, Inc. ("ICE") uses SMS text messaging via RingCentral to communicate with customers who have opted in. Below you will find information about how we handle SMS consent, how to opt in, and how to opt out at any time.',
-  related_label: "Terms of Service",
-  related_href: "/terms-of-service",
+    'International Computer Exchange, Inc. ("ICE") may use SMS text messaging to communicate with people who have affirmatively opted in. This policy explains the program, your choices, and how to get help.',
+  related_label: "Privacy Policy",
+  related_href: "/privacy-policy",
 };
 
 type CmsRecord = Record<string, unknown>;
@@ -282,7 +291,7 @@ export default function SmsConsentPage({ cmsData, orderedSections }: { cmsData?:
                     className={cx("scroll-mt-24 py-8", i < sections.length - 1 && "border-b border-secondary")}
                   >
                     <h3 className="text-lg font-semibold text-primary">{section.title}</h3>
-                    <div className="prose mt-4 whitespace-pre-line">{section.content}</div>
+                    <div className="prose mt-4 whitespace-pre-line">{section.content.replace(/\\n/g, "\n")}</div>
                   </div>
                 ))}
               </div>

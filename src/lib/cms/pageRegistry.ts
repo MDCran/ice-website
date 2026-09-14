@@ -15,6 +15,7 @@ export const SYSTEM_CMS_SLUGS = new Set([
   "partners",
   "why-ice",
   "contact",
+  "privacy-policy",
   "terms-of-service",
   "sms-consent",
   "site-settings",

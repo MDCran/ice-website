@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { notifyNewLead } from "@/lib/notifyLead";
+import { SMS_CONSENT_DISCLOSURE_VERSION } from "@/lib/smsConsent";
 
 /** Max lengths to keep submissions sane (DB columns are unbounded text). */
 const MAX_LENGTHS = {
@@ -130,6 +131,12 @@ export async function POST(request: NextRequest) {
     const cleanReferrer = cleanString(referrer, MAX_LENGTHS.referrer);
     const cleanUtm = cleanRecord(utm, 10);
     const cleanQualification = cleanRecord(qualification, 20);
+    const smsConsentGiven = smsConsent === true && (cleanPhone?.replace(/\D/g, "").length ?? 0) >= 7;
+    const smsConsentAt = smsConsentGiven ? new Date().toISOString() : null;
+    const smsConsentSource = smsConsentGiven ? cleanFormKey ?? cleanSource ?? "contact_form" : null;
+    const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0] ?? request.headers.get("x-real-ip");
+    const smsConsentIp = smsConsentGiven ? cleanString(forwardedFor, 200) : null;
+    const smsConsentUserAgent = smsConsentGiven ? cleanString(request.headers.get("user-agent"), 500) : null;
     const leadScore = calculateLeadScore({
       company: cleanCompany,
       phone: cleanPhone,
@@ -147,7 +154,12 @@ export async function POST(request: NextRequest) {
       phone: cleanPhone,
       service: cleanService,
       message: cleanMessage,
-      sms_consent: smsConsent === true,
+      sms_consent: smsConsentGiven,
+      sms_consent_at: smsConsentAt,
+      sms_consent_source: smsConsentSource,
+      sms_consent_ip: smsConsentIp,
+      sms_consent_user_agent: smsConsentUserAgent,
+      sms_consent_disclosure_version: smsConsentGiven ? SMS_CONSENT_DISCLOSURE_VERSION : null,
       email_marketing_consent: marketingConsent === true,
       email_consent_at: marketingConsent === true ? new Date().toISOString() : null,
       email_consent_source: marketingConsent === true ? cleanFormKey ?? "contact_form" : null,
@@ -164,7 +176,7 @@ export async function POST(request: NextRequest) {
     let { error } = await supabase.from("contacts").insert(row);
     if (
       error &&
-      /pipeline_stage|form_key|source|page_path|referrer|utm|qualification|lead_score|email_marketing_consent|email_consent_at|email_consent_source|schema cache|column/i.test(
+      /pipeline_stage|form_key|source|page_path|referrer|utm|qualification|lead_score|sms_consent_at|sms_consent_source|sms_consent_ip|sms_consent_user_agent|sms_consent_disclosure_version|email_marketing_consent|email_consent_at|email_consent_source|schema cache|column/i.test(
         error.message,
       )
     ) {
@@ -177,6 +189,11 @@ export async function POST(request: NextRequest) {
         "utm",
         "qualification",
         "lead_score",
+        "sms_consent_at",
+        "sms_consent_source",
+        "sms_consent_ip",
+        "sms_consent_user_agent",
+        "sms_consent_disclosure_version",
         "email_marketing_consent",
         "email_consent_at",
         "email_consent_source",

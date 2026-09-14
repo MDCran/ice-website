@@ -40,6 +40,7 @@ import { publicPathForCmsPage, SYSTEM_CMS_SLUGS } from "@/lib/cms/pageRegistry";
 import { getDefaultSolutionFinderContent } from "@/components/marketing/SolutionFinder";
 import { getDefaultConsultWizardContent } from "@/components/marketing/ConsultWizard";
 import { getDefaultContactWidgetContent } from "@/components/ui/ContactWidget";
+import { PRIVACY_POLICY_DEFAULTS } from "@/app/(public)/privacy-policy/Client";
 import llmsDefault from "../../../../../../content/llms-default.json";
 
 const PAGE_SEO_KEY = "page_seo";
@@ -1584,7 +1585,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     content: {
       prefix: "By submitting, you consent to the selected communications.",
       privacy_label: "Read our privacy notice",
-      privacy_href: "/sms-consent",
+      privacy_href: "/privacy-policy",
       suffix: ".",
     },
   },
@@ -1699,12 +1700,33 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     content: { label: "Or browse the full catalog →", href: "/solutions" },
   },
   {
+    id: "privacy-policy-hero",
+    label: "Privacy Policy Hero",
+    description: "Header copy for the Privacy Policy page.",
+    key: "hero",
+    type: "hero",
+    slugs: ["privacy-policy"],
+    required: true,
+    content: PRIVACY_POLICY_DEFAULTS.hero as unknown as JsonObject,
+  },
+  {
+    id: "privacy-policy-sections",
+    label: "Privacy Policy Sections",
+    description: "Editable privacy-policy sections, including the mobile opt-in non-sharing statement.",
+    key: "sections",
+    type: "content",
+    slugs: ["privacy-policy"],
+    required: true,
+    content: { items: PRIVACY_POLICY_DEFAULTS.sections } as JsonObject,
+  },
+  {
     id: "legal-hero",
     label: "Legal Hero",
-    description: "Header copy for Terms of Service and SMS Consent pages.",
+    description: "Header copy for Privacy Policy, Terms of Service, and SMS Consent pages.",
     key: "hero",
     type: "hero",
     pageTypes: ["legal"],
+    excludeSlugs: ["privacy-policy"],
     required: true,
     content: {
       eyebrow: "Legal · Website Terms",
@@ -1721,10 +1743,11 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
   {
     id: "legal-sections",
     label: "Legal Sections",
-    description: "Editable policy sections (id, title, content) for Terms and SMS Consent.",
+    description: "Editable policy sections (id, title, content) for Privacy, Terms, and SMS Consent.",
     key: "sections",
     type: "content",
     pageTypes: ["legal"],
+    excludeSlugs: ["privacy-policy"],
     required: true,
     content: {
       items: [

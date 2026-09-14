@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, type HTMLAttributes, useEffect, useId, useMemo, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
+import { SmsConsentDisclosure } from "@/components/legal/SmsConsentDisclosure";
 import { usePathname } from "next/navigation";
 import { AlertCircle, CheckCircle, MessageChatCircle, Send01, XClose } from "@untitledui/icons";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -116,11 +116,11 @@ const DEFAULT_CONTACT_WIDGET_CONTENT: ResolvedContactWidgetContent = {
   service_placeholder: "Select a service...",
   message_label: "Message",
   message_placeholder: "How can we help?",
-  sms_consent_aria_label: "SMS consent",
+  sms_consent_aria_label: "Optional SMS consent",
   sms_consent_prefix:
-    "I consent to receive SMS text messages from ICE. Message and data rates may apply. Reply STOP to opt out. See our ",
-  sms_consent_link_label: "SMS Consent Policy",
-  sms_consent_link_href: "/sms-consent",
+    "By checking this optional box, you agree to receive text messages from International Computer Exchange. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our ",
+  sms_consent_link_label: "Privacy Policy",
+  sms_consent_link_href: "/privacy-policy",
   sms_consent_suffix: ".",
   marketing_consent_aria_label: "Email marketing consent",
   marketing_consent_hint:
@@ -863,21 +863,7 @@ export default function ContactWidget({ content }: { content?: ContactWidgetCont
                       )}
                       isSelected={form.smsConsent}
                       onChange={(isSelected) => setField("smsConsent", isSelected)}
-                      hint={
-                        <>
-                          {widget.sms_consent_prefix}
-                          <Link
-                            href={widget.sms_consent_link_href}
-                            className="text-brand-secondary underline underline-offset-2 hover:text-brand-secondary_hover"
-                          >
-                            {accessibleLabel(
-                              widget.sms_consent_link_label,
-                              DEFAULT_CONTACT_WIDGET_CONTENT.sms_consent_link_label,
-                            )}
-                          </Link>
-                          {widget.sms_consent_suffix}
-                        </>
-                      }
+                      hint={<SmsConsentDisclosure />}
                     />
 
                     <Checkbox
