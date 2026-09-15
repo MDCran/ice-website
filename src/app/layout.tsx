@@ -5,6 +5,7 @@ import "lenis/dist/lenis.css";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/themeProvider";
 import { RouteProvider } from "@/components/providers/RouteProvider";
+import { getSeoConfig } from "@/lib/seo/config";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -18,18 +19,13 @@ const geist = Geist({
   variable: "--font-geist",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://icesales.com";
-const siteName = "International Computer Exchange";
-const defaultTitle =
-  "International Computer Exchange — Enterprise Cloud, Security & IBM Managed Services";
-const defaultDescription =
-  "IBM Business Partner since 1990. ICE delivers managed cloud hosting, disaster recovery, backup, IBM i security, and enterprise managed services from SOC 2 Type II certified data centers.";
-
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+ const { siteUrl, siteName, defaultTitle, defaultDescription, titleTemplate } = await getSeoConfig();
+ return {
   metadataBase: new URL(siteUrl),
   title: {
     default: defaultTitle,
-    template: "%s | International Computer Exchange",
+    template: titleTemplate,
   },
   description: defaultDescription,
   applicationName: siteName,
@@ -91,6 +87,7 @@ export const metadata: Metadata = {
       }
     : {}),
 };
+}
 
 export default function RootLayout({
   children,

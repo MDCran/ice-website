@@ -107,7 +107,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .replace(/\s*[|\-–]\s*International Computer Exchange\s*$/i, "")
     .trim();
 
-  const metadata = await buildPageMetadata(page, {
+  const shareImage = page.og_image_url || profile.hero_image || profile.card_image;
+  const metadata = await buildPageMetadata({ ...page, meta_title: cleanTitle || rawTitle, og_image_url: shareImage }, {
     fallbackTitle: cleanTitle || rawTitle || serviceName(page, profile),
     fallbackDescription: description,
     defaultPath: `/solutions/${slug}`,

@@ -21,7 +21,7 @@ export default async function SeoAdminPage() {
     .eq("slug", "site-settings")
     .maybeSingle();
 
-  let seoContent: Record<string, any> = {};
+  let seoContent: Record<string, unknown> = {};
   let seoSectionId: string | null = null;
 
   if (page?.id) {
@@ -33,7 +33,7 @@ export default async function SeoAdminPage() {
       .maybeSingle();
     if (section) {
       seoSectionId = section.id;
-      seoContent = (section.content as Record<string, any>) ?? {};
+      seoContent = (section.content as Record<string, unknown>) ?? {};
     }
   }
 
@@ -52,9 +52,9 @@ export default async function SeoAdminPage() {
  * Map a stored `seo` section (snake_case, matching getSeoConfig readers) into the
  * flat form shape. Falls back to DEFAULT_SEO_CONFIG so every field starts filled.
  */
-function toFormValues(seo: Record<string, any>): SeoFormValues {
+function toFormValues(seo: Record<string, unknown>): SeoFormValues {
   const d = DEFAULT_SEO_CONFIG;
-  const org = (seo.organization as Record<string, any>) ?? {};
+  const org = (seo.organization as Record<string, unknown>) ?? {};
 
   const pick = (v: unknown, fallback: string): string =>
     typeof v === "string" && v.trim() ? v : fallback;
@@ -71,6 +71,7 @@ function toFormValues(seo: Record<string, any>): SeoFormValues {
   };
 
   return {
+    site_url: pick(seo.site_url ?? seo.siteUrl, d.siteUrl),
     site_name: pick(seo.site_name, d.siteName),
     default_title: pick(seo.default_title, d.defaultTitle),
     title_template: pick(seo.title_template, d.titleTemplate),

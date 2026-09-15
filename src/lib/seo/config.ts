@@ -1,4 +1,5 @@
 import { getSiteSettings } from "@/lib/cms";
+import { resolveSiteUrl } from "./siteUrl";
 
 /**
  * Site-wide SEO / AEO / GEO configuration.
@@ -56,16 +57,16 @@ export interface SeoConfig {
   defaultOgImage: string | null;
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://icesales.com";
+const SITE_URL = resolveSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
 
 export const DEFAULT_SEO_CONFIG: SeoConfig = {
   siteUrl: SITE_URL,
   siteName: "International Computer Exchange",
   defaultTitle:
-    "International Computer Exchange — Enterprise Cloud, Security & IBM Managed Services",
+    "AS400 & IBM i Hosting | International Computer Exchange",
   titleTemplate: "%s | International Computer Exchange",
   defaultDescription:
-    "IBM Business Partner since 1990. ICE delivers AS400 and IBM i hosting, managed cloud hosting, disaster recovery, backup, IBM i security, and enterprise managed services.",
+    "30+ years in business. ICE specializes in AS400 and IBM i hosting, IBM Power support, backup, disaster recovery, security, and managed IT services.",
   keywords: [
     "AS400",
     "AS400 hosting",
@@ -138,19 +139,19 @@ function arr(v: unknown, fallback: string[]): string[] {
  */
 export async function getSeoConfig(): Promise<SeoConfig> {
   const d = DEFAULT_SEO_CONFIG;
-  let seo: Record<string, any> = {};
-  let org: Record<string, any> = {};
+  let seo: Record<string, unknown> = {};
+  let org: Record<string, unknown> = {};
   try {
     const settings = await getSiteSettings();
-    seo = (settings?.seo as Record<string, any>) ?? {};
+    seo = (settings?.seo as Record<string, unknown>) ?? {};
     // Organization contact can also live in the existing company_info section.
-    org = (seo.organization as Record<string, any>) ?? (settings?.company_info as Record<string, any>) ?? {};
+    org = (seo.organization as Record<string, unknown>) ?? (settings?.company_info as Record<string, unknown>) ?? {};
   } catch {
     // DB unavailable — fall back to defaults.
   }
 
   return {
-    siteUrl: d.siteUrl,
+    siteUrl: resolveSiteUrl(seo.site_url ?? seo.siteUrl, d.siteUrl),
     siteName: str(seo.site_name ?? seo.siteName, d.siteName),
     defaultTitle: str(seo.default_title ?? seo.defaultTitle, d.defaultTitle),
     titleTemplate: str(seo.title_template ?? seo.titleTemplate, d.titleTemplate),

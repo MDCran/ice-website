@@ -26,11 +26,13 @@ import { Toggle } from "@/components/base/toggle/toggle";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { cx } from "@/utils/cx";
 import SeoHealthChecklist from "@/components/admin/SeoHealthChecklist";
+import { publicUrl, resolveSiteUrl } from "@/lib/seo/siteUrl";
 
 /* ─────────────────────────────────────────────────────────────── */
 
 export interface SeoFormValues {
   // General
+  site_url: string;
   site_name: string;
   default_title: string;
   title_template: string;
@@ -124,7 +126,7 @@ export default function SeoSettingsClient({
     set("social", values.social.filter((_, i) => i !== index));
 
   /* ── Build the persisted object (snake_case keys getSeoConfig reads) ── */
-  const buildContent = (): Record<string, any> => {
+  const buildContent = (): Record<string, unknown> => {
     const keywords = values.keywords
       .split(",")
       .map((k) => k.trim())
@@ -135,6 +137,7 @@ export default function SeoSettingsClient({
     const longitude = parseFloat(values.longitude);
 
     return {
+      site_url: resolveSiteUrl(values.site_url),
       site_name: values.site_name.trim(),
       default_title: values.default_title.trim(),
       title_template: values.title_template.trim(),
@@ -172,6 +175,9 @@ export default function SeoSettingsClient({
     setSaveStatus("saving");
     setErrorMsg("");
     try {
+      if (!values.site_url.trim().startsWith("https://") || !publicUrl(values.site_url)) {
+        throw new Error("Enter the public HTTPS website address, not localhost or an IP address.");
+      }
       // Resolve the site-settings page id (create the page if it does not exist yet).
       let settingsPageId = pageId;
       if (!settingsPageId) {
@@ -312,6 +318,13 @@ export default function SeoSettingsClient({
 
       {/* ── General ── */}
       <Card icon={SearchLg} title="General" description="Default titles, description, and keywords.">
+        <Input
+          label="Public Website URL"
+          value={values.site_url}
+          onChange={(v) => set("site_url", v)}
+          placeholder="https://sandbox.icesales.com"
+          hint="The domain currently serving these pages. Drives canonical URLs, social links, structured data, and the sitemap. Update this when moving to your production domain."
+        />
         <Input
           label="Site Name"
           value={values.site_name}

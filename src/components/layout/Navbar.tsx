@@ -175,12 +175,12 @@ export interface NavbarCMSContent {
 
 const DEFAULT_NAVBAR_CONTENT = {
   solutions_column_label: "Solutions",
-  promo_eyebrow: "Talk to ICE",
-  promo_heading: "Not sure which solution fits?",
-  promo_description: "Get a free infrastructure assessment — or jump into the solution finder in under a minute.",
-  promo_primary: { label: "Request a consultation", href: "/contact" },
+  promo_eyebrow: "Our core specialty",
+  promo_heading: "AS400 & IBM i Hosting",
+  promo_description: "30+ years in business. Hosting, support, backup, and recovery for your IBM i environment.",
+  promo_primary: { label: "Explore AS400 hosting", href: "/solutions/as400" },
   promo_secondary: { label: "Find your solution", href: "/solutions/find" },
-  proof_line: "Providing Enterprise solutions since 1990.",
+  proof_line: "30+ years in business · Serving enterprise IT since 1990",
   view_all_label: "View All Solutions",
   view_all_href: "/solutions",
   desktop_search_aria_label: "Search (Ctrl+K)",
@@ -445,6 +445,7 @@ export default function Navbar({
               {addressLine}
             </span>
             <div className="flex items-center gap-6">
+              <span className="font-semibold text-brand-secondary">{navbarContent.proof_line}</span>
               <a
                 href={phoneHref}
                 className="inline-flex items-center gap-1.5 rounded-sm outline-focus-ring transition duration-100 ease-linear hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -469,7 +470,7 @@ export default function Navbar({
           Dark mode: navy glass (translucent primary + blur) with white plate behind the JPG logo. */}
       <nav
         className={cx(
-          "border-b border-secondary bg-white transition-shadow duration-300 dark:bg-primary/80 dark:backdrop-blur-xl",
+          "relative border-b border-secondary bg-white transition-shadow duration-300 dark:bg-primary/80 dark:backdrop-blur-xl",
           scrolled && "shadow-sm"
         )}
       >
@@ -498,7 +499,7 @@ export default function Navbar({
               link.hasMega ? (
                 <div
                   key={link.label}
-                  className="relative"
+                  className="static"
                   onPointerEnter={onMegaPointerEnter}
                   onPointerLeave={onMegaPointerLeave}
                   onBlur={(e) => {
@@ -518,10 +519,9 @@ export default function Navbar({
                     aria-expanded={megaOpen}
                     aria-haspopup="true"
                     onFocus={openMega}
-                    onClick={() => {
-                      if (megaOpenRef.current) closeMegaNow();
-                      else openMega();
-                    }}
+                    // Hover/focus may already have opened the panel. A click
+                    // must not immediately undo that action.
+                    onClick={openMega}
                     className={cx(
                       "inline-flex cursor-pointer items-center gap-0.5 rounded-lg px-3 py-2 text-sm font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
                       isActive(link.href)
@@ -546,7 +546,7 @@ export default function Navbar({
                       fires pointerleave. */}
                   <AnimatePresence>
                     {megaOpen && (
-                      <div className="absolute top-full left-1/2 z-50 -translate-x-1/2 pt-2">
+                      <div className="absolute inset-x-4 top-full z-50 mx-auto max-w-[1100px] pt-2">
                         {/* Invisible bridge fills the gap between trigger and panel */}
                         <div aria-hidden="true" className="absolute inset-x-0 top-0 h-2" />
                         <motion.div
@@ -555,7 +555,7 @@ export default function Navbar({
                           exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
                           transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
                         >
-                          <div className="w-[1100px] overflow-hidden rounded-2xl bg-primary shadow-2xl ring-1 ring-black/5 dark:bg-primary dark:ring-white/10">
+                          <div className="w-full overflow-hidden rounded-2xl bg-primary shadow-2xl ring-1 ring-black/5 dark:bg-primary dark:ring-white/10">
                             {/* Brand gradient hairline */}
                             <div aria-hidden="true" className="h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent" />
                             <div className="grid grid-cols-[1fr_280px]">
@@ -582,7 +582,7 @@ export default function Navbar({
                                       <li key={item.href}>
                                         <Link
                                           href={item.href}
-                                          className="group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm leading-snug text-secondary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover/60 hover:text-primary focus-visible:outline-2"
+                                          className={cx("group flex min-h-11 items-center gap-2 rounded-md px-2.5 py-2 text-sm leading-snug outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover/60 hover:text-primary focus-visible:outline-2", isAs400Link(item) ? "bg-brand-primary_alt font-semibold text-brand-secondary ring-1 ring-brand/30" : "text-secondary")}
                                         >
                                           <span className="flex-1 text-balance">{item.label}</span>
                                           <ArrowRight className="size-3.5 shrink-0 -translate-x-1 text-fg-brand-primary opacity-0 transition duration-100 ease-linear group-hover:translate-x-0 group-hover:opacity-100" />
@@ -814,6 +814,11 @@ export default function Navbar({
                             className="overflow-hidden"
                           >
                             <div className="mt-2 flex flex-col gap-4 pb-2 pl-4">
+                              <Link href={navbarContent.promo_primary.href} onClick={() => setMobileOpen(false)} className="rounded-xl bg-brand-primary_alt p-4 text-brand-secondary ring-1 ring-brand/30 focus-visible:outline-2 focus-visible:outline-offset-2">
+                                <span className="block text-xs uppercase tracking-wide">{navbarContent.promo_eyebrow}</span>
+                                <span className="mt-1 block text-lg font-semibold">{navbarContent.promo_heading}</span>
+                                <span className="mt-2 block text-sm text-tertiary">{navbarContent.promo_description}</span>
+                              </Link>
                               <Link
                                 href={navbarContent.view_all_href}
                                 onClick={() => setMobileOpen(false)}

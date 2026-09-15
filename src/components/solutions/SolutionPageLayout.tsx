@@ -568,7 +568,7 @@ export default function SolutionPageLayout({
                 dangerouslySetInnerHTML={{ __html: title }}
               />
 
-              <p className="mt-4 max-w-xl text-lg leading-relaxed text-tertiary line-clamp-3 md:mt-6 md:text-xl">
+              <p className="mt-4 max-w-xl text-lg leading-relaxed text-tertiary md:mt-6 md:text-xl">
                 {subtitle}
               </p>
 

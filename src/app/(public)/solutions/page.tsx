@@ -5,6 +5,7 @@ import SolutionsClient from "./Client";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublishedSolutionCatalog } from "@/lib/cms/solutionCatalog";
+import { buildPageMetadata } from "@/lib/seo/pageMetadata";
 
 /** Trim to <=155 chars at a word boundary, appending an ellipsis when cut. */
 function clampDescription(value: string, max = 155): string {
@@ -17,14 +18,11 @@ function clampDescription(value: string, max = 155): string {
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageContent("solutions");
-  return {
-    title: page?.meta_title ?? page?.title ?? "Solutions | ICE",
-    description: clampDescription(
-      page?.meta_description ??
-        "Enterprise cloud, AS400 and IBM i hosting, data protection, security, and managed services from ICE, an IBM Business Partner since 1990.",
-    ),
-    alternates: { canonical: "/solutions" },
-  };
+  return buildPageMetadata(page, {
+    fallbackTitle: "AS400, IBM i & Managed IT Solutions",
+    fallbackDescription: clampDescription("Explore AS400 and IBM i hosting, cloud, backup, recovery, and managed IT services from ICE, with 30+ years in business."),
+    defaultPath: "/solutions",
+  });
 }
 
 export default async function SolutionsPage() {

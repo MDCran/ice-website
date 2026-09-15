@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { PageData } from "@/lib/cms";
 import { getSeoConfig } from "@/lib/seo/config";
+import { publicUrl } from "./siteUrl";
 
 /** Trim to <=155 chars at a word boundary. */
 export function clampDescription(value: string, max = 155): string {
@@ -29,9 +30,8 @@ export async function buildPageMetadata(
   const description = clampDescription(
     page?.meta_description?.trim() || opts.fallbackDescription || seo.defaultDescription
   );
-  const canonical =
-    page?.canonical_url?.trim() ||
-    opts.defaultPath;
+  const canonical = publicUrl(page?.canonical_url, seo.siteUrl)
+    || new URL(opts.defaultPath, seo.siteUrl).href;
 
   const ogImage = page?.og_image_url?.trim() || seo.defaultOgImage || undefined;
   const twitterImage =

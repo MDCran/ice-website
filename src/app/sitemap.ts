@@ -1,9 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { DEFAULT_SEO_CONFIG } from "@/lib/seo/config";
+import { getSeoConfig } from "@/lib/seo/config";
 import type { MetadataRoute } from "next";
 import { publicPathForCmsPage } from "@/lib/cms/pageRegistry";
-
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SEO_CONFIG.siteUrl;
 
 /** Static pages get a per-slug priority; anything unlisted falls back to 0.6. */
 const STATIC_PRIORITY: Record<string, number> = {
@@ -14,7 +12,7 @@ const STATIC_PRIORITY: Record<string, number> = {
   contact: 0.6,
 };
 
-function urlForPage(slug: string, pageType: string | null): string {
+function urlForPage(baseUrl: string, slug: string, pageType: string | null): string {
   return `${baseUrl}${publicPathForCmsPage(slug, pageType)}`;
 }
 
@@ -33,6 +31,7 @@ function priorityFor(slug: string, pageType: string | null): number {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const { siteUrl } = await getSeoConfig();
   const supabase = await createClient();
   const { data: pages } = await supabase
     .from("pages")
@@ -45,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   for (const page of pages ?? []) {
     entries.push({
-      url: urlForPage(page.slug, page.page_type),
+      url: urlForPage(siteUrl, page.slug, page.page_type),
       lastModified: page.updated_at ? new Date(page.updated_at) : new Date(),
       changeFrequency: changeFrequencyFor(page.page_type),
       priority: priorityFor(page.slug, page.page_type),
