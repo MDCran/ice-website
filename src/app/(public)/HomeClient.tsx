@@ -824,10 +824,10 @@ export default function Home({
               </motion.div>
             ))}
 
-            {/* 6th tile — View All Solutions CTA */}
+            {/* Fill the two columns beside the fourth service card on desktop. */}
             <motion.div
               {...reveal(popularSolutions.length * MOTION_STAGGER)}
-              className="h-full sm:col-span-2 lg:col-span-3"
+              className="h-full sm:col-span-2"
             >
               <Link
                 href={popularSolutionsSection?.view_all?.href ?? "/solutions"}
