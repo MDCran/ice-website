@@ -43,7 +43,7 @@ const DEFAULT_HERO: LegalHero = {
     "Please read these terms and conditions carefully before using the International Computer Exchange, Inc. website.",
   last_updated: "March 2026",
   badge_note: "Applies to icesales.com",
-  document_title: "Terms of Service & Conditions",
+  document_title: "Terms and Conditions",
   document_intro:
     "These Terms govern your access to and use of the International Computer Exchange, Inc. website. By using the site, you agree to be bound by the sections below.",
   related_label: "SMS Consent Policy",
@@ -103,9 +103,9 @@ If you decide to access any of the third-party websites linked to the Site, you 
   {
     id: "sms-terms",
     title: "7. SMS Terms",
-    content: `If you separately and affirmatively opt in to receive text messages from ICE, you agree to receive conversational, service and support, project or appointment scheduling, account updates, and promotional messages at the mobile number you provide. Consent is not a condition of purchase. Message frequency varies, and message and data rates may apply.
+    content: `If you separately and affirmatively opt in using the optional SMS checkbox on our website, you agree to receive messages from International Computer Exchange, Inc. about your inquiry, service and support, project updates, and appointment scheduling. Submitting a phone number alone is not SMS consent. Consent is not a condition of purchase. Message frequency varies, and message and data rates may apply. This opt-in does not cover promotional messages.
 
-Reply STOP to any ICE text message to opt out. You will receive the following confirmation: "International Computer Exchange: You will no longer receive messages from us. Reply START to opt back in." Reply HELP for help. You will receive: "International Computer Exchange: Reply STOP to cancel. For support, call 1-800-786-9188 or email info@icesales.com." Our SMS Consent Policy and Privacy Policy describe the program and how we handle information. You may opt in only through a method that clearly requests SMS consent; providing a phone number alone does not opt you in to marketing text messages.`,
+Reply STOP to any ICE text message to opt out. Reply HELP for help. You can also contact us at 1-800-786-9188 or info@icesales.com. Rejoining after opting out requires a new affirmative opt-in. See our SMS Consent and Privacy Policy pages for details.`,
   },
   {
     id: "changes-to-terms",

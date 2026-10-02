@@ -159,7 +159,7 @@ const contactWidgetContent = {
   service_label: "Service Interested In", service_placeholder: "Select a service...",
   message_label: "Message", message_placeholder: "How can we help?",
   sms_consent_aria_label: "Optional SMS consent",
-  sms_consent_prefix: "By checking this optional box, you agree to receive text messages from International Computer Exchange. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our ",
+  sms_consent_prefix: "By checking this optional box, you agree to receive SMS messages from International Computer Exchange, Inc. about your inquiry, service and support, project updates, and appointment scheduling. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our ",
   sms_consent_link_label: "Privacy Policy", sms_consent_link_href: "/privacy-policy", sms_consent_suffix: ".",
   marketing_consent_aria_label: "Email marketing consent",
   marketing_consent_hint: "Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time.",

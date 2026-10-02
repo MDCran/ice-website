@@ -17,9 +17,9 @@ const DEFAULT_SECTIONS = [
   {
     id: "website-opt-in",
     title: "1. Website Opt-In",
-    content: `You opt in to SMS messages on our website only by selecting the separate, optional SMS consent checkbox beside the disclosure. Providing a phone number alone does not opt you in to promotional text messages. Consent is not a condition of purchase.
+    content: `You opt in to SMS messages on our website only by selecting the separate, optional SMS consent checkbox beside the disclosure. Providing a phone number alone does not opt you in to text messages. Consent is not a condition of purchase, and you can submit a form without checking the box.
 
-By selecting that checkbox, you acknowledge that you consent to receive text messages from International Computer Exchange, Inc. ("ICE") about conversations, service and support, project or appointment scheduling, account updates, and promotions at the number you provide; message frequency varies; message and data rates may apply; you can reply STOP to opt out; and you can reply HELP for help.`,
+By selecting that checkbox, you consent to receive SMS messages from International Computer Exchange, Inc. ("ICE") about your inquiry, service and support, project updates, and appointment scheduling at the number you provide. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. This opt-in does not cover promotional messages.`,
   },
   {
     id: "opting-out",
@@ -30,16 +30,13 @@ By selecting that checkbox, you acknowledge that you consent to receive text mes
 • Send an email to info@icesales.com with the subject "SMS Opt-Out".
 • Call 1-800-786-9188 during business hours (9:00 AM – 5:00 PM ET).
 
-After opting out, you will receive this confirmation message: "International Computer Exchange: You will no longer receive messages from us. Reply START to opt back in."`,
+We will stop sending SMS messages to that number after the opt-out is processed. To receive messages again, submit a new request and affirmatively select the SMS consent checkbox.`,
   },
   {
     id: "help",
-    title: "3. HELP and STOP Keyword Responses",
-    content: `HELP message: If you text HELP, you will receive: "International Computer Exchange: Reply STOP to cancel. For support, call 1-800-786-9188 or email info@icesales.com."
+    title: "3. Help",
+    content: `Reply HELP for assistance. You can also contact ICE at info@icesales.com or 1-800-786-9188. Reply STOP to opt out.`,
 
-STOP message: If you text STOP, you will receive: "International Computer Exchange: You will no longer receive messages from us. Reply START to opt back in."
-
-You can also contact us at info@icesales.com or 1-800-786-9188 for assistance.`,
   },
   {
     id: "frequency",
@@ -47,23 +44,24 @@ You can also contact us at info@icesales.com or 1-800-786-9188 for assistance.`,
     content: `Message frequency varies. You may receive:
 
 • Responses to your inquiries or support requests
-• Service updates, project or appointment scheduling, or account notifications
-• Promotional offers, product announcements, or newsletters
-• Follow-up communications related to ongoing projects
+• Project updates and appointment scheduling messages
+• Follow-up communications related to your inquiry or ongoing project
 
-Standard message and data rates may apply. Carriers are not liable for delayed or undelivered messages.`,
+Standard message and data rates may apply. Carriers are not liable for delayed or undelivered messages.
+
+Example: “International Computer Exchange: We received your request and will follow up about your project. Reply STOP to opt out.”`,
   },
   {
     id: "consent-records",
     title: "5. Consent Records and Privacy",
     content: `When you opt in through our website, ICE may retain your phone number, the date and method of consent, the form or source, the disclosure version, and message or opt-out records to operate the messaging program, honor your choices, and document consent.
 
-No mobile opt-in or text message consent will be shared with third parties or affiliates for their marketing or promotional purposes. See our Privacy Policy at /privacy-policy for more detail.`,
+Mobile opt-in, SMS consent, and phone numbers collected for SMS communication purposes will not be shared with any third party or affiliates for marketing purposes. We do not share mobile opt-in or text message consent with any third party or affiliate for its own marketing or promotional purposes. Essential service providers may process information only on ICE's behalf to provide messaging and related services, not for their own marketing. See our Privacy Policy for more detail.`,
   },
   {
     id: "program-availability",
     title: "6. Program Availability",
-    content: `ICE uses a communications provider, including RingCentral, to deliver messages. Delivery depends on carrier availability and other factors. We will register and operate messaging campaigns as required by applicable provider and carrier rules; registration or carrier approval is not represented by this policy alone.`,
+    content: `ICE may use communications providers to deliver messages. Delivery depends on provider, device, and carrier availability; delivery is not guaranteed. This website disclosure describes the SMS program but does not itself confirm carrier or campaign registration or approval.`,
   },
   {
     id: "questions",
@@ -80,7 +78,7 @@ const DEFAULT_HERO = {
   eyebrow: "Legal · Messaging Policy",
   headline: "SMS Consent",
   subheadline: "SMS / Text messaging – opt-in & opt-out policy.",
-  last_updated: "September 14, 2026",
+  last_updated: "October 1, 2026",
   badge_note: "Reply STOP to opt out at any time",
   document_title: "SMS / Text Messaging – Opt-In & Opt-Out",
   document_intro:

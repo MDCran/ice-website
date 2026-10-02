@@ -8,7 +8,7 @@ export const PRIVACY_POLICY_DEFAULTS: LegalPolicyDefaults = {
     eyebrow: "Legal · Privacy",
     headline: "Privacy Policy",
     subheadline: "How International Computer Exchange collects, uses, and protects information.",
-    last_updated: "September 14, 2026",
+    last_updated: "October 1, 2026",
     badge_note: "Applies to icesales.com",
     document_title: "Privacy Policy",
     document_intro:
@@ -39,7 +39,7 @@ We do not use a phone number for promotional text messages merely because you su
     {
       id: "sms-privacy",
       title: "4. Mobile and SMS Privacy",
-      content: `No mobile opt-in or text message consent will be shared with third parties or affiliates for their marketing or promotional purposes.
+      content: `Mobile opt-in, SMS consent, and phone numbers collected for SMS communication purposes will not be shared with any third party or affiliates for marketing purposes. We do not share mobile opt-in or text message consent with any third party or affiliate for its own marketing or promotional purposes.
 
 If you opt in to SMS messages, we may retain your phone number, the date and method of consent, the form or source, the disclosure version, and message or opt-out records to operate the program, honor your choices, prevent abuse, and document consent. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help.`,
     },

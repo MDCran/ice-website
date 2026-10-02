@@ -1722,7 +1722,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
   {
     id: "legal-hero",
     label: "Legal Hero",
-    description: "Header copy for Privacy Policy, Terms of Service, and SMS Consent pages.",
+    description: "Header copy for Privacy Policy, Terms and Conditions, and SMS Consent pages.",
     key: "hero",
     type: "hero",
     pageTypes: ["legal"],

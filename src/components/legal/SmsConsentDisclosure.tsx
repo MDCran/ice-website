@@ -7,12 +7,11 @@ import Link from "next/link";
 export function SmsConsentDisclosure() {
   return (
     <>
-      By checking this optional box, you agree to receive text messages from
-      International Computer Exchange about conversations, service and support,
-      appointments or account updates, and promotions. Message frequency varies.
-      Message and data rates may apply. Reply STOP to opt out or HELP for help.
-      Reply START to opt back in after opting out. Consent is not a condition of
-      purchase. See our {" "}
+      By checking this optional box, you agree to receive SMS messages from
+      International Computer Exchange, Inc. about your inquiry, service and
+      support, project updates, and appointment scheduling. Message frequency
+      varies. Message and data rates may apply. Reply STOP to opt out or HELP for
+      help. Consent is not a condition of purchase. See our{" "}
       <Link
         href="/privacy-policy"
         className="text-brand-secondary underline underline-offset-2 hover:text-brand-secondary_hover"
@@ -24,7 +23,7 @@ export function SmsConsentDisclosure() {
         href="/terms-of-service"
         className="text-brand-secondary underline underline-offset-2 hover:text-brand-secondary_hover"
       >
-        Terms of Service
+        Terms and Conditions
       </Link>
       .
     </>
