@@ -293,8 +293,9 @@ export async function POST(request: Request) {
     if (!recipients?.length) return NextResponse.json({ error: "No eligible recipients remain after consent and suppression checks." }, { status: 400 });
     const { data: mailSettings } = await auth.supabase.from("marketing_settings").select("payment_url").eq("id", true).maybeSingle();
     const paymentUrl = clean(mailSettings?.payment_url, 2048);
-    if (!campaign.body_only && hasPaymentLink(String(campaign.html ?? "")) && !validHttpsUrl(paymentUrl)) return NextResponse.json({ error: "Set a secure customer payment link in Email settings before sending this campaign." }, { status: 400 });
-    if (!campaign.body_only && String(campaign.html ?? "").includes("{{amount_due}}")) {
+    const campaignHtml = campaign.body_only ? "" : renderMarketingEmail({ preheader: campaign.preheader, blocks: (campaign.blocks ?? []) as EmailBlock[], includeUnsubscribe: includesPreferenceCenter(campaign.campaign_type) });
+    if (!campaign.body_only && hasPaymentLink(campaignHtml) && !validHttpsUrl(paymentUrl)) return NextResponse.json({ error: "Set a secure customer payment link in Email settings before sending this campaign." }, { status: 400 });
+    if (!campaign.body_only && campaignHtml.includes("{{amount_due}}")) {
       const missing = missingAmounts(recipients);
       if (missing) return NextResponse.json({ error: `${missing} recipient${missing === 1 ? " is" : "s are"} missing amount_due. Add the amount_due column to your contact CSV and import it before sending.` }, { status: 400 });
     }
@@ -312,7 +313,7 @@ export async function POST(request: Request) {
         ...(campaign.body_only
           ? { text: campaign.body_text }
           : {
-              html: withPaymentUrl(personalize(campaign.html, contact, true), paymentUrl).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
+              html: withPaymentUrl(personalize(campaignHtml, contact, true), paymentUrl).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
               headers: {
                 "List-Unsubscribe": `<${siteUrl}/api/marketing/unsubscribe?id=${contact.id}>`,
                 "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",

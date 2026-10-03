@@ -17,12 +17,36 @@ function imageSource(value = "") {
   }
 }
 
+function normalizeBillingBlocks(blocks: EmailBlock[]) {
+  const needsBalance = blocks.some((item) => [item.heading, item.body, item.value].some((value) => value?.includes("{{amount_due}}")))
+    && blocks.some((item) => item.type === "button" && (/pay your balance/i.test(item.label ?? "") || item.href?.includes("payment_url") || item.href?.includes("quickbooks.intuit.com")));
+  if (!needsBalance || blocks.some((item) => item.type === "balance")) return blocks;
+
+  let amount = "{{amount_due}}";
+  const normalized = blocks.map((item) => {
+    if (item.type !== "hero" || !item.body?.includes("{{amount_due}}")) return item;
+    const body = item.body
+      .replace(/Hello\s+{{first_name}},\s*this is a friendly reminder that your current balance due is\s*{{amount_due}}\.?/i, "Hello {{first_name}}, this is a friendly reminder about your ICE account.")
+      .replace(/Hello\s+{{first_name}},\s*your current balance due is\s*{{amount_due}}\.?/i, "Hello {{first_name}}, please review the amount due on your ICE account.")
+      .replace(/Your account balance of\s*{{amount_due}}\s*is overdue\.?/i, "Please review the overdue amount on your ICE account.");
+    return { ...item, body };
+  });
+  const valueBlock = blocks.find((item) => item.value?.includes("{{amount_due}}"));
+  if (valueBlock?.value) amount = valueBlock.value;
+  const heroIndex = normalized.findIndex((item) => item.type === "hero");
+  normalized.splice(heroIndex < 0 ? 0 : heroIndex + 1, 0, {
+    id: "generated-amount-due", type: "balance", heading: "Amount due", value: amount,
+  });
+  return normalized;
+}
+
 export function renderMarketingEmail(input: {
   preheader?: string;
   blocks: EmailBlock[];
   includeUnsubscribe?: boolean;
 }) {
-  const content = input.blocks.map((item) => {
+  const blocks = normalizeBillingBlocks(input.blocks);
+  const content = blocks.map((item) => {
     if (item.type === "hero") return `<tr><td style="padding:38px 40px 34px;background-color:#07172a;background-image:linear-gradient(rgba(111,175,215,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(111,175,215,.08) 1px,transparent 1px),radial-gradient(ellipse at 100% 0%,rgba(0,145,220,.24),transparent 55%);background-size:32px 32px,32px 32px,auto;color:#fff;font-family:Inter,'Segoe UI',Arial,sans-serif"><p style="margin:0 0 12px;font-size:10px;font-weight:700;letter-spacing:2px;color:#7dd3fc">${escapeHtml(item.eyebrow || "INTERNATIONAL COMPUTER EXCHANGE")}</p><h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:700;letter-spacing:-.35px">${escapeHtml(item.heading)}</h1><p style="margin:16px 0 0;font-size:16px;line-height:1.65;color:#d5e4f1">${paragraphs(item.body)}</p></td></tr>`;
     if (item.type === "text") return `<tr><td style="padding:30px 40px 6px"><h2 style="margin:0 0 10px;font-size:22px;color:#101828">${escapeHtml(item.heading)}</h2><p style="margin:0;font-size:16px;line-height:1.7;color:#475467">${paragraphs(item.body)}</p></td></tr>`;
     if (item.type === "service") return `<tr><td style="padding:24px 40px"><div style="padding:24px;border:1px solid #d0d5dd;border-radius:14px;background:#f9fafb"><h2 style="margin:0;font-size:20px;color:#101828">${escapeHtml(item.heading)}</h2><p style="margin:10px 0 0;font-size:15px;line-height:1.6;color:#475467">${paragraphs(item.body)}</p></div></td></tr>`;
@@ -38,7 +62,10 @@ export function renderMarketingEmail(input: {
       return `<tr><td style="padding:0 28px 8px"><img src="${src}" width="624" alt="${escapeHtml(item.heading || "ICE service infrastructure")}" style="display:block;width:100%;max-width:624px;height:auto;border:0;border-radius:10px"></td></tr>`;
     }
     if (item.type === "signature") return `<tr><td style="padding:26px 40px 34px;font-family:Inter,'Segoe UI',Arial,sans-serif"><img src="${imageSource(item.imageUrl || "https://www.icesales.com/images/branding/ceo-signature.png")}" width="220" alt="Signature of ${escapeHtml(item.heading || "ICE leadership")}" style="display:block;width:220px;max-width:80%;height:auto;margin:0 0 8px"><strong style="display:block;color:#101828;font-size:15px;line-height:1.5">${escapeHtml(item.heading)}</strong><span style="display:block;margin-top:2px;color:#475467;font-size:13px;line-height:1.5">${escapeHtml(item.body)}</span></td></tr>`;
-    if (item.type === "button") return `<tr><td style="padding:28px 40px 34px"><a href="${escapeHtml(item.href || "https://www.icesales.com/contact")}" style="display:inline-block;padding:13px 20px;border-radius:9px;background:#0284c7;color:#fff;text-decoration:none;font-weight:700">${escapeHtml(item.label || "Learn more")}</a></td></tr>`;
+    if (item.type === "button") {
+      const isPaymentButton = /pay your balance/i.test(item.label ?? "") || item.href?.includes("{{payment_url}}") || item.href?.includes("quickbooks.intuit.com");
+      return `<tr><td style="padding:24px 40px 34px"><a href="${escapeHtml(item.href || "https://www.icesales.com/contact")}" style="display:inline-block;padding:14px 24px;border:1px solid #0077b8;border-radius:9px;background:#0284c7;color:#fff;text-decoration:none;font-family:Inter,'Segoe UI',Arial,sans-serif;font-size:15px;line-height:1.35;font-weight:700">${escapeHtml(item.label || "Learn more")}</a>${isPaymentButton ? `<p style="margin:10px 0 0;color:#66788a;font-family:Inter,'Segoe UI',Arial,sans-serif;font-size:12px;line-height:1.5">Powered by <strong style="color:#475467">Intuit QuickBooks</strong></p>` : ""}</td></tr>`;
+    }
     if (item.type === "divider") return `<tr><td style="padding:24px 40px"><div style="height:1px;background:#e4e7ec"></div></td></tr>`;
     return `<tr><td style="height:24px"></td></tr>`;
   }).join("");

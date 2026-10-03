@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { campaignPreferenceKey, normalizeMarketingPreferences } from "@/lib/marketing/preferences";
+import { renderMarketingEmail } from "@/lib/marketing/renderEmail";
+import type { EmailBlock } from "@/lib/marketing/templates";
 
 const clean = (value: unknown) => typeof value === "string" ? value.trim() : "";
 const validHttpsUrl = (value: string) => { try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; } catch { return false; } };
@@ -52,13 +54,14 @@ export async function GET(request: Request) {
     const { data: contacts } = await supabase.from("marketing_contacts").select("*").in("id", ids);
     const recipients = (contacts ?? []).filter((contact) => isEligible(contact, campaign.campaign_type));
     if (!recipients?.length) { results.push({ id: campaign.id, sent: 0, error: "No eligible recipients" }); continue; }
-    if (!campaign.body_only && hasPaymentLink(String(campaign.html ?? "")) && !validHttpsUrl(paymentUrl)) {
+    const campaignHtml = campaign.body_only ? "" : renderMarketingEmail({ preheader: campaign.preheader, blocks: (campaign.blocks ?? []) as EmailBlock[], includeUnsubscribe: campaign.campaign_type !== "transactional" });
+    if (!campaign.body_only && hasPaymentLink(campaignHtml) && !validHttpsUrl(paymentUrl)) {
       const message = "Set a secure customer payment link in Email settings before sending this campaign.";
       results.push({ id: campaign.id, sent: 0, error: message });
       await supabase.from("marketing_campaigns").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", campaign.id);
       continue;
     }
-    if (!campaign.body_only && String(campaign.html ?? "").includes("{{amount_due}}")) {
+    if (!campaign.body_only && campaignHtml.includes("{{amount_due}}")) {
       const missing = recipients.filter((contact) => !clean((contact.custom_fields as Record<string, unknown> | null)?.amount_due)).length;
       if (missing) {
         const message = `${missing} recipient${missing === 1 ? " is" : "s are"} missing amount_due. Import those values before sending.`;
@@ -86,7 +89,7 @@ export async function GET(request: Request) {
         ...(campaign.body_only
           ? { text: campaign.body_text }
           : {
-              html: personalize(campaign.html, contact, true).replace(/{{\s*payment_url\s*}}/g, htmlEscape(paymentUrl)).replace(/https:\/\/quickbooks\.intuit\.com\/?/gi, htmlEscape(paymentUrl)).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
+              html: personalize(campaignHtml, contact, true).replace(/{{\s*payment_url\s*}}/g, htmlEscape(paymentUrl)).replace(/https:\/\/quickbooks\.intuit\.com\/?/gi, htmlEscape(paymentUrl)).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
               headers: {
                 "List-Unsubscribe": `<${siteUrl}/api/marketing/unsubscribe?id=${contact.id}>`,
                 "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
