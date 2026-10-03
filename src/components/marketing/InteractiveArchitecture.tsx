@@ -98,8 +98,8 @@ export default function InteractiveArchitecture({
     const nextIndex = (activeIndex + 1) % nodes.length;
     // Let the active node breathe, then send the flow to the next node.
     // Promote it to active only after the rail has nearly completed its travel.
-    const startTravel = window.setTimeout(() => setFlowIndex(nextIndex), 850);
-    const arrive = window.setTimeout(() => setActiveIndex(nextIndex), 2_350);
+    const startTravel = window.setTimeout(() => setFlowIndex(nextIndex), 600);
+    const arrive = window.setTimeout(() => setActiveIndex(nextIndex), 2_000);
 
     return () => {
       window.clearTimeout(startTravel);
@@ -208,9 +208,13 @@ export default function InteractiveArchitecture({
         <div className="mb-4 h-1 overflow-hidden rounded-full bg-secondary">
           <div
             className={cx(
-              "h-full w-full rounded-full bg-gradient-to-r from-brand-500 via-sky-200 to-emerald-300 shadow-[0_0_10px_rgb(4_155_251/0.5)]",
+              "h-full rounded-full bg-gradient-to-r from-brand-500 via-sky-200 to-emerald-300 shadow-[0_0_10px_rgb(4_155_251/0.5)]",
               !reduceMotion && "ice-arch-progress-stream ice-arch-flow-fill",
             )}
+            style={{
+              width: `${reduceMotion || nodes.length === 1 ? 100 : Math.max(6, (flowIndex / (nodes.length - 1)) * 100)}%`,
+              transition: reduceMotion ? "none" : "width 1.4s cubic-bezier(0.22, 1, 0.36, 1)",
+            }}
           />
         </div>
         <ol className="flex flex-wrap justify-center gap-2" aria-label={flowAriaLabel}>

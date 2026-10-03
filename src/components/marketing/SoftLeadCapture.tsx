@@ -127,6 +127,7 @@ export default function SoftLeadCapture({
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [phone, setPhone] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [smsConsent, setSmsConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -222,7 +223,7 @@ export default function SoftLeadCapture({
           service: resolvedContent.lead_service,
           message: resolvedContent.lead_message,
           smsConsent,
-          marketingConsent: false,
+          marketingConsent,
           formKey: resolvedContent.lead_form_key,
           source: resolvedContent.lead_source,
           pagePath: pathname,
@@ -348,6 +349,14 @@ export default function SoftLeadCapture({
                   placeholder={resolvedContent.company_placeholder}
                   value={company}
                   onChange={setCompany}
+                />
+                <Checkbox
+                  size="sm"
+                  aria-label="Optional email marketing consent"
+                  isSelected={marketingConsent}
+                  onChange={setMarketingConsent}
+                  label="Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time."
+                  className="min-[480px]:col-span-2"
                 />
                 <Checkbox
                   size="sm"
