@@ -1,4 +1,4 @@
-export type EmailBlockType = "hero" | "text" | "button" | "service" | "notice" | "metric" | "image" | "divider" | "spacer" | "signature";
+export type EmailBlockType = "hero" | "text" | "button" | "service" | "notice" | "metric" | "balance" | "image" | "divider" | "spacer" | "signature";
 
 export interface EmailBlock {
   id: string;
@@ -100,17 +100,17 @@ export const MARKETING_TEMPLATE_PRESETS: MarketingTemplatePreset[] = [
   {
     id: "invoice-available", name: "Balance due notice", category: "billing", transactional: true,
     description: "Notify a client that their QuickBooks balance is ready to pay. Add the QuickBooks payment link to the button.", subject: "Your ICE account balance is ready", preheader: "Your current ICE account balance and payment options.",
-    blocks: [block("balance-hero", "hero", { eyebrow: "ACCOUNT NOTICE", heading: "Your account balance is ready", body: "Hello {{first_name}}, your current balance due is {{amount_due}}." }), block("balance-notice", "notice", { heading: "Payment options", body: "Review your account balance and use the secure QuickBooks payment link provided by ICE.", tone: "neutral" }), block("balance-button", "button", { label: "Pay your balance", href: "https://quickbooks.intuit.com" })],
+    blocks: [block("balance-hero", "hero", { eyebrow: "ACCOUNT NOTICE", heading: "Your account balance is ready", body: "Hello {{first_name}}, please review the amount due on your ICE account." }), block("balance-amount", "balance", { heading: "Amount due", value: "{{amount_due}}" }), block("balance-notice", "notice", { heading: "Payment options", body: "Use the secure payment link below. If you have already paid or have a question, reply to this email.", tone: "neutral" }), block("balance-button", "button", { label: "Pay your balance", href: "{{payment_url}}" })],
   },
   {
     id: "payment-due", name: "Balance due reminder", category: "billing", transactional: true,
     description: "Friendly reminder for an outstanding QuickBooks balance.", subject: "Friendly reminder: balance due", preheader: "A friendly payment reminder from ICE.",
-    blocks: [block("due-hero", "hero", { eyebrow: "PAYMENT REMINDER", heading: "A friendly balance reminder", body: "Hello {{first_name}}, this is a friendly reminder that your current balance due is {{amount_due}}." }), block("due-button", "button", { label: "Pay your balance", href: "https://quickbooks.intuit.com" })],
+    blocks: [block("due-hero", "hero", { eyebrow: "PAYMENT REMINDER", heading: "A friendly balance reminder", body: "Hello {{first_name}}, this is a friendly reminder about your ICE account." }), block("due-amount", "balance", { heading: "Amount due", value: "{{amount_due}}" }), block("due-button", "button", { label: "Pay your balance", href: "{{payment_url}}" })],
   },
   {
     id: "payment-overdue", name: "Balance overdue", category: "billing", transactional: true,
     description: "Clear, professional notice for an overdue QuickBooks balance.", subject: "Action requested: balance overdue", preheader: "Please review your outstanding ICE balance.",
-    blocks: [block("overdue-hero", "hero", { eyebrow: "ACCOUNT ACTION", heading: "Your balance needs attention", body: "Your account balance of {{amount_due}} is overdue." }), block("overdue-notice", "notice", { heading: "Need help?", body: "If payment has already been sent or you need assistance, reply to this email and our team will help.", tone: "warning" }), block("overdue-button", "button", { label: "Pay your balance", href: "https://quickbooks.intuit.com" })],
+    blocks: [block("overdue-hero", "hero", { eyebrow: "ACCOUNT ACTION", heading: "Your balance needs attention", body: "Please review the overdue amount on your ICE account." }), block("overdue-amount", "balance", { heading: "Amount due", value: "{{amount_due}}" }), block("overdue-notice", "notice", { heading: "Need help?", body: "If payment has already been sent or you need assistance, reply to this email and our team will help.", tone: "warning" }), block("overdue-button", "button", { label: "Pay your balance", href: "{{payment_url}}" })],
   },
   {
     id: "payment-received", name: "Payment received", category: "billing", transactional: true,

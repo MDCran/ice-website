@@ -31,6 +31,7 @@ export function renderMarketingEmail(input: {
       return `<tr><td style="padding:24px 40px"><div style="padding:20px;border-radius:12px;background:${colors[0]}"><h2 style="margin:0;font-size:17px;color:${colors[1]}">${escapeHtml(item.heading)}</h2><p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:#475467">${paragraphs(item.body)}</p></div></td></tr>`;
     }
     if (item.type === "metric") return `<tr><td style="padding:24px 40px;text-align:center"><p style="margin:0;font-size:38px;font-weight:700;color:#0284c7">${escapeHtml(item.value)}</p><p style="margin:6px 0 0;font-size:14px;color:#475467">${escapeHtml(item.label)}</p></td></tr>`;
+    if (item.type === "balance") return `<tr><td style="padding:8px 40px 22px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #cfe4f2;border-left:4px solid #0284c7;border-radius:12px;background:#f3f9fd"><tr><td style="padding:20px 22px"><p style="margin:0 0 5px;color:#536b7e;font-size:12px;line-height:1.5;font-weight:700;letter-spacing:1.1px;text-transform:uppercase">${escapeHtml(item.heading || "Amount due")}</p><p style="margin:0;color:#0b1f33;font-size:34px;line-height:1.2;font-weight:800;letter-spacing:-.6px">${escapeHtml(item.value || "{{amount_due}}")}</p></td></tr></table></td></tr>`;
     if (item.type === "image") {
       const src = imageSource(item.imageUrl);
       if (!src) return "";

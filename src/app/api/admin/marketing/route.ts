@@ -6,6 +6,8 @@ import { campaignPreferenceKey, MARKETING_PREFERENCE_KEYS, normalizeMarketingPre
 
 const clean = (value: unknown, max = 500) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const validEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const validHttpsUrl = (value: string) => { try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; } catch { return false; } };
+const htmlEscape = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
 const CAMPAIGN_TYPES = ["marketing", "billing", "transactional", "private_message", "special_message", "event", "service_update", "maintenance", "service_alert"] as const;
 
 function isEligible(contact: Record<string, unknown>, campaignType: string) {
@@ -20,8 +22,27 @@ function includesPreferenceCenter(campaignType: string) {
   return campaignType !== "transactional";
 }
 
-function personalize(value: string, contact: Record<string, unknown>) {
-  return value.replace(/{{\s*(first_name|last_name|email|company)\s*}}/g, (_, key: string) => clean(contact[key], 500));
+function personalize(value: string, contact: Record<string, unknown>, html = false) {
+  const customFields = contact.custom_fields && typeof contact.custom_fields === "object" ? contact.custom_fields as Record<string, unknown> : {};
+  return value.replace(/{{\s*(first_name|last_name|email|company|amount_due)\s*}}/g, (_, key: string) => {
+    const source = key === "amount_due" ? customFields.amount_due : contact[key];
+    const text = clean(source, key === "amount_due" ? 80 : 500);
+    return html ? htmlEscape(text) : text;
+  });
+}
+
+function withPaymentUrl(html: string, paymentUrl: string) {
+  return html
+    .replace(/{{\s*payment_url\s*}}/g, htmlEscape(paymentUrl))
+    .replace(/https:\/\/quickbooks\.intuit\.com\/?/gi, htmlEscape(paymentUrl));
+}
+
+function hasPaymentLink(html: string) {
+  return /{{\s*payment_url\s*}}|https:\/\/quickbooks\.intuit\.com\/?/i.test(html);
+}
+
+function missingAmounts(recipients: Array<Record<string, unknown>>) {
+  return recipients.filter((contact) => !clean((contact.custom_fields as Record<string, unknown> | null)?.amount_due, 80)).length;
 }
 
 export async function GET() {
@@ -35,7 +56,7 @@ export async function GET() {
     auth.supabase.from("marketing_campaigns").select("*").order("created_at", { ascending: false }).limit(200),
     auth.supabase.from("marketing_templates").select("*").order("updated_at", { ascending: false }).limit(200),
   ]);
-  const { data: settings } = await auth.supabase.from("marketing_settings").select("lead_notification_email").eq("id", true).maybeSingle();
+  const { data: settings, error: settingsError } = await auth.supabase.from("marketing_settings").select("lead_notification_email,payment_url").eq("id", true).maybeSingle();
 
   const firstError = [contacts.error, lists.error, members.error, campaigns.error, templates.error].find(Boolean);
   if (firstError) {
@@ -54,7 +75,8 @@ export async function GET() {
     members: members.data ?? [],
     campaigns: campaigns.data ?? [],
     templates: templates.data ?? [],
-    settings: { leadNotificationEmail: settings?.lead_notification_email ?? "" },
+    settings: { leadNotificationEmail: settings?.lead_notification_email ?? "", paymentUrl: settings?.payment_url ?? "" },
+    paymentSettingsReady: !settingsError,
     resendConnected: Boolean(process.env.RESEND_API_KEY),
   });
 }
@@ -67,9 +89,11 @@ export async function POST(request: Request) {
 
   if (action === "save_email_settings") {
     const email = clean(body.leadNotificationEmail, 320).toLowerCase();
+    const paymentUrl = clean(body.paymentUrl, 2048);
     if (email && !validEmail(email)) return NextResponse.json({ error: "Enter a valid notification email address." }, { status: 400 });
+    if (paymentUrl && !validHttpsUrl(paymentUrl)) return NextResponse.json({ error: "Enter a valid HTTPS payment link." }, { status: 400 });
     const { error } = await auth.supabase.from("marketing_settings").upsert({
-      id: true, lead_notification_email: email || null, updated_at: new Date().toISOString(), updated_by: auth.user.id,
+      id: true, lead_notification_email: email || null, payment_url: paymentUrl || null, updated_at: new Date().toISOString(), updated_by: auth.user.id,
     }, { onConflict: "id" });
     return error ? NextResponse.json({ error: error.message }, { status: 400 }) : NextResponse.json({ ok: true });
   }
@@ -105,6 +129,7 @@ export async function POST(request: Request) {
         company: clean(raw.company, 180) || null,
         source: clean(raw.source, 120) || "csv_import",
         tags: Array.isArray(raw.tags) ? raw.tags.map((tag: unknown) => clean(tag, 60)).filter(Boolean).slice(0, 30) : [],
+        custom_fields: clean(raw.amount_due, 80) ? { amount_due: clean(raw.amount_due, 80) } : undefined,
         email_consent_status: consent,
         email_consent_at: consent === "subscribed" ? new Date().toISOString() : null,
         email_consent_source: consent === "subscribed" ? "admin_csv_import_attestation" : null,
@@ -224,6 +249,16 @@ export async function POST(request: Request) {
     const bodyText = typeof body.bodyText === "string" ? body.bodyText.slice(0, 100000) : "";
     if (bodyOnly && body.campaignType !== "transactional") return NextResponse.json({ error: "Body-only email is available for transactional messages only." }, { status: 400 });
     if (bodyOnly && !bodyText.trim()) return NextResponse.json({ error: "Enter the plain-text email body." }, { status: 400 });
+    const { data: mailSettings } = await auth.supabase.from("marketing_settings").select("payment_url").eq("id", true).maybeSingle();
+    const paymentUrl = clean(mailSettings?.payment_url, 2048);
+    const renderedTestHtml = bodyOnly ? "" : renderMarketingEmail({ preheader: clean(body.preheader, 500), blocks, includeUnsubscribe: true });
+    if (!bodyOnly && hasPaymentLink(renderedTestHtml) && !validHttpsUrl(paymentUrl)) return NextResponse.json({ error: "Set a secure customer payment link in Email settings before testing this template." }, { status: 400 });
+    const testHtml = bodyOnly ? "" : withPaymentUrl(
+      renderedTestHtml
+        .replace(/{{\s*first_name\s*}}/g, "Alex")
+        .replace(/{{\s*amount_due\s*}}/g, () => "$1,250.00"),
+      paymentUrl,
+    ).replace(/{{unsubscribe_url}}/g, "https://www.icesales.com/subscribe");
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
@@ -232,7 +267,7 @@ export async function POST(request: Request) {
         to: [to],
         reply_to: clean(body.replyTo, 320) || "info@icesales.com",
         subject: `[TEST] ${clean(body.subject, 300) || "ICE email preview"}`,
-        ...(bodyOnly ? { text: bodyText } : { html: renderMarketingEmail({ preheader: clean(body.preheader, 500), blocks, includeUnsubscribe: true }).replace(/{{unsubscribe_url}}/g, "https://www.icesales.com/subscribe") }),
+        ...(bodyOnly ? { text: bodyText } : { html: testHtml }),
       }),
     });
     const result = await response.json().catch(() => ({}));
@@ -256,6 +291,13 @@ export async function POST(request: Request) {
     if (recipientError) return NextResponse.json({ error: recipientError.message }, { status: 400 });
     const recipients = (contacts ?? []).filter((contact) => isEligible(contact, campaign.campaign_type));
     if (!recipients?.length) return NextResponse.json({ error: "No eligible recipients remain after consent and suppression checks." }, { status: 400 });
+    const { data: mailSettings } = await auth.supabase.from("marketing_settings").select("payment_url").eq("id", true).maybeSingle();
+    const paymentUrl = clean(mailSettings?.payment_url, 2048);
+    if (!campaign.body_only && hasPaymentLink(String(campaign.html ?? "")) && !validHttpsUrl(paymentUrl)) return NextResponse.json({ error: "Set a secure customer payment link in Email settings before sending this campaign." }, { status: 400 });
+    if (!campaign.body_only && String(campaign.html ?? "").includes("{{amount_due}}")) {
+      const missing = missingAmounts(recipients);
+      if (missing) return NextResponse.json({ error: `${missing} recipient${missing === 1 ? " is" : "s are"} missing amount_due. Add the amount_due column to your contact CSV and import it before sending.` }, { status: 400 });
+    }
     if (campaign.body_only && recipients.length !== 1) return NextResponse.json({ error: "Body-only transactional email must have exactly one eligible recipient. Choose a list containing just that person." }, { status: 400 });
 
     await auth.supabase.from("marketing_campaigns").update({ status: "sending", recipient_count: recipients.length, updated_at: new Date().toISOString() }).eq("id", campaign.id);
@@ -270,7 +312,7 @@ export async function POST(request: Request) {
         ...(campaign.body_only
           ? { text: campaign.body_text }
           : {
-              html: personalize(campaign.html, contact).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
+              html: withPaymentUrl(personalize(campaign.html, contact, true), paymentUrl).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
               headers: {
                 "List-Unsubscribe": `<${siteUrl}/api/marketing/unsubscribe?id=${contact.id}>`,
                 "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",

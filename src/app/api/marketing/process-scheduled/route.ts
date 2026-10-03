@@ -3,7 +3,16 @@ import { createClient } from "@supabase/supabase-js";
 import { campaignPreferenceKey, normalizeMarketingPreferences } from "@/lib/marketing/preferences";
 
 const clean = (value: unknown) => typeof value === "string" ? value.trim() : "";
-const personalize = (value: string, contact: Record<string, unknown>) => value.replace(/{{\s*(first_name|last_name|email|company)\s*}}/g, (_, key: string) => clean(contact[key]));
+const validHttpsUrl = (value: string) => { try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; } catch { return false; } };
+const htmlEscape = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
+const hasPaymentLink = (html: string) => /{{\s*payment_url\s*}}|https:\/\/quickbooks\.intuit\.com\/?/i.test(html);
+const personalize = (value: string, contact: Record<string, unknown>, html = false) => {
+  const customFields = contact.custom_fields && typeof contact.custom_fields === "object" ? contact.custom_fields as Record<string, unknown> : {};
+  return value.replace(/{{\s*(first_name|last_name|email|company|amount_due)\s*}}/g, (_, key: string) => {
+    const text = clean(key === "amount_due" ? customFields.amount_due : contact[key]);
+    return html ? htmlEscape(text) : text;
+  });
+};
 
 function isEligible(contact: Record<string, unknown>, campaignType: string) {
   if (contact.suppressed_at) return false;
@@ -21,6 +30,8 @@ export async function GET(request: Request) {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const { data: campaigns, error } = await supabase.from("marketing_campaigns").select("*").eq("status", "scheduled").lte("scheduled_at", new Date().toISOString()).limit(10);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const { data: emailSettings } = await supabase.from("marketing_settings").select("payment_url").eq("id", true).maybeSingle();
+  const paymentUrl = clean(emailSettings?.payment_url);
   const results: Array<{ id: string; sent: number; error?: string }> = [];
 
   for (const campaign of campaigns ?? []) {
@@ -41,6 +52,21 @@ export async function GET(request: Request) {
     const { data: contacts } = await supabase.from("marketing_contacts").select("*").in("id", ids);
     const recipients = (contacts ?? []).filter((contact) => isEligible(contact, campaign.campaign_type));
     if (!recipients?.length) { results.push({ id: campaign.id, sent: 0, error: "No eligible recipients" }); continue; }
+    if (!campaign.body_only && hasPaymentLink(String(campaign.html ?? "")) && !validHttpsUrl(paymentUrl)) {
+      const message = "Set a secure customer payment link in Email settings before sending this campaign.";
+      results.push({ id: campaign.id, sent: 0, error: message });
+      await supabase.from("marketing_campaigns").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", campaign.id);
+      continue;
+    }
+    if (!campaign.body_only && String(campaign.html ?? "").includes("{{amount_due}}")) {
+      const missing = recipients.filter((contact) => !clean((contact.custom_fields as Record<string, unknown> | null)?.amount_due)).length;
+      if (missing) {
+        const message = `${missing} recipient${missing === 1 ? " is" : "s are"} missing amount_due. Import those values before sending.`;
+        results.push({ id: campaign.id, sent: 0, error: message });
+        await supabase.from("marketing_campaigns").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", campaign.id);
+        continue;
+      }
+    }
     if (campaign.body_only && recipients.length !== 1) {
       results.push({ id: campaign.id, sent: 0, error: "Body-only transactional email must have exactly one eligible recipient." });
       await supabase.from("marketing_campaigns").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", campaign.id);
@@ -60,7 +86,7 @@ export async function GET(request: Request) {
         ...(campaign.body_only
           ? { text: campaign.body_text }
           : {
-              html: personalize(campaign.html, contact).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
+              html: personalize(campaign.html, contact, true).replace(/{{\s*payment_url\s*}}/g, htmlEscape(paymentUrl)).replace(/https:\/\/quickbooks\.intuit\.com\/?/gi, htmlEscape(paymentUrl)).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
               headers: {
                 "List-Unsubscribe": `<${siteUrl}/api/marketing/unsubscribe?id=${contact.id}>`,
                 "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
