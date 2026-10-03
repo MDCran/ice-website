@@ -62,7 +62,9 @@ const escapeHtml = (value = "") =>
   value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
 
 function paragraphs(value = "") {
-  return escapeHtml(value).replace(/\n/g, "<br />");
+  return escapeHtml(value)
+    .replace(/\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}\b/g, (phone) => `<span style="white-space:nowrap">${phone}</span>`)
+    .replace(/\n/g, "<br />");
 }
 
 function imageSource(value = "") {
@@ -113,7 +115,7 @@ export function renderMarketingEmail(input: {
     if (item.type === "service") return `<tr><td style="padding:16px 32px"><div style="padding:18px;border:1px solid #d0d5dd;border-radius:14px;background:#f9fafb"><h2 style="margin:0;font-size:20px;color:#101828">${escapeHtml(item.heading)}</h2><p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:#475467">${paragraphs(item.body)}</p></div></td></tr>`;
     if (item.type === "notice") {
       const colors = item.tone === "warning" ? ["#fffaeb", "#b54708"] : item.tone === "success" ? ["#ecfdf3", "#027a48"] : ["#f0f9ff", "#026aa2"];
-      return `<tr><td style="padding:14px 32px"><div style="padding:16px;border-radius:12px;background:${colors[0]}"><h2 style="margin:0;font-size:17px;color:${colors[1]}">${escapeHtml(item.heading)}</h2><p style="margin:6px 0 0;font-size:15px;line-height:1.55;color:#475467">${paragraphs(item.body)}</p></div></td></tr>`;
+      return `<tr><td style="padding:12px 28px"><div style="padding:14px 16px;border-radius:12px;background:${colors[0]}"><h2 style="margin:0;font-size:17px;color:${colors[1]}">${escapeHtml(item.heading)}</h2><p style="margin:5px 0 0;font-size:15px;line-height:1.5;color:#475467">${paragraphs(item.body)}</p></div></td></tr>`;
     }
     if (item.type === "metric") return `<tr><td style="padding:16px 32px;text-align:center"><p style="margin:0;font-size:38px;font-weight:700;color:${branding.accentColor}">${escapeHtml(item.value)}</p><p style="margin:6px 0 0;font-size:14px;color:#475467">${escapeHtml(item.label)}</p></td></tr>`;
     if (item.type === "balance") return `<tr><td style="padding:6px 32px 16px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #cfe4f2;border-left:4px solid ${branding.accentColor};border-radius:12px;background:#f3f9fd"><tr><td style="padding:16px 18px"><p style="margin:0 0 5px;color:#536b7e;font-size:12px;line-height:1.5;font-weight:700;letter-spacing:1.1px;text-transform:uppercase">${escapeHtml(item.heading || "Amount due")}</p><p style="margin:0;color:#0b1f33;font-size:34px;line-height:1.2;font-weight:800;letter-spacing:-.6px">${escapeHtml(item.value || "{{amount_due}}")}</p></td></tr></table></td></tr>`;
