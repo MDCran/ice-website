@@ -68,6 +68,7 @@ function holidayTemplate(id: string, name: string, message: string): MarketingTe
     preheader: message,
     blocks: [
       block(`${id}-hero`, "hero", { eyebrow: "A MESSAGE FROM ICE", heading: name, body: message }),
+      block(`${id}-image`, "image", { heading: `${name} greeting`, imageUrl: `https://www.icesales.com/images/email/holidays/${id}.webp` }),
       block(`${id}-text`, "text", { body: "Thank you for the trust you place in our team. We appreciate the opportunity to support your business and technology." }),
       block(`${id}-button`, "button", { label: "Visit ICE", href: "https://www.icesales.com" }),
     ],

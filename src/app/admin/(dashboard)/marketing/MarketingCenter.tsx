@@ -377,7 +377,7 @@ export default function MarketingCenter() {
       {tab === "studio" && blocks.some((block) => block.type === "image" || block.type === "signature") && (
         <section className="rounded-xl bg-primary p-5 ring-1 ring-secondary">
           <h2 className="text-lg font-semibold text-primary">Email imagery and signature</h2>
-          <p className="mt-1 text-sm text-tertiary">Use a full HTTPS image URL. Service templates use ICE’s service-specific page artwork.</p>
+          <p className="mt-1 text-sm text-tertiary">Use a full HTTPS image URL. Service and holiday templates start with matching ICE artwork; replace the image URL whenever you need.</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {blocks.filter((block) => block.type === "image" || block.type === "signature").map((block) => (
               <label key={block.id} className="block text-sm font-medium text-secondary">
