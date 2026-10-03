@@ -21,7 +21,7 @@ export const searchIndex: SearchItem[] = [
   {
     title: "Managed Cloud Hosting",
     description:
-      "Fully managed cloud hosting backed by 99.99% uptime SLA and enterprise-grade infrastructure for AS400, iSeries, and IBM Power.",
+      "Managed cloud hosting for AS400, iSeries, IBM i, and business workloads, with platform, operations, backup, and recovery scoped to your needs.",
     url: "/solutions/managed-cloud-hosting",
     category: "Managed Cloud Services",
     keywords: ["hosting", "cloud", "as400", "iseries", "power", "data center", "uptime"],
@@ -89,7 +89,7 @@ export const searchIndex: SearchItem[] = [
   {
     title: "IBM i Security",
     description:
-      "Comprehensive security hardening and compliance for IBM i environments with 24/7 monitoring.",
+      "IBM i security review and hardening for access controls, exit points, audit settings, and monitoring.",
     url: "/solutions/ibm-i-security",
     category: "Managed Security",
     keywords: ["ibm i", "as400", "iseries", "hardening", "compliance", "hipaa", "pci"],
@@ -105,10 +105,10 @@ export const searchIndex: SearchItem[] = [
   {
     title: "Security Monitoring",
     description:
-      "24/7 managed security monitoring with real-time threat detection and incident response.",
+      "Security monitoring and alert response scoped to your environment and agreed service.",
     url: "/solutions/security-monitoring",
     category: "Managed Security",
-    keywords: ["monitoring", "soc", "siem", "incident response", "24/7"],
+    keywords: ["security monitoring", "alert triage", "incident response planning"],
   },
   {
     title: "Threat Detection and Response",
@@ -174,7 +174,7 @@ export const searchIndex: SearchItem[] = [
   {
     title: "Systems Management",
     description:
-      "Comprehensive 24/7 proactive monitoring and management for your entire IT infrastructure.",
+      "Support for infrastructure operations, monitoring, patching, and service responsibilities agreed for each environment.",
     url: "/solutions/systems-management",
     category: "Managed Services",
     keywords: ["systems", "management", "monitoring", "proactive", "noc"],
@@ -237,7 +237,7 @@ export const searchIndex: SearchItem[] = [
   {
     title: "Why ICE",
     description:
-      "IBM Business Partner since 1990. 35+ years of experience, 1,200+ successful projects, 500+ satisfied clients.",
+      "IBM Business Partner since 1990. Based in Boca Raton, ICE helps businesses host and support IBM i systems and plan cloud and recovery services.",
     url: "/why-ice",
     category: "Pages",
     keywords: ["about", "why", "experience", "history", "team"],

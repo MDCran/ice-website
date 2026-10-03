@@ -345,10 +345,10 @@ const DEFAULT_CATEGORIES = [
     description: "Scalable, reliable cloud infrastructure tailored to enterprise workloads.",
     icon: Cloud01,
     services: [
-      { title: "Managed Cloud Hosting", href: "/solutions/managed-cloud-hosting", icon: Cloud01, desc: "Enterprise-grade cloud hosting with 24/7 management and support." },
+      { title: "Managed Cloud Hosting", href: "/solutions/managed-cloud-hosting", icon: Cloud01, desc: "Managed cloud hosting planned around your workloads, operating needs, and recovery priorities." },
       { title: "Managed Private Cloud", href: "/solutions/managed-private-cloud", icon: Server01, desc: "Dedicated private cloud environments built for security and compliance." },
       { title: "Managed Hybrid Cloud", href: "/solutions/managed-hybrid-cloud", icon: Database01, desc: "Seamlessly bridge on-premises and cloud infrastructure." },
-      { title: "Cloud Migration Services", href: "/solutions/cloud-migration", icon: RefreshCcw01, desc: "Zero-downtime migration strategy and execution for any workload." },
+      { title: "Cloud Migration Services", href: "/solutions/cloud-migration", icon: RefreshCcw01, desc: "Migration planning, cutover steps, and validation tailored to each workload." },
     ],
   },
   {
@@ -357,8 +357,8 @@ const DEFAULT_CATEGORIES = [
     icon: Shield01,
     services: [
       { title: "Backup as a Service", href: "/solutions/backup-as-a-service", icon: HardDrive, desc: "Automated, encrypted backups with rapid restore capabilities." },
-      { title: "Disaster Recovery as a Service", href: "/solutions/disaster-recovery", icon: RefreshCcw01, desc: "Full disaster recovery with guaranteed RTOs and RPOs." },
-      { title: "High Availability as a Service", href: "/solutions/high-availability", icon: Database01, desc: "Real-time replication and automatic failover for critical systems." },
+      { title: "Disaster Recovery as a Service", href: "/solutions/disaster-recovery", icon: RefreshCcw01, desc: "Disaster recovery planning with objectives, runbooks, and testing agreed for each workload." },
+      { title: "High Availability as a Service", href: "/solutions/high-availability", icon: Database01, desc: "Evaluate replication and failover options against the recovery objectives your business needs." },
       { title: "Ransomware Recovery", href: "/solutions/ransomware-recovery", icon: ShieldZap, desc: "Immutable backups and rapid recovery from ransomware attacks." },
     ],
   },
@@ -369,7 +369,7 @@ const DEFAULT_CATEGORIES = [
     services: [
       { title: "IBM i Security", href: "/solutions/ibm-i-security", icon: ShieldTick, desc: "Comprehensive security assessments and hardening for IBM i environments." },
       { title: "Protection Suite", href: "/solutions/protection-suite", icon: Shield01, desc: "Multi-layered endpoint and network protection suite." },
-      { title: "Security Monitoring", href: "/solutions/security-monitoring", icon: Activity, desc: "24/7 SOC monitoring with real-time threat intelligence." },
+      { title: "Security Monitoring", href: "/solutions/security-monitoring", icon: Activity, desc: "Security monitoring and alert response scoped to your environment and service needs." },
       { title: "Threat Detection & Response", href: "/solutions/threat-detection", icon: Target04, desc: "Advanced threat hunting and automated incident response." },
       { title: "Endpoint Security", href: "/solutions/endpoint-security", icon: Scan, desc: "Next-gen endpoint protection with AI-driven threat prevention." },
     ],
@@ -380,8 +380,8 @@ const DEFAULT_CATEGORIES = [
     icon: Server01,
     services: [
       AS400_SERVICE,
-      { title: "Managed Microsoft Services", href: "/solutions/managed-microsoft", icon: Monitor01, desc: "Complete Microsoft 365 and Azure management and optimization." },
-      { title: "Automation Suite", href: "/solutions/automation-suite", icon: Dataflow01, desc: "AI-powered patch management, vulnerability remediation, and security automation." },
+      { title: "Managed Microsoft Services", href: "/solutions/managed-microsoft", icon: Monitor01, desc: "Microsoft 365 and Azure administration scoped to your organization." },
+      { title: "Automation Suite", href: "/solutions/automation-suite", icon: Dataflow01, desc: "Automate routine IT tasks with workflows and runbooks suited to your operations." },
       { title: "Systems Management", href: "/solutions/systems-management", icon: Settings01, desc: "Proactive monitoring, patching, and performance management." },
       { title: "IBM Power VS", href: "/solutions/ibm-power-vs", icon: CpuChip01, desc: "IBM Power Virtual Server management in the cloud." },
     ],
@@ -403,19 +403,19 @@ const SOLUTIONS_CONSULT_HREF =
 
 const BUYER_SIGNALS = [
   {
-    value: "35+",
-    label: "years in enterprise IT",
+    value: "30+",
+    label: "years in business",
     detail: "IBM Business Partner since 1990",
   },
   {
-    value: "24/7",
-    label: "operations coverage",
-    detail: "NOC, SOC, escalation, and managed service ownership",
+    value: "AS400",
+    label: "and IBM i hosting",
+    detail: "Cloud, support, backup, and recovery options",
   },
   {
-    value: "99.99%",
-    label: "target uptime SLA",
-    detail: "Validated per service scope and architecture",
+    value: "RPO / RTO",
+    label: "recovery planning",
+    detail: "Objectives and tests agreed for each workload",
   },
 ];
 

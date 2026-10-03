@@ -21,6 +21,9 @@ const geist = Geist({
 
 export async function generateMetadata(): Promise<Metadata> {
  const { siteUrl, siteName, defaultTitle, defaultDescription, titleTemplate } = await getSeoConfig();
+ const shareImage = new URL("/api/og", siteUrl);
+ shareImage.searchParams.set("title", "AS400 & IBM i hosting, cloud hosting, and disaster recovery");
+ shareImage.searchParams.set("description", "International Computer Exchange brings 30+ years of experience to IBM i hosting, cloud infrastructure, and recovery planning.");
  return {
   metadataBase: new URL(siteUrl),
   title: {
@@ -57,11 +60,13 @@ export async function generateMetadata(): Promise<Metadata> {
     url: siteUrl,
     title: defaultTitle,
     description: defaultDescription,
+    images: [{ url: shareImage.href, width: 1200, height: 630, alt: `${siteName} — AS400, IBM i, cloud hosting, and disaster recovery` }],
   },
   twitter: {
     card: "summary_large_image",
     title: defaultTitle,
     description: defaultDescription,
+    images: [shareImage.href],
   },
   robots: {
     index: true,

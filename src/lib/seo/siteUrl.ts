@@ -20,7 +20,15 @@ export function resolveSiteUrl(...candidates: unknown[]): string {
   for (const candidate of candidates) {
     if (typeof candidate !== "string" || !candidate.trim().startsWith("https://")) continue;
     const url = publicUrl(candidate);
-    if (url) return new URL(url).origin;
+    if (url) {
+      const origin = new URL(url).origin;
+      // sandbox.icesales.com and the apex domain redirect to the public www
+      // host. Keep canonicals, sitemaps, and schema on the final destination.
+      if (["sandbox.icesales.com", "icesales.com"].includes(new URL(origin).hostname.toLowerCase())) {
+        return PUBLIC_SITE_URL;
+      }
+      return origin;
+    }
   }
   return PUBLIC_SITE_URL;
 }

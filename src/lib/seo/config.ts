@@ -66,7 +66,7 @@ export const DEFAULT_SEO_CONFIG: SeoConfig = {
     "AS400 & IBM i Hosting | International Computer Exchange",
   titleTemplate: "%s | International Computer Exchange",
   defaultDescription:
-    "30+ years in business. ICE specializes in AS400 and IBM i hosting, IBM Power support, backup, disaster recovery, security, and managed IT services.",
+    "ICE helps businesses host AS400 and IBM i systems, run workloads in the cloud, and plan disaster recovery. 30+ years of experience. Talk with our team.",
   keywords: [
     "AS400",
     "AS400 hosting",
@@ -87,7 +87,7 @@ export const DEFAULT_SEO_CONFIG: SeoConfig = {
     "International Computer Exchange",
   ],
   organization: {
-    legalName: "International Computer Exchange",
+    legalName: "International Computer Exchange, Inc.",
     foundingDate: "1990",
     telephone: "+1-800-786-9188",
     email: "info@icesales.com",
@@ -158,12 +158,20 @@ export async function getSeoConfig(): Promise<SeoConfig> {
     defaultDescription: str(seo.default_description ?? seo.defaultDescription, d.defaultDescription),
     keywords: arr(seo.keywords, d.keywords),
     organization: {
-      legalName: str(org.legal_name ?? org.legalName ?? org.name, d.organization.legalName),
+      legalName: (() => {
+        const legalName = str(org.legal_name ?? org.legalName ?? org.name, d.organization.legalName);
+        return legalName.toLowerCase() === "international computer exchange"
+          ? d.organization.legalName
+          : legalName;
+      })(),
       foundingDate: str(org.founding_date ?? org.foundingDate, d.organization.foundingDate),
       telephone: str(org.telephone ?? org.phone, d.organization.telephone),
       email: str(org.email, d.organization.email),
       streetAddress: str(org.street_address ?? org.streetAddress ?? org.address, d.organization.streetAddress),
-      addressLocality: str(org.address_locality ?? org.addressLocality ?? org.city, d.organization.addressLocality),
+      addressLocality: str(
+        org.address_locality ?? org.addressLocality ?? org.city,
+        d.organization.addressLocality,
+      ).replace(/,\s*[A-Z]{2}(?:\s+\d{5}(?:-\d{4})?)?$/i, ""),
       addressRegion: str(org.address_region ?? org.addressRegion ?? org.state, d.organization.addressRegion),
       postalCode: str(org.postal_code ?? org.postalCode ?? org.zip, d.organization.postalCode),
       addressCountry: str(org.address_country ?? org.addressCountry ?? org.country, d.organization.addressCountry),

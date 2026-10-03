@@ -27,16 +27,13 @@ const DEFAULT_HERO = {
 };
 
 const DEFAULT_FACTS = {
-  heading: "Verified facts",
+  heading: "Company facts",
   items: [
     { text: "IBM Business Partner since 1990" },
-    { text: "Headquarters: Boca Raton, Florida, USA" },
-    { text: "SOC 2 Type II certified data centers" },
-    { text: "24/7/365 US-based NOC and SOC support" },
+    { text: "Based in Boca Raton, Florida, USA" },
+    { text: "30+ years of experience in enterprise technology" },
     { text: "Focus platforms: IBM Power, IBM i (AS/400), Microsoft, hybrid cloud" },
-    {
-      text: "Core offerings: AS400 services, managed cloud, DRaaS, BaaS, IBM i security, managed security",
-    },
+    { text: "Services include AS400 and IBM i hosting, managed cloud hosting, backup, and disaster recovery" },
   ],
 };
 

@@ -596,7 +596,7 @@ export default function PartnersPage({
                             />
                             <div className="relative flex flex-col items-center">
                                 <span className="bg-gradient-to-br from-brand-400 via-brand-500 to-brand-700 bg-clip-text font-mono text-display-xl font-semibold text-transparent md:text-display-2xl dark:from-brand-300 dark:via-brand-400 dark:to-brand-600">
-                                    {finalCta.stat_value ?? "35+"}
+                                    {finalCta.stat_value ?? "30+"}
                                 </span>
                                 <span className="mt-2 text-md font-medium text-primary md:text-lg">
                                     {finalCta.stat_label ?? "Years as an IBM Business Partner"}

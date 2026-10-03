@@ -57,7 +57,7 @@ const RESOURCES: ResourceCard[] = [
     category: "Cloud",
     title: "Managed cloud for IBM Power workloads",
     summary:
-      "How ICE hosts IBM i and AIX with 24/7 operations, defined SLAs, and SOC 2 Type II controls.",
+      "Compare platform options, service responsibilities, monitoring, maintenance, backup, and available assurance reports before choosing hosted IBM i or AIX.",
     href: "/solutions/managed-cloud-hosting",
     icon: Cloud01,
   },

@@ -8,11 +8,11 @@ export type SolutionExperience = {
 };
 
 const DEFAULT_EXPERIENCE: SolutionExperience = {
-  outcome: "Move from reactive IT to measurable service levels",
-  proof: "US-based operations · Enterprise infrastructure · 24/7 escalation",
+  outcome: "Set clear service responsibilities and measurable objectives",
+  proof: "Enterprise infrastructure · Cloud and recovery options planned for your environment",
   industries: ["Manufacturing", "Finance", "Healthcare"],
   platforms: ["Hybrid"],
-  architecture: ["Your environment", "ICE secure edge", "Managed platform", "24/7 operations"],
+  architecture: ["Your systems", "Secure connectivity", "Hosting and protection", "Agreed operations"],
   resources: [
     { title: "Enterprise infrastructure assessment checklist", kind: "Checklist", href: "/resources" },
     { title: "How to evaluate a managed services partner", kind: "Guide", href: "/resources" },
@@ -21,8 +21,8 @@ const DEFAULT_EXPERIENCE: SolutionExperience = {
 
 export const SOLUTION_EXPERIENCE: Record<string, SolutionExperience> = {
   "managed-cloud-hosting": {
-    outcome: "Run critical workloads at 99.99% target availability",
-    proof: "Manufacturing · IBM Power + x86 · Consolidated hosting with 24/7 operations",
+    outcome: "Host business workloads with a service plan built around their needs",
+    proof: "IBM Power + x86 · Workload-specific platform and operating plan",
     industries: ["Manufacturing", "Finance", "Healthcare"],
     platforms: ["IBM i", "Hybrid"],
     architecture: ["Users & sites", "Secure connectivity", "ICE cloud", "Managed compute", "Backup"],
@@ -56,7 +56,7 @@ export const SOLUTION_EXPERIENCE: Record<string, SolutionExperience> = {
     resources: DEFAULT_EXPERIENCE.resources,
   },
   "backup-as-a-service": {
-    outcome: "Restore protected data in minutes—not after a crisis",
+    outcome: "Know how protected data can be restored before a disruption",
     proof: "Healthcare · Hybrid workloads · Encrypted copies with restore validation",
     industries: ["Healthcare", "Finance", "Manufacturing"],
     platforms: ["IBM i", "Azure", "Hybrid"],
@@ -67,8 +67,8 @@ export const SOLUTION_EXPERIENCE: Record<string, SolutionExperience> = {
     ],
   },
   "disaster-recovery": {
-    outcome: "Recover priority systems in under 4 hours",
-    proof: "Manufacturing · IBM i + Windows · Tested failover with defined RPO/RTO",
+    outcome: "Plan how priority systems can be recovered after a disruption",
+    proof: "Recovery objectives · System dependencies · Documented runbooks and exercises",
     industries: ["Manufacturing", "Finance", "Healthcare"],
     platforms: ["IBM i", "Azure", "Hybrid"],
     architecture: ["Production", "Continuous replication", "ICE recovery site", "Orchestration", "Business validation"],
@@ -78,7 +78,7 @@ export const SOLUTION_EXPERIENCE: Record<string, SolutionExperience> = {
     ],
   },
   "high-availability": {
-    outcome: "Fail over critical systems with near-zero disruption",
+    outcome: "Evaluate failover options around business and workload objectives",
     proof: "Financial services · IBM Power · Continuously replicated standby capacity",
     industries: ["Finance", "Manufacturing"],
     platforms: ["IBM i", "Hybrid"],
@@ -124,8 +124,8 @@ export const SOLUTION_EXPERIENCE: Record<string, SolutionExperience> = {
     resources: DEFAULT_EXPERIENCE.resources,
   },
   "security-monitoring": {
-    outcome: "Move from alert noise to 24/7 triage and escalation",
-    proof: "Regulated enterprise · Hybrid infrastructure · Always-on monitoring with response paths",
+    outcome: "Plan alert review and escalation around agreed service coverage",
+    proof: "Hybrid infrastructure · Monitoring responsibilities and response paths defined by scope",
     industries: ["Healthcare", "Finance", "Manufacturing"],
     platforms: ["IBM i", "Azure", "Hybrid"],
     architecture: ["Infrastructure", "Security telemetry", "ICE SOC", "Triage", "Escalation"],

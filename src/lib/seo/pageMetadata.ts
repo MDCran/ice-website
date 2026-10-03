@@ -33,9 +33,13 @@ export async function buildPageMetadata(
   const canonical = publicUrl(page?.canonical_url, seo.siteUrl)
     || new URL(opts.defaultPath, seo.siteUrl).href;
 
-  const ogImage = page?.og_image_url?.trim() || seo.defaultOgImage || undefined;
+  const brandedShareImage = new URL(
+    `/api/og?title=${encodeURIComponent(title.replace(/\s*[|–-]\s*(?:International Computer Exchange|ICE).*$/i, "").trim())}&description=${encodeURIComponent(description)}`,
+    seo.siteUrl,
+  ).href;
+  const ogImage = page?.og_image_url?.trim() || seo.defaultOgImage || brandedShareImage;
   const twitterImage =
-    page?.twitter_image_url?.trim() || page?.og_image_url?.trim() || seo.defaultOgImage || undefined;
+    page?.twitter_image_url?.trim() || page?.og_image_url?.trim() || seo.defaultOgImage || brandedShareImage;
   const favicon = page?.favicon_url?.trim() || seo.faviconUrl || undefined;
 
   const metadata: Metadata = {
@@ -43,11 +47,13 @@ export async function buildPageMetadata(
     description,
     alternates: { canonical },
     openGraph: {
+      type: "website",
+      locale: "en_US",
       title,
       description,
       url: canonical.startsWith("http") ? canonical : `${seo.siteUrl}${canonical.startsWith("/") ? "" : "/"}${canonical}`,
       siteName: seo.siteName,
-      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
+      ...(ogImage ? { images: [{ url: ogImage, alt: `${seo.siteName} — ${title}` }] } : {}),
     },
     twitter: {
       card: "summary_large_image",

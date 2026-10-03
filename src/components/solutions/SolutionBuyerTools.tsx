@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -17,7 +17,6 @@ import { Button } from "@/components/base/buttons/button";
 import StickySolutionCta from "@/components/marketing/StickySolutionCta";
 import { experienceFor } from "@/lib/solutionExperience";
 import { resolveIcon } from "@/lib/iconMap";
-import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
 import { cx } from "@/utils/cx";
 
 const ARCHITECTURE_NODE_ICONS = [
@@ -193,7 +192,7 @@ export function SolutionArchitecture({
   config?: NonNullable<BuyerToolsContent["architecture"]>;
 }) {
   const data = experienceFor(slug);
-  const reduceMotion = useHydratedReducedMotion();
+  const reduceMotion = true;
   const configuredLayers = Array.isArray(config.layers)
     ? config.layers
     : data.architecture;
@@ -208,63 +207,54 @@ export function SolutionArchitecture({
         : valueOr(item.label, `Layer ${index + 1}`),
     icon: typeof item === "string" ? undefined : item.icon,
   }));
+  const panelDescription = valueOr(
+    config.panel_description,
+    "A straightforward view of the service, from your systems to ongoing support.",
+  );
   const firstLayer = architecture[0]?.label ?? "Source";
-  const finalLayer =
-    architecture[architecture.length - 1]?.label ?? "Managed outcome";
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    if (reduceMotion || architecture.length < 2) return;
-    const interval = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % architecture.length);
-    }, 2400);
-    return () => window.clearInterval(interval);
-  }, [architecture.length, reduceMotion]);
-
-  const activeLayer = architecture[activeIndex]?.label ?? firstLayer;
-  const activeProgress =
-    architecture.length > 1
-      ? (activeIndex / (architecture.length - 1)) * 100
-      : 100;
+  const finalLayer = architecture[architecture.length - 1]?.label ?? "Managed outcome";
+  const activeIndex = 0;
+  const activeLayer = firstLayer;
+  const activeProgress = 100;
 
   return (
     <section className="border-b border-secondary bg-primary py-16 md:py-24">
       <div className="mx-auto max-w-container px-4 md:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
-            {valueOr(config.eyebrow, "Service architecture")}
+            {valueOr(config.eyebrow, "Service overview")}
           </span>
           <h2 className="mt-3 text-display-sm font-semibold text-primary">
-            {valueOr(config.heading, "How data moves through this service")}
+            {valueOr(config.heading, "How ICE supports your environment")}
           </h2>
           <p className="mt-4 text-lg text-tertiary">
             {valueOr(
               config.description,
-              "A live view of the protected path from source to managed outcome.",
+              "A clear view of the systems, protection, and support behind the service.",
             )}
           </p>
         </div>
 
-        <div className="ice-arch-live-surface relative mx-auto mt-12 max-w-6xl overflow-hidden rounded-3xl border border-white/10 bg-[#07152a] p-5 shadow-[0_24px_80px_rgb(2_12_27/0.26)] md:p-8">
+        <div className="relative mx-auto mt-12 max-w-6xl overflow-hidden rounded-2xl border border-secondary bg-primary_alt p-5 md:p-8">
           <div
             aria-hidden="true"
-            className="ice-solution-architecture-grid pointer-events-none absolute inset-0 opacity-35"
+            className="hidden"
           />
           {!reduceMotion && (
             <div
               aria-hidden="true"
-              className="ice-arch-ambient-flow pointer-events-none absolute inset-0"
+              className="hidden"
             />
           )}
           {!reduceMotion && (
             <div
               aria-hidden="true"
-              className="ice-arch-scanner pointer-events-none absolute inset-y-0 left-0 w-1/3"
+              className="hidden"
             />
           )}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -top-28 left-1/2 h-64 w-3/4 -translate-x-1/2 rounded-full bg-brand-500/20 blur-3xl"
+            className="hidden"
           />
 
           <div className="relative flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -277,17 +267,16 @@ export function SolutionArchitecture({
               </span>
               <div>
                 <p className="text-sm font-semibold text-white">
-                  {valueOr(config.panel_title, "ICE managed data path")}
+                  {valueOr(config.panel_title, "How the service is managed")}
                 </p>
                 <p className="mt-0.5 text-xs text-white/50">
-                  {valueOr(
-                    config.panel_description,
-                    "Continuous visibility across every service layer",
-                  )}
+                  {/select a layer/i.test(panelDescription)
+                    ? "A straightforward view of the service, from your systems to ongoing support."
+                    : panelDescription}
                 </p>
               </div>
             </div>
-            <span className="inline-flex w-fit items-center gap-3 rounded-full bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-300/20">
+            <span className="hidden">
               <span className="inline-flex items-center gap-2">
                 <span className="relative flex size-2">
                   {!reduceMotion && (
@@ -305,7 +294,7 @@ export function SolutionArchitecture({
             </span>
           </div>
 
-          <div className="relative mt-5 overflow-hidden rounded-full bg-white/[0.06] p-1 ring-1 ring-white/10">
+          <div className="hidden">
             <span
               className={cx(
                 "block h-1.5 w-full rounded-full bg-gradient-to-r from-brand-500 via-sky-200 to-emerald-300 shadow-[0_0_20px_rgb(4_155_251/0.55)]",
@@ -338,10 +327,7 @@ export function SolutionArchitecture({
           <div className="relative mt-8 hidden md:block">
             <div
               aria-hidden="true"
-              className={cx(
-                "absolute top-8 right-[9%] left-[9%] z-0 h-[3px] overflow-hidden rounded-full bg-white/15",
-                !reduceMotion && "ice-arch-rail-base",
-              )}
+              className="hidden"
             >
               <span
                 className={cx(
@@ -384,48 +370,15 @@ export function SolutionArchitecture({
                 return (
                   <li
                     key={`${step.label}-${index}`}
-                    aria-current={index === activeIndex ? "step" : undefined}
                     className="flex min-w-0 flex-1 flex-col items-center text-center"
                   >
-                    <span
-                      style={{ animationDelay: `${index * -0.28}s` }}
-                      className={cx(
-                        "relative z-[2] flex size-16 items-center justify-center rounded-2xl border border-brand-300/40 bg-[#0b2e4b] text-sm font-bold text-white shadow-[0_0_18px_rgb(4_155_251/0.22)] transition-[border-color,box-shadow,transform] duration-700",
-                        !reduceMotion && "ice-arch-node-live",
-                        index === activeIndex &&
-                          "border-brand-200/90 shadow-[0_0_26px_rgb(4_155_251/0.5)]",
-                      )}
-                    >
-                      {!reduceMotion && (
-                        <span
-                          style={{ animationDelay: `${index * 0.32}s` }}
-                          className="ice-arch-node-pulse absolute inset-0 rounded-2xl bg-brand-300/20"
-                          aria-hidden="true"
-                        />
-                      )}
-                      <Icon className="relative size-6" aria-hidden="true" />
+                    <span className="relative z-[2] flex size-14 items-center justify-center rounded-2xl border border-secondary bg-primary text-fg-brand-primary">
+                      <Icon className="size-6" aria-hidden="true" />
                     </span>
-                    <span
-                      className={cx(
-                        "mt-4 max-w-36 text-sm font-semibold leading-snug transition-colors duration-500",
-                        index === activeIndex ? "text-white" : "text-white/65",
-                      )}
-                    >
+                    <span className="mt-4 max-w-36 text-sm font-semibold leading-snug text-primary">
                       {step.label}
                     </span>
-                    <span
-                      className={cx(
-                        "mt-2 text-[10px] font-semibold tracking-[0.16em] uppercase transition-colors duration-500",
-                        index === activeIndex
-                          ? "text-brand-200"
-                          : "text-brand-300/55",
-                      )}
-                    >
-                      {index === activeIndex
-                        ? valueOr(config.active_state_label, "Active")
-                        : valueOr(config.idle_state_label, "Live")}
-                    </span>
-                    <span className="mt-2 h-1 w-10 overflow-hidden rounded-full bg-white/10 opacity-100">
+                    <span className="hidden">
                       <span
                         style={{ animationDelay: `${index * 0.22}s` }}
                         className={cx(
@@ -443,10 +396,7 @@ export function SolutionArchitecture({
           <ol className="relative mt-6 grid gap-3 md:hidden">
             <div
               aria-hidden="true"
-              className={cx(
-                "absolute top-5 bottom-5 left-5 w-px bg-white/15",
-                !reduceMotion && "ice-arch-vertical-flow",
-              )}
+              className="hidden"
             />
             {architecture.map((step, index) => {
               const Icon = step.icon
@@ -457,29 +407,12 @@ export function SolutionArchitecture({
               return (
                 <li
                   key={`${step.label}-${index}`}
-                  aria-current={index === activeIndex ? "step" : undefined}
-                  className={cx(
-                    "relative flex items-center gap-4 rounded-xl border border-brand-300/25 bg-[#0b2e4b] p-3 transition-colors duration-500",
-                    index === activeIndex && "border-brand-200/70 bg-[#103b5d]",
-                  )}
+                  className="relative flex items-center gap-4 rounded-xl border border-secondary bg-primary p-3"
                 >
-                  <span
-                    style={{ animationDelay: `${index * -0.22}s` }}
-                    className={cx(
-                      "relative z-10 flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#0b2e4b] text-white shadow-[0_0_16px_rgb(4_155_251/0.22)]",
-                      !reduceMotion && "ice-arch-node-live",
-                    )}
-                  >
-                    {!reduceMotion && (
-                      <span
-                        style={{ animationDelay: `${index * 0.3}s` }}
-                        className="ice-arch-node-pulse absolute inset-0 rounded-xl bg-brand-300/20"
-                        aria-hidden="true"
-                      />
-                    )}
-                    <Icon className="relative size-4" aria-hidden="true" />
+                  <span className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary_alt text-fg-brand-primary">
+                    <Icon className="size-4" aria-hidden="true" />
                   </span>
-                  <span className="text-sm font-semibold text-white/85">
+                  <span className="text-sm font-semibold text-primary">
                     {step.label}
                   </span>
                 </li>
@@ -487,11 +420,15 @@ export function SolutionArchitecture({
             })}
           </ol>
 
-          <div
-            className={cx(
-              "relative mt-8 grid gap-4 rounded-2xl border border-brand-300/20 bg-brand-500/10 p-4 ring-1 ring-white/[0.04] md:grid-cols-[0.8fr_1.2fr] md:p-5",
-              !reduceMotion && "ice-arch-layer-card",
+          <p className="relative mt-6 border-t border-secondary pt-5 text-sm leading-relaxed text-tertiary">
+            {valueOr(
+              config.summary,
+              "ICE coordinates the platform, protection, and ongoing operations, with clear reporting for your team.",
             )}
+          </p>
+
+          <div
+            className="hidden"
           >
             <div>
               <p className="text-[11px] font-semibold tracking-[0.18em] text-brand-200 uppercase">
@@ -513,7 +450,7 @@ export function SolutionArchitecture({
             </p>
           </div>
 
-          <div className="relative mt-8 grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-3">
+          <div className="hidden">
             {(Array.isArray(config.badges)
               ? config.badges
               : [

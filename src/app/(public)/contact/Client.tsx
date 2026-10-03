@@ -116,9 +116,9 @@ const DEFAULT_CONTACT_INFO: ContactItem[] = [
 
 const DEFAULT_OPERATIONS: OperationItem[] = [
   {
-    label: "NOC / SOC coverage",
-    value: "24/7/365 operations",
-    description: "Monitoring and escalation for managed clients.",
+    label: "Managed service coverage",
+    value: "Defined for each service",
+    description: "Monitoring and escalation coverage is documented in the agreed service scope.",
   },
   {
     label: "Business office",

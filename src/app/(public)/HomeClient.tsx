@@ -149,19 +149,12 @@ export interface HomePageData {
    ══════════════════════════════════════════════════════════════════════════ */
 
 const DEFAULT_STATS = [
-  { value: 35, suffix: "+", label: "Years of Experience" },
-  { value: 1200, suffix: "+", label: "Successful Projects" },
-  { value: 500, suffix: "+", label: "Enterprise Clients" },
-  { value: 99.99, suffix: "%", label: "Uptime SLA" },
+  { value: 30, suffix: "+", label: "Years in Business" },
 ];
 
 const DEFAULT_TIMELINE = [
-  { year: "1990", title: "Founded", description: "Established as an IBM Business Partner in Boca Raton, Florida." },
-  { year: "2000", title: "Cloud Pioneer", description: "Early adoption of cloud infrastructure and managed hosting solutions." },
-  { year: "2010", title: "Security Focus", description: "Expanded into managed security, threat detection, and data protection." },
-  { year: "2020", title: "Hybrid Cloud Era", description: "Full-suite hybrid cloud, disaster recovery, and automation services." },
-  { year: "2025", title: "35+ Years Strong", description: "Serving 500+ enterprises across manufacturing, finance, healthcare, and more." },
-  { year: "2026", title: "Enterprise AI Innovation", description: "Delivering advanced AI receptionists, intelligent workflows, and next-generation analytics to our partners." },
+  { year: "1990", title: "Our beginning", description: "ICE began serving enterprise technology customers with an IBM-focused approach." },
+  { year: "Today", title: "Your next chapter", description: "AS400 and IBM i hosting, cloud, recovery, and support planned around current business requirements." },
 ];
 
 const DEFAULT_INDUSTRIES = [
@@ -257,22 +250,12 @@ function normalizeMarqueePartners(
 /** Static proof points shown under the hero CTAs. */
 /** Proof claims under the hero — long enough to fill wide viewports without gaps. */
 const HERO_PROOF = [
-  "35+ Years Enterprise IT",
-  "SOC 2 Type II Certified",
-  "99.99% Uptime SLA",
-  "24/7/365 NOC + SOC",
+  "30+ Years in Business",
   "IBM Business Partner Since 1990",
-  "US-Based Support Team",
-  "IBM Power & IBM i Specialists",
-  "Hybrid & Private Cloud",
-  "Defined RPO / RTO Targets",
-  "Tier-3 Data Centers",
-  "Zero-Trust Security",
-  "500+ Enterprise Clients",
-  "Flash Systems Storage",
-  "Boca Raton Headquarters",
-  "PCI & HIPAA Ready Environments",
-  "Dedicated Account Management",
+  "AS400 & IBM i Hosting",
+  "Managed Cloud Hosting",
+  "Disaster Recovery Planning",
+  "Boca Raton, Florida",
 ];
 
 function resolveProofLabels(cms?: string[]): string[] {
@@ -291,35 +274,35 @@ const POPULAR_SOLUTIONS: {
   {
     title: "Managed Cloud Hosting",
     href: "/solutions/managed-cloud-hosting",
-    desc: "Enterprise-grade cloud hosting with 24/7 management and support.",
+    desc: "Managed cloud hosting planned around your workloads, operating needs, and recovery priorities.",
     icon: Cloud01,
     image: "/images/solutions/heroes/managed-cloud-hosting.webp",
   },
   {
     title: "Managed Private Cloud",
     href: "/solutions/managed-private-cloud",
-    desc: "Dedicated private cloud environments built for security and compliance.",
+    desc: "Private cloud options with infrastructure, access, and service responsibilities scoped to your needs.",
     icon: Server01,
     image: "/images/solutions/heroes/managed-private-cloud.webp",
   },
   {
     title: "Disaster Recovery as a Service",
     href: "/solutions/disaster-recovery",
-    desc: "Full disaster recovery with guaranteed RTOs and RPOs.",
+    desc: "Disaster recovery planning with objectives, runbooks, and testing agreed for each workload.",
     icon: RefreshCw01,
     image: "/images/solutions/heroes/disaster-recovery.webp",
   },
   {
     title: "AS400 / IBM i Hosting",
     href: "/solutions/as400",
-    desc: "Secure hosting, operations, and modernization support for AS400 / IBM i environments.",
+    desc: "Hosting, platform support, backup, and recovery planning for AS400 and IBM i systems.",
     icon: Server01,
     image: "/images/solutions/heroes/ibm-i-security.webp",
   },
   {
     title: "High Availability as a Service",
     href: "/solutions/high-availability",
-    desc: "Real-time replication and automatic failover for critical systems.",
+    desc: "Evaluate replication and failover options against the recovery objectives your business needs.",
     icon: Database01,
     image: "/images/solutions/heroes/high-availability.webp",
   },
@@ -333,12 +316,7 @@ const POPULAR_SOLUTIONS: {
 ];
 
 /** Performance indicators — distinct from By The Numbers (years / projects / clients / uptime). */
-const PERFORMANCE_METRICS = [
-  { value: "15", suffix: " min", label: "Mean Incident Response" },
-  { value: "24/7/365", label: "Always-On Operations" },
-  { value: "14,723", label: "Threats Blocked (30d)" },
-  { value: "0", label: "Active Threats" },
-];
+const PERFORMANCE_METRICS: { value: string; suffix?: string; label: string }[] = [];
 
 /* ══════════════════════════════════════════════════════════════════════════
    SHARED SECTION HEADER
@@ -403,7 +381,7 @@ function StatItem({
     >
       <dt className="text-md font-semibold text-primary md:text-lg">{label}</dt>
       <dd className="text-display-lg font-semibold tracking-tight text-brand-tertiary_alt tabular-nums md:text-display-xl">
-        <CountUpNumber target={value} suffix={suffix} inView={inView} duration={2000} />
+        {/year/i.test(label) ? `${value}${suffix}` : <CountUpNumber target={value} suffix={suffix} inView={inView} duration={2000} />}
       </dd>
     </div>
   );
@@ -562,16 +540,17 @@ export default function Home({
     icon: resolveIcon(node.icon ?? "Server") as IconComponent,
   }));
   const dataCenterFeatures = dataCentersSection?.features ?? [
-    "Tier-3 data centers with guaranteed uptime",
-    "PCI, HIPAA, SOX, and GDPR compliant",
-    "Geographically separated backup data centers",
-    "Redundant power, cooling, and Flash Systems Storage",
+    "Capacity and connectivity planning",
+    "Power and cooling requirements",
+    "Physical access controls",
+    "Backup and recovery arrangements",
+    "Facility details and available assurance reports reviewed before service selection",
   ];
   const trustBadges = (trustBadgesSection?.items ?? [
-    { icon: "Shield", title: "SOC 2 Certified", description: "SSAE 18 Type II audited data centers" },
-    { icon: "Lock", title: "Zero-Trust Security", description: "Multi-layered threat detection and response" },
-    { icon: "Database", title: "99.99% Uptime", description: "Redundant infrastructure with failover" },
-    { icon: "Globe", title: "24/7 Monitoring", description: "Round-the-clock NOC and SOC operations" },
+    { icon: "Server", title: "IBM i experience", description: "AS400 hosting and IBM Power platform support" },
+    { icon: "Award", title: "30+ years in business", description: "Enterprise technology experience since 1990" },
+    { icon: "Database", title: "Recovery planning", description: "Backup and recovery options matched to your needs" },
+    { icon: "Users", title: "Defined responsibilities", description: "Service scope agreed with your team" },
   ]).map((item) => ({ ...item, icon: resolveIcon(item.icon) as IconComponent }));
   const extraSections = (orderedSections ?? []).filter(
     (section) =>
@@ -911,15 +890,15 @@ export default function Home({
             >
               <Image
                 src={dataCentersSection?.image ?? "/images/service/data_center.jpg"}
-                alt={dataCentersSection?.image_alt ?? "ICE high-security data center"}
+                alt={dataCentersSection?.image_alt ?? "Data center infrastructure"}
                 width={720}
                 height={480}
                 className="h-auto w-full rounded-2xl object-cover dark:shadow-[0_0_40px_rgb(4_155_251/0.15)]"
               />
               {/* Floating certification badge */}
               <div className="absolute -bottom-4 right-4 rounded-xl bg-primary px-5 py-3 shadow-lg ring-1 ring-secondary ring-inset lg:bottom-6 lg:-right-6">
-                <p className="text-xs font-medium tracking-wider text-tertiary uppercase">{dataCentersSection?.badge_label ?? "Certified"}</p>
-                <p className="text-sm font-semibold text-primary">{dataCentersSection?.badge_value ?? "SOC 2 Type II"}</p>
+                <p className="text-xs font-medium tracking-wider text-tertiary uppercase">{dataCentersSection?.badge_label ?? "Infrastructure"}</p>
+                <p className="text-sm font-semibold text-primary">{dataCentersSection?.badge_value ?? "Workload-specific design"}</p>
               </div>
             </motion.div>
 
@@ -937,7 +916,7 @@ export default function Home({
               </h2>
               <p className="mt-4 text-lg text-tertiary md:mt-5">
                 {dataCentersSection?.description ??
-                  "Our SOC 2 Type II certified data centers deliver the reliability, redundancy, and security your mission-critical workloads demand."}
+                  "Review the proposed hosting environment, resilience design, security controls, and available assurance reports with ICE before selecting a service."}
               </p>
               <ul className="mt-8 flex flex-col gap-4">
                 {dataCenterFeatures.map((item) => (
@@ -996,7 +975,7 @@ export default function Home({
         <div className="relative z-10 mx-auto w-full max-w-container px-4 md:px-8">
           <SectionHeader
             eyebrow={timelineSection?.eyebrow ?? "Our Journey"}
-            heading={timelineSection?.heading ?? "35+ Years of Innovation"}
+            heading={timelineSection?.heading ?? "30+ years in business"}
           />
 
           <div className="relative mx-auto mt-12 max-w-5xl md:mt-16">
@@ -1270,7 +1249,7 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           PERFORMANCE METRICS
           ═══════════════════════════════════════════════════════════════════ */}
-      {show("metrics") && <section className="relative overflow-hidden bg-primary py-16 md:py-24">
+      {show("metrics") && performanceMetrics.length > 0 && <section className="relative overflow-hidden bg-primary py-16 md:py-24">
         {/* Depth: faint centered dot field behind the metrics panel */}
         <div
           aria-hidden="true"

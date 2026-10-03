@@ -22,7 +22,7 @@ export const SOLUTION_CATALOG: SolutionRef[] = [
   {
     slug: "managed-cloud-hosting",
     title: "Managed Cloud Hosting",
-    description: "Enterprise cloud hosting with 24/7 management for mission-critical workloads.",
+    description: "Managed cloud hosting planned around your workloads, operating needs, and recovery priorities.",
     category: "Managed Cloud Services",
     icon: "Cloud",
     tags: ["cloud", "hosting", "ibm power", "uptime"],
@@ -102,10 +102,10 @@ export const SOLUTION_CATALOG: SolutionRef[] = [
   {
     slug: "security-monitoring",
     title: "Security Monitoring",
-    description: "24/7 US-based monitoring with escalation to ICE security operations.",
+    description: "Security monitoring and alert response scoped to the environment and agreed service.",
     category: "Managed Security",
     icon: "Eye",
-    tags: ["soc", "monitoring", "24/7"],
+    tags: ["security monitoring", "alert triage", "incident response planning"],
   },
   {
     slug: "threat-detection",

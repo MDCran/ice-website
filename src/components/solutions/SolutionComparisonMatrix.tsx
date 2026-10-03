@@ -5,9 +5,9 @@ const OPTIONS = [
   {
     name: "IBM i Managed Cloud",
     bestFor: "Modernizing Power workloads without replatforming",
-    sla: "99.99% target",
-    rpo: "15 min–24 hr",
-    rto: "4–24 hr",
+    sla: "Defined per agreement",
+    rpo: "Set for each workload",
+    rto: "Set for each workload",
     platforms: "IBM i, AIX, Power",
     href: "/solutions/managed-cloud-hosting",
   },
@@ -15,17 +15,17 @@ const OPTIONS = [
     name: "Managed Hybrid Cloud",
     bestFor: "One operating model across on-prem and cloud",
     sla: "Workload-specific",
-    rpo: "Policy-based",
-    rto: "Workload-specific",
+    rpo: "Set for each workload",
+    rto: "Set for each workload",
     platforms: "IBM i, x86, Azure",
     href: "/solutions/managed-hybrid-cloud",
   },
   {
     name: "Disaster Recovery",
     bestFor: "Defined recovery targets and tested failover",
-    sla: "Recovery SLA",
-    rpo: "Near-zero–24 hr",
-    rto: "<1–24 hr",
+    sla: "Recovery scope agreed",
+    rpo: "Defined in recovery plan",
+    rto: "Defined in recovery plan",
     platforms: "IBM i, AIX, Windows, Linux",
     href: "/solutions/disaster-recovery",
   },
@@ -59,7 +59,7 @@ export default function SolutionComparisonMatrix({ content = {} }: { content?: S
         <div className="mx-auto max-w-3xl text-center">
           <span className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">{content.eyebrow ?? "Shortlist faster"}</span>
           <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">{content.heading ?? "Compare common solution paths"}</h2>
-          <p className="mt-4 text-lg text-tertiary">{content.description ?? "Starting ranges for planning; final commitments depend on workload discovery and design."}</p>
+          <p className="mt-4 text-lg text-tertiary">{content.description ?? "Use this as a discussion guide. Platforms, availability, and recovery targets are confirmed for each workload and service agreement."}</p>
         </div>
         <div className="mt-10 overflow-x-auto rounded-2xl bg-primary shadow-sm ring-1 ring-secondary">
           <table className="min-w-[760px] w-full text-left">

@@ -441,24 +441,24 @@ export const DEFAULT_SALES_ENABLEMENT: SalesEnablementConfig = {
       "Each proof point is paired with context so buyers can validate fit during discovery and contracting.",
     metrics: [
       {
-        value: "35+",
-        label: "Years in enterprise IT",
+        value: "30+",
+        label: "Years in business",
         detail: "IBM Business Partner since 1990.",
       },
       {
-        value: "24/7/365",
-        label: "Operations coverage",
-        detail: "Monitoring and support for mission-critical environments.",
+        value: "AS400 / IBM i",
+        label: "Hosting and support",
+        detail: "Cloud, platform, backup, and recovery options.",
       },
       {
-        value: "99.99%",
-        label: "Target uptime SLA",
-        detail: "Service-specific commitments are finalized in the agreement.",
+        value: "Cloud + DR",
+        label: "Managed services",
+        detail: "Plan hosting and recovery around your workloads.",
       },
       {
-        value: "US-based",
-        label: "Support organization",
-        detail: "Direct access to infrastructure specialists and account ownership.",
+        value: "Agreed scope",
+        label: "Clear responsibilities",
+        detail: "Service coverage and objectives are documented before work begins.",
       },
     ],
   },
@@ -568,7 +568,7 @@ export const DEFAULT_SALES_ENABLEMENT: SalesEnablementConfig = {
           "Multiple tools and vendors made ownership, escalation, and evidence collection difficult.",
         outcome:
           "Consolidated monitoring, control ownership, incident paths, and recurring service review.",
-        metric: "24/7",
+        metric: "Scoped",
         metricLabel: "Monitoring coverage",
         href: "/solutions/security-monitoring",
       },
@@ -592,8 +592,8 @@ export const DEFAULT_SALES_ENABLEMENT: SalesEnablementConfig = {
       "Buyers can evaluate operating controls, responsibilities, and evidence before commercial commitment.",
     certifications: [
       {
-        name: "SOC 2 Type II",
-        detail: "Service organization controls supporting enterprise assurance reviews.",
+        name: "Assurance information",
+        detail: "Available service and control information can be reviewed during discovery.",
         href: "/contact?service=Security%20and%20Compliance%20Pack&source=enterprise_trust",
       },
       {
@@ -609,7 +609,7 @@ export const DEFAULT_SALES_ENABLEMENT: SalesEnablementConfig = {
     ],
     commitments: [
       {
-        value: "24/7/365",
+        value: "As agreed",
         label: "Monitoring and support",
         detail: "Coverage and escalation paths defined by service.",
       },
@@ -919,19 +919,19 @@ export const DEFAULT_SALES_ENABLEMENT: SalesEnablementConfig = {
       lead_source: "soft_lead_capture",
       analytics_form: "soft_lead",
     },
-    homePreviewEyebrow: "For enterprise buying teams",
-    homePreviewHeading: "Make the next infrastructure decision easier to defend.",
+    homePreviewEyebrow: "Start with what your business needs",
+    homePreviewHeading: "Find the right next step for your critical systems.",
     homePreviewDescription:
-      "Explore operating commitments, stakeholder outcomes, implementation stages, planning economics, and procurement resources before the first call.",
+      "Talk through your IBM i, cloud hosting, or recovery needs with ICE before making a change.",
     homePreviewCta: {
-      label: "Plan an executive briefing",
-      href: "/contact?service=Enterprise%20Infrastructure%20Planning&source=home_sales_preview",
+      label: "Talk with an ICE specialist",
+      href: "/contact?service=Infrastructure%20Planning&source=home_sales_preview",
     },
     homePreviewMetrics: [
-      { value: "35+", label: "Years in enterprise IT", detail: "IBM Business Partner since 1990." },
-      { value: "24/7/365", label: "Operations coverage", detail: "Monitoring and support for mission-critical environments." },
-      { value: "99.99%", label: "Target uptime SLA", detail: "Service-specific commitments are finalized in the agreement." },
-      { value: "US-based", label: "Support organization", detail: "Direct access to infrastructure specialists and account ownership." },
+      { value: "30+", label: "Years in business", detail: "IBM Business Partner since 1990." },
+      { value: "AS400 / IBM i", label: "Hosting and support", detail: "Cloud, platform, backup, and recovery options." },
+      { value: "Cloud + DR", label: "Managed services", detail: "Plan hosting and recovery around your workloads." },
+      { value: "Agreed scope", label: "Clear responsibilities", detail: "Service coverage and objectives are documented before work begins." },
     ],
   },
 };

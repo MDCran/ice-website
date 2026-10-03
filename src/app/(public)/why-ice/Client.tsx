@@ -62,18 +62,15 @@ interface Stat {
 }
 
 const DEFAULT_STATS: Stat[] = [
-  { value: 35, suffix: "+", label: "Years of Experience" },
-  { value: 1200, suffix: "+", label: "Projects Delivered" },
-  { value: 500, suffix: "+", label: "Clients Served" },
-  { value: 99.99, suffix: "%", label: "Uptime SLA" },
+  { value: 30, suffix: "+", label: "Years in Business" },
 ];
 
 /** Quiet mono proof chips shown under the hero lead. */
 const DEFAULT_PROOF: string[] = [
   "IBM Business Partner Since 1990",
-  "SOC 2 Type II Data Centers",
-  "Tier-3 Infrastructure",
-  "24/7/365 U.S. Support",
+  "AS400 and IBM i Hosting",
+  "Managed Cloud Hosting",
+  "Disaster Recovery Planning",
 ];
 
 interface Differentiator {
@@ -93,7 +90,7 @@ const DEFAULT_DIFFERENTIATORS: Differentiator[] = [
     icon: Server01,
     title: "Enterprise-Grade Infrastructure",
     description:
-      "Our SOC 2 Type II certified data centers provide the reliability, security, and performance that enterprise workloads demand. Redundant power, cooling, and connectivity ensure maximum uptime.",
+      "Review the proposed hosting environment, connectivity, security controls, and available assurance reports before selecting a service.",
   },
   {
     icon: LayersThree01,
@@ -114,7 +111,7 @@ const DEFAULT_FAQS: FAQ[] = [
     id: "faq-1",
     question: "Why choose International Computer Exchange?",
     answer:
-      "International Computer Exchange has been an IBM Business Partner since 1990, providing over 35 years of enterprise technology expertise. We specialize in IBM Power Systems, cloud hosting, disaster recovery, and managed services. Our SOC 2 Type II certified data centers, combined with our deep technical knowledge and personalized service, make us a trusted partner for businesses that demand reliability and performance.",
+      "International Computer Exchange has been an IBM Business Partner since 1990. ICE works with IBM Power and IBM i environments, managed cloud hosting, disaster recovery, and related services. Start with your applications and requirements, then agree on the service scope, responsibilities, and recovery objectives.",
   },
   {
     id: "faq-2",
@@ -126,7 +123,7 @@ const DEFAULT_FAQS: FAQ[] = [
     id: "faq-3",
     question: "Where is ICE's infrastructure hosted?",
     answer:
-      "ICE leverages Tier-3 data centers with geographically separated backup infrastructure. All facilities are PCI, HIPAA, SOX, and GDPR compliant, featuring redundant power systems, enterprise-grade cooling, Flash Systems Storage, multiple network carriers, and 24/7 physical security monitoring to ensure maximum uptime and data protection.",
+      "The hosting location and facility details depend on the proposed environment. Ask ICE to review the relevant security documentation, resilience design, backup arrangements, and recovery responsibilities for your service.",
   },
   {
     id: "faq-4",
@@ -159,13 +156,13 @@ const DEFAULT_INDUSTRIES: Industry[] = [
     icon: Bank,
     title: "Financial Services",
     description:
-      "Secure, compliant hosting and data protection for banks, credit unions, and financial institutions.",
+      "Hosting and recovery planning for financial workloads, with security controls and responsibilities defined for each engagement.",
   },
   {
     icon: ActivityHeart,
     title: "Healthcare",
     description:
-      "HIPAA-ready infrastructure and managed services for healthcare providers and health systems.",
+      "Technology hosting and support for healthcare organizations, with compliance requirements reviewed for each engagement.",
   },
   {
     icon: ShieldTick,
@@ -569,7 +566,7 @@ export default function WhyICEPage({
                     >
                       <dt className="text-md font-medium text-secondary_on-brand">{stat.label}</dt>
                       <dd className="text-display-lg font-semibold tracking-tight text-primary_on-brand tabular-nums md:text-display-xl">
-                        <AnimatedCounter target={value} suffix={stat.suffix ?? ""} inView={statsInView} />
+                        {/year/i.test(stat.label) ? `${value}${stat.suffix ?? ""}` : <AnimatedCounter target={value} suffix={stat.suffix ?? ""} inView={statsInView} />}
                       </dd>
                     </div>
                   );

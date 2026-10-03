@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: page?.meta_title ?? page?.title ?? "Why ICE | International Computer Exchange",
     description: clampDescription(
       page?.meta_description ??
-        "Why enterprises choose ICE: an IBM Business Partner since 1990 delivering managed cloud, security, and disaster recovery from SOC 2 Type II certified data centers.",
+        "Why businesses choose ICE: an IBM Business Partner since 1990 for AS400 and IBM i hosting, managed cloud, and disaster recovery planning.",
     ),
     alternates: { canonical: "/why-ice" },
   };

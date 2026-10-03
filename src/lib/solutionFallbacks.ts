@@ -72,23 +72,23 @@ export type SolutionFallbackPage = {
 
 const DEFAULT_PROCESS = {
   items: [
-    { step: "01", title: "Assessment", description: "We analyze your environment, requirements, and success criteria." },
-    { step: "02", title: "Design", description: "Our architects design a solution tailored to your workloads and SLAs." },
-    { step: "03", title: "Deploy", description: "We implement, migrate, and validate with minimal business disruption." },
-    { step: "04", title: "Manage", description: "24/7 monitoring, optimization, and dedicated support from ICE." },
+    { step: "01", title: "Understand your environment", description: "Review your applications, platforms, dependencies, and priorities." },
+    { step: "02", title: "Agree on the service", description: "Set the scope, responsibilities, costs, and success measures before work begins." },
+    { step: "03", title: "Plan the transition", description: "Document the implementation steps, timing, and validation plan." },
+    { step: "04", title: "Support and improve", description: "Manage the agreed services and revisit the plan as your needs change." },
   ],
 };
 
 const DEFAULT_BENEFITS = {
   items: [
-    "Enterprise SLAs backed by Tier-3 data centers",
-    "Dedicated US-based engineers who know your environment",
-    "Predictable operating expense instead of capital spend",
-    "Compliance-ready infrastructure (SOC 2, HIPAA, PCI, GDPR)",
+    "Reduce the burden of maintaining infrastructure in-house",
+    "Keep business-critical applications while updating the platform around them",
+    "Plan protection and recovery around application priorities",
+    "Set clear service responsibilities before implementation",
   ],
 };
 
-const PROOF = ["99.99% Uptime SLA", "24/7 Engineer-Led Operations", "SOC 2 Type II", "US-Based Support"];
+const PROOF = ["IBM Business Partner since 1990", "AS400 and IBM i experience", "Cloud hosting", "Disaster recovery planning"];
 
 function buildOrdered(sections: SectionMap): SolutionFallbackPage["orderedSections"] {
   const order: SolutionFallbackPage["orderedSections"] = [];
@@ -119,7 +119,7 @@ function page(
     benefits: DEFAULT_BENEFITS,
     cta: {
       heading: `Ready to modernize with ${title}?`,
-      description: "Talk with our enterprise architects about a solution tailored to your workloads and budget.",
+      description: "Talk with ICE about your environment, priorities, and the right next step.",
     },
   };
 
@@ -135,17 +135,17 @@ function page(
 const FALLBACKS: Record<SolutionSlug, SolutionFallbackPage> = {
   "managed-cloud-hosting": page(
     "Managed Cloud Hosting",
-    "Enterprise-grade cloud hosting with 24/7 proactive monitoring, Tier-3 data centers, and dedicated support.",
+    "Managed cloud hosting for business applications, with workload assessment, operations, and protection scoped to your needs.",
     {
       eyebrow: "Key capabilities",
-      heading: "Comprehensive features",
+        heading: "Hosting shaped around your workloads",
       items: [
-        { icon: "Monitor", title: "24/7 Proactive Monitoring", description: "Round-the-clock infrastructure monitoring with automated alerting and rapid incident response." },
-        { icon: "Server", title: "Tier-3 Data Centers", description: "SOC 2 Type II certified facilities with redundant power, cooling, and multiple network carriers." },
-        { icon: "Database", title: "Redundant Infrastructure", description: "Geographically separated data centers with automatic failover and data replication." },
-        { icon: "Zap", title: "Scalable Resources", description: "Instantly scale compute, storage, and bandwidth to match your workload demands." },
-        { icon: "Users", title: "Dedicated Support Team", description: "Named account managers and certified engineers who know your environment." },
-        { icon: "Lock", title: "Multi-Tenant Isolation", description: "Complete workload isolation with dedicated resources and network segmentation." },
+        { icon: "Monitor", title: "Managed operations", description: "Define monitoring, maintenance, escalation, and administration responsibilities for your service." },
+        { icon: "Server", title: "Workload-fit hosting", description: "Select a platform based on application, operating-system, and performance requirements." },
+        { icon: "Database", title: "Backup and recovery options", description: "Choose protection and recovery arrangements that fit the workload and agreed service scope." },
+        { icon: "Zap", title: "Capacity planning", description: "Plan compute, storage, and network capacity around current use and expected change." },
+        { icon: "Users", title: "Experienced support", description: "Work with an IBM-focused team that understands business-critical infrastructure." },
+        { icon: "Lock", title: "Access and connectivity", description: "Review network design, user access, and application integrations before implementation." },
       ],
     },
   ),
@@ -167,7 +167,7 @@ const FALLBACKS: Record<SolutionSlug, SolutionFallbackPage> = {
   ),
   "disaster-recovery": page(
     "Disaster Recovery",
-    "Business continuity with defined RPO/RTO targets, tested failover, and geographically separated recovery sites.",
+    "Plan disaster recovery around application dependencies, acceptable data loss, restoration time, and recovery exercises.",
   ),
   "high-availability": page(
     "High Availability",
@@ -182,14 +182,14 @@ const FALLBACKS: Record<SolutionSlug, SolutionFallbackPage> = {
       hero: {
         headline: "AS400",
         subheadline:
-          "AS400 hosting, AS/400 support, iSeries managed services, and IBM i cloud hosting for mission-critical workloads. ICE hosts, secures, backs up, and manages IBM i environments with 24/7 support from an IBM Business Partner since 1990.",
-        proof_labels: ["IBM Business Partner since 1990", "AS400 and IBM i expertise", "24/7 managed operations", "SOC 2 Type II"],
+          "Keep your AS400 and IBM i applications running while you plan the next stage of hosting, support, backup, and recovery with an IBM-focused team with 30+ years in business.",
+        proof_labels: ["IBM Business Partner since 1990", "AS400 and IBM i experience", "Hosting and support", "Recovery planning"],
       },
       features: {
         eyebrow: "AS400 services",
         heading: "AS400 hosting, IBM i support, security, backup, HA, and DR",
         description:
-          "A single AS400 partner for the high-intent services buyers search for: hosting, support, modernization, security, backup, high availability, and disaster recovery.",
+          "Start with your applications and operating requirements. ICE can help assess hosting, support, security, backup, availability, and recovery needs.",
         items: [
           {
             icon: "Server",
@@ -306,7 +306,7 @@ const FALLBACKS: Record<SolutionSlug, SolutionFallbackPage> = {
             {
               question: "Who is AS400 hosting best for?",
               answer:
-                "AS400 hosting is best for organizations that rely on IBM i applications but want to reduce aging hardware risk, improve resilience, add 24/7 operations, strengthen security, or build a tested disaster recovery path without rewriting the application.",
+                "AS400 hosting can suit organizations that rely on IBM i applications and want to reduce aging hardware risk, improve resilience, clarify operational responsibilities, or plan recovery without rewriting the application.",
             },
             {
               question: "Can ICE help with AS400 backup and disaster recovery?",
@@ -337,7 +337,7 @@ const FALLBACKS: Record<SolutionSlug, SolutionFallbackPage> = {
             {
               label: "Operations",
               before: "Knowledge concentrated in a small internal team",
-              after: "24/7 support from IBM i and enterprise infrastructure specialists",
+              after: "Support from IBM i and enterprise infrastructure specialists",
             },
             {
               label: "Recovery",
@@ -378,7 +378,7 @@ const FALLBACKS: Record<SolutionSlug, SolutionFallbackPage> = {
   ),
   "security-monitoring": page(
     "Security Monitoring",
-    "Continuous detection and response with 24/7 monitoring of threats across your infrastructure.",
+    "Security monitoring and alert response scoped to your environment, risk priorities, and service requirements.",
   ),
   "threat-detection": page(
     "Threat Detection and Response",

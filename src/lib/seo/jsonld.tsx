@@ -55,6 +55,14 @@ export function organization(cfg: SeoConfig): Record<string, unknown> {
     foundingDate: o.foundingDate,
     areaServed: "US",
     address: postalAddress(cfg),
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "sales",
+      telephone: o.telephone,
+      email: o.email,
+      areaServed: "US",
+      availableLanguage: "English",
+    },
   };
   if (cfg.social.length > 0) node.sameAs = cfg.social;
   return node;

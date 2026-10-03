@@ -21,22 +21,12 @@ export interface SharedBlocksContent {
 
 export const DEFAULT_SHARED_BLOCKS: SharedBlocksContent = {
   proof_labels: [
-    "35+ Years Enterprise IT",
-    "SOC 2 Type II Certified",
-    "99.99% Uptime SLA",
-    "24/7/365 NOC + SOC",
+    "30+ Years in Business",
     "IBM Business Partner Since 1990",
-    "US-Based Support Team",
-    "IBM Power & IBM i Specialists",
-    "Hybrid & Private Cloud",
-    "Defined RPO / RTO Targets",
-    "Tier-3 Data Centers",
-    "Zero-Trust Security",
-    "500+ Enterprise Clients",
-    "Flash Systems Storage",
-    "Boca Raton Headquarters",
-    "PCI & HIPAA Ready Environments",
-    "Dedicated Account Management",
+    "AS400 & IBM i Hosting",
+    "Managed Cloud Hosting",
+    "Disaster Recovery Planning",
+    "Boca Raton, Florida",
   ],
   partners: [
     { name: "IBM", logo_src: "/images/v3/b_1.png" },

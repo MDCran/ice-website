@@ -58,7 +58,7 @@ function holidayTemplate(id: string, name: string, message: string): MarketingTe
 }
 
 export const MARKETING_TEMPLATE_PRESETS: MarketingTemplatePreset[] = [
-  serviceTemplate("managed-cloud-hosting", "Managed Cloud Hosting", "Run critical workloads without adding operational burden", "24/7 operations for IBM Power, Windows, Linux, and hybrid estates."),
+  serviceTemplate("managed-cloud-hosting", "Managed Cloud Hosting", "Run critical workloads without adding operational burden", "Hosting, operating responsibilities, backup, and recovery options scoped to your workloads."),
   serviceTemplate("managed-private-cloud", "Managed Private Cloud", "Gain dedicated control without managing every layer", "Private infrastructure, predictable performance, and compliance-ready controls."),
   serviceTemplate("managed-hybrid-cloud", "Managed Hybrid Cloud", "Operate cloud and on-prem systems as one environment", "Connect legacy platforms, private infrastructure, and public cloud with one operating model."),
   serviceTemplate("cloud-migration", "Cloud Migration", "Move workloads with a controlled cutover plan", "Discovery, dependency mapping, migration sequencing, and validation from ICE engineers."),
