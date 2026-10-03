@@ -33,7 +33,9 @@ export async function POST(request: Request) {
   const applied: string[] = [];
 
   try {
-    revalidateTag("cms-pages", "max");
+    // CMS edits are an explicit publish/save action: the next public visit must
+    // block for fresh content rather than serve the stale-while-revalidate copy.
+    revalidateTag("cms-pages", { expire: 0 });
     applied.push("cms-pages");
   } catch {
     /* older runtimes */
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
 
   if (slug) {
     try {
-      revalidateTag(`cms-page:${slug}`, "max");
+      revalidateTag(`cms-page:${slug}`, { expire: 0 });
       applied.push(`cms-page:${slug}`);
     } catch {
       /* ignore */

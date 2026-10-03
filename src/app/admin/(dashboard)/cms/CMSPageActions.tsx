@@ -454,6 +454,22 @@ export default function CMSPageActions({
       const supabase = createClient();
       const cloneSlug = `${page.slug}-copy-${Date.now().toString(36).slice(-4)}`;
 
+      let cloneSortOrder = page.sort_order + 1;
+      if (page.page_type === "solution") {
+        const { data: lastSolution, error: orderError } = await supabase
+          .from("pages")
+          .select("sort_order")
+          .eq("page_type", "solution")
+          .order("sort_order", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (orderError) {
+          setError(`Could not find an available catalog position: ${orderError.message}`);
+          return;
+        }
+        cloneSortOrder = lastSolution ? (Number(lastSolution.sort_order) || 0) + 1 : 0;
+      }
+
       const { data: created, error: createError } = await supabase
         .from("pages")
         .insert({
@@ -463,7 +479,7 @@ export default function CMSPageActions({
           meta_title: page.meta_title,
           meta_description: page.meta_description,
           is_published: false,
-          sort_order: page.sort_order + 1,
+          sort_order: cloneSortOrder,
         })
         .select("id")
         .single();
@@ -515,48 +531,59 @@ export default function CMSPageActions({
       });
 
       startTransition(() => router.push(`/admin/cms/${cloneSlug}`));
+    } catch (cloneError) {
+      setError(cloneError instanceof Error ? cloneError.message : "Could not duplicate this page.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleExport = async () => {
-    if (!page) return;
-    const supabase = createClient();
-    const { data: sections } = await supabase
-      .from("page_sections")
-      .select("section_key, section_type, content, sort_order, is_visible")
-      .eq("page_id", page.id)
-      .neq("section_key", "access_settings")
-      .order("sort_order", { ascending: true });
+    if (!page || isSaving) return;
+    setError("");
+    setIsSaving(true);
+    try {
+      const supabase = createClient();
+      const { data: sections, error: sectionsError } = await supabase
+        .from("page_sections")
+        .select("section_key, section_type, content, sort_order, is_visible")
+        .eq("page_id", page.id)
+        .neq("section_key", "access_settings")
+        .order("sort_order", { ascending: true });
+      if (sectionsError) throw sectionsError;
 
-    const payload = {
-      exported_at: new Date().toISOString(),
-      page: {
-        title: page.title,
-        slug: page.slug,
-        page_type: page.page_type,
-        meta_title: page.meta_title,
-        meta_description: page.meta_description,
-        is_published: page.is_published,
-      },
-      sections: sections ?? [],
-    };
+      const payload = {
+        exported_at: new Date().toISOString(),
+        page: {
+          title: page.title,
+          slug: page.slug,
+          page_type: page.page_type,
+          meta_title: page.meta_title,
+          meta_description: page.meta_description,
+          is_published: page.is_published,
+        },
+        sections: sections ?? [],
+      };
 
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${page.slug}.ice-page.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${page.slug}.ice-page.json`;
+      a.click();
+      URL.revokeObjectURL(url);
 
-    await writeAuditLog(supabase, {
-      action: "cms.page_exported",
-      entityType: "page",
-      entityId: page.id,
-      summary: `Exported ${page.slug}`,
-    });
+      await writeAuditLog(supabase, {
+        action: "cms.page_exported",
+        entityType: "page",
+        entityId: page.id,
+        summary: `Exported ${page.slug}`,
+      });
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : "Could not export this page.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleImportFile = async (file: File) => {

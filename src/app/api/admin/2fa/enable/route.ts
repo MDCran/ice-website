@@ -14,11 +14,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("admin_profiles")
     .select("id, email, totp_enabled")
     .eq("id", user.id)
     .single();
+
+  if (profileError && /totp_enabled/i.test(profileError.message) && /column|schema cache|does not exist|could not find/i.test(profileError.message)) {
+    return NextResponse.json(
+      { error: "Two-factor authentication is not configured yet. Apply the admin TOTP database migration, then try again." },
+      { status: 503 },
+    );
+  }
 
   if (!profile) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -47,10 +54,17 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+  const { error: secretError } = await admin
+    .from("admin_totp_secrets")
+    .upsert({ admin_id: user.id, secret }, { onConflict: "admin_id" });
+
+  if (secretError) {
+    return NextResponse.json({ error: "Could not securely save your authenticator setup. Apply the admin TOTP database migration and try again." }, { status: 500 });
+  }
+
   const { error } = await admin
     .from("admin_profiles")
     .update({
-      totp_secret: secret,
       totp_enabled: true,
       totp_enabled_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -58,6 +72,7 @@ export async function POST(request: Request) {
     .eq("id", user.id);
 
   if (error) {
+    await admin.from("admin_totp_secrets").delete().eq("admin_id", user.id);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

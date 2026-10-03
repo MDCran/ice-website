@@ -16,7 +16,7 @@ export interface IllustrationMeta {
   name: string;
   category: string;
   description: string;
-  tags: string[];
+  tags: readonly string[];
   /** Preferred default size when dropping into CMS. */
   defaultSize?: IllustrationSizePreset;
 }
@@ -29,7 +29,7 @@ export const ILLUSTRATION_CATEGORIES = [
   "Services & Business",
 ] as const;
 
-export const ILLUSTRATIONS: IllustrationMeta[] = [
+export const ILLUSTRATIONS = [
   // Cloud & Hosting
   {
     id: "cloud-server",
@@ -147,13 +147,13 @@ export const ILLUSTRATIONS: IllustrationMeta[] = [
     description: "Enterprise global network connectivity",
     tags: ["network", "global", "connectivity", "nodes"],
   },
-];
+] as const satisfies readonly IllustrationMeta[];
 
 export function getIllustration(id: string): IllustrationMeta | undefined {
   return ILLUSTRATIONS.find((ill) => ill.id === id);
 }
 
-export function getIllustrationsByCategory(category: string): IllustrationMeta[] {
+export function getIllustrationsByCategory(category: string): readonly IllustrationMeta[] {
   if (category === "All") return ILLUSTRATIONS;
   return ILLUSTRATIONS.filter((ill) => ill.category === category);
 }

@@ -13,28 +13,32 @@ export default function IllustrationsClient({
   illustrations,
   categories,
 }: {
-  illustrations: IllustrationMeta[];
+  illustrations: readonly IllustrationMeta[];
   categories: readonly string[];
 }) {
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState("");
 
   const filtered = illustrations.filter((ill) => {
     const matchCat = category === "All" || ill.category === category;
-    const q = query.toLowerCase();
-    const matchQ =
-      !q ||
-      ill.name.toLowerCase().includes(q) ||
-      ill.description.toLowerCase().includes(q) ||
-      ill.tags.some((t) => t.includes(q));
+    const q = query.trim().toLocaleLowerCase();
+    const matchQ = !q || [ill.name, ill.description, ill.category, ...ill.tags]
+      .some((value) => value.toLocaleLowerCase().includes(q));
     return matchCat && matchQ;
   });
 
-  const copyId = (id: string) => {
-    navigator.clipboard.writeText(id);
-    setCopied(id);
-    setTimeout(() => setCopied(null), 1800);
+  const copyId = async (id: string) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      setCopyError("");
+      setCopied(id);
+      setTimeout(() => setCopied((current) => current === id ? null : current), 1800);
+    } catch {
+      setCopied(null);
+      setCopyError("Could not access the clipboard. Select and copy the illustration ID manually.");
+    }
   };
 
   return (
@@ -66,6 +70,8 @@ export default function IllustrationsClient({
           </Button>
         ))}
       </div>
+
+      {copyError && <p role="alert" className="text-sm text-utility-red-700">{copyError}</p>}
 
       {/* Grid */}
       {filtered.length === 0 ? (

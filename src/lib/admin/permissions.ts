@@ -122,5 +122,6 @@ export const NAV_CAPABILITY: Record<string, AdminCapability | undefined> = {
   "/admin/clients": "clients.manage",
   "/admin/contacts": "leads.manage",
   "/admin/marketing": "marketing.manage",
+  "/admin/email": "marketing.manage",
   "/admin/settings": "settings.manage",
 };

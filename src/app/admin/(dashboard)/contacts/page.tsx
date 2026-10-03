@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { Mail01 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { Table, TableCard } from "@/components/application/table/table";
 import ContactsFilter from "./ContactsFilter";
 import ContactReadToggle from "./ContactReadToggle";
 import ContactStageSelect from "./ContactStageSelect";
@@ -127,140 +126,94 @@ export default async function ContactsPage({
           </p>
         </div>
       ) : (
-        <TableCard.Root size="sm">
-          <Table aria-label="Form submissions" size="sm">
-            <Table.Header>
-              <Table.Head id="read" aria-label="Read status" className="w-10" />
-              <Table.Head id="stage" label="Stage" />
-              <Table.Head id="name" label="Name" isRowHeader />
-              <Table.Head id="email" label="Email" />
-              <Table.Head id="company" label="Company" />
-              <Table.Head id="phone" label="Phone" />
-              <Table.Head id="service" label="Service" />
-              <Table.Head id="intent" label="Intent" />
-              <Table.Head id="message" label="Message" />
-              <Table.Head id="date" label="Date" />
-            </Table.Header>
-            <Table.Body>
-              {contacts.map((contact) => (
-                <Table.Row key={contact.id} id={contact.id}>
-                  <Table.Cell className="px-3">
-                    <ContactReadToggle
-                      id={contact.id}
-                      isRead={contact.is_read ?? false}
-                    />
-                  </Table.Cell>
-                  <Table.Cell>
-                    <ContactStageSelect id={contact.id} stage={contact.pipeline_stage} />
-                  </Table.Cell>
-                  <Table.Cell className="whitespace-nowrap">
-                    <span className="flex items-center gap-2 text-sm font-medium text-primary">
-                      {!contact.is_read && (
-                        <span className="size-2 shrink-0 rounded-full bg-fg-brand-primary" />
-                      )}
-                      {contact.name ?? "—"}
-                    </span>
-                  </Table.Cell>
-                  <Table.Cell className="whitespace-nowrap">
-                    {contact.email ? (
-                      <a
-                        href={`mailto:${contact.email}`}
-                        className="font-medium text-brand-secondary transition-colors hover:text-brand-secondary_hover"
-                      >
-                        {contact.email}
-                      </a>
-                    ) : (
-                      "—"
-                    )}
-                  </Table.Cell>
-                  <Table.Cell className="whitespace-nowrap">
-                    {contact.company ?? "—"}
-                  </Table.Cell>
-                  <Table.Cell className="whitespace-nowrap">
-                    {contact.phone ?? "—"}
-                  </Table.Cell>
-                  <Table.Cell className="whitespace-nowrap">
-                    {contact.service ? (
-                      <Badge size="sm" color="brand">
-                        {contact.service}
-                      </Badge>
-                    ) : (
-                      "—"
-                    )}
-                  </Table.Cell>
-                  <Table.Cell className="min-w-40">
-                    {typeof contact.lead_score === "number" || contact.source ? (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {typeof contact.lead_score === "number" && (
-                            <Badge
-                              size="sm"
-                              color={
-                                contact.lead_score >= 70
-                                  ? "success"
-                                  : contact.lead_score >= 45
-                                    ? "warning"
-                                    : "gray"
-                              }
-                            >
-                              Score {contact.lead_score}
-                            </Badge>
-                          )}
-                          {contact.source && (
-                            <span className="text-xs font-medium text-secondary">
-                              {String(contact.source).replace(/_/g, " ")}
-                            </span>
-                          )}
-                        </div>
-                        {contact.qualification &&
-                          typeof contact.qualification === "object" && (
+        <div className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1120px] text-left" aria-label="Form submissions">
+              <thead className="bg-secondary">
+                <tr className="h-10 text-xs font-semibold text-quaternary">
+                  <th scope="col" className="w-12 px-3"><span className="sr-only">Read status</span></th>
+                  <th scope="col" className="px-4">Stage</th>
+                  <th scope="col" className="px-4">Name</th>
+                  <th scope="col" className="px-4">Email</th>
+                  <th scope="col" className="px-4">Company</th>
+                  <th scope="col" className="px-4">Phone</th>
+                  <th scope="col" className="px-4">Service</th>
+                  <th scope="col" className="px-4">Intent</th>
+                  <th scope="col" className="px-4">Message</th>
+                  <th scope="col" className="px-4">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contacts.map((contact) => (
+                  <tr key={contact.id} className="min-h-14 border-t border-secondary text-sm text-tertiary hover:bg-secondary">
+                    <td className="px-3 py-3">
+                      <ContactReadToggle id={contact.id} isRead={contact.is_read ?? false} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <ContactStageSelect id={contact.id} stage={contact.pipeline_stage} />
+                    </td>
+                    <th scope="row" className="whitespace-nowrap px-4 py-3 text-left font-medium text-primary">
+                      <span className="flex items-center gap-2">
+                        {!contact.is_read && <span className="size-2 shrink-0 rounded-full bg-fg-brand-primary" />}
+                        {contact.name ?? "—"}
+                      </span>
+                    </th>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {contact.email ? (
+                        <a href={`mailto:${contact.email}`} className="font-medium text-brand-secondary transition-colors hover:text-brand-secondary_hover">
+                          {contact.email}
+                        </a>
+                      ) : "—"}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">{contact.company ?? "—"}</td>
+                    <td className="whitespace-nowrap px-4 py-3">{contact.phone ?? "—"}</td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {contact.service ? <Badge size="sm" color="brand">{contact.service}</Badge> : "—"}
+                    </td>
+                    <td className="min-w-40 px-4 py-3">
+                      {typeof contact.lead_score === "number" || contact.source ? (
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {typeof contact.lead_score === "number" && (
+                              <Badge size="sm" color={contact.lead_score >= 70 ? "success" : contact.lead_score >= 45 ? "warning" : "gray"}>
+                                Score {contact.lead_score}
+                              </Badge>
+                            )}
+                            {contact.source && <span className="text-xs font-medium text-secondary">{String(contact.source).replace(/_/g, " ")}</span>}
+                          </div>
+                          {contact.qualification && typeof contact.qualification === "object" && (
                             <p
                               className="max-w-48 truncate text-xs text-tertiary"
-                              title={[
-                                contact.qualification.priority,
-                                contact.qualification.timeline,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
+                              title={[contact.qualification.priority, contact.qualification.timeline].filter(Boolean).join(" · ")}
                             >
-                              {[
-                                contact.qualification.priority,
-                                contact.qualification.timeline,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
+                              {[contact.qualification.priority, contact.qualification.timeline].filter(Boolean).join(" · ")}
                             </p>
                           )}
-                      </div>
-                    ) : (
-                      "—"
-                    )}
-                  </Table.Cell>
-                  <Table.Cell className="max-w-50">
-                    <span className="block truncate" title={contact.message ?? ""}>
-                      {contact.message
-                        ? contact.message.length > 80
-                          ? `${contact.message.slice(0, 80)}...`
-                          : contact.message
+                        </div>
+                      ) : "—"}
+                    </td>
+                    <td className="max-w-50 px-4 py-3">
+                      <span className="block truncate" title={contact.message ?? ""}>
+                        {contact.message ? contact.message.length > 80 ? `${contact.message.slice(0, 80)}...` : contact.message : "—"}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs">
+                      {contact.created_at
+                        ? new Date(contact.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
                         : "—"}
-                    </span>
-                  </Table.Cell>
-                  <Table.Cell className="whitespace-nowrap text-xs">
-                    {contact.created_at
-                      ? new Date(contact.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "—"}
-                  </Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
-        </TableCard.Root>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   );

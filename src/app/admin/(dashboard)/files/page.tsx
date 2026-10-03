@@ -37,9 +37,26 @@ interface MediaFile {
   file_size: number | null;
   alt_text: string | null;
   folder: string | null;
+  bucket: string;
   public_url: string | null;
   is_static_local: boolean;
   created_at: string;
+}
+
+function mapMediaRecord(record: Record<string, unknown>): MediaFile {
+  return {
+    id: String(record.id),
+    file_name: String(record.original_filename ?? record.file_name ?? record.filename ?? "Unnamed file"),
+    file_path: String(record.storage_path ?? record.file_path ?? ""),
+    file_type: (record.mime_type ?? record.file_type ?? null) as string | null,
+    file_size: (record.size_bytes ?? record.file_size ?? null) as number | null,
+    alt_text: (record.alt_text ?? null) as string | null,
+    folder: record.folder === "/" ? null : (record.folder as string | null) ?? null,
+    bucket: String(record.bucket ?? "public-media"),
+    public_url: (record.public_url ?? null) as string | null,
+    is_static_local: Boolean(record.is_static_local),
+    created_at: String(record.created_at ?? ""),
+  };
 }
 
 export default function MediaPage() {
@@ -81,7 +98,7 @@ export default function MediaPage() {
     if (fetchError) {
       setError(fetchError.message);
     } else {
-      setFiles(data ?? []);
+      setFiles((data ?? []).map((record) => mapMediaRecord(record as Record<string, unknown>)));
     }
     setLoading(false);
   }, [selectedFolder]);
@@ -102,8 +119,8 @@ export default function MediaPage() {
           const folders = Array.from(
             new Set(
               data
-                .map((f: any) => f.folder)
-                .filter((f: string | null): f is string => f !== null && f !== "")
+                .map((f) => f.folder)
+                .filter((f: string | null): f is string => f !== null && f !== "" && f !== "/")
             )
           ).sort();
           setAllFolders(folders);
@@ -133,24 +150,25 @@ export default function MediaPage() {
 
   const handleUpload = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
+    const selectedFiles = Array.from(fileList);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setUploading(true);
     setError("");
 
     const supabase = createClient();
 
-    for (let i = 0; i < fileList.length; i++) {
-      const file = fileList[i];
-      const timestamp = Date.now();
+    const failures: string[] = [];
+    for (const file of selectedFiles) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const folderPath = selectedFolder ? `${selectedFolder}/` : "";
-      const storagePath = `${folderPath}${timestamp}_${safeName}`;
+      const storagePath = `${folderPath}${crypto.randomUUID()}_${safeName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("public-media")
         .upload(storagePath, file, { cacheControl: "3600", upsert: false });
 
       if (uploadError) {
-        setError(`Upload failed for ${file.name}: ${uploadError.message}`);
+        failures.push(`${file.name}: ${uploadError.message}`);
         continue;
       }
 
@@ -158,18 +176,25 @@ export default function MediaPage() {
         data: { publicUrl },
       } = supabase.storage.from("public-media").getPublicUrl(storagePath);
 
-      await supabase.from("media").insert({
-        file_name: file.name,
-        file_path: storagePath,
-        file_type: file.type,
-        file_size: file.size,
+      const { error: recordError } = await supabase.from("media").insert({
+        filename: safeName,
+        original_filename: file.name,
+        storage_path: storagePath,
+        mime_type: file.type || "application/octet-stream",
+        size_bytes: file.size,
+        bucket: "public-media",
         folder: selectedFolder || null,
         public_url: publicUrl,
         is_static_local: false,
       });
+      if (recordError) {
+        await supabase.storage.from("public-media").remove([storagePath]);
+        failures.push(`${file.name}: ${recordError.message}`);
+      }
     }
 
     setUploading(false);
+    if (failures.length) setError(`Some files could not be uploaded. ${failures.join(" · ")}`);
     fetchFiles();
   };
 
@@ -182,25 +207,39 @@ export default function MediaPage() {
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
     setCreatingFolder(true);
+    setError("");
     const supabase = createClient();
 
-    // Create a placeholder file to establish the folder
     const folderName = newFolderName.trim().replace(/[^a-zA-Z0-9_-]/g, "_");
-    const placeholderPath = `${folderName}/.folder`;
-    await supabase.storage
-      .from("public-media")
-      .upload(placeholderPath, new Blob([""]), { cacheControl: "3600", upsert: true });
+    if (!folderName) {
+      setError("Enter a folder name using letters, numbers, hyphens, or underscores.");
+      setCreatingFolder(false);
+      return;
+    }
+    if (allFolders.includes(folderName)) {
+      setError("A folder with that name already exists.");
+      setCreatingFolder(false);
+      return;
+    }
 
-    // Insert a media record so the folder shows up
-    await supabase.from("media").insert({
-      file_name: ".folder",
-      file_path: placeholderPath,
-      file_type: "folder/placeholder",
-      file_size: 0,
+    // Storage folders are virtual. A database marker keeps an empty folder visible.
+    const { error: folderError } = await supabase.from("media").insert({
+      filename: ".folder",
+      original_filename: ".folder",
+      storage_path: `${folderName}/.folder`,
+      mime_type: "folder/placeholder",
+      size_bytes: 0,
+      bucket: "public-media",
       folder: folderName,
-      public_url: null,
+      public_url: "",
       is_static_local: false,
     });
+
+    if (folderError) {
+      setError(`Could not create folder: ${folderError.message}`);
+      setCreatingFolder(false);
+      return;
+    }
 
     setNewFolderName("");
     setShowNewFolder(false);
@@ -213,11 +252,21 @@ export default function MediaPage() {
     const supabase = createClient();
 
     const fileToDelete = files.find((f) => f.id === fileId);
-    if (fileToDelete && !fileToDelete.is_static_local) {
-      await supabase.storage.from("public-media").remove([fileToDelete.file_path]);
+    if (fileToDelete && !fileToDelete.is_static_local && fileToDelete.file_name !== ".folder") {
+      const { error: storageError } = await supabase.storage.from(fileToDelete.bucket).remove([fileToDelete.file_path]);
+      if (storageError) {
+        setError(`Could not delete file from storage: ${storageError.message}`);
+        setDeleting(false);
+        return;
+      }
     }
 
-    await supabase.from("media").delete().eq("id", fileId);
+    const { error: recordError } = await supabase.from("media").delete().eq("id", fileId);
+    if (recordError) {
+      setError(`Could not remove file record: ${recordError.message}`);
+      setDeleting(false);
+      return;
+    }
 
     setDeleting(false);
     setDeleteConfirm(null);
@@ -247,10 +296,16 @@ export default function MediaPage() {
     if (!selectedFile) return;
     setSavingAlt(true);
     const supabase = createClient();
-    await supabase
+    const { error: saveError } = await supabase
       .from("media")
       .update({ alt_text: altText })
       .eq("id", selectedFile.id);
+
+    if (saveError) {
+      setError(`Could not save alt text: ${saveError.message}`);
+      setSavingAlt(false);
+      return;
+    }
 
     setSelectedFile({ ...selectedFile, alt_text: altText });
     setSavingAlt(false);
@@ -620,7 +675,7 @@ export default function MediaPage() {
                             color="tertiary"
                             icon={Trash01}
                             tooltip="Delete"
-                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); handleDeleteFile(file.id); }}
+                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); setSelectedFile(file); setDeleteConfirm(file.id); }}
                           />
                         </div>
                       </Table.Cell>

@@ -114,17 +114,11 @@ body.menu-open [data-contact-widget] {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-/* React Aria mounts select popovers in a global overlay layer (z-index 100000).
-   Keep the sticky site header above contact-form dropdowns only; other modal
-   overlays retain their intended full-screen stacking behavior. */
-body:has(.contact-form-popover) [data-site-navbar] {
-  z-index: 100001;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto;
-}
-
+/* Contact form selects are portaled outside their form/widget stacking
+   contexts. Keep the menu above the page without promoting the sticky navbar
+   above it (which can make the header cover the menu or appear to jump away). */
 .contact-form-popover {
+  z-index: 100001;
   overscroll-behavior: contain;
   isolation: isolate;
 }

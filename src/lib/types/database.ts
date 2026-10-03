@@ -8,8 +8,6 @@ export interface AdminProfile {
   avatar_url: string | null;
   totp_enabled?: boolean;
   totp_enabled_at?: string | null;
-  /** Never select from the browser — service-role only. */
-  totp_secret?: string | null;
   created_at: string; // timestamptz
   updated_at: string; // timestamptz
 }

@@ -49,27 +49,55 @@ export default function AdminSettingsPage() {
   const [totpCode, setTotpCode] = useState("");
   const [totpBusy, setTotpBusy] = useState(false);
   const [disableCode, setDisableCode] = useState("");
+  const [totpSchemaReady, setTotpSchemaReady] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          setError("Sign in again to manage your security settings.");
+          return;
+        }
 
-      const { data: profile } = await supabase
-        .from("admin_profiles")
-        .select("display_name, email, avatar_url, totp_enabled")
-        .eq("id", user.id)
-        .single();
+        const [profileResult, totpResult] = await Promise.all([
+          supabase
+            .from("admin_profiles")
+            .select("display_name, email, avatar_url")
+            .eq("id", user.id)
+            .single(),
+          supabase
+            .from("admin_profiles")
+            .select("totp_enabled")
+            .eq("id", user.id)
+            .single(),
+        ]);
 
-      if (profile) {
-        setDisplayName(profile.display_name ?? "");
-        setEmail(profile.email ?? "");
-        setAvatarUrl(profile.avatar_url ?? "");
-        setTotpEnabled(Boolean(profile.totp_enabled));
+        if (profileResult.error) throw profileResult.error;
+        if (profileResult.data) {
+          setDisplayName(profileResult.data.display_name ?? "");
+          setEmail(profileResult.data.email ?? "");
+          setAvatarUrl(profileResult.data.avatar_url ?? "");
+        }
+
+        if (totpResult.error) {
+          const missingTotpColumn = /totp_enabled/i.test(totpResult.error.message) &&
+            /column|schema cache|does not exist|could not find/i.test(totpResult.error.message);
+          if (missingTotpColumn) {
+            setTotpSchemaReady(false);
+          } else {
+            throw totpResult.error;
+          }
+        } else {
+          setTotpEnabled(Boolean(totpResult.data?.totp_enabled));
+        }
+      } catch {
+        setError("Could not load your security settings. Please refresh and try again.");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -411,16 +439,22 @@ export default function AdminSettingsPage() {
         </div>
 
         {!totpEnabled && !totpSetup && (
-          <Button
-            size="md"
-            color="primary"
-            iconLeading={Shield01}
-            isLoading={totpBusy}
-            showTextWhileLoading
-            onClick={startTotpSetup}
-          >
-            Set up 2FA
-          </Button>
+          totpSchemaReady ? (
+            <Button
+              size="md"
+              color="primary"
+              iconLeading={Shield01}
+              isLoading={totpBusy}
+              showTextWhileLoading
+              onClick={startTotpSetup}
+            >
+              Set up 2FA
+            </Button>
+          ) : (
+            <div role="status" className="rounded-lg bg-utility-yellow-50 px-4 py-3 text-sm leading-5 text-utility-yellow-700 ring-1 ring-utility-yellow-200">
+              Two-factor setup needs its database fields first. Apply <code className="rounded bg-white/70 px-1 py-0.5 text-xs">supabase/migrations/20261007_admin_totp.sql</code>, then refresh this page.
+            </div>
+          )
         )}
 
         {!totpEnabled && totpSetup && (

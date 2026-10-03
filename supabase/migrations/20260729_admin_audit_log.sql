@@ -40,3 +40,6 @@ create policy "Admins insert audit log"
       select 1 from public.admin_profiles ap where ap.id = auth.uid()
     )
   );
+
+-- Refresh PostgREST after the migration creates the table and policies.
+notify pgrst, 'reload schema';

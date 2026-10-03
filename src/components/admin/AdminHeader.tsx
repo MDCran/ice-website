@@ -26,6 +26,8 @@ const PAGE_NAMES: Record<string, string> = {
   "/admin/cms": "CMS Pages",
   "/admin/solutions": "Solutions",
   "/admin/sales": "Sales Enablement",
+  "/admin/marketing": "Marketing Center",
+  "/admin/email": "Email Management",
   "/admin/navigation": "Navigation",
   "/admin/seo": "SEO & Analytics",
   "/admin/performance": "Core Web Vitals",
@@ -34,7 +36,7 @@ const PAGE_NAMES: Record<string, string> = {
   "/admin/clients": "Clients",
   "/admin/contact-changes": "Contact Changes",
   "/admin/contacts": "Form Submissions",
-  "/admin/templates": "Templates",
+  "/admin/templates": "Section library",
   "/admin/settings": "Settings",
 };
 
@@ -199,22 +201,32 @@ export default function AdminHeader() {
               className="size-4 shrink-0 stroke-[2.5px] text-fg-quaternary"
             />
           </AriaButton>
-          <Dropdown.Popover>
+          <Dropdown.Popover className="w-80 max-w-[calc(100vw-1rem)] overflow-hidden">
+            <div className="flex items-center gap-3 border-b border-secondary bg-secondary/50 px-4 py-3.5">
+              <Avatar
+                size="sm"
+                alt={displayName}
+                src={avatarUrl || undefined}
+                placeholderIcon={User01}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="break-words text-sm font-semibold leading-5 text-primary" title={displayName}>
+                  {displayName}
+                </p>
+                {email && (
+                  <p className="mt-0.5 break-all text-xs leading-4 text-tertiary" title={email}>
+                    {email}
+                  </p>
+                )}
+              </div>
+            </div>
             <Dropdown.Menu
+              aria-label="Account options"
               onAction={(key) => {
                 if (key === "settings") router.push("/admin/settings");
                 if (key === "signout") handleLogout();
               }}
             >
-              {(email || displayName) && (
-                <Dropdown.Item
-                  id="profile-label"
-                  label={displayName}
-                  addon={email || undefined}
-                  icon={User01}
-                  isDisabled
-                />
-              )}
               <Dropdown.Item id="settings" label="Settings" icon={Settings01} />
               <Dropdown.Separator />
               <Dropdown.Item id="signout" label="Sign out" icon={LogOut01} />

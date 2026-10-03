@@ -161,6 +161,8 @@ const adminAreaGuide = [
   },
 ];
 
+const adminAreaGroups = ["Build", "Optimize", "Operate"] as const;
+
 export default async function AdminDashboard() {
   const data = await getDashboardData();
   const maxCount = Math.max(...data.dailyCounts.map((d) => d.count), 1);
@@ -179,32 +181,48 @@ export default async function AdminDashboard() {
     <div className="flex flex-col gap-6">
       <h1 className="text-display-xs font-semibold text-primary">Dashboard</h1>
 
-      <section className="overflow-hidden rounded-xl bg-brand-primary_alt/60 ring-1 ring-brand/20">
-        <div className="border-b border-brand/15 px-5 py-4">
-          <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">Admin control center</p>
-          <h2 className="mt-1 text-lg font-semibold text-primary">What would you like to manage?</h2>
-          <p className="mt-1 max-w-3xl text-sm text-tertiary">
-            Build public experiences, improve how they perform, or operate customer follow-up from one workspace. Choose an area below to go directly to its tools.
-          </p>
+      <section className="overflow-hidden rounded-2xl bg-primary shadow-xs ring-1 ring-secondary">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-secondary bg-brand-primary_alt/30 px-6 py-5">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">Admin control center</p>
+            <h2 className="mt-1 text-display-xs font-semibold text-primary">What would you like to manage?</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-tertiary">
+              Build public experiences, improve how they perform, or manage customer follow-up—all from one workspace.
+            </p>
+          </div>
+          <span className="rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-secondary ring-1 ring-secondary">
+            {adminAreaGuide.length} tools
+          </span>
         </div>
-        <div className="grid gap-px bg-brand/15 sm:grid-cols-2 lg:grid-cols-3">
-          {adminAreaGuide.map((area) => {
-            const Icon = area.icon;
+        <div className="grid gap-6 p-5 md:grid-cols-2 xl:grid-cols-3">
+          {adminAreaGroups.map((group) => {
+            const areas = adminAreaGuide.filter((area) => area.group === group);
             return (
-              <Link
-                key={area.label}
-                href={area.href}
-                className="group bg-primary/75 p-4 outline-focus-ring transition hover:bg-primary focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
-              >
-                <div className="flex items-start gap-3">
-                  <FeaturedIcon icon={Icon} color="brand" theme="light" size="sm" />
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-semibold tracking-[0.16em] text-quaternary uppercase">{area.group}</span>
-                    <h3 className="mt-1 text-sm font-semibold text-primary group-hover:text-brand-secondary">{area.label}</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-tertiary">{area.description}</p>
-                  </div>
+              <div key={group}>
+                <div className="mb-3 flex items-center justify-between border-b border-secondary pb-2">
+                  <h3 className="text-xs font-semibold tracking-[0.14em] text-quaternary uppercase">{group}</h3>
+                  <span className="text-xs tabular-nums text-quaternary">{String(areas.length).padStart(2, "0")}</span>
                 </div>
-              </Link>
+                <div className="grid gap-2.5">
+                  {areas.map((area) => {
+                    const Icon = area.icon;
+                    return (
+                      <Link
+                        key={area.label}
+                        href={area.href}
+                        className="group flex min-h-24 items-start gap-3 rounded-xl bg-primary p-3.5 ring-1 ring-secondary transition duration-150 hover:bg-primary_hover hover:shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-solid"
+                      >
+                        <FeaturedIcon icon={Icon} color="brand" theme="light" size="sm" />
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-semibold text-primary transition-colors group-hover:text-brand-secondary">{area.label}</h4>
+                          <p className="mt-1 text-xs leading-relaxed text-tertiary">{area.description}</p>
+                        </div>
+                        <ArrowRight aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-fg-quaternary opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100 group-focus-visible:opacity-100" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </div>
@@ -249,7 +267,7 @@ export default async function AdminDashboard() {
             <p className="mx-auto mt-3 max-w-lg text-xs text-quaternary">
               Migration file:{" "}
               <code className="rounded bg-secondary px-1.5 py-0.5">
-                supabase/migrations/20260711_admin_analytics_and_2fa.sql
+                supabase/migrations/20261006_page_views_analytics.sql
               </code>
             </p>
           </div>

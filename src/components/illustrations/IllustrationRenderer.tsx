@@ -1,5 +1,9 @@
 "use client";
 
+import type { ReactElement } from "react";
+import { getIllustration, ILLUSTRATIONS } from "@/lib/illustrations";
+import { cx } from "@/utils/cx";
+
 /* --------------------------------------------------------------------------
    ILLUSTRATION RENDERER
    16 built-in SVG illustrations for use in CMS sections.
@@ -518,9 +522,7 @@ function GlobalNetwork({ className }: SvgProps) {
    REGISTRY + RENDERER
    -------------------------------------------------------------------------- */
 
-import type { ReactElement } from "react";
-
-const ILLUSTRATION_MAP: Record<string, (props: SvgProps) => ReactElement> = {
+const ILLUSTRATION_MAP: Record<(typeof ILLUSTRATIONS)[number]["id"], (props: SvgProps) => ReactElement> = {
   "cloud-server": CloudServer,
   "hybrid-cloud": HybridCloud,
   "cloud-migration": CloudMigration,
@@ -545,9 +547,27 @@ interface IllustrationRendererProps {
 }
 
 export function IllustrationRenderer({ id, className }: IllustrationRendererProps) {
-  const Illustration = ILLUSTRATION_MAP[id];
-  if (!Illustration) return null;
-  return <Illustration className={className} />;
+  const Illustration = id in ILLUSTRATION_MAP
+    ? ILLUSTRATION_MAP[id as keyof typeof ILLUSTRATION_MAP]
+    : undefined;
+  const meta = getIllustration(id);
+  if (!Illustration || !meta) {
+    return (
+      <div
+        role="img"
+        aria-label="Illustration unavailable"
+        className={cx("flex items-center justify-center rounded-lg bg-secondary p-4 text-center text-xs text-tertiary", className)}
+      >
+        Illustration unavailable
+      </div>
+    );
+  }
+
+  return (
+    <div role="img" aria-label={meta.name} data-illustration-id={id} className={className}>
+      <Illustration className="h-full w-full" />
+    </div>
+  );
 }
 
 export { ILLUSTRATION_MAP };

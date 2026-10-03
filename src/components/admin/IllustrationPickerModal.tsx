@@ -25,18 +25,14 @@ export default function IllustrationPickerModal({
 }: IllustrationPickerModalProps) {
   const [category, setCategory] = useState<string>("All");
   const [query, setQuery] = useState("");
-  const [hovered, setHovered] = useState<string | null>(null);
 
   if (!open) return null;
 
   const filtered = ILLUSTRATIONS.filter((ill) => {
     const matchCat = category === "All" || ill.category === category;
-    const q = query.toLowerCase();
-    const matchQ =
-      !q ||
-      ill.name.toLowerCase().includes(q) ||
-      ill.description.toLowerCase().includes(q) ||
-      ill.tags.some((t) => t.includes(q));
+    const q = query.trim().toLocaleLowerCase();
+    const matchQ = !q || [ill.name, ill.description, ill.category, ...ill.tags]
+      .some((value) => value.toLocaleLowerCase().includes(q));
     return matchCat && matchQ;
   });
 
@@ -90,9 +86,6 @@ export default function IllustrationPickerModal({
                       key={ill.id}
                       ill={ill}
                       isSelected={current === ill.id}
-                      isHovered={hovered === ill.id}
-                      onHover={() => setHovered(ill.id)}
-                      onLeave={() => setHovered(null)}
                       onClick={() => {
                         onSelect(ill.id);
                         onClose();
@@ -129,24 +122,16 @@ export default function IllustrationPickerModal({
 function IllustrationCard({
   ill,
   isSelected,
-  isHovered,
-  onHover,
-  onLeave,
   onClick,
 }: {
   ill: IllustrationMeta;
   isSelected: boolean;
-  isHovered: boolean;
-  onHover: () => void;
-  onLeave: () => void;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      onMouseEnter={onHover}
-      onMouseLeave={onLeave}
       className={cx(
         "group relative flex cursor-pointer flex-col items-center gap-2 rounded-xl bg-primary p-3 text-left transition",
         isSelected

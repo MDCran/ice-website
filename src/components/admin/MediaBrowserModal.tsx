@@ -27,6 +27,7 @@ interface MediaFile {
   file_type: string | null;
   file_size: number | null;
   folder: string | null;
+  bucket: string;
   public_url: string | null;
   is_static_local: boolean;
 }
@@ -53,6 +54,7 @@ export default function MediaBrowserModal({
   const [uploading, setUploading] = useState(false);
   const [folders, setFolders] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchFiles = useCallback(async () => {
@@ -60,15 +62,26 @@ export default function MediaBrowserModal({
     const supabase = createClient();
     let query = supabase
       .from("media")
-      .select("id, file_name, file_path, file_type, file_size, folder, public_url, is_static_local")
+      .select("id, original_filename, filename, storage_path, mime_type, size_bytes, folder, bucket, public_url, is_static_local, created_at")
       .order("created_at", { ascending: false });
 
     if (selectedFolder !== null) {
       query = query.eq("folder", selectedFolder);
     }
 
-    const { data } = await query;
-    setFiles((data ?? []).filter((f: any) => f.file_name !== ".folder"));
+    const { data, error: fetchError } = await query;
+    if (fetchError) setError(fetchError.message);
+    setFiles((data ?? []).map((row) => ({
+      id: row.id,
+      file_name: row.original_filename || row.filename,
+      file_path: row.storage_path,
+      file_type: row.mime_type,
+      file_size: row.size_bytes,
+      folder: row.folder === "/" ? null : row.folder,
+      bucket: row.bucket,
+      public_url: row.public_url,
+      is_static_local: row.is_static_local,
+    })).filter((f) => f.file_name !== ".folder"));
     setLoading(false);
   }, [selectedFolder]);
 
@@ -77,7 +90,7 @@ export default function MediaBrowserModal({
     const { data } = await supabase.from("media").select("folder");
     if (data) {
       const folderList = Array.from(
-        new Set(data.map((f: any) => f.folder).filter((f: string | null): f is string => f !== null && f !== ""))
+        new Set(data.map((f) => f.folder).filter((f: string | null): f is string => f !== null && f !== "" && f !== "/"))
       ).sort();
       setFolders(folderList);
     }
@@ -92,36 +105,48 @@ export default function MediaBrowserModal({
 
   const handleUpload = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
+    const selectedFiles = Array.from(fileList);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setUploading(true);
+    setError("");
 
     const supabase = createClient();
-    for (let i = 0; i < fileList.length; i++) {
-      const file = fileList[i];
-      const timestamp = Date.now();
+    const failures: string[] = [];
+    for (const file of selectedFiles) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const folderPath = selectedFolder ? `${selectedFolder}/` : "";
-      const storagePath = `${folderPath}${timestamp}_${safeName}`;
+      const storagePath = `${folderPath}${crypto.randomUUID()}_${safeName}`;
 
       const { error } = await supabase.storage
         .from("public-media")
         .upload(storagePath, file, { cacheControl: "3600", upsert: false });
 
-      if (error) continue;
+      if (error) {
+        failures.push(`${file.name}: ${error.message}`);
+        continue;
+      }
 
       const { data: { publicUrl } } = supabase.storage.from("public-media").getPublicUrl(storagePath);
 
-      await supabase.from("media").insert({
-        file_name: file.name,
-        file_path: storagePath,
-        file_type: file.type,
-        file_size: file.size,
+      const { error: recordError } = await supabase.from("media").insert({
+        filename: safeName,
+        original_filename: file.name,
+        storage_path: storagePath,
+        mime_type: file.type || "application/octet-stream",
+        size_bytes: file.size,
+        bucket: "public-media",
         folder: selectedFolder || null,
         public_url: publicUrl,
         is_static_local: false,
       });
+      if (recordError) {
+        await supabase.storage.from("public-media").remove([storagePath]);
+        failures.push(`${file.name}: ${recordError.message}`);
+      }
     }
 
     setUploading(false);
+    if (failures.length) setError(`Some files could not be uploaded. ${failures.join(" · ")}`);
     fetchFiles();
   };
 
@@ -260,6 +285,11 @@ export default function MediaBrowserModal({
 
               {/* File grid */}
               <div className="flex-1 overflow-y-auto p-4">
+                {error && (
+                  <p role="alert" className="mb-4 rounded-lg bg-utility-red-50 px-3 py-2 text-sm text-utility-red-700 ring-1 ring-utility-red-200">
+                    {error}
+                  </p>
+                )}
                 {loading ? (
                   <div className="flex items-center justify-center py-12">
                     <LoadingIndicator type="line-spinner" size="sm" />

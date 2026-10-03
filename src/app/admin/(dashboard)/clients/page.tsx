@@ -3,8 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
-import { EmptyState } from "@/components/application/empty-state/empty-state";
-import { Table, TableCard } from "@/components/application/table/table";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import ClientsSearch from "@/components/admin/clients/ClientsSearch";
 import CreateClientModal from "@/components/admin/clients/CreateClientModal";
@@ -83,78 +81,76 @@ export default async function ClientsListPage({
         </div>
       )}
 
-      <TableCard.Root size="sm">
+      <div className="overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary">
         {clients && clients.length > 0 ? (
-          <Table aria-label="Client accounts" size="sm">
-            <Table.Header>
-              <Table.Head id="company" label="Company Name" isRowHeader className="w-full" />
-              <Table.Head id="status" label="Status" />
-              <Table.Head id="created" label="Created" />
-              <Table.Head id="actions" aria-label="Actions" />
-            </Table.Header>
-            <Table.Body>
-              {clients.map((client) => (
-                <Table.Row id={client.id} key={client.id}>
-                  <Table.Cell>
-                    <div className="flex items-center gap-3">
-                      <Avatar
-                        size="sm"
-                        src={client.logo_url}
-                        alt={client.company_name}
-                        initials={getInitials(client.company_name ?? "")}
-                      />
-                      <span className="text-sm font-medium whitespace-nowrap text-primary">
-                        {client.company_name}
-                      </span>
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    {client.is_active !== false ? (
-                      <BadgeWithDot size="sm" type="pill-color" color="success">
-                        Active
-                      </BadgeWithDot>
-                    ) : (
-                      <BadgeWithDot size="sm" type="pill-color" color="gray">
-                        Inactive
-                      </BadgeWithDot>
-                    )}
-                  </Table.Cell>
-                  <Table.Cell className="whitespace-nowrap">
-                    {client.created_at
-                      ? new Date(client.created_at).toLocaleDateString()
-                      : "N/A"}
-                  </Table.Cell>
-                  <Table.Cell className="px-4">
-                    <div className="flex justify-end">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left" aria-label="Client accounts">
+              <thead className="bg-secondary">
+                <tr className="h-10 text-xs font-semibold text-quaternary">
+                  <th scope="col" className="px-5">Company Name</th>
+                  <th scope="col" className="px-5">Status</th>
+                  <th scope="col" className="px-5">Created</th>
+                  <th scope="col" className="px-5 text-right"><span className="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {clients.map((client) => (
+                  <tr key={client.id} className="h-14 border-t border-secondary text-sm text-tertiary hover:bg-secondary">
+                    <td className="px-5">
+                      <div className="flex items-center gap-3">
+                        <Avatar
+                          size="sm"
+                          src={client.logo_url}
+                          alt={client.company_name}
+                          initials={getInitials(client.company_name ?? "")}
+                        />
+                        <span className="whitespace-nowrap font-medium text-primary">
+                          {client.company_name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-5">
+                      {client.is_active !== false ? (
+                        <BadgeWithDot size="sm" type="pill-color" color="success">
+                          Active
+                        </BadgeWithDot>
+                      ) : (
+                        <BadgeWithDot size="sm" type="pill-color" color="gray">
+                          Inactive
+                        </BadgeWithDot>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-5">
+                      {client.created_at
+                        ? new Date(client.created_at).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    <td className="px-5 text-right">
                       <Button color="link-color" size="sm" href={`/admin/clients/${client.id}`}>
                         View
                       </Button>
-                    </div>
-                  </Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <div className="flex justify-center px-6 py-16">
-            <EmptyState size="sm">
-              <EmptyState.Header>
-                <EmptyState.FeaturedIcon color="gray" />
-              </EmptyState.Header>
-              <EmptyState.Content>
-                <EmptyState.Title>
-                  {q ? "No clients match your search." : "No clients found."}
-                </EmptyState.Title>
-                <EmptyState.Description>
-                  {q
-                    ? "Try adjusting your search terms."
-                    : "Create a client to get started."}
-                </EmptyState.Description>
-              </EmptyState.Content>
-            </EmptyState>
+          <div className="flex flex-col items-center px-6 py-16 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-secondary text-tertiary">
+              <Users01 className="size-6" aria-hidden="true" />
+            </div>
+            <h2 className="mt-4 text-md font-semibold text-primary">
+              {q ? "No clients match your search." : "No clients found."}
+            </h2>
+            <p className="mt-1 max-w-sm text-sm text-tertiary">
+              {q
+                ? "Try adjusting your search terms."
+                : "Provision a client to create their account and portal access."}
+            </p>
           </div>
         )}
-      </TableCard.Root>
+      </div>
     </div>
   );
 }

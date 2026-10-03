@@ -140,8 +140,8 @@ function StatCard({ label, value, detail, icon: Icon }: { label: string; value: 
   );
 }
 
-export default function MarketingCenter() {
-  const [tab, setTab] = useState<Tab>("overview");
+export default function MarketingCenter({ initialTab = "overview" }: { initialTab?: Tab }) {
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [data, setData] = useState<ApiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

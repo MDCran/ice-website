@@ -19,7 +19,7 @@ export interface AnalyticsInsights {
 }
 
 const SETUP_HINT =
-  "No pageview data yet. Apply the SQL migration (page_views table), then browse the public site — first-party tracking logs each visit automatically.";
+  "No visits have been recorded yet. Browse the public site in a new tab; first-party tracking logs public page visits automatically.";
 
 function dayLabel(d: Date): string {
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()];

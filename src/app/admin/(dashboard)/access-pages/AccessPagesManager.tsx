@@ -46,9 +46,9 @@ function slugify(value: string) {
 }
 
 function statusClasses(status: string) {
-  if (status === "active") return "bg-utility-success-50 text-utility-success-700 ring-utility-success-200";
-  if (status === "archived") return "bg-utility-gray-100 text-utility-gray-600 ring-utility-gray-200";
-  return "bg-utility-warning-50 text-utility-warning-700 ring-utility-warning-200";
+  if (status === "active") return "bg-utility-green-50 text-utility-green-700 ring-utility-green-200";
+  if (status === "archived") return "bg-utility-neutral-100 text-utility-neutral-700 ring-utility-neutral-200";
+  return "bg-utility-yellow-50 text-utility-yellow-700 ring-utility-yellow-200";
 }
 
 export default function AccessPagesManager({
@@ -157,7 +157,7 @@ export default function AccessPagesManager({
     <div className="mx-auto max-w-7xl">
       <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-start gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-primary text-white shadow-xs">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-primary_alt text-fg-brand-primary ring-1 ring-brand/20">
             <FileKey2 className="size-5" />
           </span>
           <div>
@@ -184,7 +184,7 @@ export default function AccessPagesManager({
           ["3", "Create a private link", "Set a password, expiration, and view limit."],
         ].map(([step, heading, description]) => (
           <div key={step} className="flex gap-3">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-primary text-xs font-semibold text-white">{step}</span>
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-primary_alt text-sm font-semibold text-brand-secondary ring-1 ring-brand/20">{step}</span>
             <div>
               <p className="text-sm font-semibold text-primary">{heading}</p>
               <p className="mt-0.5 text-xs leading-5 text-tertiary">{description}</p>
@@ -212,7 +212,9 @@ export default function AccessPagesManager({
           placeholder="Search client, title, or URL…"
           className="h-9 flex-1 border-0 bg-transparent text-sm text-primary outline-none placeholder:text-placeholder"
         />
-        <span className="pr-2 text-xs text-tertiary">{filtered.length} page{filtered.length === 1 ? "" : "s"}</span>
+        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary">
+          {filtered.length} page{filtered.length === 1 ? "" : "s"}
+        </span>
       </div>
 
       {filtered.length === 0 ? (
@@ -229,14 +231,14 @@ export default function AccessPagesManager({
           )}
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className={`grid gap-4 ${filtered.length === 1 ? "max-w-3xl grid-cols-1" : "md:grid-cols-2"}`}>
           {filtered.map((page) => {
             const status = page.settings.status || "draft";
             const grants = page.settings.grants ?? [];
             const activeLinks = grants.filter((grant) => !grant.revoked_at).length;
             const views = grants.reduce((sum, grant) => sum + Number(grant.view_count || 0), 0);
             return (
-              <article key={page.id} className="rounded-2xl bg-primary p-5 shadow-xs ring-1 ring-secondary transition hover:ring-brand-secondary">
+              <article key={page.id} className="rounded-2xl bg-primary p-5 shadow-xs ring-1 ring-secondary transition duration-150 hover:shadow-md hover:ring-brand/40">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -246,7 +248,7 @@ export default function AccessPagesManager({
                     <Link href={`/admin/access-pages/${page.id}`} className="mt-3 block truncate text-lg font-semibold text-primary hover:text-brand-secondary">
                       {page.settings.document_title || page.title}
                     </Link>
-                    <p className="mt-1 truncate font-mono text-xs text-quaternary">/access/{page.slug}</p>
+                    <p className="mt-1 truncate font-mono text-xs text-tertiary">/access/{page.slug}</p>
                   </div>
                   <Link href={`/admin/access-pages/${page.id}`} aria-label={`Edit ${page.title}`} className="rounded-lg p-2 text-tertiary ring-1 ring-secondary transition hover:bg-secondary hover:text-primary">
                     <ExternalLink className="size-4" />

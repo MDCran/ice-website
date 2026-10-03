@@ -28,21 +28,35 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("admin_profiles")
-    .select("id, email, totp_enabled, totp_secret")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile, error: profileError }, { data: totpSecret, error: secretError }] = await Promise.all([
+    admin
+      .from("admin_profiles")
+      .select("id, email, totp_enabled")
+      .eq("id", user.id)
+      .single(),
+    admin
+      .from("admin_totp_secrets")
+      .select("secret")
+      .eq("admin_id", user.id)
+      .maybeSingle(),
+  ]);
+
+  if (profileError || secretError) {
+    return NextResponse.json(
+      { error: "Two-factor storage is unavailable. Apply the admin TOTP database migration and try again." },
+      { status: 503 },
+    );
+  }
 
   if (!profile) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (!profile.totp_enabled || !profile.totp_secret) {
+  if (!profile.totp_enabled || !totpSecret?.secret) {
     return NextResponse.json({ error: "Two-factor authentication is not enabled." }, { status: 400 });
   }
 
-  if (!verifyTotpCode(profile.totp_secret, code, profile.email || "admin")) {
+  if (!verifyTotpCode(totpSecret.secret, code, profile.email || "admin")) {
     return NextResponse.json({ error: "Invalid verification code." }, { status: 400 });
   }
 
