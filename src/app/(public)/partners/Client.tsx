@@ -11,6 +11,7 @@ import { BackgroundPattern } from "@/components/shared-assets/background-pattern
 import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import GenericCMSSections, { type CMSRenderableSection } from "@/components/cms/GenericCMSSections";
 import { isCmsSectionVisible } from "@/lib/cms/sectionManifest";
+import { canonicalPartnerName, resolvePartnerLogo } from "@/lib/partnerBrands";
 import { cx } from "@/utils/cx";
 
 /* -------------------------------------------------------------------------- */
@@ -238,14 +239,11 @@ function Eyebrow({ children }: { children: ReactNode }) {
 /** Correct known partner name/logo mismatches from CMS or legacy data. */
 function normalizePartner(value: unknown): Partner {
     const partner = asRecord(value);
-    let name = optionalString(partner.name)?.trim() ?? "";
-    if (/^acronix$/i.test(name)) name = "Acronis";
-
-    let logoSrc = optionalString(partner.logo_src) ?? optionalString(partner.logoSrc);
-    const key = name.toLowerCase();
-    if (key === "acronis") logoSrc = "/images/v3/b_6.png";
-    else if (key === "cybernetics") logoSrc = "/images/v3/b_7.png";
-    else if (key === "cloudsafe") logoSrc = "/images/partners/cloudsafe.svg";
+    const name = canonicalPartnerName(optionalString(partner.name) ?? "");
+    const logoSrc = resolvePartnerLogo(
+        name,
+        optionalString(partner.logo_src) ?? optionalString(partner.logoSrc),
+    );
 
     return {
         name,

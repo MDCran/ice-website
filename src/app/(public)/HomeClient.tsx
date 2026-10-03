@@ -43,6 +43,7 @@ import { isCmsSectionVisible } from "@/lib/cms/sectionManifest";
 import { serviceImageFor } from "@/lib/solutionHeroImages";
 import { EnterpriseSalesPreview } from "@/components/marketing/EnterpriseSalesSuite";
 import type { SalesEnablementConfig } from "@/lib/salesEnablement";
+import { canonicalPartnerName, resolvePartnerLogo } from "@/lib/partnerBrands";
 
 type IconComponent = FC<{ className?: string }>;
 
@@ -150,11 +151,25 @@ export interface HomePageData {
 
 const DEFAULT_STATS = [
   { value: 30, suffix: "+", label: "Years in Business" },
+  { value: 4, suffix: "", label: "Core Service Areas" },
+  { value: 24, suffix: "/7/365", label: "Operations Coverage Options" },
+  { value: 99.99, suffix: "%", label: "Target Uptime SLA" },
 ];
 
+function statTopic(label: string): string | undefined {
+  const normalized = label.toLowerCase();
+  if (/year|experience/.test(normalized)) return "experience";
+  if (/core service|service area/.test(normalized)) return "service-areas";
+  if (/operation|coverage|monitoring/.test(normalized)) return "operations";
+  if (/uptime|sla/.test(normalized)) return "uptime";
+  return undefined;
+}
+
 const DEFAULT_TIMELINE = [
-  { year: "1990", title: "Our beginning", description: "ICE began serving enterprise technology customers with an IBM-focused approach." },
-  { year: "Today", title: "Your next chapter", description: "AS400 and IBM i hosting, cloud, recovery, and support planned around current business requirements." },
+  { year: "1990", title: "An IBM relationship begins", description: "ICE becomes an IBM Business Partner, beginning a long-running focus on enterprise systems." },
+  { year: "AS/400 → IBM i", title: "A platform evolves", description: "As IBM’s platform moved from AS/400 through iSeries and System i to IBM i, customers kept relying on it to run essential business applications." },
+  { year: "Over the years", title: "Support beyond the server", description: "The work grew to cover the needs around critical systems too: infrastructure, security, backup, recovery, and day-to-day operations." },
+  { year: "Today", title: "Hosting built around the workload", description: "ICE helps businesses run and protect AS/400, IBM i, IBM Power, and other enterprise workloads with hosting, cloud, managed services, and recovery planning." },
 ];
 
 const DEFAULT_INDUSTRIES = [
@@ -229,20 +244,18 @@ function normalizeMarqueePartners(
   }
   return partners.map((p, i) => {
     if (typeof p === "string") {
+      const name = canonicalPartnerName(p);
       return {
-        name: p,
-        logo_src: DEFAULT_PARTNERS[i]?.logo_src ?? `/images/v3/b_${(i % 8) + 1}.png`,
-        capability: PARTNER_CAPABILITIES[p] ?? "Enterprise technology",
+        name,
+        logo_src: resolvePartnerLogo(name) ?? "",
+        capability: PARTNER_CAPABILITIES[name] ?? "Enterprise technology",
       };
     }
+    const name = canonicalPartnerName(p.name?.trim() || DEFAULT_PARTNERS[i]?.name || `Partner ${i + 1}`);
     return {
-      name: p.name?.trim() || DEFAULT_PARTNERS[i]?.name || `Partner ${i + 1}`,
-      logo_src:
-        p.logo_src ||
-        p.logoSrc ||
-        DEFAULT_PARTNERS[i]?.logo_src ||
-        `/images/v3/b_${(i % 8) + 1}.png`,
-      capability: p.capability ?? PARTNER_CAPABILITIES[p.name?.trim() ?? ""] ?? "Enterprise technology",
+      name,
+      logo_src: resolvePartnerLogo(name, p.logo_src || p.logoSrc) ?? "",
+      capability: p.capability ?? PARTNER_CAPABILITIES[name] ?? "Enterprise technology",
     };
   });
 }
@@ -315,7 +328,7 @@ const POPULAR_SOLUTIONS: {
   },
 ];
 
-/** Performance indicators — distinct from By The Numbers (years / projects / clients / uptime). */
+/** Optional performance indicators, separate from the verified trust figures above. */
 const PERFORMANCE_METRICS: { value: string; suffix?: string; label: string }[] = [];
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -480,6 +493,10 @@ export default function Home({
   const popularSolutionsSection = data?.popular_solutions ?? data?.services_grid;
   const statsSection = data?.stats;
   const dataCentersSection = data?.data_centers;
+  const dataCenterImage =
+    dataCentersSection?.image === "/images/service/data_center.jpg"
+      ? "/images/service/data_center.webp"
+      : dataCentersSection?.image ?? "/images/service/data_center.webp";
   const infrastructureSection = data?.infrastructure;
   const timelineSection = data?.timeline;
   const partnersSection = data?.partners_marquee;
@@ -518,9 +535,15 @@ export default function Home({
       image: serviceImageFor(item) ?? fallback?.image ?? "/images/solutions/heroes/managed-cloud-hosting.webp",
     };
   });
-  const stats: { value: number; suffix: string; label: string }[] = (
-    data?.stats?.items ?? DEFAULT_STATS
-  ).map((s) => ({
+  const cmsStats = data?.stats?.items ?? [];
+  const statItems = [...cmsStats];
+  for (const fallback of DEFAULT_STATS) {
+    if (statItems.length >= DEFAULT_STATS.length) break;
+    const topic = statTopic(fallback.label);
+    if (topic && statItems.some((item) => statTopic(item.label) === topic)) continue;
+    statItems.push(fallback);
+  }
+  const stats: { value: number; suffix: string; label: string }[] = statItems.map((s) => ({
     value:
       typeof s.value === "number"
         ? s.value
@@ -854,7 +877,7 @@ export default function Home({
             <SectionHeader
               eyebrow={statsSection?.eyebrow ?? "By The Numbers"}
               heading={statsSection?.heading ?? "Proven Enterprise Track Record"}
-              description={statsSection?.description}
+              description={statsSection?.description || "Service coverage and uptime targets are defined for each agreement."}
             />
 
             <dl
@@ -889,7 +912,7 @@ export default function Home({
               className="relative"
             >
               <Image
-                src={dataCentersSection?.image ?? "/images/service/data_center.jpg"}
+                src={dataCenterImage}
                 alt={dataCentersSection?.image_alt ?? "Data center infrastructure"}
                 width={720}
                 height={480}
@@ -977,30 +1000,19 @@ export default function Home({
             eyebrow={timelineSection?.eyebrow ?? "Our Journey"}
             heading={timelineSection?.heading ?? "30+ years in business"}
           />
+          <p className="mx-auto mt-5 max-w-2xl text-center text-base leading-relaxed text-tertiary md:text-lg">
+            ICE has been an IBM Business Partner since 1990. The technology has changed; the focus on keeping business-critical systems running has stayed constant.
+          </p>
 
           <div className="relative mx-auto mt-12 max-w-5xl md:mt-16">
-            {/* Rail + beam stop at the endcap center (bottom-2.5 = half of size-5). */}
+            {/* A quiet guide line connects the milestones without competing with their story. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute top-1 bottom-3 left-6 z-0 w-10 -translate-x-1/2 overflow-hidden rounded-full md:left-1/2"
+              className="pointer-events-none absolute top-1 bottom-10 left-6 z-0 w-px bg-gradient-to-b from-brand-500/10 via-border-brand/45 to-brand-500/10 md:left-1/2"
             >
-              {/* Pipeline rail — a subtle brand-tinted track the beam runs along */}
-              <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 rounded-full bg-gradient-to-b from-brand-500/10 via-border-brand/45 to-brand-500/10" />
-              <span
-                aria-hidden="true"
-                className="ice-timeline-auto-beam absolute top-0 left-1/2 z-[2] h-32 w-[3px] -translate-x-1/2 rounded-full"
-              />
-              <span
-                aria-hidden="true"
-                className="ice-timeline-auto-tip absolute left-1/2 z-[3] -translate-x-1/2 -translate-y-1/2"
-              >
-                <span className="absolute top-1/2 left-1/2 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-solid/12 blur-md" />
-                <span className="relative block size-2 rounded-full bg-brand-solid shadow-[0_0_12px_3px_rgb(4_155_251/0.42)]" />
-              </span>
             </div>
 
             {timeline.map((item, i) => {
-              const isLast = i === timeline.length - 1;
               return (
                 <div
                   key={item.year}
@@ -1021,14 +1033,6 @@ export default function Home({
                     className="relative z-10 col-start-1 row-start-1 flex justify-center pt-2 md:col-start-2"
                   >
                     <span className="relative flex size-6 items-center justify-center rounded-full border border-brand/35 bg-primary shadow-[0_0_0_6px_var(--color-bg-primary),0_12px_28px_-16px_rgb(4_155_251/0.9)] dark:bg-secondary">
-                      {isLast && (
-                        <motion.span
-                          aria-hidden="true"
-                          className="absolute inset-0 rounded-full bg-brand-solid/40"
-                          animate={{ scale: [1, 1.9], opacity: [0.7, 0] }}
-                          transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut" }}
-                        />
-                      )}
                       <span className="size-1.5 rounded-full bg-brand-solid" />
                     </span>
                   </motion.div>
@@ -1077,17 +1081,6 @@ export default function Home({
               );
             })}
 
-            {/* Pipeline endcap — same size as milestone dots; rail ends on its center */}
-            <div className="relative grid grid-cols-[3rem_minmax(0,1fr)] gap-x-5 md:grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] md:gap-x-8">
-              <span
-                aria-hidden="true"
-                className="relative z-10 col-start-1 flex justify-center md:col-start-2"
-              >
-                <span className="flex size-6 items-center justify-center rounded-full border border-brand/35 bg-primary shadow-[0_0_0_6px_var(--color-bg-primary),0_0_18px_2px_rgb(4_155_251/0.28)] dark:bg-secondary">
-                  <span className="size-1.5 rounded-full bg-brand-solid" />
-                </span>
-              </span>
-            </div>
           </div>
         </div>
       </section>}
@@ -1118,13 +1111,19 @@ export default function Home({
                       key={`${copy}-${partner.name}-${i}`}
                       className="mx-4 flex h-24 w-60 shrink-0 items-center gap-4 rounded-xl border border-brand/10 bg-white px-5 shadow-[0_16px_40px_rgb(15_23_42/0.08)] ring-1 ring-slate-950/5 md:mx-5 dark:border-white/10 dark:bg-secondary dark:shadow-none dark:ring-secondary"
                     >
-                      <Image
-                        src={partner.logo_src}
-                        alt={copy === 0 ? partner.name : ""}
-                        width={180}
-                        height={64}
-                        className="h-9 w-auto max-w-[7rem] object-contain opacity-75 brightness-[0.35] contrast-125 saturate-0 dark:opacity-60 dark:brightness-100 dark:contrast-100"
-                      />
+                      {partner.logo_src ? (
+                        <Image
+                          src={partner.logo_src}
+                          alt={copy === 0 ? partner.name : ""}
+                          width={180}
+                          height={64}
+                          className="h-9 w-auto max-w-[7rem] object-contain opacity-75 brightness-[0.35] contrast-125 saturate-0 dark:opacity-60 dark:brightness-100 dark:contrast-100"
+                        />
+                      ) : (
+                        <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-primary_alt text-xs font-semibold text-brand-secondary">
+                          {partner.name.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
                       <span className="min-w-0">
                         <span className="block text-xs font-semibold text-slate-950 dark:text-primary">{partner.name}</span>
                         <span className="mt-1 block text-[11px] leading-snug text-slate-600 dark:text-tertiary">

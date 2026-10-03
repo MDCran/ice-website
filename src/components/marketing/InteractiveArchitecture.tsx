@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FC } from "react";
+import { useState, type FC } from "react";
 import {
   Cloud01,
   Database01,
@@ -88,14 +88,8 @@ export default function InteractiveArchitecture({
   const finalNode = nodes[nodes.length - 1];
   const [activeIndex, setActiveIndex] = useState(0);
   const activeNode = nodes[activeIndex] ?? firstNode;
-
-  useEffect(() => {
-    if (reduceMotion || nodes.length < 2) return;
-    const interval = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % nodes.length);
-    }, 2800);
-    return () => window.clearInterval(interval);
-  }, [nodes.length, reduceMotion]);
+  const activeDetails = activeNode?.details.length ? activeNode.details : [activeNode?.summary ?? ""];
+  const detailRowCount = Math.max(3, ...nodes.map((node) => node.details.length || 1));
 
   if (nodes.length === 0 || !firstNode || !finalNode) return null;
 
@@ -141,9 +135,11 @@ export default function InteractiveArchitecture({
 
               return (
                 <li key={node.id} className="relative flex justify-center">
-                  <div
-                    className="relative z-[1] flex w-full cursor-default flex-col items-center gap-3 rounded-xl px-2 py-3 text-center"
-                    aria-current={index === activeIndex ? "step" : undefined}
+                  <button
+                    type="button"
+                    className="group relative z-[1] flex w-full cursor-pointer flex-col items-center gap-3 rounded-xl px-2 py-3 text-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-solid"
+                    aria-pressed={index === activeIndex}
+                    onClick={() => setActiveIndex(index)}
                   >
                     <span
                       aria-hidden="true"
@@ -179,7 +175,7 @@ export default function InteractiveArchitecture({
                     <span className={cx("text-sm font-semibold transition-colors", index === activeIndex ? "text-brand-secondary" : "text-secondary")}>
                       {node.label}
                     </span>
-                  </div>
+                  </button>
                 </li>
               );
             })}
@@ -203,15 +199,21 @@ export default function InteractiveArchitecture({
             return (
               <li
                 key={node.id}
-                className={cx(
-                  "inline-flex items-center gap-2 rounded-full bg-brand-primary_alt px-3 py-1.5 text-sm font-medium text-brand-secondary ring-1 ring-brand/30 shadow-[0_0_14px_rgb(4_155_251/0.16)]",
-                  !reduceMotion && "ice-arch-node-live",
-                  index === activeIndex && "ice-arch-node-active",
-                )}
-                style={!reduceMotion ? { animationDelay: `${index * 0.16}s` } : undefined}
               >
-                <Icon className="size-4 shrink-0" />
-                {node.label}
+                <button
+                  type="button"
+                  aria-pressed={index === activeIndex}
+                  onClick={() => setActiveIndex(index)}
+                  className={cx(
+                    "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ring-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-solid",
+                    index === activeIndex
+                      ? "bg-brand-primary_alt text-brand-secondary ring-brand/50"
+                      : "bg-secondary text-secondary ring-border-secondary hover:bg-brand-primary_alt hover:text-brand-secondary",
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" />
+                  {node.label}
+                </button>
               </li>
             );
           })}
@@ -219,7 +221,7 @@ export default function InteractiveArchitecture({
       </div>
 
       <div
-        className="ice-arch-layer-card relative mx-auto mt-8 max-w-4xl overflow-hidden rounded-2xl border border-brand/20 bg-primary/80 p-5 shadow-[0_20px_50px_rgb(15_23_42/0.08)] ring-1 ring-white/60 md:mt-10 md:p-6 dark:ring-white/[0.04]"
+        className="ice-arch-layer-card relative mx-auto mt-8 min-h-[220px] max-w-4xl overflow-hidden rounded-2xl border border-brand/20 bg-primary/80 p-5 shadow-[0_20px_50px_rgb(15_23_42/0.08)] ring-1 ring-white/60 md:mt-10 md:min-h-[220px] md:p-6 dark:ring-white/[0.04]"
         role="region"
         aria-label={pathAriaLabel}
       >
@@ -232,26 +234,31 @@ export default function InteractiveArchitecture({
           className="pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full bg-brand-500/10 blur-3xl"
         />
         <div className="grid gap-5 md:grid-cols-[0.9fr_1.1fr] md:items-center">
-          <div className="min-w-0">
+          <div className="flex min-w-0 flex-col justify-center md:min-h-[156px]">
             <p className="text-xs font-medium tracking-[0.2em] text-brand-secondary uppercase">
               {pathLabel}
             </p>
               <div key={activeNode.id} className={!reduceMotion ? "ice-arch-detail-enter" : undefined}>
                 <p className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">{activeLayerLabel} · {activeNode.label}</p>
-                <h3 className="mt-2 text-display-xs font-semibold text-primary">
+                <h3 className="mt-2 line-clamp-2 min-h-[2.5rem] text-display-xs font-semibold text-primary">
                   {firstNode.label} to {activeNode.label}
                 </h3>
-                <p className="mt-2 text-md text-tertiary">{activeNode.summary}</p>
+                <p className="mt-2 line-clamp-2 min-h-12 text-md text-tertiary">{activeNode.summary}</p>
               </div>
           </div>
-          <ul className="grid min-w-0 gap-2 sm:grid-cols-3 md:grid-cols-1">
-            {(activeNode.details.length ? activeNode.details : [activeNode.summary]).map((detail) => (
+          <ul className="grid min-w-0 content-center gap-2 sm:grid-cols-3 md:grid-cols-1">
+            {Array.from({ length: detailRowCount }, (_, index) => activeDetails[index]).map((detail, index) => (
               <li
-                key={detail}
-                className={cx("flex items-start gap-2 rounded-xl border border-secondary/80 bg-secondary/55 px-3 py-2 text-sm text-secondary shadow-[0_8px_24px_rgb(15_23_42/0.04)]", !reduceMotion && "ice-arch-detail-item-enter")}
+                key={`${activeNode.id}-${index}`}
+                aria-hidden={detail ? undefined : true}
+                className={cx(
+                  "flex min-h-10 items-start gap-2 rounded-xl border border-secondary/80 bg-secondary/55 px-3 py-2 text-sm text-secondary shadow-[0_8px_24px_rgb(15_23_42/0.04)]",
+                  detail ? "" : "invisible",
+                  !reduceMotion && detail && "ice-arch-detail-item-enter",
+                )}
               >
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-solid shadow-[0_0_10px_rgb(4_155_251/0.65)]" />
-                <span>{detail}</span>
+                <span className="line-clamp-2">{detail}</span>
               </li>
             ))}
           </ul>

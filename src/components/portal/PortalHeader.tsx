@@ -10,31 +10,25 @@ import { Button } from "@/components/base/buttons/button";
 import { Badge } from "@/components/base/badges/badges";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import PortalNotifications from "@/components/portal/PortalNotifications";
+import { usePortalCopy } from "@/components/portal/PortalCopyProvider";
 
-const PAGE_NAMES: Record<string, string> = {
-  "/portal": "Dashboard",
-  "/portal/profile": "Company & Contacts",
-  "/portal/resources": "Resources",
-  "/portal/surveys": "Surveys",
-};
-
-function getPageName(pathname: string): string {
-  if (PAGE_NAMES[pathname]) return PAGE_NAMES[pathname];
+function getPageName(pathname: string, pageNames: Record<string, string>, fallback: string): string {
+  if (pageNames[pathname]) return pageNames[pathname];
   const parts = pathname.split("/").filter(Boolean);
   for (let i = parts.length; i >= 2; i--) {
     const check = "/" + parts.slice(0, i).join("/");
-    if (PAGE_NAMES[check]) return PAGE_NAMES[check];
+    if (pageNames[check]) return pageNames[check];
   }
-  return "Portal";
+  return fallback;
 }
 
-function getBreadcrumbs(pathname: string) {
+function getBreadcrumbs(pathname: string, pageNames: Record<string, string>, portalLabel: string) {
   const parts = pathname.split("/").filter(Boolean);
-  const crumbs = [{ label: "Portal", href: "/portal" }];
+  const crumbs = [{ label: portalLabel, href: "/portal" }];
   if (parts.length <= 1) return crumbs;
   for (let i = 1; i < parts.length; i++) {
     const cleanPath = "/" + parts.slice(0, i + 1).join("/");
-    const name = PAGE_NAMES[cleanPath];
+    const name = pageNames[cleanPath];
     crumbs.push({
       label: name ?? parts[i].charAt(0).toUpperCase() + parts[i].slice(1).replace(/-/g, " "),
       href: cleanPath,
@@ -50,13 +44,20 @@ function formatRoleLabel(role: string) {
 }
 
 export default function PortalHeader() {
+  const copy = usePortalCopy();
   const router = useRouter();
   const pathname = usePathname();
   const [userName, setUserName] = useState("");
   const [role, setRole] = useState<string>("");
 
-  const pageName = getPageName(pathname);
-  const breadcrumbs = getBreadcrumbs(pathname);
+  const pageNames = {
+    "/portal": copy.dashboard,
+    "/portal/profile": copy.company_contacts,
+    "/portal/resources": copy.resources,
+    "/portal/surveys": copy.surveys,
+  };
+  const pageName = getPageName(pathname, pageNames, copy.portal);
+  const breadcrumbs = getBreadcrumbs(pathname, pageNames, copy.portal);
 
   useEffect(() => {
     async function loadUser() {
@@ -125,13 +126,13 @@ export default function PortalHeader() {
             <Dropdown.Menu>
               <Dropdown.Item
                 icon={Settings01}
-                label="Settings"
+                label={copy.settings}
                 onAction={() => router.push("/portal/profile")}
               />
               <Dropdown.Separator />
               <Dropdown.Item
                 icon={LogOut01}
-                label="Sign Out"
+                label={copy.sign_out}
                 onAction={() => handleLogout()}
               />
             </Dropdown.Menu>

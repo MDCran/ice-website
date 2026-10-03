@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/base/badges/badges";
 import { cx } from "@/utils/cx";
+import { usePortalCopy } from "@/components/portal/PortalCopyProvider";
 
 interface NavItem {
   label: string;
@@ -23,19 +24,14 @@ interface NavItem {
   badgeKey?: "surveys";
 }
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/portal", icon: Home01 },
-  { label: "Company & Contacts", href: "/portal/profile", icon: Building07 },
-  { label: "Resources", href: "/portal/resources", icon: Folder },
-  {
-    label: "Surveys",
-    href: "/portal/surveys",
-    icon: ClipboardCheck,
-    badgeKey: "surveys",
-  },
-];
-
 export default function PortalSidebar() {
+  const copy = usePortalCopy();
+  const navItems: NavItem[] = [
+    { label: copy.dashboard, href: "/portal", icon: Home01 },
+    { label: copy.company_contacts, href: "/portal/profile", icon: Building07 },
+    { label: copy.resources, href: "/portal/resources", icon: Folder },
+    { label: copy.surveys, href: "/portal/surveys", icon: ClipboardCheck, badgeKey: "surveys" },
+  ];
   const pathname = usePathname();
   const [badges, setBadges] = useState<{ surveys: number }>({
     surveys: 0,
@@ -148,7 +144,7 @@ export default function PortalSidebar() {
           className="flex items-center gap-2 rounded-md text-sm font-semibold text-tertiary outline-focus-ring transition duration-100 ease-linear hover:text-tertiary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <ArrowLeft className="size-4 text-fg-quaternary" aria-hidden="true" />
-          Back to Site
+          {copy.back_to_site}
         </Link>
       </div>
     </aside>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
+import { useDeferredAutoplay } from "@/hooks/useDeferredAutoplay";
 import { cx } from "@/utils/cx";
 
 /**
@@ -22,29 +23,8 @@ export default function SolutionMutedDemo({
 }) {
   const reduceMotion = useHydratedReducedMotion();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (reduceMotion) return;
-    let cancelled = false;
-    const enable = () => {
-      if (!cancelled) setReady(true);
-    };
-    let idleId: number | undefined;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      idleId = window.requestIdleCallback(enable, { timeout: 2200 });
-    } else {
-      timeoutId = setTimeout(enable, 700);
-    }
-    return () => {
-      cancelled = true;
-      if (idleId != null && typeof window !== "undefined" && "cancelIdleCallback" in window) {
-        window.cancelIdleCallback(idleId);
-      }
-      if (timeoutId != null) clearTimeout(timeoutId);
-    };
-  }, [reduceMotion]);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const ready = useDeferredAutoplay(videoContainerRef, { disabled: reduceMotion, delayMs: 900 });
 
   useEffect(() => {
     const el = videoRef.current;
@@ -60,7 +40,7 @@ export default function SolutionMutedDemo({
         className,
       )}
     >
-      <div className="relative aspect-video w-full bg-primary">
+      <div ref={videoContainerRef} className="relative aspect-video w-full bg-primary">
         {posterSrc && (
           <Image
             src={posterSrc}
@@ -79,14 +59,13 @@ export default function SolutionMutedDemo({
             loop
             playsInline
             autoPlay
-            preload="metadata"
+            preload="none"
             aria-label={caption}
           />
         )}
       </div>
       <figcaption className="border-t border-secondary px-4 py-2 text-xs text-tertiary">
         {caption}
-        {reduceMotion ? " · static preview (reduced motion)" : " · autoplays muted"}
       </figcaption>
     </figure>
   );

@@ -11,6 +11,7 @@ import { CloseButton } from "@/components/base/buttons/close-button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
 import { Label } from "@/components/base/input/label";
+import { ComboBox } from "@/components/base/select/combobox";
 import { Select, type SelectItemType } from "@/components/base/select/select";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -113,7 +114,7 @@ const DEFAULT_CONTACT_WIDGET_CONTENT: ResolvedContactWidgetContent = {
   phone_placeholder: "(561) 555-0100",
   country_dial_code_aria_label: "Country dial code",
   service_label: "Service Interested In",
-  service_placeholder: "Select a service...",
+  service_placeholder: "Search or select a service...",
   message_label: "Message",
   message_placeholder: "How can we help?",
   sms_consent_aria_label: "Optional SMS consent",
@@ -259,27 +260,56 @@ interface ServiceSelectProps {
 /** Sectioned service dropdown built on the Untitled UI Select (react-aria). */
 export function ServiceSelect({
   label = "Service Interested In",
-  placeholder = "Select a service...",
+  placeholder = "Search or select a service...",
   size = "md",
   name,
   value,
   onChange,
   groups = DEFAULT_SERVICE_GROUPS,
 }: ServiceSelectProps) {
+  const otherOption = "Other";
+  const selectedService = value.startsWith(`${otherOption}: `) ? otherOption : value;
+  const customService = value.startsWith(`${otherOption}: `) ? value.slice(otherOption.length + 2) : "";
+  const allOptions = useMemo(() => new Set([...groups.flatMap((group) => group.options), otherOption]), [groups]);
+  const [query, setQuery] = useState("");
+
+  const visibleGroups = groups
+    .map((group) => ({
+      ...group,
+      options: group.options.filter((option) => {
+        if (option.toLowerCase() === otherOption.toLowerCase()) return false;
+        return !query.trim() || option.toLowerCase().includes(query.trim().toLowerCase());
+      }),
+    }))
+    .filter((group) => group.options.length > 0);
+  visibleGroups.push({ label: query.trim() ? "Not listed?" : "", options: [otherOption] });
+
   return (
-    <Select
+    <div className="w-full">
+    <ComboBox
       name={name}
       label={label}
       size={size}
       placeholder={placeholder}
-      selectedKey={value === "" ? null : value}
-      onSelectionChange={(key) => onChange(key == null ? "" : String(key))}
+      hint="Type to search, or choose Other to enter a service."
+      selectedKey={selectedService === "" ? null : selectedService}
+      onInputChange={(nextValue) => {
+        setQuery(nextValue);
+        if (nextValue !== selectedService && !allOptions.has(nextValue)) onChange("");
+      }}
+      onSelectionChange={(key) => {
+        const nextValue = key == null ? "" : String(key);
+        const customValue = query.trim();
+        setQuery("");
+        onChange(nextValue === otherOption && customValue ? `${otherOption}: ${customValue}` : nextValue);
+      }}
+      allowsCustomValue={false}
+      menuTrigger="input"
       className="w-full"
       popoverClassName="contact-form-popover overscroll-contain"
-      preventPageScroll
-      openOnLabelClick
+      aria-label={label}
     >
-      {groups.map((group, index) =>
+      {visibleGroups.map((group, index) =>
         group.label ? (
           <AriaListBoxSection
             key={group.label}
@@ -290,7 +320,11 @@ export function ServiceSelect({
               {group.label}
             </AriaHeader>
             {group.options.map((option) => (
-              <Select.Item key={option} id={option} label={option} />
+              <Select.Item
+                key={option}
+                id={option}
+                label={option === otherOption && query.trim() ? `Other — ${query.trim()}` : option}
+              />
             ))}
           </AriaListBoxSection>
         ) : (
@@ -298,13 +332,24 @@ export function ServiceSelect({
             <Select.Item
               key={`${index}-${option}`}
               id={option}
-              label={option}
+              label={option === otherOption && query.trim() ? `Other — ${query.trim()}` : option}
               className={cx(index > 0 && optionIndex === 0 && "mt-1 border-t border-secondary pt-1")}
             />
           ))
         ),
       )}
-    </Select>
+    </ComboBox>
+    {selectedService === otherOption && (
+      <Input
+        className="mt-3"
+        size={size}
+        label="What service do you need?"
+        placeholder="Tell us what you’re looking for"
+        value={customService}
+        onChange={(nextValue) => onChange(nextValue.trim() ? `${otherOption}: ${nextValue}` : otherOption)}
+      />
+    )}
+    </div>
   );
 }
 

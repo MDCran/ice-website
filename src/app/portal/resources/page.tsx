@@ -25,10 +25,12 @@ import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/mod
 import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import { cx } from "@/utils/cx";
 import type { ClientResource } from "@/lib/types/database";
+import { usePortalCopy } from "@/components/portal/PortalCopyProvider";
 
 type ViewMode = "grid" | "list";
 
 export default function ResourcesPage() {
+  const copy = usePortalCopy();
   const [resources, setResources] = useState<ClientResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<string>("all");
@@ -122,21 +124,22 @@ export default function ResourcesPage() {
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-display-xs font-semibold text-primary">Documents</h1>
+          <h1 className="text-display-xs font-semibold text-primary">{copy.documents_title}</h1>
           <p className="mt-1 text-md text-tertiary">
-            {visibleResources.length} document{visibleResources.length !== 1 ? "s" : ""}{" "}
-            available
+            {visibleResources.length} {visibleResources.length === 1
+              ? copy.documents_available_singular
+              : copy.documents_available_plural}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="relative block w-full sm:w-64">
-            <span className="sr-only">Search documents</span>
+            <span className="sr-only">{copy.search_documents_accessible}</span>
             <SearchLg aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-quaternary" />
             <input
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search documents..."
+              placeholder={copy.search_documents}
               className="h-10 w-full rounded-lg border-0 bg-primary py-2 pr-3 pl-9 text-sm text-primary outline-none ring-1 ring-secondary placeholder:text-placeholder focus:ring-2 focus:ring-brand"
             />
           </label>
@@ -152,7 +155,7 @@ export default function ResourcesPage() {
                     : "bg-primary text-tertiary ring-secondary hover:text-primary",
                 )}
               >
-                All
+                {copy.filter_all}
               </button>
               {categories.map((c) => (
                 <button
@@ -173,14 +176,14 @@ export default function ResourcesPage() {
           )}
         <div
           role="group"
-          aria-label="View mode"
+            aria-label={`${copy.grid_view} / ${copy.list_view}`}
           className="flex items-center gap-0.5 rounded-lg bg-primary p-0.5 shadow-xs ring-1 ring-primary ring-inset"
         >
           <ButtonUtility
             size="sm"
             color="tertiary"
             icon={Grid01}
-            tooltip="Grid view"
+            tooltip={copy.grid_view}
             aria-pressed={viewMode === "grid"}
             className={cx(viewMode === "grid" && "bg-active text-fg-quaternary_hover")}
             onClick={() => toggleView("grid")}
@@ -189,7 +192,7 @@ export default function ResourcesPage() {
             size="sm"
             color="tertiary"
             icon={List}
-            tooltip="List view"
+            tooltip={copy.list_view}
             aria-pressed={viewMode === "list"}
             className={cx(viewMode === "list" && "bg-active text-fg-quaternary_hover")}
             onClick={() => toggleView("list")}
@@ -205,9 +208,9 @@ export default function ResourcesPage() {
               <EmptyState.FeaturedIcon color="gray" icon={Folder} />
             </EmptyState.Header>
             <EmptyState.Content>
-              <EmptyState.Title>No documents available</EmptyState.Title>
+              <EmptyState.Title>{copy.no_documents_title}</EmptyState.Title>
               <EmptyState.Description>
-                Documents shared with your account will appear here after your ICE team publishes them.
+                {copy.no_documents_description}
               </EmptyState.Description>
             </EmptyState.Content>
           </EmptyState>
@@ -225,7 +228,7 @@ export default function ResourcesPage() {
                 <FeaturedIcon color="brand" theme="light" size="md" icon={File02} />
                 {!resource.allow_download && (
                   <BadgeWithIcon type="pill-color" size="sm" color="warning" iconLeading={Lock01}>
-                    Preview Only
+                    {copy.preview_only}
                   </BadgeWithIcon>
                 )}
               </div>
@@ -270,12 +273,12 @@ export default function ResourcesPage() {
         <TableCard.Root>
           <Table aria-label="Resources">
             <Table.Header>
-              <Table.Head id="title" isRowHeader label="Title" className="w-full" />
-              <Table.Head id="category" label="Category" />
-              <Table.Head id="author" label="Author" />
-              <Table.Head id="date" label="Date" />
-              <Table.Head id="access" label="Access" />
-              <Table.Head id="actions" aria-label="Actions" />
+              <Table.Head id="title" isRowHeader label={copy.table_title} className="w-full" />
+              <Table.Head id="category" label={copy.table_category} />
+              <Table.Head id="author" label={copy.table_author} />
+              <Table.Head id="date" label={copy.table_date} />
+              <Table.Head id="access" label={copy.table_access} />
+              <Table.Head id="actions" aria-label={copy.table_actions} />
             </Table.Header>
             <Table.Body items={visibleResources}>
               {(resource) => (
@@ -320,11 +323,11 @@ export default function ResourcesPage() {
                   <Table.Cell>
                     {resource.allow_download ? (
                       <Badge type="pill-color" size="sm" color="success">
-                        Download
+                        {copy.download}
                       </Badge>
                     ) : (
                       <BadgeWithIcon type="pill-color" size="sm" color="warning" iconLeading={Lock01}>
-                        Preview Only
+                        {copy.preview_only}
                       </BadgeWithIcon>
                     )}
                   </Table.Cell>
@@ -334,7 +337,7 @@ export default function ResourcesPage() {
                       color="link-color"
                       onClick={() => setPreviewResource(resource)}
                     >
-                      View
+                      {copy.view}
                     </Button>
                   </Table.Cell>
                 </Table.Row>
@@ -375,11 +378,11 @@ export default function ResourcesPage() {
                         iconLeading={Download01}
                         onClick={() => handleDownload(previewResource)}
                       >
-                        Download
+                        {copy.download}
                       </Button>
                     ) : (
                       <BadgeWithIcon type="pill-color" size="md" color="warning" iconLeading={Eye}>
-                        Preview Only
+                        {copy.preview_only}
                       </BadgeWithIcon>
                     )}
                     <CloseButton size="sm" onClick={() => setPreviewResource(null)} />

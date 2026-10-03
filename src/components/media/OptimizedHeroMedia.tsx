@@ -3,53 +3,39 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
+import { useDeferredAutoplay } from "@/hooks/useDeferredAutoplay";
+import { canOptimizeImageSource } from "@/lib/imageSources";
 import { cx } from "@/utils/cx";
 
 /**
  * LCP-optimized cinematic hero media.
  *
  * - Poster `next/image` with `priority` paints first.
- * - Muted inline video mounts shortly after first paint and retries autoplay.
- * - `respectReducedMotion` can opt specific placements into poster-only mode.
+ * - Muted inline video waits until the hero is visible and the browser is idle.
+ * - The poster remains the fast, responsive fallback on mobile and slow links.
  */
 export default function OptimizedHeroMedia({
   videoSrc = "/videos/data_center.mp4",
-  posterSrc = "/videos/data_center_cover.jpg",
+  posterSrc = "/videos/data_center_cover.webp",
   posterAlt = "",
   className,
-  respectReducedMotion = false,
-  startDelayMs = 250,
+  startDelayMs = 1800,
 }: {
   videoSrc?: string;
-  posterSrc?: string;
+  posterSrc?: string | null;
   posterAlt?: string;
   className?: string;
-  respectReducedMotion?: boolean;
   startDelayMs?: number;
 }) {
   const reduceMotion = useHydratedReducedMotion();
-  const posterOnly = respectReducedMotion && reduceMotion;
+  const posterOnly = reduceMotion;
+  const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [canPlayVideo, setCanPlayVideo] = useState(false);
+  const canPlayVideo = useDeferredAutoplay(containerRef, {
+    disabled: posterOnly,
+    delayMs: startDelayMs,
+  });
   const [isVideoReady, setIsVideoReady] = useState(false);
-
-  useEffect(() => {
-    if (posterOnly) {
-      setCanPlayVideo(false);
-      setIsVideoReady(false);
-      return;
-    }
-
-    let cancelled = false;
-    const timeoutId = window.setTimeout(() => {
-      if (!cancelled) setCanPlayVideo(true);
-    }, startDelayMs);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [posterOnly, startDelayMs]);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -57,8 +43,6 @@ export default function OptimizedHeroMedia({
 
     el.muted = true;
     el.playsInline = true;
-    el.load();
-
     const play = el.play();
     if (play && typeof play.catch === "function") {
       play.catch(() => {
@@ -68,24 +52,27 @@ export default function OptimizedHeroMedia({
   }, [canPlayVideo, posterOnly]);
 
   return (
-    <div aria-hidden={posterAlt ? undefined : true} className={cx("absolute inset-0", className)}>
-      <Image
-        src={posterSrc}
-        alt={posterAlt}
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover"
-      />
-      {canPlayVideo && !posterOnly && (
+    <div ref={containerRef} aria-hidden={posterAlt ? undefined : true} className={cx("absolute inset-0", className)}>
+      {posterSrc && (
+        <Image
+          src={posterSrc}
+          alt={posterAlt}
+          fill
+          unoptimized={!canOptimizeImageSource(posterSrc)}
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+      )}
+      {videoSrc && canPlayVideo && !posterOnly && (
         <video
           ref={videoRef}
           autoPlay
           loop
           muted
           playsInline
-          preload="auto"
-          poster={posterSrc}
+          preload="none"
+          poster={posterSrc ?? undefined}
           onCanPlay={() => setIsVideoReady(true)}
           onPlaying={() => setIsVideoReady(true)}
           className={cx(

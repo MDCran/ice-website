@@ -27,6 +27,7 @@ const EASE = MOTION_EASE;
 
 /** Shared vertical rhythm for solution detail section bands. */
 const SECTION_Y = "py-16 md:py-24";
+const COMPACT_SECTION_Y = "py-12 md:py-16";
 
 /** Thin brand hairline separating major sections. */
 function BrandHairline() {
@@ -334,7 +335,7 @@ export default function SolutionPageLayout({
   /* ── Benefits Checklist ────────────────────────────────────────────── */
   const benefitsBlock =
     benefits.length > 0 ? (
-      <section className={cx("bg-primary", SECTION_Y)}>
+      <section className={cx("bg-primary", COMPACT_SECTION_Y)}>
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
             <motion.div

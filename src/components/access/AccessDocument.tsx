@@ -19,6 +19,9 @@ import type {
   AccessSectionValue,
   PublicAccessSettings,
 } from "@/lib/access-pages/types";
+import OptimizedHeroMedia from "@/components/media/OptimizedHeroMedia";
+import Image from "next/image";
+import { canOptimizeImageSource } from "@/lib/imageSources";
 
 type ValueObject = Record<string, AccessSectionValue>;
 
@@ -557,14 +560,16 @@ export default function AccessDocument({
 
       <section className="relative flex min-h-[520px] items-center justify-center overflow-hidden border-b border-white/[0.06]">
         {heroVideo && (
-          <video autoPlay muted loop playsInline className="absolute inset-0 h-full w-full object-cover">
-            <source src={heroVideo} />
-          </video>
+          <OptimizedHeroMedia videoSrc={heroVideo} posterSrc={heroImage || ""} />
         )}
         {!heroVideo && heroImage && (
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${JSON.stringify(heroImage)})` }}
+          <Image
+            src={heroImage}
+            alt=""
+            fill
+            unoptimized={!canOptimizeImageSource(heroImage)}
+            sizes="100vw"
+            className="object-cover object-center"
           />
         )}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.55),rgba(2,6,23,0.94))]" />

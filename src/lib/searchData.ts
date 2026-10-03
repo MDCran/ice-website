@@ -192,10 +192,10 @@ export const searchIndex: SearchItem[] = [
   {
     title: "Technology Partners",
     description:
-      "ICE partners with CloudSafe, IBM, Lenovo, Cisco, Dell, DASCOM, Printronix, Acronix, and Cybernetics.",
+      "ICE partners with CloudSafe, IBM, Lenovo, Cisco, Dell, DASCOM, Printronix, Acronis, and Cybernetics.",
     url: "/partners",
     category: "Pages",
-    keywords: ["partners", "cloudsafe", "ibm", "lenovo", "cisco", "dell", "dascom", "printronix", "acronix", "cybernetics"],
+    keywords: ["partners", "cloudsafe", "ibm", "lenovo", "cisco", "dell", "dascom", "printronix", "acronis", "cybernetics"],
   },
   {
     title: "CloudSafe",

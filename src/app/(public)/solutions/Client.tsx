@@ -3,6 +3,7 @@
 import { useEffect, useState, type ComponentProps } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Activity,
   ArrowRight,
@@ -43,6 +44,7 @@ import SolutionComparisonMatrix, {
 import StickySolutionCta from "@/components/marketing/StickySolutionCta";
 import { isCmsSectionVisible } from "@/lib/cms/sectionManifest";
 import type { SolutionCatalogItem } from "@/lib/cms/solutionCatalog";
+import { canOptimizeImageSource } from "@/lib/imageSources";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -823,12 +825,13 @@ export default function SolutionsPage({
                         <div
                           className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[58%] overflow-hidden sm:w-[62%]"
                         >
-                          <img
+                          <Image
                             src={serviceImage}
                             alt={svc.image_alt ?? svc.imageAlt ?? ""}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-full w-full translate-x-[12%] object-cover object-center opacity-[0.18] transition-opacity duration-500 ease-out group-hover:opacity-[0.55] dark:opacity-[0.22] dark:group-hover:opacity-[0.62]"
+                            fill
+                            unoptimized={!canOptimizeImageSource(serviceImage)}
+                            sizes="(max-width: 640px) 58vw, 360px"
+                            className="translate-x-[12%] object-cover object-center opacity-[0.18] transition-opacity duration-500 ease-out group-hover:opacity-[0.55] dark:opacity-[0.22] dark:group-hover:opacity-[0.62]"
                           />
                           {/* Soft left fade so the image blends into the card — stronger in light mode */}
                           <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg-primary)] from-0% via-[var(--color-bg-primary)]/90 via-35% to-transparent to-85%" />

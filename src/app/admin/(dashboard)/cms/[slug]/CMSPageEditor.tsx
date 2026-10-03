@@ -40,6 +40,7 @@ import { publicPathForCmsPage, SYSTEM_CMS_SLUGS } from "@/lib/cms/pageRegistry";
 import { getDefaultSolutionFinderContent } from "@/components/marketing/SolutionFinder";
 import { getDefaultConsultWizardContent } from "@/components/marketing/ConsultWizard";
 import { getDefaultContactWidgetContent } from "@/components/ui/ContactWidget";
+import { PORTAL_COPY_DEFAULTS } from "@/lib/portalCopy";
 import { PRIVACY_POLICY_DEFAULTS } from "@/app/(public)/privacy-policy/Client";
 import llmsDefault from "../../../../../../content/llms-default.json";
 
@@ -467,12 +468,12 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     content: {
       eyebrow: "By The Numbers",
       heading: "Proven Enterprise Track Record",
-      description: "Measured results across three decades of enterprise infrastructure work.",
+      description: "Service coverage and uptime targets are defined for each agreement.",
       items: [
-        { value: 35, suffix: "+", label: "Years of Experience", source_note: "" },
-        { value: 1200, suffix: "+", label: "Successful Projects", source_note: "" },
-        { value: 500, suffix: "+", label: "Enterprise Clients", source_note: "" },
-        { value: 100, suffix: "%", label: "Uptime SLA", source_note: "Contractual SLA target" },
+        { value: 30, suffix: "+", label: "Years in Business", source_note: "IBM Business Partner since 1990" },
+        { value: 4, suffix: "", label: "Core Service Areas", source_note: "Cloud, data protection, security, and managed services" },
+        { value: 24, suffix: "/7/365", label: "Operations Coverage Options", source_note: "Availability defined by service scope" },
+        { value: 99.99, suffix: "%", label: "Target Uptime SLA", source_note: "Only where specified in the service agreement" },
       ],
     },
   },
@@ -488,7 +489,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       eyebrow: "Infrastructure",
       heading: "Infrastructure for Business-Critical Workloads",
       description: "Hosting and recovery options are planned around workload requirements, responsibilities, and the service scope agreed with each customer.",
-      image: "/images/service/data_center.jpg",
+      image: "/images/service/data_center.webp",
       image_alt: "ICE high-security data center",
       features: ["IBM Power and x86 hosting options", "Backup and recovery planning", "Service responsibilities documented by scope"],
       badge_label: "Experience",
@@ -506,10 +507,12 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     required: true,
     content: {
       eyebrow: "Our Journey",
-      heading: "35+ Years of Innovation",
+      heading: "30+ years in business",
       items: [
-        { year: "1990", title: "Founded", description: "Established as an IBM Business Partner." },
-        { year: "2025", title: "35 Years Strong", description: "Serving enterprise clients across critical industries." },
+        { year: "1990", title: "An IBM relationship begins", description: "ICE becomes an IBM Business Partner, beginning a long-running focus on enterprise systems." },
+        { year: "AS/400 → IBM i", title: "A platform evolves", description: "As IBM’s platform moved from AS/400 through iSeries and System i to IBM i, customers kept relying on it to run essential business applications." },
+        { year: "Over the years", title: "Support beyond the server", description: "The work grew to cover the needs around critical systems too: infrastructure, security, backup, recovery, and day-to-day operations." },
+        { year: "Today", title: "Hosting built around the workload", description: "ICE helps businesses run and protect AS/400, IBM i, IBM Power, and other enterprise workloads with hosting, cloud, managed services, and recovery planning." },
       ],
     },
   },
@@ -530,6 +533,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
         { name: "Cisco", logo_src: "/images/v3/b_3.png", capability: "Secure networking" },
         { name: "Dell", logo_src: "/images/v3/b_4.png", capability: "Servers & storage" },
         { name: "Printronix", logo_src: "/images/v3/b_5.png", capability: "Industrial printing" },
+        { name: "CloudSafe", logo_src: "/images/partners/cloudsafe.svg", capability: "Cloud hosting" },
         { name: "Acronis", logo_src: "/images/v3/b_6.png", capability: "Cyber protection" },
         { name: "Cybernetics", logo_src: "/images/v3/b_7.png", capability: "Backup & archive" },
         { name: "DASCOM", logo_src: "/images/v3/b_8.png", capability: "Document infrastructure" },
@@ -1242,7 +1246,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       heading: "Built for mission-critical workloads",
       description:
         "Tier-3 data centers with geographic separation, redundant power, and SOC 2 Type II controls.",
-      image: "/images/service/data_center.jpg",
+        image: "/images/service/data_center.webp",
       image_alt: "ICE data center",
       media_position: "right",
       features: ["SOC 2 Type II", "99.99% uptime target", "24/7 US-based NOC"],
@@ -1804,6 +1808,16 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
     },
   },
   {
+    id: "site-client-portal-copy",
+    label: "Client Portal Interface Copy",
+    description: "Navigation and document-center labels shown to signed-in clients. Client-uploaded documents and account details are managed in their own admin tools.",
+    key: "portal_copy",
+    type: "content",
+    slugs: ["site-settings"],
+    required: true,
+    content: { ...PORTAL_COPY_DEFAULTS },
+  },
+  {
     id: "site-contact-widget",
     label: "Floating Contact Widget",
     description: "Site-wide floating contact form copy, consent text, accessibility labels, and grouped service choices.",
@@ -1863,10 +1877,10 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       rights_reserved_label: "All Rights Reserved.",
       logo_alt: "International Computer Exchange",
       ibm_logo_alt: "IBM",
-      coretv_label: "by CoreTV",
+      coretv_label: "Managed by",
       coretv_url: "https://coretv.co",
       redirect_heading: "Leaving ICE",
-      redirect_description_prefix: "You are being redirected off this page to CoreTV in",
+      redirect_description_prefix: "You are being redirected off this page to Core in",
       redirect_second_singular: "second",
       redirect_second_plural: "seconds",
       redirect_cancel_label: "Cancel",
@@ -1920,7 +1934,7 @@ function getTypeLabel(value: string): string {
 }
 
 /** Check if a field key is likely a media/image URL field */
-const MEDIA_KEY_PATTERNS = ["image", "logo", "avatar", "background", "banner", "icon_url", "photo", "thumbnail", "cover", "poster", "src"];
+const MEDIA_KEY_PATTERNS = ["image", "video", "logo", "avatar", "background", "banner", "icon_url", "photo", "thumbnail", "cover", "poster", "src"];
 function isMediaKey(key: string): boolean {
   const lower = key.toLowerCase();
   return MEDIA_KEY_PATTERNS.some((p) => lower.includes(p));
@@ -3329,6 +3343,7 @@ function FieldEditor({ fieldKey, value, onChange, onDelete }: {
   const [illustrationPickerOpen, setIllustrationPickerOpen] = useState(false);
   const label = prettifyKey(fieldKey);
   const mediaField = isMediaKey(fieldKey);
+  const videoField = fieldKey.toLowerCase().includes("video");
   const iconField = isIconKey(fieldKey) && !mediaField;
   const illustrationField = isIllustrationKey(fieldKey) && !mediaField;
 
@@ -3431,7 +3446,11 @@ function FieldEditor({ fieldKey, value, onChange, onDelete }: {
         )}
         {mediaField && typeof value === "string" && value && (value.startsWith("http") || value.startsWith("/")) && (
           <div className="mt-1.5 size-16 overflow-hidden rounded-lg bg-secondary ring-1 ring-secondary ring-inset">
-            <img src={value} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            {videoField ? (
+              <video src={value} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+            ) : (
+              <img src={value} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            )}
           </div>
         )}
         {mediaField && (
@@ -3439,8 +3458,8 @@ function FieldEditor({ fieldKey, value, onChange, onDelete }: {
             open={mediaBrowserOpen}
             onClose={() => setMediaBrowserOpen(false)}
             onSelect={(url) => { onChange(url); setMediaBrowserOpen(false); }}
-            accept="image/*"
-            title="Select Image"
+            accept={videoField ? "video/*" : "image/*"}
+            title={videoField ? "Select Video" : "Select Image"}
           />
         )}
       </div>
@@ -3676,6 +3695,7 @@ function SubFieldInput({ fieldKey, value, onChange }: {
 }) {
   const [mediaBrowserOpen, setMediaBrowserOpen] = useState(false);
   const mediaField = isMediaKey(fieldKey);
+  const videoField = fieldKey.toLowerCase().includes("video");
   const iconField = isIconKey(fieldKey) && !mediaField;
   const stringValue = String(value ?? "");
   const label = prettifyKey(fieldKey);
@@ -3759,7 +3779,11 @@ function SubFieldInput({ fieldKey, value, onChange }: {
       </div>
       {mediaField && typeof value === "string" && value && (value.startsWith("http") || value.startsWith("/")) && (
         <div className="mt-1 size-10 overflow-hidden rounded-md bg-secondary ring-1 ring-secondary ring-inset">
-          <img src={value} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          {videoField ? (
+            <video src={value} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+          ) : (
+            <img src={value} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          )}
         </div>
       )}
       {mediaField && (
@@ -3767,8 +3791,8 @@ function SubFieldInput({ fieldKey, value, onChange }: {
           open={mediaBrowserOpen}
           onClose={() => setMediaBrowserOpen(false)}
           onSelect={(url) => { onChange(url); setMediaBrowserOpen(false); }}
-          accept="image/*"
-          title="Select Image"
+          accept={videoField ? "video/*" : "image/*"}
+          title={videoField ? "Select Video" : "Select Image"}
         />
       )}
     </div>

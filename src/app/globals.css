@@ -15,6 +15,30 @@ body {
   color: var(--color-text-primary);
 }
 
+/* Shared editorial polish for the public site: balanced headlines avoid
+   awkward one-word wraps, while body copy breaks more naturally on modern
+   browsers without changing component-specific widths or spacing. */
+#main-content :where(h1, h2, h3) {
+  text-wrap: balance;
+}
+
+#main-content :where(p) {
+  text-wrap: pretty;
+}
+
+/* Keep keyboard navigation visibly intentional across page templates,
+   including CMS-rendered links and controls. */
+#main-content :where(a, button, [role="button"], [role="link"], input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.lenis) {
+    scroll-behavior: auto;
+  }
+}
+
 /* ═══ Dark mode: ICE-branded surfaces ═══
    Tint the neutral dark tokens toward ICE deep navy so dark mode reads as
    "International Computer Exchange", not flat black. */

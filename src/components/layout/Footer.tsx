@@ -260,7 +260,9 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   const companyPhone = stringOr(company?.phone, "1-800-786-9188");
   const companyEmail = stringOr(company?.email, "info@icesales.com");
   const companyHours = stringOr(company?.hours, "Mon – Fri, 9–5 ET");
-  const copyrightName = stringOr(footerCopy?.copyright, "International Computer Exchange, Inc.");
+  const copyrightName = stringOr(footerCopy?.copyright, "International Computer Exchange, Inc.")
+    .trim()
+    .replace(/\.+$/, "");
   const ibmLabel = stringOr(footerCopy?.ibm_partner_label, "IBM Business Partner");
   const ibmSublabel = stringOr(footerCopy?.ibm_partner_sublabel, "Since 1990");
   const ibmPartnerText = stringOr(footerCopy?.ibm_partner_text, "");
@@ -274,7 +276,10 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   const getInTouchCtaHref = stringOr(footerCopy?.get_in_touch_cta_href, "/contact");
   const quickLinksHeading = stringOr(footerCopy?.quick_links_heading, "Quick Links");
   const rightsReservedLabel = stringOr(footerCopy?.rights_reserved_label, "All Rights Reserved.");
-  const coreTvLabel = stringOr(footerCopy?.coretv_label, "by CoreTV");
+  const configuredCoreLabel = stringOr(footerCopy?.coretv_label, "Managed by").trim();
+  const coreAttributionLabel = /^by\s+coretv$/i.test(configuredCoreLabel)
+    ? "Managed by"
+    : configuredCoreLabel;
   const coreTvUrl = stringOr(footerCopy?.coretv_url, CORETV_URL);
   const socialLinks = normalizeSocialLinks(footerCopy?.social_links);
 
@@ -447,9 +452,30 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
             <button
               type="button"
               onClick={() => setCoreTvOpen(true)}
-              className="rounded-xs text-sm text-quaternary outline-brand transition duration-100 ease-linear hover:text-tertiary focus-visible:outline-2 focus-visible:outline-offset-2"
+              aria-label="Managed by Core. Open Core information"
+              className="group inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-sm text-quaternary outline-brand transition duration-200 ease-out hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
-              {coreTvLabel}
+              <span className="transition-colors duration-200 group-hover:text-brand-secondary motion-reduce:transition-none">
+                {coreAttributionLabel}
+              </span>
+              <span className="relative flex h-6 w-[4.5rem] items-center justify-center transition duration-200 ease-out group-hover:-translate-y-px group-hover:drop-shadow-[0_2px_8px_rgb(4_155_251/0.35)] motion-reduce:transform-none motion-reduce:transition-none">
+                <Image
+                  src="/images/branding/core-logo-black.png"
+                  alt=""
+                  aria-hidden="true"
+                  width={1607}
+                  height={563}
+                  className="h-full w-full object-contain dark:hidden"
+                />
+                <Image
+                  src="/images/branding/core-logo-white.png"
+                  alt=""
+                  aria-hidden="true"
+                  width={1607}
+                  height={563}
+                  className="hidden h-full w-full object-contain dark:block"
+                />
+              </span>
             </button>
           </div>
         </div>
@@ -467,7 +493,7 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
         heading={stringOr(footerCopy?.redirect_heading, "Leaving ICE")}
         descriptionPrefix={stringOr(
           footerCopy?.redirect_description_prefix,
-          "You are being redirected off this page to CoreTV in",
+          "You are being redirected off this page to Core in",
         )}
         singularLabel={stringOr(footerCopy?.redirect_second_singular, "second")}
         pluralLabel={stringOr(footerCopy?.redirect_second_plural, "seconds")}

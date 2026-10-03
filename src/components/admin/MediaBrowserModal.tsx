@@ -126,11 +126,15 @@ export default function MediaBrowserModal({
   };
 
   const isImage = (fileType: string | null) => fileType?.startsWith("image/") ?? false;
+  const isVideo = (fileType: string | null) => fileType?.startsWith("video/") ?? false;
 
   // Filter files
   let filtered = files;
   if (accept === "image/*") {
     filtered = filtered.filter((f) => isImage(f.file_type));
+  }
+  if (accept === "video/*") {
+    filtered = filtered.filter((f) => isVideo(f.file_type));
   }
   if (searchQuery) {
     filtered = filtered.filter((f) => f.file_name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -291,6 +295,8 @@ export default function MediaBrowserModal({
                         <div className="mb-2 flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-secondary">
                           {isImage(file.file_type) && file.public_url ? (
                             <img src={file.public_url} alt={file.file_name} className="h-full w-full rounded-lg object-cover" />
+                          ) : isVideo(file.file_type) && file.public_url ? (
+                            <video src={file.public_url} muted playsInline preload="metadata" className="h-full w-full rounded-lg object-cover" />
                           ) : (
                             <File02 className="size-6 text-fg-quaternary" />
                           )}
@@ -316,6 +322,8 @@ export default function MediaBrowserModal({
                       >
                         {isImage(file.file_type) && file.public_url ? (
                           <img src={file.public_url} alt="" className="size-8 shrink-0 rounded object-cover" />
+                        ) : isVideo(file.file_type) && file.public_url ? (
+                          <video src={file.public_url} muted playsInline preload="metadata" className="size-8 shrink-0 rounded object-cover" />
                         ) : (
                           <div className="flex size-8 shrink-0 items-center justify-center rounded bg-secondary">
                             <File02 className="size-4 text-fg-quaternary" />

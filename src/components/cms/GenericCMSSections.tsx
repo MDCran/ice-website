@@ -12,6 +12,7 @@ import IceIllustration from "@/components/illustrations/IceIllustration";
 import { BrandOrbs } from "@/components/effects/AmbientMotion";
 import { CountUpStat } from "@/components/ui/CountUpValue";
 import { resolveIcon } from "@/lib/iconMap";
+import { canonicalPartnerName, resolvePartnerLogo } from "@/lib/partnerBrands";
 import { serviceImageFor } from "@/lib/solutionHeroImages";
 import { MOTION_DURATION, MOTION_EASE, MOTION_STAGGER, MOTION_VIEWPORT } from "@/lib/motion";
 import { useHydratedReducedMotion } from "@/hooks/useHydratedReducedMotion";
@@ -941,14 +942,14 @@ function renderFaq(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className={cx("bg-primary", SECTION_Y)}>
+    <section className="bg-primary py-12 md:py-16">
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
           heading={text(content.heading, titleFromKey(section.section_key))}
           description={text(content.description)}
         />
-        <Reveal delay={0.1} className="mx-auto mt-12 flex max-w-3xl flex-col gap-6 md:mt-16">
+        <Reveal delay={0.1} className="mx-auto mt-8 flex max-w-3xl flex-col gap-5 md:mt-10">
           {items.map((item, index) => (
             <details
               key={`${item.question ?? index}`}
@@ -990,8 +991,11 @@ function renderPartners(section: CMSRenderableSection) {
         />
         <ul className="mt-12 grid grid-cols-1 gap-6 md:mt-16 md:grid-cols-2">
           {items.map((item, index) => {
-            const name = typeof item === "string" ? item : text(item.name, `Partner ${index + 1}`);
-            const logo = typeof item === "object" ? text(item.logo_src ?? item.logoSrc) : "";
+            const name = canonicalPartnerName(
+              typeof item === "string" ? item : text(item.name, `Partner ${index + 1}`),
+            );
+            const suppliedLogo = typeof item === "object" ? text(item.logo_src ?? item.logoSrc) : "";
+            const logo = resolvePartnerLogo(name, suppliedLogo);
             return (
               <li key={`${name}-${index}`}>
                 <Reveal
