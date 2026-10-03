@@ -3,7 +3,15 @@ import { createClient } from "@supabase/supabase-js";
 import { MARKETING_PREFERENCE_KEYS } from "@/lib/marketing/preferences";
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
+  const contentType = request.headers.get("content-type") ?? "";
+  let body: Record<string, unknown> = {};
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+    const form = new URLSearchParams(await request.text());
+    if (form.get("List-Unsubscribe") !== "One-Click") return NextResponse.json({ error: "Invalid unsubscribe request." }, { status: 400 });
+    body.id = new URL(request.url).searchParams.get("id");
+  } else {
+    body = await request.json().catch(() => ({}));
+  }
   const id = typeof body.id === "string" ? body.id.trim() : "";
   if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: "Invalid unsubscribe link." }, { status: 400 });
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: "Unsubscribe service is not configured." }, { status: 503 });

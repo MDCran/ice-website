@@ -32,7 +32,7 @@ function mergeSection(slug, key, patch) {
   const row = sectionFor(slug, key);
   if (row) section(slug, key, { ...row.content, ...patch });
 }
-const scope = "Features, supported platforms, coverage hours, pricing, availability commitments, and recovery objectives are defined in your proposal and service agreement after assessment. This page is an overview, not an SLA or a compliance certification.";
+const scope = "Service scope, coverage, pricing, availability, and recovery commitments are confirmed in your proposal. This overview is not an SLA or compliance certification.";
 const icons = ["Server", "Settings", "Shield", "CheckCircle"];
 for (const [slug, copy] of Object.entries(services)) {
   const page = pageFor(slug);
@@ -52,7 +52,7 @@ for (const [slug, copy] of Object.entries(services)) {
     { question: "What should we share for an assessment?", answer: "Share your platform and operating-system versions, application dependencies, current support arrangements, data volumes, business priorities, and preferred timing. Do not send passwords or confidential credentials through the contact form." },
     { question: "Which commitments are included?", answer: scope },
   ] });
-  mergeSection(slug, "cta", { heading: `Talk to ICE about ${copy.title}`, description: "Bring your requirements to a partner with 30+ years in business. We will help define a practical next step.", support_note: scope });
+  mergeSection(slug, "cta", { heading: `Talk to ICE about ${copy.title}`, description: "Get personal, direct support from ICE specialists—not a one-size-fits-all manufacturer queue.", support_note: scope });
   const profile = sectionFor(slug, "service_profile")?.content;
   if (profile) section(slug, "service_profile", {
     ...profile, card_description: copy.description, outcome: `Plan ${copy.title.toLowerCase()} around your workload requirements`,
@@ -92,12 +92,19 @@ for (const slug of ["home", "solutions", "why-ice"]) {
 }
 mergeSection("why-ice", "hero", { headline: "30+ years in business. Focused on your next chapter.", subheadline: "Since 1990, ICE has helped businesses plan and support enterprise technology, with IBM i and IBM Power at the heart of our expertise." });
 for (const slug of ["home", "why-ice"]) {
-  mergeSection(slug, "stats", { items: [{ value: 30, suffix: "+", label: "Years in Business" }] });
+  mergeSection(slug, "stats", { heading: "Proven Enterprise Track Record", description: "Service coverage and uptime targets are defined for each agreement.", items: [
+    { value: 30, suffix: "+", label: "Years in Business" },
+    { value: 4, suffix: "", label: "Core Service Areas" },
+    { value: 24, suffix: "/7/365", label: "Operations Coverage Options" },
+    { value: 99.99, suffix: "%", label: "Target Uptime SLA" },
+  ] });
 }
 const homeMetrics = sectionFor("home", "metrics");
 if (homeMetrics) update("page_sections", homeMetrics, { is_visible: false });
 mergeSection("home", "timeline", { heading: "30+ years in business", items: [
   { year: "1990", title: "Our beginning", description: "ICE began serving enterprise technology customers with an IBM-focused approach." },
+  { year: "AS/400 → IBM i", title: "A platform evolves", description: "As IBM's platform moved from AS/400 through iSeries and System i to IBM i, customers kept relying on it to run essential business applications." },
+  { year: "Over the years", title: "Support beyond the server", description: "The work grew to cover the needs around critical systems too: infrastructure, security, backup, recovery, and day-to-day operations." },
   { year: "Today", title: "Your next chapter", description: "AS400 and IBM i hosting, platform support, cloud, security, and data protection planning for today's business requirements." },
 ] });
 mergeSection("home", "trust_badges", { heading: "Experience with a practical focus", items: [

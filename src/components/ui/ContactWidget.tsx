@@ -77,8 +77,6 @@ export interface ContactWidgetContent {
   sms_consent_link_label?: string;
   sms_consent_link_href?: string;
   sms_consent_suffix?: string;
-  marketing_consent_aria_label?: string;
-  marketing_consent_hint?: string;
   phone_required_error?: string;
   generic_error?: string;
   sending_label?: string;
@@ -123,9 +121,6 @@ const DEFAULT_CONTACT_WIDGET_CONTENT: ResolvedContactWidgetContent = {
   sms_consent_link_label: "Privacy Policy",
   sms_consent_link_href: "/privacy-policy",
   sms_consent_suffix: ".",
-  marketing_consent_aria_label: "Email marketing consent",
-  marketing_consent_hint:
-    "Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time.",
   phone_required_error: "Phone number is required.",
   generic_error: "Something went wrong. Please try again.",
   sending_label: "Sending...",
@@ -305,6 +300,7 @@ export function ServiceSelect({
       }}
       allowsCustomValue={false}
       menuTrigger="input"
+      preventPageScroll
       className="w-full"
       popoverClassName="contact-form-popover overscroll-contain"
       aria-label={label}
@@ -604,7 +600,6 @@ type ContactFormState = {
   service: string;
   message: string;
   smsConsent: boolean;
-  marketingConsent: boolean;
 };
 
 const INITIAL_FORM: ContactFormState = {
@@ -615,7 +610,6 @@ const INITIAL_FORM: ContactFormState = {
   service: "",
   message: "",
   smsConsent: false,
-  marketingConsent: false,
 };
 
 const WELCOME_BUBBLE_DELAY_MS = 30000;
@@ -909,17 +903,6 @@ export default function ContactWidget({ content }: { content?: ContactWidgetCont
                       isSelected={form.smsConsent}
                       onChange={(isSelected) => setField("smsConsent", isSelected)}
                       hint={<SmsConsentDisclosure />}
-                    />
-
-                    <Checkbox
-                      size="sm"
-                      aria-label={accessibleLabel(
-                        widget.marketing_consent_aria_label,
-                        DEFAULT_CONTACT_WIDGET_CONTENT.marketing_consent_aria_label,
-                      )}
-                      isSelected={form.marketingConsent}
-                      onChange={(isSelected) => setField("marketingConsent", isSelected)}
-                      hint={widget.marketing_consent_hint}
                     />
 
                     {/* Error message */}

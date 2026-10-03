@@ -3,7 +3,7 @@
 import { type ReactNode } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Building07, CheckCircle, Settings01, ShieldTick } from "@untitledui/icons";
+import { ArrowRight, Building07, CheckCircle, Settings01 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -519,93 +519,72 @@ export default function PartnersPage({
             <GenericCMSSections sections={extraSections} />
 
             {/* ================================================================= */}
-            {/*  IBM partnership spotlight + CTA — textured band with watermark   */}
+            {/*  IBM partnership spotlight + CTA                                  */}
             {/* ================================================================= */}
-            {show("final_cta", "cta") && <section className="relative isolate overflow-hidden bg-secondary py-16 md:py-24">
+            {show("final_cta", "cta") && <section className="relative overflow-hidden border-y border-secondary bg-secondary py-14 md:py-20">
                 <Hairline className="absolute inset-x-0 top-0" />
-                <Hairline className="absolute inset-x-0 bottom-0" />
-
-                {/* Depth layers */}
                 <div
                     aria-hidden="true"
-                    className="texture-grid pointer-events-none absolute inset-0 opacity-[0.5] [mask-image:radial-gradient(ellipse_at_center,black_25%,transparent_80%)]"
-                />
-                <BrandOrbs />
-                <div aria-hidden="true" className="texture-noise pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.05]" />
-
-                {/* Oversized decorative glyph bleeding past the band edge */}
-                <ShieldTick
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -right-6 bottom-0 size-48 text-brand-500/10 md:size-64 dark:text-brand-500/15"
+                    className="texture-grid pointer-events-none absolute inset-0 opacity-[0.22] [mask-image:radial-gradient(ellipse_at_center,black_10%,transparent_75%)]"
                 />
 
-                <div className="relative mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-12 px-4 md:px-8 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
-                    <motion.div {...reveal()} className="flex flex-col items-start">
-                        <Image
-                            src={finalCta.logo_src ?? "/images/ibm.svg"}
-                            alt={finalCta.logo_alt ?? "IBM Business Partner"}
-                            width={160}
-                            height={64}
-                            className="h-12 w-auto md:h-14"
-                        />
-                        <h2 className="mt-8 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
-                            {finalCta.heading ?? "Proud IBM Business Partner Since 1990"}
-                        </h2>
-                        <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">
-                            {finalCta.description ??
-                                "Leverage our deep IBM expertise and partner ecosystem to modernize your infrastructure and accelerate your digital transformation."}
-                        </p>
-                        <div className="mt-8 flex w-full flex-col-reverse gap-3 sm:w-auto sm:flex-row md:mt-10">
-                            <Button
-                                color="secondary"
-                                size="xl"
-                                href={finalCta.cta_secondary?.href ?? finalCta.ctaSecondary?.href ?? "/solutions"}
-                            >
-                                {finalCta.cta_secondary?.label ?? finalCta.ctaSecondary?.label ?? "Explore Solutions"}
-                            </Button>
-                            <Button
-                                size="xl"
-                                href={finalCta.cta_primary?.href ?? finalCta.ctaPrimary?.href ?? "/contact"}
-                                iconTrailing={ArrowRight}
-                            >
-                                {finalCta.cta_primary?.label ?? finalCta.ctaPrimary?.label ?? "Get In Touch"}
-                            </Button>
-                        </div>
-                    </motion.div>
-
-                    <motion.div {...reveal(0.12)} className="relative">
-                        {/* Gentle continuous ambient glow behind the stat card */}
-                        <motion.div
-                            aria-hidden="true"
-                            className="pointer-events-none absolute -inset-8 rounded-full bg-brand-500/10 blur-3xl"
-                            animate={reduceMotion ? undefined : { opacity: [0.4, 0.85, 0.4], scale: [1, 1.05, 1] }}
-                            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                        />
-                        <div className="relative overflow-hidden rounded-2xl bg-primary p-8 text-center ring-1 ring-secondary md:p-10 dark:shadow-[0_0_40px_rgb(4_155_251/0.12)]">
-                            <BackgroundPattern
-                                pattern="circle"
-                                size="md"
-                                aria-hidden="true"
-                                className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-60"
-                            />
-                            <div
-                                aria-hidden="true"
-                                className="texture-noise pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
-                            />
-                            <div className="relative flex flex-col items-center">
-                                <span className="bg-gradient-to-br from-brand-400 via-brand-500 to-brand-700 bg-clip-text font-mono text-display-xl font-semibold text-transparent md:text-display-2xl dark:from-brand-300 dark:via-brand-400 dark:to-brand-600">
-                                    {finalCta.stat_value ?? "30+"}
-                                </span>
-                                <span className="mt-2 text-md font-medium text-primary md:text-lg">
-                                    {finalCta.stat_label ?? "Years as an IBM Business Partner"}
-                                </span>
-                                <Hairline className="my-6 max-w-60" />
-                                <span className="text-xs font-medium tracking-[0.2em] text-quaternary uppercase">
-                                    {finalCta.stat_note ?? "Partnership est. 1990"}
-                                </span>
+                <div className="relative mx-auto w-full max-w-6xl px-4 md:px-8">
+                    <div className="grid overflow-hidden rounded-2xl border border-secondary bg-primary shadow-[0_24px_70px_-44px_rgb(15_23_42/0.55)] lg:grid-cols-[1.2fr_0.8fr]">
+                        <motion.div {...reveal()} className="flex flex-col items-start p-6 sm:p-8 md:p-12">
+                            <div className="flex items-center gap-4">
+                                <Image
+                                    src={finalCta.logo_src ?? "/images/ibm.svg"}
+                                    alt={finalCta.logo_alt ?? "IBM Business Partner"}
+                                    width={160}
+                                    height={64}
+                                    className="h-9 w-auto md:h-10"
+                                />
+                                <span aria-hidden="true" className="h-8 w-px bg-border-secondary" />
+                                <span className="text-xs font-semibold tracking-[0.16em] text-brand-secondary uppercase">Technology partnership</span>
                             </div>
-                        </div>
-                    </motion.div>
+                            <h2 className="mt-7 max-w-2xl text-display-sm font-semibold tracking-tight text-primary md:text-display-md">
+                                {finalCta.heading ?? "Proud IBM Business Partner Since 1990"}
+                            </h2>
+                            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-tertiary md:mt-5 md:text-xl">
+                                {finalCta.description ??
+                                    "Leverage our deep IBM expertise and partner ecosystem to modernize your infrastructure and accelerate your digital transformation."}
+                            </p>
+                            <div className="mt-8 flex w-full flex-col-reverse gap-3 sm:w-auto sm:flex-row md:mt-9">
+                                <Button
+                                    color="secondary"
+                                    size="xl"
+                                    href={finalCta.cta_secondary?.href ?? finalCta.ctaSecondary?.href ?? "/solutions"}
+                                >
+                                    {finalCta.cta_secondary?.label ?? finalCta.ctaSecondary?.label ?? "Explore Solutions"}
+                                </Button>
+                                <Button
+                                    size="xl"
+                                    href={finalCta.cta_primary?.href ?? finalCta.ctaPrimary?.href ?? "/contact"}
+                                    iconTrailing={ArrowRight}
+                                >
+                                    {finalCta.cta_primary?.label ?? finalCta.ctaPrimary?.label ?? "Get In Touch"}
+                                </Button>
+                            </div>
+                        </motion.div>
+
+                        <motion.div {...reveal(0.12)} className="relative flex items-center border-t border-secondary bg-secondary/55 p-6 sm:p-8 md:p-12 lg:border-t-0 lg:border-l">
+                            <div className="w-full rounded-xl border border-secondary bg-primary p-7 sm:p-9">
+                                <p className="text-xs font-semibold tracking-[0.18em] text-quaternary uppercase">Partnership tenure</p>
+                                <div className="mt-4 flex flex-wrap items-end gap-x-4 gap-y-2">
+                                    <span className="bg-gradient-to-br from-brand-400 via-brand-500 to-brand-700 bg-clip-text font-mono text-display-xl font-semibold leading-none text-transparent md:text-display-2xl dark:from-brand-300 dark:via-brand-400 dark:to-brand-600">
+                                        {finalCta.stat_value ?? "30+"}
+                                    </span>
+                                    <span className="pb-1 text-md font-medium text-primary md:text-lg">
+                                        {finalCta.stat_label ?? "Years as an IBM Business Partner"}
+                                    </span>
+                                </div>
+                                <div className="my-6 h-px w-full bg-secondary" />
+                                <p className="text-sm font-medium tracking-[0.12em] text-tertiary uppercase">
+                                    {finalCta.stat_note ?? "Partnership established in 1990"}
+                                </p>
+                            </div>
+                        </motion.div>
+                    </div>
                 </div>
             </section>}
         </main>

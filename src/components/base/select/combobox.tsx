@@ -17,6 +17,8 @@ interface ComboBoxProps extends Omit<AriaComboBoxProps<SelectItemType>, "childre
     shortcut?: boolean;
     items?: SelectItemType[];
     popoverClassName?: string;
+    /** Keep wheel/touch scrolling inside the open menu instead of scrolling the page. */
+    preventPageScroll?: boolean;
     shortcutClassName?: string;
     /** Leading icon component displayed before the input. */
     icon?: FC | ReactNode;
@@ -108,6 +110,7 @@ const ComboBoxValue = ({ size, shortcut, placeholder, shortcutClassName, icon: I
 export const ComboBox = ({
     placeholder = "Search",
     shortcut = true,
+    preventPageScroll = false,
     size = "md",
     children,
     items,
@@ -158,7 +161,7 @@ export const ComboBox = ({
                             onPointerEnter={onResize}
                         />
 
-                        <Popover size={size} triggerRef={placeholderRef} style={{ width: popoverWidth }} className={otherProps.popoverClassName}>
+                        <Popover size={size} triggerRef={placeholderRef} style={{ width: popoverWidth }} className={otherProps.popoverClassName} data-lenis-prevent={preventPageScroll ? "" : undefined}>
                             <AriaListBox items={items} className="size-full outline-hidden">
                                 {children}
                             </AriaListBox>

@@ -582,9 +582,15 @@ export default function Navbar({
                                       <li key={item.href}>
                                         <Link
                                           href={item.href}
-                                          className={cx("group flex min-h-11 items-center gap-2 rounded-md px-2.5 py-2 text-sm leading-snug outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover/60 hover:text-primary focus-visible:outline-2", isAs400Link(item) ? "bg-brand-primary_alt font-semibold text-brand-secondary ring-1 ring-brand/30" : "text-secondary")}
+                                          aria-current={isActive(item.href) ? "page" : undefined}
+                                          className={cx(
+                                            "group flex min-h-11 items-center gap-2 rounded-md px-2.5 py-2 text-sm leading-snug outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover/60 hover:text-primary focus-visible:outline-2",
+                                            isActive(item.href)
+                                              ? "bg-brand-primary_alt font-semibold text-brand-secondary ring-1 ring-brand/30"
+                                              : "text-secondary",
+                                          )}
                                         >
-                                          <span className="flex-1 text-balance">{item.label}</span>
+                                          <span className="min-w-0 flex-1">{item.label}</span>
                                           <ArrowRight className="size-3.5 shrink-0 -translate-x-1 text-fg-brand-primary opacity-0 transition duration-100 ease-linear group-hover:translate-x-0 group-hover:opacity-100" />
                                         </Link>
                                       </li>

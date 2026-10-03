@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
 import { pushEvent } from "@/lib/analytics";
 import { cx } from "@/utils/cx";
+import { SmsConsentDisclosure } from "@/components/legal/SmsConsentDisclosure";
 
 const STORAGE_KEY = "ice-soft-lead-dismissed";
 const SOFT_LEAD_IDLE_DELAY_MS = 90000;
@@ -30,8 +31,6 @@ export interface SoftLeadCaptureContent {
   phone_placeholder?: string;
   company_label?: string;
   company_placeholder?: string;
-  marketing_consent_aria_label?: string;
-  marketing_consent_text?: string;
   sending_label?: string;
   submit_label?: string;
   phone_error?: string;
@@ -64,8 +63,6 @@ const DEFAULT_SOFT_LEAD_CAPTURE_CONTENT: ResolvedSoftLeadCaptureContent = {
   phone_placeholder: "(561) 555-0100",
   company_label: "Company",
   company_placeholder: "",
-  marketing_consent_aria_label: "Email marketing consent",
-  marketing_consent_text: "Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time.",
   sending_label: "Sending…",
   submit_label: "Request assessment",
   phone_error: "Please enter a valid 10-digit phone number.",
@@ -130,7 +127,7 @@ export default function SoftLeadCapture({
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [phone, setPhone] = useState("");
-  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -224,8 +221,8 @@ export default function SoftLeadCapture({
           phone,
           service: resolvedContent.lead_service,
           message: resolvedContent.lead_message,
-          smsConsent: false,
-          marketingConsent,
+          smsConsent,
+          marketingConsent: false,
           formKey: resolvedContent.lead_form_key,
           source: resolvedContent.lead_source,
           pagePath: pathname,
@@ -354,10 +351,10 @@ export default function SoftLeadCapture({
                 />
                 <Checkbox
                   size="sm"
-                  aria-label={resolvedContent.marketing_consent_aria_label}
-                  isSelected={marketingConsent}
-                  onChange={setMarketingConsent}
-                  hint={resolvedContent.marketing_consent_text}
+                  aria-label="Optional SMS consent"
+                  isSelected={smsConsent}
+                  onChange={setSmsConsent}
+                  hint={<SmsConsentDisclosure />}
                   className="min-[480px]:col-span-2"
                 />
                 <Button type="submit" size="lg" isLoading={status === "loading"} showTextWhileLoading className="w-full min-[480px]:col-span-2">

@@ -31,12 +31,12 @@ import { MARKETING_TEMPLATE_PRESETS, cloneTemplateBlocks, type EmailBlock, type 
 import { renderMarketingEmail } from "@/lib/marketing/renderEmail";
 import { campaignTypeLabel } from "@/lib/marketing/preferences";
 
-type Tab = "overview" | "audience" | "studio" | "campaigns";
+type Tab = "overview" | "audience" | "studio" | "campaigns" | "settings";
 type Contact = { id: string; first_name: string | null; last_name: string | null; email: string; phone: string | null; company: string | null; source: string; tags: string[]; email_consent_status: string; marketing_preferences?: Record<string, boolean>; suppressed_at: string | null; last_emailed_at: string | null; created_at: string };
 type List = { id: string; name: string; description: string | null; member_count: number; created_at: string };
 type Member = { list_id: string; contact_id: string };
-type Campaign = { id: string; name: string; campaign_type: string; status: string; list_id: string | null; subject: string; preheader: string; blocks: EmailBlock[]; scheduled_at: string | null; sent_at: string | null; recipient_count: number; delivered_count: number; opened_count: number; clicked_count: number; bounced_count: number; complained_count: number; unsubscribed_count: number; created_at: string };
-type ApiData = { contacts: Contact[]; lists: List[]; members: Member[]; campaigns: Campaign[]; templates: unknown[]; resendConnected: boolean };
+type Campaign = { id: string; name: string; campaign_type: string; status: string; list_id: string | null; subject: string; preheader: string; body_only: boolean; body_text: string; blocks: EmailBlock[]; scheduled_at: string | null; sent_at: string | null; recipient_count: number; delivered_count: number; opened_count: number; clicked_count: number; bounced_count: number; complained_count: number; unsubscribed_count: number; created_at: string };
+type ApiData = { contacts: Contact[]; lists: List[]; members: Member[]; campaigns: Campaign[]; templates: unknown[]; resendConnected: boolean; settings?: { leadNotificationEmail: string } };
 type ImportRow = { first_name: string; last_name: string; email: string; phone: string; company: string; source: string; tags: string[]; email_consent_status: "subscribed" | "unknown" };
 
 const TABS: Array<{ id: Tab; label: string; icon: typeof Mail01 }> = [
@@ -44,10 +44,11 @@ const TABS: Array<{ id: Tab; label: string; icon: typeof Mail01 }> = [
   { id: "audience", label: "Audience & lists", icon: Users01 },
   { id: "studio", label: "Email studio", icon: CodeBrowser },
   { id: "campaigns", label: "Campaigns", icon: Send01 },
+  { id: "settings", label: "Email settings", icon: Mail01 },
 ];
 
 const BLOCK_LABELS: Record<EmailBlockType, string> = {
-  hero: "Hero", text: "Text", button: "Button", service: "Service card", notice: "Notice", metric: "Metric", divider: "Divider", spacer: "Spacer",
+  hero: "Hero", text: "Text", button: "Button", service: "Service card", notice: "Notice", metric: "Metric", divider: "Divider", spacer: "Spacer", signature: "CEO signature",
 };
 
 function parseCsv(text: string): string[][] {
@@ -103,6 +104,21 @@ function statusColor(status: string): "success" | "warning" | "error" | "brand" 
   return "gray";
 }
 
+function renderPlainTextPreview(value: string) {
+  const escaped = value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
+  return `<!doctype html><html><body style="margin:0;padding:24px;font:15px/1.6 Arial,sans-serif;color:#1d2939;white-space:pre-wrap"><pre style="margin:0;font:inherit;white-space:pre-wrap">${escaped}</pre></body></html>`;
+}
+
+function renderSavedCampaignPreview(campaign: Campaign) {
+  if (campaign.body_only) return renderPlainTextPreview(campaign.body_text ?? "");
+  return renderMarketingEmail({ preheader: campaign.preheader, blocks: campaign.blocks ?? [], includeUnsubscribe: campaign.campaign_type !== "transactional" })
+    .replace(/{{\s*first_name\s*}}/g, "Alex")
+    .replace(/{{\s*last_name\s*}}/g, "Morgan")
+    .replace(/{{\s*email\s*}}/g, "alex@example.com")
+    .replace(/{{\s*company\s*}}/g, "Example Company")
+    .replace(/{{unsubscribe_url}}/g, "https://www.icesales.com/unsubscribe/preview");
+}
+
 function StatCard({ label, value, detail, icon: Icon }: { label: string; value: string | number; detail: string; icon: typeof Mail01 }) {
   return (
     <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary">
@@ -135,23 +151,28 @@ export default function MarketingCenter() {
   const [campaignListId, setCampaignListId] = useState("");
   const [subject, setSubject] = useState("");
   const [preheader, setPreheader] = useState("");
+  const [bodyOnly, setBodyOnly] = useState(false);
+  const [bodyText, setBodyText] = useState("");
+  const [campaignPreview, setCampaignPreview] = useState<Campaign | null>(null);
   const [blocks, setBlocks] = useState<EmailBlock[]>([]);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [darkPreview, setDarkPreview] = useState(false);
   const [testEmail, setTestEmail] = useState("");
+  const [leadNotificationEmail, setLeadNotificationEmail] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
-    setLoading(true); setError("");
     const response = await fetch("/api/admin/marketing", { cache: "no-store" });
     const result = await response.json().catch(() => ({}));
+    setError("");
     if (!response.ok) setError(result.setupRequired ? "Marketing Center database tables are not installed yet. Apply the 20260802_marketing_center migration, then reload this page." : result.error || "Could not load Marketing Center.");
-    else setData(result);
+    else { setData(result); setLeadNotificationEmail(result.settings?.leadNotificationEmail ?? ""); }
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate this admin screen from its initial API response.
   useEffect(() => { void load(); }, []);
 
   const post = async (payload: Record<string, unknown>) => {
@@ -180,10 +201,12 @@ export default function MarketingCenter() {
     });
   }, [consentFilter, data, listFilter, query]);
 
-  const previewHtml = useMemo(() => renderMarketingEmail({ preheader, blocks, includeUnsubscribe: campaignType !== "transactional" }), [blocks, campaignType, preheader]);
+  const previewHtml = useMemo(() => bodyOnly
+    ? renderPlainTextPreview(bodyText)
+    : renderMarketingEmail({ preheader, blocks, includeUnsubscribe: campaignType !== "transactional" }), [blocks, bodyOnly, bodyText, campaignType, preheader]);
 
   const chooseTemplate = (template: MarketingTemplatePreset) => {
-    setCampaignId(null);
+    setCampaignId(null); setBodyOnly(false); setBodyText("");
     setCampaignName(template.name);
     setCampaignType(template.transactional ? "transactional" : template.category === "maintenance" ? "maintenance" : "marketing");
     setSubject(template.subject); setPreheader(template.preheader); setBlocks(cloneTemplateBlocks(template.blocks));
@@ -191,11 +214,11 @@ export default function MarketingCenter() {
   };
 
   const editCampaign = (campaign: Campaign) => {
-    setCampaignId(campaign.id); setCampaignName(campaign.name); setCampaignType(campaign.campaign_type); setCampaignStatus(campaign.status); setCampaignListId(campaign.list_id ?? ""); setSubject(campaign.subject); setPreheader(campaign.preheader); setBlocks(campaign.blocks ?? []); setScheduledAt(campaign.scheduled_at?.slice(0, 16) ?? ""); setTab("studio");
+    setCampaignId(campaign.id); setCampaignName(campaign.name); setCampaignType(campaign.campaign_type); setCampaignStatus(campaign.status); setCampaignListId(campaign.list_id ?? ""); setSubject(campaign.subject); setPreheader(campaign.preheader); setBodyOnly(campaign.body_only === true); setBodyText(campaign.body_text ?? ""); setBlocks(campaign.blocks ?? []); setScheduledAt(campaign.scheduled_at?.slice(0, 16) ?? ""); setTab("studio");
   };
 
   const saveCampaign = async () => {
-    const result = await post({ action: "save_campaign", id: campaignId, name: campaignName, campaignType, status: campaignStatus, listId: campaignListId, subject, preheader, blocks, scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null, fromName: "International Computer Exchange", fromEmail: "marketing@icesales.com", replyTo: "info@icesales.com" });
+    const result = await post({ action: "save_campaign", id: campaignId, name: campaignName, campaignType, bodyOnly, bodyText, status: campaignStatus, listId: campaignListId, subject, preheader, blocks, scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null, fromName: "International Computer Exchange", fromEmail: "marketing@icesales.com", replyTo: "info@icesales.com" });
     if (result?.campaign) { setCampaignId(result.campaign.id); setNotice("Campaign saved."); await load(); }
   };
 
@@ -265,12 +288,13 @@ export default function MarketingCenter() {
           <section className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><h2 className="text-lg font-semibold text-primary">Template library</h2><p className="mt-1 text-sm text-tertiary">Start with an ICE-branded service, billing, customer, maintenance, or holiday message.</p></div><div className="flex flex-wrap gap-2"><label className="relative"><span className="sr-only">Search templates</span><SearchLg className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-quaternary" /><input value={templateQuery} onChange={(event) => setTemplateQuery(event.target.value)} placeholder="Search templates..." className="rounded-lg bg-primary py-2 pl-9 pr-3 text-sm ring-1 ring-secondary outline-none focus:ring-2 focus:ring-brand" /></label><select value={templateCategory} onChange={(event) => setTemplateCategory(event.target.value)} className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary"><option value="all">All categories</option><option value="services">Services</option><option value="billing">Billing</option><option value="messages">Messages</option><option value="maintenance">Maintenance</option><option value="holidays">U.S. holidays</option></select></div></div><div className="mt-5 flex snap-x gap-3 overflow-x-auto pb-2">{MARKETING_TEMPLATE_PRESETS.filter((template) => (templateCategory === "all" || template.category === templateCategory) && (!templateQuery.trim() || `${template.name} ${template.description}`.toLowerCase().includes(templateQuery.trim().toLowerCase()))).map((template) => <button key={template.id} onClick={() => chooseTemplate(template)} className="min-w-64 snap-start rounded-xl bg-secondary p-4 text-left ring-1 ring-secondary transition hover:-translate-y-0.5 hover:ring-brand"><Badge size="sm" color={template.transactional ? "gray" : "brand"}>{template.category}</Badge><p className="mt-3 text-sm font-semibold text-primary">{template.name}</p><p className="mt-1 text-xs leading-5 text-tertiary">{template.description}</p></button>)}</div></section>
 
           <section className="grid gap-6 2xl:grid-cols-[minmax(0,0.9fr)_minmax(520px,1.1fr)]">
-            <div className="space-y-5">
+            <div className={cx("space-y-5", bodyOnly && "[&>div:nth-child(3)]:hidden")}>
+              <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><label className="flex items-start gap-3"><input type="checkbox" checked={bodyOnly} disabled={campaignType !== "transactional"} onChange={(event) => setBodyOnly(event.target.checked)} className="mt-1 size-4 accent-brand-solid" /><span><strong className="block text-sm font-semibold text-primary">Send body only</strong><span className="mt-1 block text-sm text-tertiary">Send plain text exactly as entered—without ICE layout, footer, or unsubscribe link. Restricted to one-recipient transactional emails; promotional campaigns keep their unsubscribe link.</span></span></label>{bodyOnly && <label className="mt-4 block text-sm font-medium text-secondary">Email body<textarea value={bodyText} onChange={(event) => setBodyText(event.target.value)} rows={10} maxLength={100000} placeholder="Write the complete plain-text email body…" className="mt-1.5 block w-full resize-y rounded-lg bg-primary px-3 py-2.5 font-mono text-sm text-primary ring-1 ring-secondary" /><span className="mt-1 block text-xs text-quaternary">Plain text only · {bodyText.length.toLocaleString()} / 100,000 characters · no automatic content is added.</span></label>}</div>
               <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><div className="grid gap-4 md:grid-cols-2"><Input label="Campaign name" value={campaignName} onChange={setCampaignName} placeholder="Q3 IBM i modernization" /><label className="text-sm font-medium text-secondary">Message type<select value={campaignType} onChange={(event) => setCampaignType(event.target.value)} className="mt-1.5 block w-full rounded-lg bg-primary px-3 py-2.5 text-sm ring-1 ring-secondary"><option value="marketing">Marketing materials</option><option value="billing">Billing</option><option value="private_message">Private message</option><option value="special_message">Special message</option><option value="event">Event / webinar</option><option value="service_update">Service update</option><option value="transactional">Transactional</option><option value="maintenance">Maintenance</option><option value="service_alert">Service alert</option></select><span className="mt-1 block text-xs text-quaternary">Recipients are checked against this preference before delivery.</span></label><div className="md:col-span-2"><Input label="Subject line" value={subject} onChange={setSubject} placeholder="A clear reason to open this email" /></div><div className="md:col-span-2"><Input label="Preheader" value={preheader} onChange={setPreheader} placeholder="Supporting text shown in the inbox preview" /></div><label className="text-sm font-medium text-secondary">Audience list<select value={campaignListId} onChange={(event) => setCampaignListId(event.target.value)} className="mt-1.5 block w-full rounded-lg bg-primary px-3 py-2.5 text-sm ring-1 ring-secondary"><option value="">Choose later</option>{data?.lists.map((list) => <option key={list.id} value={list.id}>{list.name} · {list.member_count}</option>)}</select></label><label className="text-sm font-medium text-secondary">Workflow status<select value={campaignStatus} onChange={(event) => setCampaignStatus(event.target.value)} className="mt-1.5 block w-full rounded-lg bg-primary px-3 py-2.5 text-sm ring-1 ring-secondary"><option value="draft">Draft</option><option value="review">Internal review</option><option value="approved">Approved</option><option value="scheduled">Scheduled</option></select></label>{campaignStatus === "scheduled" && <label className="text-sm font-medium text-secondary md:col-span-2">Send date and time<input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} className="mt-1.5 block w-full rounded-lg bg-primary px-3 py-2.5 text-sm ring-1 ring-secondary" /></label>}</div></div>
 
               <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-semibold text-primary">Content blocks</h2><p className="mt-1 text-sm text-tertiary">Arrange accessible, email-safe sections using the ICE brand system.</p></div><select defaultValue="" onChange={(event) => { if (event.target.value) addBlock(event.target.value as EmailBlockType); event.target.value = ""; }} className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary"><option value="">+ Add block</option>{Object.entries(BLOCK_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></div><div className="mt-5 space-y-3">{blocks.map((item, index) => <div key={item.id} className="rounded-xl bg-secondary p-4 ring-1 ring-secondary"><div className="flex items-center justify-between gap-3"><Badge size="sm" color="brand">{BLOCK_LABELS[item.type]}</Badge><div className="flex gap-1"><button aria-label="Move block up" onClick={() => moveBlock(index, -1)} className="rounded-md p-1.5 text-tertiary hover:bg-primary"><ArrowUp className="size-4" /></button><button aria-label="Move block down" onClick={() => moveBlock(index, 1)} className="rounded-md p-1.5 text-tertiary hover:bg-primary"><ArrowDown className="size-4" /></button><button aria-label="Delete block" onClick={() => setBlocks((current) => current.filter((block) => block.id !== item.id))} className="rounded-md p-1.5 text-error-primary hover:bg-primary"><Trash01 className="size-4" /></button></div></div>{!["divider", "spacer", "button"].includes(item.type) && <input value={item.heading ?? ""} onChange={(event) => updateBlock(item.id, { heading: event.target.value })} placeholder="Heading" className="mt-3 w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary ring-1 ring-secondary" />}{!["divider", "spacer", "button", "metric"].includes(item.type) && <textarea value={item.body ?? ""} onChange={(event) => updateBlock(item.id, { body: event.target.value })} placeholder="Body copy" rows={3} className="mt-2 w-full resize-y rounded-lg bg-primary px-3 py-2 text-sm text-primary ring-1 ring-secondary" />}{item.type === "hero" && <input value={item.eyebrow ?? ""} onChange={(event) => updateBlock(item.id, { eyebrow: event.target.value })} placeholder="Eyebrow" className="mt-2 w-full rounded-lg bg-primary px-3 py-2 text-sm text-primary ring-1 ring-secondary" />}{item.type === "button" && <div className="mt-3 grid gap-2 sm:grid-cols-2"><input value={item.label ?? ""} onChange={(event) => updateBlock(item.id, { label: event.target.value })} placeholder="Button label" className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /><input value={item.href ?? ""} onChange={(event) => updateBlock(item.id, { href: event.target.value })} placeholder="https://…" className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /></div>}{item.type === "metric" && <div className="mt-3 grid gap-2 sm:grid-cols-2"><input value={item.value ?? ""} onChange={(event) => updateBlock(item.id, { value: event.target.value })} placeholder="99.9%" className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /><input value={item.label ?? ""} onChange={(event) => updateBlock(item.id, { label: event.target.value })} placeholder="Metric label" className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /></div>}</div>)}{blocks.length === 0 && <div className="rounded-xl border border-dashed border-secondary p-8 text-center"><CodeBrowser className="mx-auto size-8 text-fg-quaternary" /><p className="mt-3 text-sm font-semibold text-primary">Choose a template or add your first block</p></div>}</div></div>
 
-              <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><div className="flex flex-wrap gap-3"><Button onClick={saveCampaign} isDisabled={busy || !campaignName.trim() || !subject.trim() || blocks.length === 0}>Save campaign</Button><div className="flex min-w-64 flex-1 gap-2"><input type="email" value={testEmail} onChange={(event) => setTestEmail(event.target.value)} placeholder="Test recipient email" className="min-w-0 flex-1 rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /><Button color="secondary" iconLeading={Send01} isDisabled={busy || !testEmail} onClick={async () => { const result = await post({ action: "send_test", to: testEmail, subject, preheader, blocks, replyTo: "info@icesales.com" }); if (result) setNotice(`Test email sent to ${testEmail}.`); }}>Send test</Button></div></div><p className="mt-3 text-xs text-quaternary">Personalization variables: {`{{first_name}}, {{last_name}}, {{company}}, {{email}}`}. Promotional emails automatically include an unsubscribe link.</p></div>
+              <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><div className="flex flex-wrap gap-3"><Button onClick={saveCampaign} isDisabled={busy || !campaignName.trim() || !subject.trim() || (bodyOnly ? !bodyText.trim() : blocks.length === 0)}>Save campaign</Button><div className="flex min-w-64 flex-1 gap-2"><input type="email" value={testEmail} onChange={(event) => setTestEmail(event.target.value)} placeholder="Test recipient email" className="min-w-0 flex-1 rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /><Button color="secondary" iconLeading={Send01} isDisabled={busy || !testEmail || (bodyOnly && !bodyText.trim())} onClick={async () => { const result = await post({ action: "send_test", to: testEmail, subject, preheader, blocks, bodyOnly, bodyText, campaignType, replyTo: "info@icesales.com" }); if (result) setNotice(`Test email sent to ${testEmail}.`); }}>Send test</Button></div></div><p className="mt-3 text-xs text-quaternary">Personalization variables: {`{{first_name}}, {{last_name}}, {{company}}, {{email}}`}. Promotional emails automatically include an unsubscribe link.</p></div>
             </div>
 
             <aside className="self-start rounded-xl bg-primary p-4 ring-1 ring-secondary 2xl:sticky 2xl:top-20"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-secondary pb-4"><div><p className="text-sm font-semibold text-primary">Live preview</p><p className="text-xs text-tertiary">Email-safe HTML, responsive layout, and dark canvas check.</p></div><div className="flex rounded-lg bg-secondary p-1"><button aria-label="Desktop preview" onClick={() => setPreviewMode("desktop")} className={cx("rounded-md p-2", previewMode === "desktop" ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary")}><Monitor01 className="size-4" /></button><button aria-label="Mobile preview" onClick={() => setPreviewMode("mobile")} className={cx("rounded-md p-2", previewMode === "mobile" ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary")}><Phone01 className="size-4" /></button><button aria-label="Toggle dark preview canvas" onClick={() => setDarkPreview((value) => !value)} className={cx("rounded-md p-2", darkPreview ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary")}><Eye className="size-4" /></button></div></div><div className={cx("mt-4 flex min-h-[700px] justify-center overflow-auto rounded-xl p-4 transition", darkPreview ? "bg-overlay" : "bg-secondary")}><iframe title="Email preview" srcDoc={previewHtml} className={cx("h-[680px] rounded-lg bg-white shadow-lg transition-all", previewMode === "mobile" ? "w-[390px]" : "w-full")} /></div></aside>
@@ -279,7 +303,55 @@ export default function MarketingCenter() {
       )}
 
       {tab === "campaigns" && (
-        <section className="overflow-hidden rounded-xl bg-primary ring-1 ring-secondary"><div className="flex flex-wrap items-center justify-between gap-4 border-b border-secondary p-5"><div><h2 className="text-lg font-semibold text-primary">Campaign workflow</h2><p className="mt-1 text-sm text-tertiary">Draft, review, approve, schedule, send, and measure each message.</p></div><Button iconLeading={Plus} onClick={() => setTab("studio")}>Create campaign</Button></div><div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-left"><thead className="bg-secondary text-xs font-semibold text-quaternary uppercase"><tr><th className="px-5 py-3">Campaign</th><th className="px-5 py-3">Type</th><th className="px-5 py-3">Audience</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Delivered</th><th className="px-5 py-3">Opens</th><th className="px-5 py-3">Clicks</th><th className="px-5 py-3">Action</th></tr></thead><tbody>{data?.campaigns.map((campaign) => { const list = data.lists.find((item) => item.id === campaign.list_id); return <tr key={campaign.id} className="border-t border-secondary"><td className="px-5 py-4"><p className="text-sm font-semibold text-primary">{campaign.name}</p><p className="max-w-sm truncate text-xs text-tertiary">{campaign.subject}</p></td><td className="px-5 py-4"><Badge size="sm" color="brand">{campaignTypeLabel(campaign.campaign_type)}</Badge></td><td className="px-5 py-4 text-sm text-secondary">{list?.name ?? "Not selected"}</td><td className="px-5 py-4"><Badge size="sm" color={statusColor(campaign.status)}>{campaign.status}</Badge></td><td className="px-5 py-4 text-sm font-semibold text-primary">{campaign.delivered_count}</td><td className="px-5 py-4 text-sm text-secondary">{campaign.opened_count}{campaign.delivered_count > 0 ? ` · ${Math.round(campaign.opened_count / campaign.delivered_count * 100)}%` : ""}</td><td className="px-5 py-4 text-sm text-secondary">{campaign.clicked_count}</td><td className="px-5 py-4"><div className="flex gap-2"><Button size="sm" color="secondary" onClick={() => editCampaign(campaign)}>Edit</Button>{["approved", "scheduled"].includes(campaign.status) && <Button size="sm" iconLeading={Send01} isDisabled={busy} onClick={async () => { if (!window.confirm(`Send ${campaign.name} to its eligible audience now?`)) return; const result = await post({ action: "send_campaign", campaignId: campaign.id }); if (result) { setNotice(`Campaign sent to ${result.sent} eligible contacts.`); await load(); } }}>Send</Button>}</div></td></tr>; })}</tbody></table>{!data?.campaigns.length && <div className="p-12 text-center"><Mail01 className="mx-auto size-9 text-fg-quaternary" /><p className="mt-3 text-sm font-semibold text-primary">No campaigns yet</p><p className="mt-1 text-sm text-tertiary">Choose a template in Email Studio to begin.</p></div>}</div></section>
+        <section className="overflow-hidden rounded-xl bg-primary ring-1 ring-secondary">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-secondary p-5">
+            <div><h2 className="text-lg font-semibold text-primary">Campaign workflow</h2><p className="mt-1 text-sm text-tertiary">Draft, review, approve, schedule, send, and measure each message.</p></div>
+            <Button iconLeading={Plus} onClick={() => setTab("studio")}>Create campaign</Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1160px] text-left">
+              <thead className="bg-secondary text-xs font-semibold text-quaternary uppercase"><tr><th className="px-5 py-3">Campaign</th><th className="px-5 py-3">Type</th><th className="px-5 py-3">Audience</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Delivered</th><th className="px-5 py-3">Opens</th><th className="px-5 py-3">Clicks</th><th className="px-5 py-3">Action</th></tr></thead>
+              <tbody>{data?.campaigns.map((campaign) => {
+                const list = data.lists.find((item) => item.id === campaign.list_id);
+                return <tr key={campaign.id} className="border-t border-secondary">
+                  <td className="px-5 py-4"><p className="text-sm font-semibold text-primary">{campaign.name}</p><p className="max-w-sm truncate text-xs text-tertiary">{campaign.subject}</p></td>
+                  <td className="px-5 py-4"><Badge size="sm" color="brand">{campaignTypeLabel(campaign.campaign_type)}</Badge>{campaign.body_only && <span className="mt-1 block text-xs text-tertiary">Plain text</span>}</td>
+                  <td className="px-5 py-4 text-sm text-secondary">{list?.name ?? "Not selected"}</td>
+                  <td className="px-5 py-4"><Badge size="sm" color={statusColor(campaign.status)}>{campaign.status}</Badge></td>
+                  <td className="px-5 py-4 text-sm font-semibold text-primary">{campaign.delivered_count}</td>
+                  <td className="px-5 py-4 text-sm text-secondary">{campaign.opened_count}{campaign.delivered_count > 0 ? ` · ${Math.round(campaign.opened_count / campaign.delivered_count * 100)}%` : ""}</td>
+                  <td className="px-5 py-4 text-sm text-secondary">{campaign.clicked_count}</td>
+                  <td className="px-5 py-4"><div className="flex gap-2"><Button size="sm" color="secondary" onClick={() => setCampaignPreview(campaign)}>Preview</Button><Button size="sm" color="secondary" onClick={() => editCampaign(campaign)}>Edit</Button>{["approved", "scheduled"].includes(campaign.status) && <Button size="sm" iconLeading={Send01} isDisabled={busy} onClick={async () => { if (!window.confirm(`Send ${campaign.name} to its eligible audience now?`)) return; const result = await post({ action: "send_campaign", campaignId: campaign.id }); if (result) { setNotice(`Campaign sent to ${result.sent} eligible contacts.`); await load(); } }}>Send</Button>}</div></td>
+                </tr>;
+              })}</tbody>
+            </table>
+            {!data?.campaigns.length && <div className="p-12 text-center"><Mail01 className="mx-auto size-9 text-fg-quaternary" /><p className="mt-3 text-sm font-semibold text-primary">No campaigns yet</p><p className="mt-1 text-sm text-tertiary">Choose a template in Email Studio to begin.</p></div>}
+          </div>
+        </section>
+      )}
+
+      {tab === "settings" && (
+        <section className="max-w-3xl rounded-xl bg-primary p-6 ring-1 ring-secondary">
+          <p className="text-xs font-semibold tracking-widest text-brand-secondary uppercase">Email operations</p>
+          <h2 className="mt-2 text-xl font-semibold text-primary">Lead notification routing</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-tertiary">New contact-page submissions and callback requests will send a branded confirmation to the person who reached out, then deliver the request details to this inbox. Leave blank to use the server’s configured notification address.</p>
+          <div className="mt-5 max-w-xl"><Input label="Inbox for new website requests" type="email" autoComplete="email" value={leadNotificationEmail} onChange={setLeadNotificationEmail} placeholder="you@company.com" /></div>
+          <Button className="mt-4" isLoading={busy} onClick={async () => { const result = await post({ action: "save_email_settings", leadNotificationEmail }); if (result) setNotice("Email routing settings saved."); }}>Save email settings</Button>
+          <div className="mt-7 rounded-lg bg-secondary p-4 text-sm leading-6 text-secondary ring-1 ring-secondary"><strong className="text-primary">Sending address</strong><br />Customer confirmations and admin notices use noreply@mail.icesales.com. Reply-to points to the customer on admin notices, so the team can respond directly.</div>
+        </section>
+      )}
+
+      {campaignPreview && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCampaignPreview(null); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="campaign-preview-title" className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-primary shadow-2xl ring-1 ring-secondary">
+            <header className="flex flex-wrap items-center justify-between gap-4 border-b border-secondary p-5">
+              <div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wider text-tertiary">Email preview</p><h2 id="campaign-preview-title" className="mt-1 truncate text-lg font-semibold text-primary">{campaignPreview.name}</h2><p className="mt-1 truncate text-sm text-secondary">Subject: {campaignPreview.subject}</p></div>
+              <div className="flex items-center gap-2"><div className="flex rounded-lg bg-secondary p-1"><button type="button" aria-pressed={previewMode === "desktop"} onClick={() => setPreviewMode("desktop")} className={cx("rounded-md px-3 py-2 text-sm font-medium", previewMode === "desktop" ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary")}>Desktop</button><button type="button" aria-pressed={previewMode === "mobile"} onClick={() => setPreviewMode("mobile")} className={cx("rounded-md px-3 py-2 text-sm font-medium", previewMode === "mobile" ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary")}>Mobile</button></div><button type="button" onClick={() => setCampaignPreview(null)} className="rounded-lg px-3 py-2 text-sm font-semibold text-secondary hover:bg-secondary">Close</button></div>
+            </header>
+            <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-secondary p-4 sm:p-6"><iframe title={`Preview of ${campaignPreview.name}`} srcDoc={renderSavedCampaignPreview(campaignPreview)} className={cx("h-[70vh] min-h-[420px] rounded-lg bg-white shadow-lg", previewMode === "mobile" ? "w-[390px] max-w-full" : "w-full")} /></div>
+            <footer className="border-t border-secondary px-5 py-3 text-xs text-tertiary">Personalization fields use sample details in this preview. The recipient’s final version may vary.</footer>
+          </section>
+        </div>
       )}
     </div>
   );

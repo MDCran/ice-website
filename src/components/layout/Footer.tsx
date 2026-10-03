@@ -276,9 +276,9 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
   const getInTouchCtaHref = stringOr(footerCopy?.get_in_touch_cta_href, "/contact");
   const quickLinksHeading = stringOr(footerCopy?.quick_links_heading, "Quick Links");
   const rightsReservedLabel = stringOr(footerCopy?.rights_reserved_label, "All Rights Reserved.");
-  const configuredCoreLabel = stringOr(footerCopy?.coretv_label, "Managed by").trim();
-  const coreAttributionLabel = /^by\s+coretv$/i.test(configuredCoreLabel)
-    ? "Managed by"
+  const configuredCoreLabel = stringOr(footerCopy?.coretv_label, "Website by").trim();
+  const coreAttributionLabel = /^(?:managed\s+by|by\s+coretv|by\s+core)$/i.test(configuredCoreLabel)
+    ? "Website by"
     : configuredCoreLabel;
   const coreTvUrl = stringOr(footerCopy?.coretv_url, CORETV_URL);
   const socialLinks = normalizeSocialLinks(footerCopy?.social_links);
@@ -452,7 +452,7 @@ export default function Footer({ cmsData }: { cmsData?: FooterCMSData }) {
             <button
               type="button"
               onClick={() => setCoreTvOpen(true)}
-              aria-label="Managed by Core. Open Core information"
+              aria-label="Website by Core. Open Core information"
               className="group inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-sm text-quaternary outline-brand transition duration-200 ease-out hover:text-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
               <span className="transition-colors duration-200 group-hover:text-brand-secondary motion-reduce:transition-none">

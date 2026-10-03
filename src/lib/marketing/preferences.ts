@@ -11,12 +11,12 @@ export type MarketingPreferenceKey = (typeof MARKETING_PREFERENCE_KEYS)[number];
 export type MarketingPreferences = Record<MarketingPreferenceKey, boolean>;
 
 export const DEFAULT_MARKETING_PREFERENCES: MarketingPreferences = {
-  marketing_materials: true,
-  billing: true,
-  private_messages: true,
-  special_messages: true,
-  service_updates: true,
-  events: true,
+  marketing_materials: false,
+  billing: false,
+  private_messages: false,
+  special_messages: false,
+  service_updates: false,
+  events: false,
 };
 
 export const MARKETING_PREFERENCE_LABELS: Record<MarketingPreferenceKey, { label: string; description: string }> = {

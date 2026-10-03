@@ -176,6 +176,7 @@ export function EnterpriseStickyCta({
   const [isVisible, setIsVisible] = useState(false);
   const [callbackOpen, setCallbackOpen] = useState(false);
   const [callbackPhone, setCallbackPhone] = useState("");
+  const [callbackEmail, setCallbackEmail] = useState("");
   const [callbackTime, setCallbackTime] = useState(
     config.global.callbackTimeOptions[0]?.id ?? "Today",
   );
@@ -227,6 +228,7 @@ export function EnterpriseStickyCta({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: callbackPhone,
+          email: callbackEmail,
           preferredTime: selectedCallbackTime,
           context: solutionName || config.global.callbackContextFallback,
           pagePath: pathname,
@@ -338,6 +340,16 @@ export function EnterpriseStickyCta({
 
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <Input
+                    id="callback-email"
+                    type="email"
+                    autoComplete="email"
+                    label="Email address"
+                    value={callbackEmail}
+                    onChange={setCallbackEmail}
+                    placeholder="you@company.com"
+                    className="min-w-0 sm:col-span-2"
+                  />
+                  <Input
                     id="callback-phone"
                     type="tel"
                     inputMode="tel"
@@ -355,7 +367,8 @@ export function EnterpriseStickyCta({
                     label={config.global.callbackPreferredTimeLabel}
                     size="md"
                     className="min-w-0"
-                    popoverClassName="w-[13.5rem]"
+                    popoverClassName="contact-form-popover w-[13.5rem] overscroll-contain"
+                    preventPageScroll
                     icon={Calendar}
                     items={callbackTimeOptions}
                     selectedKey={selectedCallbackTime}
@@ -369,7 +382,7 @@ export function EnterpriseStickyCta({
                   size="md"
                   className="mt-4 w-full justify-center"
                   isLoading={callbackStatus === "sending"}
-                  isDisabled={callbackPhone.replace(/\D/g, "").length < 7}
+                  isDisabled={callbackPhone.replace(/\D/g, "").length < 7 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(callbackEmail)}
                   onClick={submitCallback}
                 >
                   {config.global.callbackSubmitLabel}

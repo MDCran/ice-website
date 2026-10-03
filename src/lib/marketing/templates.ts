@@ -1,4 +1,4 @@
-export type EmailBlockType = "hero" | "text" | "button" | "service" | "notice" | "metric" | "divider" | "spacer";
+export type EmailBlockType = "hero" | "text" | "button" | "service" | "notice" | "metric" | "divider" | "spacer" | "signature";
 
 export interface EmailBlock {
   id: string;
@@ -10,6 +10,7 @@ export interface EmailBlock {
   eyebrow?: string;
   value?: string;
   tone?: "brand" | "neutral" | "warning" | "success";
+  imageUrl?: string;
 }
 
 export interface MarketingTemplatePreset {
@@ -58,6 +59,16 @@ function holidayTemplate(id: string, name: string, message: string): MarketingTe
 }
 
 export const MARKETING_TEMPLATE_PRESETS: MarketingTemplatePreset[] = [
+  {
+    id: "ceo-message", name: "A message from our CEO", category: "messages",
+    description: "A personal note from ICE leadership, with a handwritten signature.",
+    subject: "A note from Dave at ICE", preheader: "A personal message from International Computer Exchange.",
+    blocks: [
+      block("ceo-hero", "hero", { eyebrow: "A MESSAGE FROM ICE", heading: "A personal note", body: "Thank you for the trust you place in International Computer Exchange. Our team remains committed to responsive, personal support for your business." }),
+      block("ceo-text", "text", { heading: "Here when you need us", body: "As a long-standing IBM Business Partner, ICE brings experienced people and practical guidance to every relationship. If there is anything we can do to help, simply reply to this email." }),
+      block("ceo-signature", "signature", { heading: "Dave Cranberry", body: "Chief Executive Officer · International Computer Exchange", imageUrl: "https://www.icesales.com/images/branding/ceo-signature.png" }),
+    ],
+  },
   serviceTemplate("managed-cloud-hosting", "Managed Cloud Hosting", "Run critical workloads without adding operational burden", "Hosting, operating responsibilities, backup, and recovery options scoped to your workloads."),
   serviceTemplate("managed-private-cloud", "Managed Private Cloud", "Gain dedicated control without managing every layer", "Private infrastructure, predictable performance, and compliance-ready controls."),
   serviceTemplate("managed-hybrid-cloud", "Managed Hybrid Cloud", "Operate cloud and on-prem systems as one environment", "Connect legacy platforms, private infrastructure, and public cloud with one operating model."),

@@ -1,16 +1,22 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
   Activity,
   BookOpen01,
+  ChevronDown,
   CheckCircle,
+  Cloud01,
   Clock,
+  Database01,
   Dataflow03,
   File02,
-  Lock01,
+  Monitor04,
+  RefreshCw01,
+  Server03,
+  Shield01,
   Zap,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
@@ -19,13 +25,32 @@ import { experienceFor } from "@/lib/solutionExperience";
 import { resolveIcon } from "@/lib/iconMap";
 import { cx } from "@/utils/cx";
 
-const ARCHITECTURE_NODE_ICONS = [
-  Dataflow03,
-  Lock01,
-  Activity,
-  Zap,
-  CheckCircle,
+const GENERIC_ARCHITECTURE_LAYERS = [
+  "workloads",
+  "connectivity",
+  "protection",
+  "operations",
+  "reporting",
 ];
+
+function ArchitectureNodeIcon({
+  label,
+  className,
+}: {
+  label: string;
+  className: string;
+}) {
+  const value = label.toLowerCase();
+  if (/monitor|report|operation|response|validation|management|escalation|health|triage/.test(value)) return <Activity className={className} aria-hidden="true" />;
+  if (/migrat|cutover|failover|restore|recovery|remediat|orchestrat/.test(value)) return <RefreshCw01 className={className} aria-hidden="true" />;
+  if (/backup|replicat|storage|database|data|vault|immutable/.test(value)) return <Database01 className={className} aria-hidden="true" />;
+  if (/automation|workflow|scheduled task/.test(value)) return <Zap className={className} aria-hidden="true" />;
+  if (/threat|detect|security|firewall|identity|policy|secure|connect|network|link/.test(value)) return <Shield01 className={className} aria-hidden="true" />;
+  if (/endpoint|device|user|workstation|client/.test(value)) return <Monitor04 className={className} aria-hidden="true" />;
+  if (/ibm.?power|power.?vs|server|platform|workload|production|system|source|infrastructure|environment/.test(value)) return <Server03 className={className} aria-hidden="true" />;
+  if (/cloud|cluster|hosting|compute|site/.test(value)) return <Cloud01 className={className} aria-hidden="true" />;
+  return <Dataflow03 className={className} aria-hidden="true" />;
+}
 
 type SelectOption = { value: string; label: string };
 type ResourceItem = { title: string; kind: string; href: string };
@@ -186,20 +211,32 @@ export function SolutionProofStrip({
 }
 export function SolutionArchitecture({
   slug,
+  pageTitle,
   config = {},
 }: {
   slug: string;
+  pageTitle: string;
   config?: NonNullable<BuyerToolsContent["architecture"]>;
 }) {
   const data = experienceFor(slug);
   const reduceMotion = true;
-  const configuredLayers = Array.isArray(config.layers)
-    ? config.layers
-    : data.architecture;
+  const isGenericLayerSet =
+    Array.isArray(config.layers) &&
+    config.layers.length === GENERIC_ARCHITECTURE_LAYERS.length &&
+    config.layers.every((item, index) => {
+      const label = typeof item === "string" ? item : valueOr(item.label, "");
+      const hasCustomIcon =
+        typeof item === "object" &&
+        typeof item.icon === "string" &&
+        item.icon.trim().length > 0;
+      return !hasCustomIcon && label.trim().toLowerCase() === GENERIC_ARCHITECTURE_LAYERS[index];
+    });
+  const configuredLayers =
+    Array.isArray(config.layers) && config.layers.length > 0 && !isGenericLayerSet
+      ? config.layers
+      : data.architecture;
   const architecture = (
-    configuredLayers.length > 0
-      ? configuredLayers
-      : ["Source", "Secure edge", "Managed platform", "Protected outcome"]
+    configuredLayers.length > 0 ? configuredLayers : data.architecture
   ).map((item, index) => ({
     label:
       typeof item === "string"
@@ -208,14 +245,29 @@ export function SolutionArchitecture({
     icon: typeof item === "string" ? undefined : item.icon,
   }));
   const panelDescription = valueOr(
-    config.panel_description,
-    "A straightforward view of the service, from your systems to ongoing support.",
+    config.panel_description &&
+      !/^(select a layer to inspect the operating flow\.|a straightforward view from your systems through protection and ongoing support\.)$/i.test(config.panel_description.trim())
+      ? config.panel_description
+      : undefined,
+    "Typical service components are shown below; final scope is confirmed for your environment.",
   );
   const firstLayer = architecture[0]?.label ?? "Source";
   const finalLayer = architecture[architecture.length - 1]?.label ?? "Managed outcome";
-  const activeIndex = 0;
   const activeLayer = firstLayer;
   const activeProgress = 100;
+  const architectureSummary =
+    config.summary &&
+    !/^(ice coordinates the platform, protection, monitoring, and reporting layers under one operating model\.|confirm platform, connectivity, protection, operations, and reporting responsibilities during assessment\.)$/i.test(config.summary.trim())
+      ? config.summary
+      : `Typical service components: ${architecture.map((step) => step.label).join(" → ")}. Final platforms, coverage, and responsibilities are agreed after assessment.`;
+  const architectureHeading =
+    /^(see how the service fits together|how ice supports your environment)$/i.test(config.heading ?? "")
+      ? `${pageTitle} architecture`
+      : valueOr(config.heading, `How ${pageTitle} works`);
+  const architectureDescription =
+    /^(explore the operating layers ice manages for this solution\.|see the systems, protection, and ongoing support included with this service\.)$/i.test(config.description ?? "")
+      ? `A practical view of the systems and service components associated with ${pageTitle}.`
+      : valueOr(config.description, "Review the service components and operating responsibilities involved.");
 
   return (
     <section className="border-b border-secondary bg-primary py-16 md:py-24">
@@ -225,17 +277,14 @@ export function SolutionArchitecture({
             {valueOr(config.eyebrow, "Service overview")}
           </span>
           <h2 className="mt-3 text-display-sm font-semibold text-primary">
-            {valueOr(config.heading, "How ICE supports your environment")}
+            {architectureHeading}
           </h2>
           <p className="mt-4 text-lg text-tertiary">
-            {valueOr(
-              config.description,
-              "A clear view of the systems, protection, and support behind the service.",
-            )}
+            {architectureDescription}
           </p>
         </div>
 
-        <div className="relative mx-auto mt-12 max-w-6xl overflow-hidden rounded-2xl border border-secondary bg-primary_alt p-5 md:p-8">
+        <div className="relative mx-auto mt-12 max-w-6xl overflow-hidden rounded-2xl border border-secondary bg-primary_alt p-5 shadow-sm md:p-8">
           <div
             aria-hidden="true"
             className="hidden"
@@ -257,22 +306,19 @@ export function SolutionArchitecture({
             className="hidden"
           />
 
-          <div className="relative flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex flex-col gap-3 border-b border-secondary pb-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-brand-500/15 ring-1 ring-brand-300/25">
-                <Dataflow03
-                  className="size-5 text-brand-300"
-                  aria-hidden="true"
-                />
+              <span className="flex size-10 items-center justify-center rounded-xl bg-brand-primary_alt ring-1 ring-brand/25">
+                <ArchitectureNodeIcon label={firstLayer} className="size-5 text-fg-brand-primary" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-white">
-                  {valueOr(config.panel_title, "How the service is managed")}
+                <p className="text-sm font-semibold text-primary">
+                  {/^(managed service path|how the service is managed)$/i.test(config.panel_title ?? "")
+                    ? `${pageTitle} service path`
+                    : valueOr(config.panel_title, `${pageTitle} service path`)}
                 </p>
-                <p className="mt-0.5 text-xs text-white/50">
-                  {/select a layer/i.test(panelDescription)
-                    ? "A straightforward view of the service, from your systems to ongoing support."
-                    : panelDescription}
+                <p className="mt-0.5 text-xs text-tertiary">
+                  {panelDescription}
                 </p>
               </div>
             </div>
@@ -327,6 +373,11 @@ export function SolutionArchitecture({
           <div className="relative mt-8 hidden md:block">
             <div
               aria-hidden="true"
+              className="absolute top-7 h-px bg-gradient-to-r from-transparent via-brand/50 to-transparent"
+              style={{ left: `${50 / architecture.length}%`, right: `${50 / architecture.length}%` }}
+            />
+            <div
+              aria-hidden="true"
               className="hidden"
             >
               <span
@@ -362,18 +413,14 @@ export function SolutionArchitecture({
             </div>
             <ol className="relative z-10 flex gap-3">
               {architecture.map((step, index) => {
-                const Icon = step.icon
-                  ? resolveIcon(step.icon)
-                  : ARCHITECTURE_NODE_ICONS[
-                      index % ARCHITECTURE_NODE_ICONS.length
-                    ];
+                const Icon = step.icon ? resolveIcon(step.icon) : undefined;
                 return (
                   <li
                     key={`${step.label}-${index}`}
                     className="flex min-w-0 flex-1 flex-col items-center text-center"
                   >
-                    <span className="relative z-[2] flex size-14 items-center justify-center rounded-2xl border border-secondary bg-primary text-fg-brand-primary">
-                      <Icon className="size-6" aria-hidden="true" />
+                    <span className="group relative z-[2] flex size-14 items-center justify-center rounded-2xl border border-brand/25 bg-primary text-fg-brand-primary shadow-[0_4px_16px_rgb(15_23_42/0.12)] transition duration-300 hover:-translate-y-0.5 hover:border-brand/50">
+                      {Icon ? <Icon className="size-6" aria-hidden="true" /> : <ArchitectureNodeIcon label={step.label} className="size-6" />}
                     </span>
                     <span className="mt-4 max-w-36 text-sm font-semibold leading-snug text-primary">
                       {step.label}
@@ -399,18 +446,14 @@ export function SolutionArchitecture({
               className="hidden"
             />
             {architecture.map((step, index) => {
-              const Icon = step.icon
-                ? resolveIcon(step.icon)
-                : ARCHITECTURE_NODE_ICONS[
-                    index % ARCHITECTURE_NODE_ICONS.length
-                  ];
+              const Icon = step.icon ? resolveIcon(step.icon) : undefined;
               return (
                 <li
                   key={`${step.label}-${index}`}
                   className="relative flex items-center gap-4 rounded-xl border border-secondary bg-primary p-3"
                 >
                   <span className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary_alt text-fg-brand-primary">
-                    <Icon className="size-4" aria-hidden="true" />
+                    {Icon ? <Icon className="size-4" aria-hidden="true" /> : <ArchitectureNodeIcon label={step.label} className="size-4" />}
                   </span>
                   <span className="text-sm font-semibold text-primary">
                     {step.label}
@@ -421,10 +464,7 @@ export function SolutionArchitecture({
           </ol>
 
           <p className="relative mt-6 border-t border-secondary pt-5 text-sm leading-relaxed text-tertiary">
-            {valueOr(
-              config.summary,
-              "ICE coordinates the platform, protection, and ongoing operations, with clear reporting for your team.",
-            )}
+            {architectureSummary}
           </p>
 
           <div
@@ -531,6 +571,56 @@ function recommendation(
   };
 }
 
+function RecoverySelect({
+  question,
+  context,
+  value,
+  onChange,
+  options,
+}: {
+  question: string;
+  context: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: SelectOption[];
+}) {
+  const id = useId();
+  const descriptionId = `${id}-description`;
+
+  return (
+    <div className="rounded-2xl border border-secondary bg-secondary/30 p-4 transition-colors duration-200 hover:border-brand/35 sm:p-5">
+      <label htmlFor={id} className="block text-sm font-semibold leading-snug text-primary">
+        {question}
+      </label>
+      <p id={descriptionId} className="mt-1.5 min-h-10 text-xs leading-relaxed text-tertiary">
+        {context}
+      </p>
+      <div className="relative mt-3">
+        <select
+          id={id}
+          aria-describedby={descriptionId}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full cursor-pointer appearance-none rounded-xl border border-secondary bg-primary py-3 pr-10 pl-3.5 text-sm font-medium text-primary shadow-xs outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-fg-quaternary"
+        />
+      </div>
+      <p className="mt-2 text-[11px] font-medium tracking-wide text-fg-quaternary uppercase">
+        Choose one option
+      </p>
+    </div>
+  );
+}
+
 export function RpoRtoCalculator({
   config = {},
 }: {
@@ -580,9 +670,6 @@ export function RpoRtoCalculator({
     [rpo, rto, dataSize, criticality, config],
   );
 
-  const fieldClass =
-    "mt-2 w-full rounded-xl border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand focus:ring-2 focus:ring-brand/20";
-
   return (
     <section className="bg-primary py-16 md:py-24">
       <div className="mx-auto grid max-w-container gap-8 px-4 md:px-8 lg:grid-cols-[1fr_0.9fr]">
@@ -600,63 +687,38 @@ export function RpoRtoCalculator({
             )}
           </p>
           <div className="mt-8 grid gap-5 sm:grid-cols-2">
-            <label className="text-sm font-semibold text-secondary">
-              {valueOr(config.rpo_label, "Maximum acceptable data loss (RPO)")}
-              <select
-                value={rpo}
-                onChange={(e) => setRpo(e.target.value)}
-                className={fieldClass}
-              >
-                {rpoOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm font-semibold text-secondary">
-              {valueOr(config.rto_label, "Maximum acceptable downtime (RTO)")}
-              <select
-                value={rto}
-                onChange={(e) => setRto(e.target.value)}
-                className={fieldClass}
-              >
-                {rtoOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm font-semibold text-secondary">
-              {valueOr(config.data_size_label, "Protected data")}
-              <select
-                value={dataSize}
-                onChange={(e) => setDataSize(e.target.value)}
-                className={fieldClass}
-              >
-                {dataSizeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm font-semibold text-secondary">
-              {valueOr(config.criticality_label, "Workload criticality")}
-              <select
-                value={criticality}
-                onChange={(e) => setCriticality(e.target.value)}
-                className={fieldClass}
-              >
-                {criticalityOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <RecoverySelect
+              question="How much recent data could you afford to lose?"
+              context={`${valueOr(config.rpo_label, "Recovery point objective (RPO)")} — the recovery point sets how far back restored data may go.`}
+              value={rpo}
+              onChange={setRpo}
+              options={rpoOptions}
+            />
+            <RecoverySelect
+              question="How long can this service be unavailable?"
+              context={`${valueOr(config.rto_label, "Recovery time objective (RTO)")} — your target time to restore service.`}
+              value={rto}
+              onChange={setRto}
+              options={rtoOptions}
+            />
+            <RecoverySelect
+              question="Approximately how much data needs protection?"
+              context="A rough estimate is enough to compare recovery approaches."
+              value={dataSize}
+              onChange={setDataSize}
+              options={dataSizeOptions}
+            />
+            <RecoverySelect
+              question="What would happen if this workload stopped?"
+              context="Choose the business impact, not a technical severity."
+              value={criticality}
+              onChange={setCriticality}
+              options={criticalityOptions}
+            />
           </div>
+          <p className="mt-4 text-sm leading-relaxed text-tertiary">
+            Choose the closest fit. These are planning estimates, not service commitments.
+          </p>
         </div>
         <aside className="relative overflow-hidden rounded-2xl bg-secondary p-6 ring-1 ring-secondary md:p-8">
           <Dataflow03
@@ -666,6 +728,7 @@ export function RpoRtoCalculator({
           <p className="mt-6 text-xs font-medium tracking-[0.18em] text-brand-secondary uppercase">
             {valueOr(config.recommendation_label, "Recommended starting point")}
           </p>
+          <p className="mt-1 text-xs text-tertiary">Updates as you change your answers</p>
           <h3 className="mt-2 text-display-xs font-semibold text-primary">
             {result.title}
           </h3>
@@ -698,9 +761,16 @@ export function SolutionResourceTeaser({
   slug: string;
   config?: NonNullable<BuyerToolsContent["resources"]>;
 }) {
-  const resources = Array.isArray(config.items)
-    ? config.items
-    : experienceFor(slug).resources;
+  const serviceResources = experienceFor(slug).resources;
+  const hasContactPlaceholder =
+    config.items?.length === 1 &&
+    config.items[0].title.trim().toLowerCase() === "talk with an ice specialist" &&
+    config.items[0].kind.trim().toLowerCase() === "assessment" &&
+    config.items[0].href.trim() === "/contact";
+  const resources =
+    Array.isArray(config.items) && config.items.length > 0 && !hasContactPlaceholder
+      ? config.items
+      : serviceResources;
   return (
     <section className="border-t border-secondary bg-primary py-16 md:py-20">
       <div className="mx-auto max-w-container px-4 md:px-8">
@@ -721,7 +791,12 @@ export function SolutionResourceTeaser({
             <ArrowRight className="size-4" />
           </Link>
         </div>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div
+          className={cx(
+            "mt-8 grid gap-4",
+            resources.length > 1 ? "sm:grid-cols-2" : "max-w-4xl grid-cols-1",
+          )}
+        >
           {resources.map((resource, index) => (
             <Link
               key={resource.title}
@@ -782,7 +857,7 @@ export function SolutionBuyerToolsSection({
       ),
     architecture:
       architecture.enabled === false ? null : (
-        <SolutionArchitecture slug={slug} config={architecture} />
+        <SolutionArchitecture slug={slug} pageTitle={pageTitle} config={architecture} />
       ),
     recovery_planner:
       recovery.enabled === true ||

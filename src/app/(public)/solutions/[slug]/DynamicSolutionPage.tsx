@@ -599,9 +599,12 @@ export default function DynamicSolutionPage({
         `A practical next step for ${breadcrumbTitle}`
       }
       ctaSubtitle={
-        cta?.description ??
-        cta?.subheadline ??
-        "Tell us what you run today and where it is getting in the way. We’ll outline a sensible next step."
+        cta?.description?.trim() ===
+          "Bring your requirements to a partner with 30+ years in business. We will help define a practical next step."
+          ? "Get personal, direct support from ICE specialists—not a one-size-fits-all manufacturer queue."
+          : cta?.description ??
+            cta?.subheadline ??
+            "Get personal, direct support from ICE specialists—not a one-size-fits-all manufacturer queue."
       }
       ctaButtonLabel={firstText(ctaPrimary?.label) ?? "Speak to an Expert"}
       ctaPrimaryHref={leadHref(ctaPrimary?.href)}

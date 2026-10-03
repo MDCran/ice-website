@@ -1175,7 +1175,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
         heading: "Continue your evaluation",
         browse_label: "Browse all resources",
         browse_href: "/resources",
-        items: [{ title: "Talk with an ICE specialist", kind: "Assessment", href: "/contact" }],
+        items: [],
       },
       sticky_cta: {
         enabled: true,
@@ -1877,7 +1877,7 @@ const SECTION_TEMPLATES: SectionTemplate[] = [
       rights_reserved_label: "All Rights Reserved.",
       logo_alt: "International Computer Exchange",
       ibm_logo_alt: "IBM",
-      coretv_label: "Managed by",
+      coretv_label: "Website by",
       coretv_url: "https://coretv.co",
       redirect_heading: "Leaving ICE",
       redirect_description_prefix: "You are being redirected off this page to Core in",

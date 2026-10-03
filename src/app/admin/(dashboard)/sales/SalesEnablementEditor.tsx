@@ -868,7 +868,7 @@ export default function SalesEnablementEditor({
           <div className="border-t border-secondary pt-5">
             <h4 className="text-sm font-semibold text-primary">Soft lead form details</h4>
             <p className="mt-1 text-xs leading-5 text-tertiary">
-              Image, fields, consent, submission, confirmation, errors, and lead classification for the delayed assessment prompt.
+              Image, fields, SMS consent, submission, confirmation, errors, and lead classification for the delayed assessment prompt.
             </p>
             <div className="mt-4">
               <CopyFields
@@ -887,8 +887,6 @@ export default function SalesEnablementEditor({
                   ["phone_placeholder", "Phone placeholder", "text"],
                   ["company_label", "Company label", "text"],
                   ["company_placeholder", "Company placeholder", "text"],
-                  ["marketing_consent_aria_label", "Consent accessibility label", "text"],
-                  ["marketing_consent_text", "Consent text", "textarea"],
                   ["sending_label", "Sending label", "text"],
                   ["submit_label", "Submit label", "text"],
                   ["phone_error", "Phone validation error", "text"],

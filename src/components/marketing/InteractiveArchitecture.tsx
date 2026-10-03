@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FC } from "react";
+import { useEffect, useState, type FC } from "react";
 import {
   Cloud01,
   Database01,
@@ -87,9 +87,25 @@ export default function InteractiveArchitecture({
   const firstNode = nodes[0];
   const finalNode = nodes[nodes.length - 1];
   const [activeIndex, setActiveIndex] = useState(0);
+  const [flowIndex, setFlowIndex] = useState(0);
   const activeNode = nodes[activeIndex] ?? firstNode;
   const activeDetails = activeNode?.details.length ? activeNode.details : [activeNode?.summary ?? ""];
   const detailRowCount = Math.max(3, ...nodes.map((node) => node.details.length || 1));
+
+  useEffect(() => {
+    if (reduceMotion || nodes.length < 2) return;
+
+    const nextIndex = (activeIndex + 1) % nodes.length;
+    // Let the active node breathe, then send the flow to the next node.
+    // Promote it to active only after the rail has nearly completed its travel.
+    const startTravel = window.setTimeout(() => setFlowIndex(nextIndex), 850);
+    const arrive = window.setTimeout(() => setActiveIndex(nextIndex), 2_350);
+
+    return () => {
+      window.clearTimeout(startTravel);
+      window.clearTimeout(arrive);
+    };
+  }, [activeIndex, nodes.length, reduceMotion]);
 
   if (nodes.length === 0 || !firstNode || !finalNode) return null;
 
@@ -112,8 +128,8 @@ export default function InteractiveArchitecture({
                 !reduceMotion && "ice-arch-progress-stream ice-arch-flow-fill",
               )}
               style={{
-                width: `${reduceMotion || nodes.length === 1 ? 100 : Math.max(6, (activeIndex / (nodes.length - 1)) * 100)}%`,
-                transition: reduceMotion ? "none" : "width 900ms cubic-bezier(0.45, 0, 0.2, 1)",
+                width: `${reduceMotion || nodes.length === 1 ? 100 : Math.max(6, (flowIndex / (nodes.length - 1)) * 100)}%`,
+                transition: reduceMotion ? "none" : "width 1.4s cubic-bezier(0.22, 1, 0.36, 1)",
               }}
             />
             {!reduceMotion && (
@@ -139,7 +155,10 @@ export default function InteractiveArchitecture({
                     type="button"
                     className="group relative z-[1] flex w-full cursor-pointer flex-col items-center gap-3 rounded-xl px-2 py-3 text-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-solid"
                     aria-pressed={index === activeIndex}
-                    onClick={() => setActiveIndex(index)}
+                    onClick={() => {
+                      setFlowIndex(index);
+                      setActiveIndex(index);
+                    }}
                   >
                     <span
                       aria-hidden="true"
@@ -155,6 +174,8 @@ export default function InteractiveArchitecture({
                       className={cx(
                         "relative rounded-full p-0.5 ring-1 ring-brand/30 transition duration-500",
                         !reduceMotion && "ice-arch-node-breathe",
+                        "transform-gpu transition-transform duration-500",
+                        index === activeIndex ? "scale-110" : "scale-100",
                         index === activeIndex && "ring-brand-solid/75",
                       )}
                       style={{
@@ -203,7 +224,10 @@ export default function InteractiveArchitecture({
                 <button
                   type="button"
                   aria-pressed={index === activeIndex}
-                  onClick={() => setActiveIndex(index)}
+                  onClick={() => {
+                    setFlowIndex(index);
+                    setActiveIndex(index);
+                  }}
                   className={cx(
                     "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ring-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-solid",
                     index === activeIndex

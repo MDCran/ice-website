@@ -10,6 +10,7 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { pushEvent } from "@/lib/analytics";
 import type { SalesEnablementConfig } from "@/lib/salesEnablement";
 import { cx } from "@/utils/cx";
+import { SmsConsentDisclosure } from "@/components/legal/SmsConsentDisclosure";
 
 type BriefingConfig = SalesEnablementConfig["briefingForm"];
 
@@ -54,7 +55,7 @@ export function EnterpriseBriefingForm({
   const [timeline, setTimeline] = useState("");
   const [context, setContext] = useState("");
   const [website, setWebsite] = useState("");
-  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -84,8 +85,8 @@ export function EnterpriseBriefingForm({
           company,
           service: config.serviceValue,
           message,
-          smsConsent: false,
-          marketingConsent,
+          smsConsent,
+          marketingConsent: false,
           website,
           formKey: "enterprise_briefing",
           source: "enterprise_briefing",
@@ -235,10 +236,10 @@ export function EnterpriseBriefingForm({
               <div className="sm:col-span-2">
                 <Checkbox
                   size="md"
-                  aria-label="Email marketing consent"
-                  isSelected={marketingConsent}
-                  onChange={setMarketingConsent}
-                  hint="Send me occasional ICE infrastructure guidance and service updates. I can unsubscribe at any time."
+                  aria-label="Optional SMS consent"
+                  isSelected={smsConsent}
+                  onChange={setSmsConsent}
+                  hint={<SmsConsentDisclosure />}
                 />
               </div>
 

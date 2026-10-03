@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ComponentProps, type ReactNode } from "react";
+import { useId, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import Link from "next/link";
 import { motion, useInView, useReducedMotion } from "motion/react";
 import { ArrowRight, Check, CheckCircle, Minus, Plus, XClose, Zap } from "@untitledui/icons";
@@ -321,6 +321,63 @@ function SectionHeading({
       </h2>
       {description && <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">{description}</p>}
     </Reveal>
+  );
+}
+
+function ServiceFaqItem({
+  question,
+  answer,
+  index,
+}: {
+  question: string;
+  answer: string;
+  index: number;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const answerId = useId();
+
+  return (
+    <article className={cx("group", isOpen && "bg-primary/45")}>
+      <h3>
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          aria-controls={answerId}
+          onClick={() => setIsOpen((open) => !open)}
+          className="flex w-full items-center gap-5 px-5 py-5 text-left outline-focus-ring transition-colors duration-200 hover:bg-primary/45 focus-visible:outline-2 focus-visible:outline-offset-[-3px] sm:px-7 sm:py-6"
+        >
+          <span aria-hidden="true" className="w-7 shrink-0 text-xs font-semibold tracking-[0.14em] text-fg-quaternary tabular-nums">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <span className="min-w-0 flex-1 text-md font-semibold leading-snug text-primary sm:text-lg">
+            {question}
+          </span>
+          <span
+            aria-hidden="true"
+            className={cx(
+              "flex size-9 shrink-0 items-center justify-center rounded-full border border-secondary bg-secondary/70 text-fg-quaternary transition duration-300 group-hover:border-brand/40 group-hover:text-fg-brand-primary",
+              isOpen && "border-brand/40 bg-brand/10 text-fg-brand-primary",
+            )}
+          >
+            {isOpen ? <Minus className="size-4" /> : <Plus className="size-4" />}
+          </span>
+        </button>
+      </h3>
+      <div
+        id={answerId}
+        aria-hidden={!isOpen}
+        className={cx(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none",
+          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <p className="ml-12 max-w-3xl border-t border-secondary px-5 pt-4 pb-6 text-md leading-relaxed text-tertiary sm:ml-[4.5rem] sm:px-7 sm:pt-5 sm:pb-7">
+            {answer}
+          </p>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -942,34 +999,24 @@ function renderFaq(section: CMSRenderableSection) {
   if (items.length === 0) return renderContentBlock(section);
 
   return (
-    <section className="bg-primary py-12 md:py-16">
+    <section className="bg-primary py-16 md:py-24">
       <div className="mx-auto w-full max-w-container px-4 md:px-8">
         <SectionHeading
           eyebrow={text(content.eyebrow ?? content.label)}
           heading={text(content.heading, titleFromKey(section.section_key))}
           description={text(content.description)}
         />
-        <Reveal delay={0.1} className="mx-auto mt-8 flex max-w-3xl flex-col gap-5 md:mt-10">
-          {items.map((item, index) => (
-            <details
-              key={`${item.question ?? index}`}
-              className="group not-first:border-t not-first:border-secondary not-first:pt-6"
-            >
-              <summary className="flex w-full cursor-pointer list-none items-start justify-between gap-2 rounded-md text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:outline-offset-2 md:gap-6 [&::-webkit-details-marker]:hidden">
-                <span className="text-md font-semibold text-primary">
-                  {text(item.question, `Question ${index + 1}`)}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="flex size-6 items-center justify-center text-fg-quaternary transition-colors duration-200 group-open:text-fg-brand-primary"
-                >
-                  <Plus className="size-5 group-open:hidden" />
-                  <Minus className="hidden size-5 group-open:block" />
-                </span>
-              </summary>
-              <p className="mt-2 pr-8 text-md text-tertiary md:pr-12">{text(item.answer)}</p>
-            </details>
-          ))}
+        <Reveal delay={0.1} className="mx-auto mt-10 max-w-4xl overflow-hidden rounded-2xl border border-secondary bg-secondary/25 shadow-sm md:mt-12">
+          <div className="divide-y divide-secondary">
+            {items.map((item, index) => (
+              <ServiceFaqItem
+                key={`${item.question ?? index}`}
+                question={text(item.question, `Question ${index + 1}`)}
+                answer={text(item.answer)}
+                index={index}
+              />
+            ))}
+          </div>
         </Reveal>
       </div>
     </section>

@@ -104,6 +104,7 @@ export default async function ContactsPage({
             {callbacks.slice(0, 9).map((item) => (
               <div key={item.id} className="rounded-lg bg-secondary p-4 ring-1 ring-secondary">
                 <a href={`tel:${String(item.phone).replace(/\D/g, "")}`} className="text-sm font-semibold text-brand-secondary hover:underline">{item.phone}</a>
+                {item.email && <a href={`mailto:${item.email}`} className="mt-1 block text-xs font-medium text-brand-secondary hover:underline">{item.email}</a>}
                 <p className="mt-1 text-sm text-primary">{item.preferred_time || "No preferred time"}</p>
                 <p className="mt-1 text-xs text-tertiary">{item.context || "General inquiry"}</p>
                 <p className="mt-2 text-xs text-quaternary">{new Date(item.created_at).toLocaleString("en-US")}</p>

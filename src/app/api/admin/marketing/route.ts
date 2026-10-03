@@ -35,6 +35,7 @@ export async function GET() {
     auth.supabase.from("marketing_campaigns").select("*").order("created_at", { ascending: false }).limit(200),
     auth.supabase.from("marketing_templates").select("*").order("updated_at", { ascending: false }).limit(200),
   ]);
+  const { data: settings } = await auth.supabase.from("marketing_settings").select("lead_notification_email").eq("id", true).maybeSingle();
 
   const firstError = [contacts.error, lists.error, members.error, campaigns.error, templates.error].find(Boolean);
   if (firstError) {
@@ -53,6 +54,7 @@ export async function GET() {
     members: members.data ?? [],
     campaigns: campaigns.data ?? [],
     templates: templates.data ?? [],
+    settings: { leadNotificationEmail: settings?.lead_notification_email ?? "" },
     resendConnected: Boolean(process.env.RESEND_API_KEY),
   });
 }
@@ -62,6 +64,15 @@ export async function POST(request: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const body = await request.json().catch(() => ({}));
   const action = clean(body.action, 80);
+
+  if (action === "save_email_settings") {
+    const email = clean(body.leadNotificationEmail, 320).toLowerCase();
+    if (email && !validEmail(email)) return NextResponse.json({ error: "Enter a valid notification email address." }, { status: 400 });
+    const { error } = await auth.supabase.from("marketing_settings").upsert({
+      id: true, lead_notification_email: email || null, updated_at: new Date().toISOString(), updated_by: auth.user.id,
+    }, { onConflict: "id" });
+    return error ? NextResponse.json({ error: error.message }, { status: 400 }) : NextResponse.json({ ok: true });
+  }
 
   if (action === "create_list") {
     const name = clean(body.name, 120);
@@ -175,6 +186,10 @@ export async function POST(request: Request) {
     const blocks = Array.isArray(body.blocks) ? body.blocks.slice(0, 80) as EmailBlock[] : [];
     if (!name || !clean(body.subject, 300)) return NextResponse.json({ error: "Campaign name and subject are required." }, { status: 400 });
     const campaignType = CAMPAIGN_TYPES.includes(body.campaignType) ? body.campaignType : "marketing";
+    const bodyOnly = body.bodyOnly === true;
+    const bodyText = typeof body.bodyText === "string" ? body.bodyText.slice(0, 100000) : "";
+    if (bodyOnly && campaignType !== "transactional") return NextResponse.json({ error: "Body-only email is available for transactional messages only. Promotional campaigns must retain the unsubscribe link." }, { status: 400 });
+    if (bodyOnly && !bodyText.trim()) return NextResponse.json({ error: "Enter the plain-text email body." }, { status: 400 });
     const values = {
       name,
       campaign_type: campaignType,
@@ -183,10 +198,12 @@ export async function POST(request: Request) {
       subject: clean(body.subject, 300),
       preheader: clean(body.preheader, 500),
       from_name: clean(body.fromName, 160) || "International Computer Exchange",
-      from_email: clean(body.fromEmail, 320) || process.env.MARKETING_FROM_EMAIL || "info@icesales.com",
+      from_email: "noreply@mail.icesales.com",
       reply_to: clean(body.replyTo, 320) || "info@icesales.com",
       blocks,
-      html: renderMarketingEmail({ preheader: clean(body.preheader, 500), blocks, includeUnsubscribe: includesPreferenceCenter(campaignType) }),
+      body_only: bodyOnly,
+      body_text: bodyOnly ? bodyText : "",
+      html: bodyOnly ? "" : renderMarketingEmail({ preheader: clean(body.preheader, 500), blocks, includeUnsubscribe: includesPreferenceCenter(campaignType) }),
       scheduled_at: body.scheduledAt || null,
       created_by: auth.user.id,
       updated_at: new Date().toISOString(),
@@ -203,15 +220,19 @@ export async function POST(request: Request) {
     const to = clean(body.to, 320).toLowerCase();
     if (!validEmail(to)) return NextResponse.json({ error: "Enter a valid test email." }, { status: 400 });
     const blocks = Array.isArray(body.blocks) ? body.blocks.slice(0, 80) as EmailBlock[] : [];
+    const bodyOnly = body.bodyOnly === true;
+    const bodyText = typeof body.bodyText === "string" ? body.bodyText.slice(0, 100000) : "";
+    if (bodyOnly && body.campaignType !== "transactional") return NextResponse.json({ error: "Body-only email is available for transactional messages only." }, { status: 400 });
+    if (bodyOnly && !bodyText.trim()) return NextResponse.json({ error: "Enter the plain-text email body." }, { status: 400 });
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: process.env.MARKETING_FROM_EMAIL || "International Computer Exchange <onboarding@resend.dev>",
+        from: "International Computer Exchange <noreply@mail.icesales.com>",
         to: [to],
         reply_to: clean(body.replyTo, 320) || "info@icesales.com",
         subject: `[TEST] ${clean(body.subject, 300) || "ICE email preview"}`,
-        html: renderMarketingEmail({ preheader: clean(body.preheader, 500), blocks, includeUnsubscribe: false }),
+        ...(bodyOnly ? { text: bodyText } : { html: renderMarketingEmail({ preheader: clean(body.preheader, 500), blocks, includeUnsubscribe: true }).replace(/{{unsubscribe_url}}/g, "https://www.icesales.com/subscribe") }),
       }),
     });
     const result = await response.json().catch(() => ({}));
@@ -225,6 +246,8 @@ export async function POST(request: Request) {
     if (campaignError || !campaign) return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
     if (!campaign.list_id) return NextResponse.json({ error: "Choose an audience list before sending." }, { status: 400 });
     if (!['approved', 'scheduled'].includes(campaign.status)) return NextResponse.json({ error: "Campaign must be approved before it can be sent." }, { status: 400 });
+    if (campaign.body_only && campaign.campaign_type !== "transactional") return NextResponse.json({ error: "Body-only email is restricted to transactional messages." }, { status: 400 });
+    if (campaign.body_only && !String(campaign.body_text ?? "").trim()) return NextResponse.json({ error: "The plain-text email body is empty." }, { status: 400 });
 
     const { data: memberships } = await auth.supabase.from("marketing_list_members").select("contact_id").eq("list_id", campaign.list_id);
     const ids = (memberships ?? []).map((item) => item.contact_id);
@@ -233,17 +256,26 @@ export async function POST(request: Request) {
     if (recipientError) return NextResponse.json({ error: recipientError.message }, { status: 400 });
     const recipients = (contacts ?? []).filter((contact) => isEligible(contact, campaign.campaign_type));
     if (!recipients?.length) return NextResponse.json({ error: "No eligible recipients remain after consent and suppression checks." }, { status: 400 });
+    if (campaign.body_only && recipients.length !== 1) return NextResponse.json({ error: "Body-only transactional email must have exactly one eligible recipient. Choose a list containing just that person." }, { status: 400 });
 
     await auth.supabase.from("marketing_campaigns").update({ status: "sending", recipient_count: recipients.length, updated_at: new Date().toISOString() }).eq("id", campaign.id);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.icesales.com";
     let sent = 0;
     for (let index = 0; index < recipients.length; index += 100) {
       const batch = recipients.slice(index, index + 100).map((contact) => ({
-        from: `${campaign.from_name} <${process.env.MARKETING_FROM_EMAIL || campaign.from_email}>`,
+        from: `${campaign.from_name} <noreply@mail.icesales.com>`,
         to: [contact.email],
         reply_to: campaign.reply_to,
         subject: personalize(campaign.subject, contact),
-        html: personalize(campaign.html, contact).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
+        ...(campaign.body_only
+          ? { text: campaign.body_text }
+          : {
+              html: personalize(campaign.html, contact).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
+              headers: {
+                "List-Unsubscribe": `<${siteUrl}/api/marketing/unsubscribe?id=${contact.id}>`,
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+              },
+            }),
         tags: [{ name: "campaign_id", value: campaign.id }],
       }));
       const response = await fetch("https://api.resend.com/emails/batch", {

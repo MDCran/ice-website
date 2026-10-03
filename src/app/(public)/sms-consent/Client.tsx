@@ -10,6 +10,7 @@ import { BackgroundPattern } from "@/components/shared-assets/background-pattern
 import { cx } from "@/utils/cx";
 import { isCmsSectionVisible } from "@/lib/cms/sectionManifest";
 import type { CMSRenderableSection } from "@/components/cms/GenericCMSSections";
+import { downloadLegalPdf } from "@/lib/downloadLegalPdf";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -150,6 +151,27 @@ export default function SmsConsentPage({ cmsData, orderedSections }: { cmsData?:
     ? selectedActiveId
     : sections[0]?.id ?? "";
   const shouldReduceMotion = useReducedMotion();
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+
+  const handleDownloadPdf = async () => {
+    if (isDownloadingPdf) return;
+    setIsDownloadingPdf(true);
+    setPdfError("");
+    try {
+      await downloadLegalPdf({
+        title: hero.document_title,
+        intro: hero.document_intro,
+        lastUpdated: hero.last_updated,
+        note: hero.badge_note,
+        sections,
+      });
+    } catch {
+      setPdfError("The PDF could not be generated. Please try again.");
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   useEffect(() => {
     const ids = sections.map((s) => s.id);
@@ -295,9 +317,10 @@ export default function SmsConsentPage({ cmsData, orderedSections }: { cmsData?:
               </div>
 
               <div className="flex flex-col items-center gap-6 border-t border-secondary pt-8 print:hidden">
-                <Button color="secondary" size="lg" iconLeading={Download01} onClick={() => window.print()}>
-                  Download as PDF
+                <Button color="secondary" size="lg" iconLeading={Download01} isDisabled={isDownloadingPdf} onClick={() => void handleDownloadPdf()}>
+                  {isDownloadingPdf ? "Preparing PDF…" : "Download PDF"}
                 </Button>
+                {pdfError && <p role="status" className="text-sm text-error-primary">{pdfError}</p>}
                 <p className="text-sm text-tertiary">
                   Related:{" "}
                   <Link

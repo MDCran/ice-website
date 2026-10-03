@@ -133,7 +133,7 @@ const buyerTools = {
     heading: "Continue your evaluation",
     browse_label: "Browse all resources",
     browse_href: "/resources",
-    items: [{ title: "Talk with an ICE specialist", kind: "Assessment", href: "/contact" }],
+    items: [],
   },
   sticky_cta: {
     enabled: true,

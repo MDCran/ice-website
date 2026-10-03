@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import {
   ArrowRight,
+  Award01,
   Check,
   ChevronRight,
   MessageChatCircle,
@@ -421,8 +422,12 @@ export default function SolutionPageLayout({
             />
             <BrandOrbs />
 
-            <div className="flex flex-col gap-x-8 gap-y-8 lg:flex-row lg:items-center">
-              <div className="flex max-w-3xl flex-1 flex-col">
+            <div className="grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-10">
+              <div className="flex min-w-0 max-w-3xl flex-col">
+                <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-brand/25 bg-brand-primary_alt px-3 py-1.5 text-xs font-semibold text-brand-secondary">
+                  <Award01 className="size-4 text-fg-brand-primary" aria-hidden="true" />
+                  IBM Business Partner · Since 1990
+                </span>
                 <h2
                   className="text-display-sm font-semibold tracking-tight text-primary md:text-display-md"
                   dangerouslySetInnerHTML={{ __html: ctaTitle }}
@@ -430,14 +435,8 @@ export default function SolutionPageLayout({
                 <p className="mt-4 text-lg text-tertiary md:mt-5">
                   {ctaSubtitle}
                 </p>
-                {ctaSupportNote !== "" && (
-                  <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-brand-secondary">
-                    <Check className="size-4" aria-hidden="true" />
-                    {ctaSupportNote ?? "ICE Solutions Desk · US-based platform and recovery specialists"}
-                  </p>
-                )}
               </div>
-              <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-start">
+              <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:justify-end">
                 <Button
                   href={primaryConsultHref}
                   size="xl"
@@ -457,6 +456,16 @@ export default function SolutionPageLayout({
                 )}
               </div>
             </div>
+            {ctaSupportNote !== "" && (
+              <div className="mt-8 flex items-start gap-2.5 border-t border-secondary/80 pt-4 text-xs leading-relaxed text-tertiary">
+                <Check className="mt-0.5 size-4 shrink-0 text-fg-brand-primary" aria-hidden="true" />
+                <p className="max-w-5xl">
+                  {ctaSupportNote && /features, supported platforms, coverage hours, pricing, availability commitments, and recovery objectives are defined/i.test(ctaSupportNote)
+                    ? "Service scope, coverage, pricing, availability, and recovery commitments are confirmed in your proposal. This overview is not an SLA or compliance certification."
+                    : ctaSupportNote ?? "ICE Solutions Desk · US-based platform and recovery specialists"}
+                </p>
+              </div>
+            )}
           </motion.div>
         </div>
       </section>

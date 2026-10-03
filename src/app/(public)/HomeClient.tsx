@@ -166,10 +166,10 @@ function statTopic(label: string): string | undefined {
 }
 
 const DEFAULT_TIMELINE = [
-  { year: "1990", title: "An IBM relationship begins", description: "ICE becomes an IBM Business Partner, beginning a long-running focus on enterprise systems." },
+  { year: "1990", title: "Our beginning", description: "ICE began serving enterprise technology customers with an IBM-focused approach." },
   { year: "AS/400 → IBM i", title: "A platform evolves", description: "As IBM’s platform moved from AS/400 through iSeries and System i to IBM i, customers kept relying on it to run essential business applications." },
   { year: "Over the years", title: "Support beyond the server", description: "The work grew to cover the needs around critical systems too: infrastructure, security, backup, recovery, and day-to-day operations." },
-  { year: "Today", title: "Hosting built around the workload", description: "ICE helps businesses run and protect AS/400, IBM i, IBM Power, and other enterprise workloads with hosting, cloud, managed services, and recovery planning." },
+  { year: "Today", title: "Your next chapter", description: "AS400 and IBM i hosting, platform support, cloud, security, and data protection planning for today's business requirements." },
 ];
 
 const DEFAULT_INDUSTRIES = [
@@ -394,7 +394,7 @@ function StatItem({
     >
       <dt className="text-md font-semibold text-primary md:text-lg">{label}</dt>
       <dd className="text-display-lg font-semibold tracking-tight text-brand-tertiary_alt tabular-nums md:text-display-xl">
-        {/year/i.test(label) ? `${value}${suffix}` : <CountUpNumber target={value} suffix={suffix} inView={inView} duration={2000} />}
+        <CountUpNumber target={value} suffix={suffix} inView={inView} duration={2000} />
       </dd>
     </div>
   );
@@ -1142,7 +1142,7 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           INDUSTRIES + CTA
           ═══════════════════════════════════════════════════════════════════ */}
-      {show("industries_cta") && <section className="bg-primary py-16 md:py-24">
+      {show("industries_cta") && <section className="bg-primary pt-16 pb-8 md:pt-24 md:pb-12">
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <motion.div
             {...reveal()}
@@ -1213,7 +1213,7 @@ export default function Home({
       {/* ═══════════════════════════════════════════════════════════════════
           TRUST & SECURITY BADGES
           ═══════════════════════════════════════════════════════════════════ */}
-      {show("trust_badges") && <section className="bg-primary py-16 md:py-24">
+      {show("trust_badges") && <section className="bg-primary pt-8 pb-16 md:pt-12 md:pb-24">
         <div className="mx-auto w-full max-w-container px-4 md:px-8">
           <SectionHeader
             eyebrow={trustBadgesSection?.eyebrow ?? "Enterprise Trust"}

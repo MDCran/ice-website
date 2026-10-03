@@ -28,12 +28,12 @@ const STEPS: { id: Step; label: string }[] = [
 
 const STEP_META: Record<Step, { title: string; description: string }> = {
   1: {
-    title: "Scope the request",
-    description: "Confirm the service area, platform, and timing so the right ICE specialist can follow up.",
+    title: "Share what you can",
+    description: "These questions are optional. Share anything relevant, or skip them and continue to your contact details.",
   },
   2: {
-    title: "Who should we contact?",
-    description: "Add the best person for discovery, budget, or technical fit questions.",
+    title: "Your contact details",
+    description: "We’ll reply by email. Add company or phone details only if useful.",
   },
   3: {
     title: "Add useful context",
@@ -93,8 +93,6 @@ export interface ConsultWizardContent {
     sms_policy_label?: string;
     sms_policy_href?: string;
     sms_consent_suffix?: string;
-    marketing_aria_label?: string;
-    marketing_consent?: string;
     calendar_step_label?: string;
     back_label?: string;
     continue_label?: string;
@@ -355,8 +353,6 @@ const DEFAULT_WIZARD_COPY = {
   sms_policy_label: "Privacy Policy",
   sms_policy_href: "/privacy-policy",
   sms_consent_suffix: ".",
-  marketing_aria_label: "Email marketing consent",
-  marketing_consent: "Send me occasional ICE infrastructure guidance, service updates, and event announcements. I can unsubscribe at any time.",
   calendar_step_label: "Prefer to book a calendar slot?",
   back_label: "Back",
   continue_label: "Continue",
@@ -404,6 +400,10 @@ export function getDefaultConsultWizardContent(): ConsultWizardContent {
 
 function copyText(value: unknown, fallback: string): string {
   return typeof value === "string" ? value : fallback;
+}
+
+function optionalLabel(label: string): string {
+  return /\boptional\b/i.test(label) ? label : `${label} (optional)`;
 }
 
 function resolveProfileCopy(base: QuestionProfile, override?: QuestionProfileCopy): QuestionProfile {
@@ -564,7 +564,6 @@ export default function ConsultWizard({
     phone: "",
     message: "",
     smsConsent: false,
-    marketingConsent: false,
   });
   const [prefillIntent, setPrefillIntent] = useState<PrefillIntent | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -633,10 +632,16 @@ export default function ConsultWizard({
   );
   const activeStepMeta =
     step === 1
-      ? { title: activeProfile.scopeTitle, description: activeProfile.scopeDescription }
+      ? {
+          title: activeProfile.scopeTitle,
+          description: "Optional. Share any details that are relevant to your request, or skip these questions and continue.",
+        }
       : step === 3
-        ? { title: activeProfile.detailTitle, description: activeProfile.detailDescription }
-        : wizard.steps.find((item) => item.id === step) ?? STEP_META[step];
+        ? {
+            title: activeProfile.detailTitle,
+            description: `${activeProfile.detailDescription} This is optional; leave it blank if it doesn't apply.`,
+          }
+        : STEP_META[2];
 
   const goToStep = (next: Step, source: "manual" | "back") => {
     if (source === "manual") {
@@ -662,25 +667,21 @@ export default function ConsultWizard({
     }));
   };
 
-  const canContinueStep1 = Boolean(
-    formData.service &&
-      activeProfile.platformOptions.includes(formData.platform) &&
-      activeProfile.urgencyOptions.some((option) => option.id === formData.urgency),
-  );
-  const hasRequiredPhone = formData.phone.replace(/\D/g, "").length >= 7;
-  const canContinueStep2 = Boolean(formData.name.trim() && isValidEmail(formData.email) && hasRequiredPhone);
+  const canContinueStep1 = true;
+  const hasValidPhone = formData.phone.replace(/\D/g, "").length >= 7;
+  const canContinueStep2 = Boolean(formData.name.trim() && isValidEmail(formData.email));
 
   const buildMessage = () => {
     const urgencyLabel =
       activeProfile.urgencyOptions.find((o) => o.id === formData.urgency)?.label ?? formData.urgency;
     const lines = [
-      formData.message.trim() || null,
+      formData.message.trim() || (!formData.service ? "General inquiry" : null),
       prefillIntent?.requestedService ? `Prefilled service: ${prefillIntent.requestedService}` : null,
       prefillIntent?.source ? `Lead source: ${prefillIntent.source}` : null,
       "Consult wizard",
       `Question profile: ${activeProfile.key}`,
-      `Platform: ${formData.platform}`,
-      `Urgency: ${urgencyLabel}`,
+      formData.platform ? `Platform: ${formData.platform}` : null,
+      formData.urgency ? `Timeline: ${urgencyLabel}` : null,
     ].filter(Boolean);
     return lines.join("\n");
   };
@@ -697,10 +698,9 @@ export default function ConsultWizard({
         email: formData.email,
         company: formData.company,
         phone: formData.phone,
-        service: formData.service,
+        service: formData.service || "General Inquiry",
         message: buildMessage(),
         smsConsent: formData.smsConsent,
-        marketingConsent: formData.marketingConsent,
       };
       const res = await fetch("/api/contact", {
         method: "POST",
@@ -784,7 +784,7 @@ export default function ConsultWizard({
 
       {/* Step indicators */}
       <nav aria-label={wizard.copy.progress_aria_label} className="w-full">
-        <ol className="grid grid-cols-3 gap-2">
+        <ol className="grid grid-cols-3 border-b border-secondary">
           {wizard.steps.map((s) => {
             const done = step > s.id;
             const current = step === s.id;
@@ -804,21 +804,19 @@ export default function ConsultWizard({
                     else if (s.id === 3 && canContinueStep1 && canContinueStep2) goToStep(3, "manual");
                   }}
                   className={cx(
-                    "flex min-h-16 w-full min-w-0 items-center gap-2.5 rounded-lg px-3 py-3 text-left ring-1 outline-focus-ring transition focus-visible:outline-2 focus-visible:outline-offset-2",
-                    current && "bg-brand-primary_alt ring-brand",
-                    done && !current && "bg-secondary ring-secondary",
-                    !done && !current && "bg-primary ring-secondary",
-                    reachable ? "cursor-pointer hover:ring-brand" : "cursor-default opacity-70",
+                    "flex min-h-12 w-full min-w-0 items-center gap-2 border-b-2 px-2 py-2.5 text-left outline-focus-ring transition focus-visible:outline-2 focus-visible:outline-offset-2 sm:gap-3 sm:px-3",
+                    current && "border-brand-solid text-brand-secondary",
+                    done && !current && "border-brand-solid/50 text-secondary",
+                    !done && !current && "border-transparent text-quaternary",
+                    reachable ? "cursor-pointer hover:text-primary" : "cursor-default",
                   )}
                   aria-current={current ? "step" : undefined}
                 >
                   <span
                     className={cx(
-                      "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition",
-                      done && "bg-brand-solid text-white",
-                      current &&
-                        "bg-brand-solid text-white shadow-[0_0_0_4px_rgb(4_155_251/0.2)]",
-                      !done && !current && "bg-secondary text-quaternary ring-1 ring-secondary",
+                      "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ring-1 transition",
+                      (done || current) && "bg-brand-primary_alt text-brand-secondary ring-brand/40",
+                      !done && !current && "bg-primary text-quaternary ring-secondary",
                     )}
                   >
                     {done ? <CheckCircle className="size-4" /> : s.id}
@@ -847,27 +845,23 @@ export default function ConsultWizard({
           <p className="mt-1 max-w-xl text-sm leading-6 text-tertiary">{activeStepMeta.description}</p>
         </div>
 
-        <div
-          className={cx(
-            "relative transition-[min-height] duration-200",
-            step === 1 && "min-h-[27rem] sm:min-h-[24rem]",
-            step === 2 && "min-h-[22rem] sm:min-h-[19rem]",
-            step === 3 && "min-h-[21rem] sm:min-h-[18rem]",
-          )}
-        >
+        <div className="relative">
           {step === 1 && (
             <div className="flex flex-col gap-5">
               <ServiceSelect
                 size="lg"
                 name="service"
-                label={wizard.copy.service_label}
+                label={optionalLabel(wizard.copy.service_label)}
                 value={formData.service}
                 onChange={handleServiceChange}
                 groups={effectiveServiceGroups}
               />
+              <p className="-mt-3 text-xs text-tertiary">Choose a listed service, enter your own, or skip this field for a general inquiry.</p>
 
               <fieldset>
-                <legend className="mb-2 text-sm font-medium text-secondary">{activeProfile.platformLabel}</legend>
+                <legend className="mb-2 flex items-center gap-2 text-sm font-medium text-secondary">
+                  {activeProfile.platformLabel}<span className="text-xs font-normal text-quaternary">Optional</span>
+                </legend>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {activeProfile.platformOptions.map((option) => (
                     <button
@@ -875,11 +869,12 @@ export default function ConsultWizard({
                       type="button"
                       onClick={() => patchForm({ platform: option })}
                       className={cx(
-                        "min-h-12 rounded-lg px-3.5 py-3 text-left text-sm ring-1 transition",
+                        "min-h-12 rounded-lg px-3.5 py-3 text-left text-sm ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-solid",
                         formData.platform === option
                           ? "bg-brand-primary_alt font-semibold text-brand-secondary ring-brand"
                           : "bg-primary text-secondary ring-secondary hover:bg-secondary",
                       )}
+                      aria-pressed={formData.platform === option}
                     >
                       {option}
                     </button>
@@ -888,7 +883,9 @@ export default function ConsultWizard({
               </fieldset>
 
               <fieldset>
-                <legend className="mb-2 text-sm font-medium text-secondary">{activeProfile.timelineLabel}</legend>
+                <legend className="mb-2 flex items-center gap-2 text-sm font-medium text-secondary">
+                  {activeProfile.timelineLabel}<span className="text-xs font-normal text-quaternary">Optional</span>
+                </legend>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {activeProfile.urgencyOptions.map((option) => (
                     <button
@@ -896,14 +893,18 @@ export default function ConsultWizard({
                       type="button"
                       onClick={() => patchForm({ urgency: option.id })}
                       className={cx(
-                        "min-h-[5rem] rounded-lg px-3.5 py-3 text-left ring-1 transition",
+                        "flex min-h-[5.5rem] flex-col justify-between rounded-lg p-3.5 text-left ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-solid",
                         formData.urgency === option.id
-                          ? "bg-brand-primary_alt ring-brand"
+                          ? "bg-brand-primary_alt ring-2 ring-brand"
                           : "bg-primary ring-secondary hover:bg-secondary",
                       )}
+                      aria-pressed={formData.urgency === option.id}
                     >
-                      <span className="block text-sm font-semibold text-primary">{option.label}</span>
-                      <span className="text-xs text-tertiary">{option.hint}</span>
+                      <span className="flex w-full items-start justify-between gap-2">
+                        <span className="text-sm font-semibold leading-snug text-primary">{option.label}</span>
+                        <span aria-hidden="true" className={cx("mt-0.5 size-4 shrink-0 rounded-full ring-1", formData.urgency === option.id ? "bg-brand-solid ring-brand-solid shadow-[inset_0_0_0_3px_var(--color-bg-primary)]" : "ring-secondary")} />
+                      </span>
+                      <span className="mt-2 text-xs leading-5 text-tertiary">{option.hint}</span>
                     </button>
                   ))}
                 </div>
@@ -913,6 +914,7 @@ export default function ConsultWizard({
 
           {step === 2 && (
             <div className="flex flex-col gap-5">
+              <p className="text-sm text-tertiary">Name and email are required so we can reply. Company and phone are optional.</p>
               <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
                 <Input
                   isRequired
@@ -942,19 +944,18 @@ export default function ConsultWizard({
                 <Input
                   size="md"
                   name="company"
-                  label={wizard.copy.company_label}
+                  label={optionalLabel(wizard.copy.company_label)}
                   placeholder={wizard.copy.company_placeholder}
                   value={formData.company}
                   onChange={(value) => patchForm({ company: value })}
                   wrapperClassName="min-w-0"
                 />
                 <PhoneField
-                  isRequired
                   size="md"
-                  label={wizard.copy.phone_label}
+                  label={optionalLabel(wizard.copy.phone_label)}
                   value={formData.phone}
-                  onChange={(value) => patchForm({ phone: value })}
-                  wrapperClassName="sm:col-span-2"
+                  onChange={(value) => patchForm({ phone: value, ...(value.replace(/\D/g, "").length < 7 ? { smsConsent: false } : {}) })}
+                  wrapperClassName="min-w-0"
                 />
               </div>
             </div>
@@ -975,17 +976,15 @@ export default function ConsultWizard({
                 name="smsConsent"
                 size="md"
                 aria-label={wizard.copy.sms_aria_label}
+                isDisabled={!hasValidPhone}
                 isSelected={formData.smsConsent}
                 onChange={(value) => patchForm({ smsConsent: value })}
-                hint={<SmsConsentDisclosure />}
-              />
-              <Checkbox
-                name="marketingConsent"
-                size="md"
-                aria-label={wizard.copy.marketing_aria_label}
-                isSelected={formData.marketingConsent}
-                onChange={(value) => patchForm({ marketingConsent: value })}
-                hint={wizard.copy.marketing_consent}
+                hint={(
+                  <>
+                    <SmsConsentDisclosure />
+                    {!hasValidPhone && <span className="mt-1 block text-xs">Add a phone number above to enable SMS consent. You can still submit by email.</span>}
+                  </>
+                )}
               />
               {bookingUrl && (
                 <Button

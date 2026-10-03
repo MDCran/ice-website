@@ -24,6 +24,16 @@ export async function GET(request: Request) {
   const results: Array<{ id: string; sent: number; error?: string }> = [];
 
   for (const campaign of campaigns ?? []) {
+    if (campaign.body_only && campaign.campaign_type !== "transactional") {
+      results.push({ id: campaign.id, sent: 0, error: "Body-only email is restricted to transactional messages." });
+      await supabase.from("marketing_campaigns").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", campaign.id);
+      continue;
+    }
+    if (campaign.body_only && !clean(campaign.body_text)) {
+      results.push({ id: campaign.id, sent: 0, error: "The plain-text email body is empty." });
+      await supabase.from("marketing_campaigns").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", campaign.id);
+      continue;
+    }
     if (!campaign.list_id) { results.push({ id: campaign.id, sent: 0, error: "No audience list" }); continue; }
     const { data: memberships } = await supabase.from("marketing_list_members").select("contact_id").eq("list_id", campaign.list_id);
     const ids = (memberships ?? []).map((item) => item.contact_id);
@@ -31,6 +41,11 @@ export async function GET(request: Request) {
     const { data: contacts } = await supabase.from("marketing_contacts").select("*").in("id", ids);
     const recipients = (contacts ?? []).filter((contact) => isEligible(contact, campaign.campaign_type));
     if (!recipients?.length) { results.push({ id: campaign.id, sent: 0, error: "No eligible recipients" }); continue; }
+    if (campaign.body_only && recipients.length !== 1) {
+      results.push({ id: campaign.id, sent: 0, error: "Body-only transactional email must have exactly one eligible recipient." });
+      await supabase.from("marketing_campaigns").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", campaign.id);
+      continue;
+    }
 
     await supabase.from("marketing_campaigns").update({ status: "sending", recipient_count: recipients.length }).eq("id", campaign.id);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.icesales.com";
@@ -38,11 +53,19 @@ export async function GET(request: Request) {
     let sendError = "";
     for (let index = 0; index < recipients.length; index += 100) {
       const batch = recipients.slice(index, index + 100).map((contact) => ({
-        from: `${campaign.from_name} <${process.env.MARKETING_FROM_EMAIL || campaign.from_email}>`,
+        from: `${campaign.from_name} <noreply@mail.icesales.com>`,
         to: [contact.email],
         reply_to: campaign.reply_to,
         subject: personalize(campaign.subject, contact),
-        html: personalize(campaign.html, contact).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
+        ...(campaign.body_only
+          ? { text: campaign.body_text }
+          : {
+              html: personalize(campaign.html, contact).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
+              headers: {
+                "List-Unsubscribe": `<${siteUrl}/api/marketing/unsubscribe?id=${contact.id}>`,
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+              },
+            }),
         tags: [{ name: "campaign_id", value: campaign.id }],
       }));
       const response = await fetch("https://api.resend.com/emails/batch", { method: "POST", headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify(batch) });

@@ -63,7 +63,19 @@ interface Stat {
 
 const DEFAULT_STATS: Stat[] = [
   { value: 30, suffix: "+", label: "Years in Business" },
+  { value: 4, suffix: "", label: "Core Service Areas" },
+  { value: 24, suffix: "/7/365", label: "Operations Coverage Options" },
+  { value: 99.99, suffix: "%", label: "Target Uptime SLA" },
 ];
+
+function statTopic(label: string): string | undefined {
+  const normalized = label.toLowerCase();
+  if (/year|experience/.test(normalized)) return "experience";
+  if (/core service|service area/.test(normalized)) return "service-areas";
+  if (/operation|coverage|monitoring/.test(normalized)) return "operations";
+  if (/uptime|sla/.test(normalized)) return "uptime";
+  return undefined;
+}
 
 /** Quiet mono proof chips shown under the hero lead. */
 const DEFAULT_PROOF: string[] = [
@@ -409,7 +421,14 @@ export default function WhyICEPage({
   const faqsSection = normalizeSection(cmsData?.faqs);
   const industriesSection = normalizeSection(cmsData?.industries);
   const finalCta = normalizeSection(cmsData?.final_cta ?? cmsData?.cta);
-  const stats = (statsSection.items ?? DEFAULT_STATS).map(normalizeStat);
+  const statItems = [...(statsSection.items ?? [])];
+  for (const fallback of DEFAULT_STATS) {
+    if (statItems.length >= DEFAULT_STATS.length) break;
+    const topic = statTopic(fallback.label);
+    if (topic && statItems.some((item) => statTopic(optionalString(asRecord(item).label) ?? "") === topic)) continue;
+    statItems.push(fallback);
+  }
+  const stats = statItems.map(normalizeStat);
   const differentiators = (differentiatorsSection.items ?? DEFAULT_DIFFERENTIATORS)
     .map(normalizeDifferentiator);
   const faqs = (faqsSection.items ?? DEFAULT_FAQS).map(normalizeFaq);
@@ -530,10 +549,14 @@ export default function WhyICEPage({
               </h2>
               {statsSection.heading ? (
                 <p className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">{statsSection.heading}</p>
-              ) : null}
+              ) : (
+                <p className="mt-3 text-display-sm font-semibold tracking-tight text-primary md:text-display-md">Proven Enterprise Track Record</p>
+              )}
               {statsSection.description ? (
                 <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">{statsSection.description}</p>
-              ) : null}
+              ) : (
+                <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">Service coverage and uptime targets are defined for each agreement.</p>
+              )}
             </motion.div>
 
             {/* Dark navy band — opaque from first paint so count-up is visible. */}
@@ -566,7 +589,7 @@ export default function WhyICEPage({
                     >
                       <dt className="text-md font-medium text-secondary_on-brand">{stat.label}</dt>
                       <dd className="text-display-lg font-semibold tracking-tight text-primary_on-brand tabular-nums md:text-display-xl">
-                        {/year/i.test(stat.label) ? `${value}${stat.suffix ?? ""}` : <AnimatedCounter target={value} suffix={stat.suffix ?? ""} inView={statsInView} />}
+                        <AnimatedCounter target={value} suffix={stat.suffix ?? ""} inView={statsInView} />
                       </dd>
                     </div>
                   );
