@@ -48,7 +48,7 @@ const TABS: Array<{ id: Tab; label: string; icon: typeof Mail01 }> = [
 ];
 
 const BLOCK_LABELS: Record<EmailBlockType, string> = {
-  hero: "Hero", text: "Text", button: "Button", service: "Service card", notice: "Notice", metric: "Metric", divider: "Divider", spacer: "Spacer", signature: "CEO signature",
+  hero: "Hero", text: "Text", button: "Button", service: "Service card", notice: "Notice", metric: "Metric", image: "Service image", divider: "Divider", spacer: "Spacer", signature: "CEO signature",
 };
 
 function parseCsv(text: string): string[][] {
@@ -338,6 +338,21 @@ export default function MarketingCenter() {
           <div className="mt-5 max-w-xl"><Input label="Inbox for new website requests" type="email" autoComplete="email" value={leadNotificationEmail} onChange={setLeadNotificationEmail} placeholder="you@company.com" /></div>
           <Button className="mt-4" isLoading={busy} onClick={async () => { const result = await post({ action: "save_email_settings", leadNotificationEmail }); if (result) setNotice("Email routing settings saved."); }}>Save email settings</Button>
           <div className="mt-7 rounded-lg bg-secondary p-4 text-sm leading-6 text-secondary ring-1 ring-secondary"><strong className="text-primary">Sending address</strong><br />Customer confirmations and admin notices use noreply@mail.icesales.com. Reply-to points to the customer on admin notices, so the team can respond directly.</div>
+        </section>
+      )}
+
+      {tab === "studio" && blocks.some((block) => block.type === "image" || block.type === "signature") && (
+        <section className="rounded-xl bg-primary p-5 ring-1 ring-secondary">
+          <h2 className="text-lg font-semibold text-primary">Email imagery and signature</h2>
+          <p className="mt-1 text-sm text-tertiary">Use a full HTTPS image URL. Service templates use ICE’s service-specific page artwork.</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {blocks.filter((block) => block.type === "image" || block.type === "signature").map((block) => (
+              <label key={block.id} className="block text-sm font-medium text-secondary">
+                {block.type === "signature" ? "Signature image URL" : `${block.heading || "Service image"} URL`}
+                <input type="url" value={block.imageUrl ?? ""} onChange={(event) => updateBlock(block.id, { imageUrl: event.target.value })} placeholder="https://www.icesales.com/images/..." className="mt-1.5 w-full rounded-lg bg-primary px-3 py-2.5 text-sm text-primary ring-1 ring-secondary" />
+              </label>
+            ))}
+          </div>
         </section>
       )}
 

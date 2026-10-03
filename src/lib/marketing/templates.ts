@@ -1,4 +1,4 @@
-export type EmailBlockType = "hero" | "text" | "button" | "service" | "notice" | "metric" | "divider" | "spacer" | "signature";
+export type EmailBlockType = "hero" | "text" | "button" | "service" | "notice" | "metric" | "image" | "divider" | "spacer" | "signature";
 
 export interface EmailBlock {
   id: string;
@@ -27,6 +27,21 @@ export interface MarketingTemplatePreset {
 const block = (id: string, type: EmailBlockType, values: Omit<EmailBlock, "id" | "type"> = {}): EmailBlock => ({ id, type, ...values });
 
 function serviceTemplate(id: string, name: string, outcome: string, detail: string): MarketingTemplatePreset {
+  const serviceImages: Record<string, string> = {
+    "managed-cloud-hosting": "managed-cloud-hosting",
+    "managed-private-cloud": "managed-private-cloud",
+    "managed-hybrid-cloud": "managed-hybrid-cloud",
+    "cloud-migration": "cloud-migration",
+    "disaster-recovery": "disaster-recovery",
+    "managed-backup": "backup-as-a-service",
+    "high-availability": "high-availability",
+    "ransomware-recovery": "ransomware-recovery",
+    cybersecurity: "security-monitoring",
+    "ibm-i-services": "as400-ibmi",
+    "ibm-power-vs": "ibm-power-vs",
+    "microsoft-services": "managed-microsoft",
+  };
+  const imageName = serviceImages[id];
   return {
     id,
     name,
@@ -36,6 +51,7 @@ function serviceTemplate(id: string, name: string, outcome: string, detail: stri
     preheader: detail,
     blocks: [
       block(`${id}-hero`, "hero", { eyebrow: "ICE SOLUTIONS", heading: outcome, body: detail }),
+      ...(imageName ? [block(`${id}-image`, "image", { heading: `${name} infrastructure`, imageUrl: `https://www.icesales.com/images/solutions/heroes/${imageName}.webp` })] : []),
       block(`${id}-service`, "service", { heading: name, body: "Engineer-led planning, implementation, validation, and ongoing support from International Computer Exchange." }),
       block(`${id}-button`, "button", { label: `Explore ${name}`, href: `https://www.icesales.com/solutions/${id}` }),
     ],
@@ -64,9 +80,9 @@ export const MARKETING_TEMPLATE_PRESETS: MarketingTemplatePreset[] = [
     description: "A personal note from ICE leadership, with a handwritten signature.",
     subject: "A note from Dave at ICE", preheader: "A personal message from International Computer Exchange.",
     blocks: [
-      block("ceo-hero", "hero", { eyebrow: "A MESSAGE FROM ICE", heading: "A personal note", body: "Thank you for the trust you place in International Computer Exchange. Our team remains committed to responsive, personal support for your business." }),
+      block("ceo-hero", "hero", { eyebrow: "FROM THE OFFICE OF THE PRESIDENT", heading: "A message from ICE leadership", body: "Thank you for the trust you place in International Computer Exchange. Our team remains committed to responsive, personal support for your business." }),
       block("ceo-text", "text", { heading: "Here when you need us", body: "As a long-standing IBM Business Partner, ICE brings experienced people and practical guidance to every relationship. If there is anything we can do to help, simply reply to this email." }),
-      block("ceo-signature", "signature", { heading: "Dave Cranberry", body: "Chief Executive Officer · International Computer Exchange", imageUrl: "https://www.icesales.com/images/branding/ceo-signature.png" }),
+      block("ceo-signature", "signature", { heading: "Dave Cran", body: "President, International Computer Exchange", imageUrl: "https://www.icesales.com/images/branding/ceo-signature.png" }),
     ],
   },
   serviceTemplate("managed-cloud-hosting", "Managed Cloud Hosting", "Run critical workloads without adding operational burden", "Hosting, operating responsibilities, backup, and recovery options scoped to your workloads."),
