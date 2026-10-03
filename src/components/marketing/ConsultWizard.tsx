@@ -914,8 +914,7 @@ export default function ConsultWizard({
 
           {step === 2 && (
             <div className="flex flex-col gap-5">
-              <p className="text-sm text-tertiary">Name and email are required so we can reply. Company and phone are optional.</p>
-              <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
+              <div className="grid min-w-0 gap-x-5 gap-y-4 sm:grid-cols-2">
                 <Input
                   isRequired
                   validationBehavior="native"

@@ -299,7 +299,7 @@ export function ServiceSelect({
         onChange(nextValue === otherOption && customValue ? `${otherOption}: ${customValue}` : nextValue);
       }}
       allowsCustomValue={false}
-      menuTrigger="input"
+      menuTrigger="focus"
       preventPageScroll
       className="w-full"
       popoverClassName="contact-form-popover overscroll-contain"
@@ -530,12 +530,12 @@ export function PhoneField({
       <Label htmlFor={inputId} isRequired={isRequired}>
         {label}
       </Label>
-      <div className="flex w-full items-stretch gap-3">
+      <div className="flex w-full min-w-0 items-stretch gap-2">
         {/* Country dial-code selector */}
         <Select
           aria-label={countryDialCodeAriaLabel}
           size={size}
-          className="w-[7.5rem] shrink-0 sm:w-32"
+          className="w-24 shrink-0"
           popoverClassName="contact-form-popover w-max min-w-[16rem] overscroll-contain"
           preventPageScroll
           selectedKey={country.code}
@@ -575,13 +575,14 @@ export function PhoneField({
           isRequired={isRequired}
           placeholder={placeholder}
           value={displayedNational}
+          inputClassName="min-w-0"
           onChange={(next) => {
             const formatted = formatNationalNumber(next, country.code);
             setNational(formatted);
             emit(country.dial, formatted);
           }}
           className="min-w-0 flex-1"
-          wrapperClassName="w-full"
+          wrapperClassName="w-full min-w-0"
         />
       </div>
     </div>
@@ -628,6 +629,7 @@ export default function ContactWidget({ content }: { content?: ContactWidgetCont
   const [showWelcome, setShowWelcome] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [confirmationEmailSent, setConfirmationEmailSent] = useState(false);
   const shouldReduceMotion = useReducedMotion();
   const widget = useMemo(() => resolveContactWidgetContent(content), [content]);
 
@@ -693,6 +695,7 @@ export default function ContactWidget({ content }: { content?: ContactWidgetCont
     }
     setStatus("sending");
     setErrorMessage("");
+    setConfirmationEmailSent(false);
 
     try {
       const res = await fetch("/api/contact", {
@@ -701,11 +704,12 @@ export default function ContactWidget({ content }: { content?: ContactWidgetCont
         body: JSON.stringify(form),
       });
 
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
         throw new Error(data?.error || widget.generic_error);
       }
 
+      setConfirmationEmailSent(data?.confirmationEmailSent === true);
       pushEvent("contact_submitted", { form: "widget", service: form.service });
       setStatus("success");
       setForm(INITIAL_FORM);
@@ -801,6 +805,11 @@ export default function ContactWidget({ content }: { content?: ContactWidgetCont
                     <FeaturedIcon icon={CheckCircle} color="success" theme="modern" size="lg" className="mb-4" />
                     <p className="text-md font-semibold text-primary">{widget.success_heading}</p>
                     <p className="mt-1 text-sm text-tertiary">{widget.success_message}</p>
+                    <p className="mt-2 text-xs leading-5 text-tertiary">
+                      {confirmationEmailSent
+                        ? "A confirmation with a copy of your message has been sent to your email."
+                        : "We couldn’t send an email confirmation right now. ICE has your message and will follow up; please call 1-800-786-9188 if you need immediate help."}
+                    </p>
                     <Button
                       color="link-color"
                       size="sm"

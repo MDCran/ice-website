@@ -231,8 +231,10 @@ export async function POST(request: NextRequest) {
       }, { onConflict: "email" });
     }
 
-    // Fire-and-forget notifications (Slack / email when env configured).
-    void notifyNewLead({
+    // Wait for Resend to accept the customer confirmation before responding.
+    // In serverless production, fire-and-forget work can be stopped as soon as
+    // the HTTP response is returned.
+    const notifications = await notifyNewLead({
       name: cleanName,
       email: cleanEmail,
       company: cleanCompany,
@@ -243,7 +245,10 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { message: "Contact form submitted successfully." },
+      {
+        message: "Contact form submitted successfully.",
+        confirmationEmailSent: notifications.confirmationEmailSent,
+      },
       { status: 201 }
     );
   } catch (error) {
