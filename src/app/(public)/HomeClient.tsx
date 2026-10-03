@@ -172,6 +172,24 @@ const DEFAULT_TIMELINE = [
   { year: "Today", title: "Your next chapter", description: "AS400 and IBM i hosting, platform support, cloud, security, and data protection planning for today's business requirements." },
 ];
 
+type TimelineItem = (typeof DEFAULT_TIMELINE)[number];
+
+function completeCanonicalTimeline(items?: TimelineItem[]): TimelineItem[] {
+  if (!items?.length) return DEFAULT_TIMELINE;
+
+  const itemsByYear = new Map(items.map((item) => [item.year.trim().toLowerCase(), item]));
+  const hasBeginning = itemsByYear.has("1990");
+  const hasToday = itemsByYear.has("today");
+
+  // Older CMS content can contain only the two bookends. Keep that copy, but
+  // restore the platform and service-evolution milestones between them.
+  if (items.length === 2 && hasBeginning && hasToday) {
+    return DEFAULT_TIMELINE.map((item) => itemsByYear.get(item.year.toLowerCase()) ?? item);
+  }
+
+  return items;
+}
+
 const DEFAULT_INDUSTRIES = [
   { name: "Manufacturing", icon: "Factory" },
   { name: "Financial Services", icon: "Landmark" },
@@ -551,7 +569,7 @@ export default function Home({
     suffix: s.suffix ?? "",
     label: s.label,
   }));
-  const timeline = data?.timeline?.items ?? DEFAULT_TIMELINE;
+  const timeline = completeCanonicalTimeline(data?.timeline?.items);
   const industries = (data?.industries_cta?.items ?? DEFAULT_INDUSTRIES).map((ind) => ({
     name: ind.name,
     icon: resolveIcon(ind.icon) as IconComponent,
