@@ -1,17 +1,28 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { campaignPreferenceKey, normalizeMarketingPreferences } from "@/lib/marketing/preferences";
-import { renderMarketingEmail } from "@/lib/marketing/renderEmail";
+import { normalizeEmailBranding, renderMarketingEmail, type EmailBranding } from "@/lib/marketing/renderEmail";
 import type { EmailBlock } from "@/lib/marketing/templates";
 
 const clean = (value: unknown) => typeof value === "string" ? value.trim() : "";
 const validHttpsUrl = (value: string) => { try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; } catch { return false; } };
 const htmlEscape = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
 const hasPaymentLink = (html: string) => /{{\s*payment_url\s*}}|https:\/\/quickbooks\.intuit\.com\/?/i.test(html);
+const missingTemplateFields = (html: string, recipients: Array<Record<string, unknown>>) => {
+  const fixed = new Set(["first_name", "last_name", "email", "company", "month", "year", "payment_url", "unsubscribe_url"]);
+  const required = [...html.matchAll(/{{\s*([a-z][a-z0-9_]*)\s*}}/gi)].map((match) => match[1]).filter((key) => !fixed.has(key));
+  return [...new Set(required)].filter((key) => recipients.some((contact) => {
+    const fields = contact.custom_fields && typeof contact.custom_fields === "object" ? contact.custom_fields as Record<string, unknown> : {};
+    return !clean(fields[key]);
+  }));
+};
 const personalize = (value: string, contact: Record<string, unknown>, html = false) => {
   const customFields = contact.custom_fields && typeof contact.custom_fields === "object" ? contact.custom_fields as Record<string, unknown> : {};
-  return value.replace(/{{\s*(first_name|last_name|email|company|amount_due)\s*}}/g, (_, key: string) => {
-    const text = clean(key === "amount_due" ? customFields.amount_due : contact[key]);
+  return value.replace(/{{\s*([a-z][a-z0-9_]*)\s*}}/gi, (token, key: string) => {
+    if (key === "payment_url" || key === "unsubscribe_url") return token;
+    if (key === "month") return new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date());
+    if (key === "year") return String(new Date().getFullYear());
+    const text = clean(["first_name", "last_name", "email", "company"].includes(key) ? contact[key] : customFields[key]);
     return html ? htmlEscape(text) : text;
   });
 };
@@ -32,8 +43,15 @@ export async function GET(request: Request) {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const { data: campaigns, error } = await supabase.from("marketing_campaigns").select("*").eq("status", "scheduled").lte("scheduled_at", new Date().toISOString()).limit(10);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const { data: emailSettings } = await supabase.from("marketing_settings").select("payment_url").eq("id", true).maybeSingle();
+  const { data: emailSettings } = await supabase.from("marketing_settings").select("*").eq("id", true).maybeSingle();
   const paymentUrl = clean(emailSettings?.payment_url);
+  const branding = normalizeEmailBranding({
+    logoUrl: clean(emailSettings?.email_logo_url), logoAlt: clean(emailSettings?.email_logo_alt), headerColor: clean(emailSettings?.email_header_color),
+    companyName: clean(emailSettings?.email_company_name), location: clean(emailSettings?.email_location), phone: clean(emailSettings?.email_phone),
+    websiteUrl: clean(emailSettings?.email_website_url), footerNote: clean(emailSettings?.email_footer_note), accentColor: clean(emailSettings?.email_accent_color),
+    heroColor: clean(emailSettings?.email_hero_color), footerColor: clean(emailSettings?.email_footer_color), pageColor: clean(emailSettings?.email_page_color),
+    fontFamily: clean(emailSettings?.email_font_family) as EmailBranding["fontFamily"],
+  });
   const results: Array<{ id: string; sent: number; error?: string }> = [];
 
   for (const campaign of campaigns ?? []) {
@@ -54,17 +72,17 @@ export async function GET(request: Request) {
     const { data: contacts } = await supabase.from("marketing_contacts").select("*").in("id", ids);
     const recipients = (contacts ?? []).filter((contact) => isEligible(contact, campaign.campaign_type));
     if (!recipients?.length) { results.push({ id: campaign.id, sent: 0, error: "No eligible recipients" }); continue; }
-    const campaignHtml = campaign.body_only ? "" : renderMarketingEmail({ preheader: campaign.preheader, blocks: (campaign.blocks ?? []) as EmailBlock[], includeUnsubscribe: campaign.campaign_type !== "transactional" });
+    const campaignHtml = campaign.body_only ? "" : renderMarketingEmail({ preheader: campaign.preheader, blocks: (campaign.blocks ?? []) as EmailBlock[], includeUnsubscribe: campaign.campaign_type !== "transactional", branding });
     if (!campaign.body_only && hasPaymentLink(campaignHtml) && !validHttpsUrl(paymentUrl)) {
       const message = "Set a secure customer payment link in Email settings before sending this campaign.";
       results.push({ id: campaign.id, sent: 0, error: message });
       await supabase.from("marketing_campaigns").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", campaign.id);
       continue;
     }
-    if (!campaign.body_only && campaignHtml.includes("{{amount_due}}")) {
-      const missing = recipients.filter((contact) => !clean((contact.custom_fields as Record<string, unknown> | null)?.amount_due)).length;
-      if (missing) {
-        const message = `${missing} recipient${missing === 1 ? " is" : "s are"} missing amount_due. Import those values before sending.`;
+    if (!campaign.body_only) {
+      const missing = missingTemplateFields(`${campaignHtml}\n${campaign.subject}\n${campaign.preheader}`, recipients);
+      if (missing.length) {
+        const message = `Add values for ${missing.map((field) => `“${field}”`).join(", ")} to the recipient CSV custom fields before sending.`;
         results.push({ id: campaign.id, sent: 0, error: message });
         await supabase.from("marketing_campaigns").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", campaign.id);
         continue;

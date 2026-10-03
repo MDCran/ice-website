@@ -28,7 +28,7 @@ import { Badge } from "@/components/base/badges/badges";
 import { Input } from "@/components/base/input/input";
 import { cx } from "@/utils/cx";
 import { MARKETING_TEMPLATE_PRESETS, cloneTemplateBlocks, type EmailBlock, type EmailBlockType, type MarketingTemplatePreset } from "@/lib/marketing/templates";
-import { renderMarketingEmail } from "@/lib/marketing/renderEmail";
+import { DEFAULT_EMAIL_BRANDING, renderMarketingEmail, type EmailBranding } from "@/lib/marketing/renderEmail";
 import { campaignTypeLabel } from "@/lib/marketing/preferences";
 
 type Tab = "overview" | "audience" | "studio" | "campaigns" | "settings";
@@ -36,8 +36,8 @@ type Contact = { id: string; first_name: string | null; last_name: string | null
 type List = { id: string; name: string; description: string | null; member_count: number; created_at: string };
 type Member = { list_id: string; contact_id: string };
 type Campaign = { id: string; name: string; campaign_type: string; status: string; list_id: string | null; subject: string; preheader: string; body_only: boolean; body_text: string; blocks: EmailBlock[]; scheduled_at: string | null; sent_at: string | null; recipient_count: number; delivered_count: number; opened_count: number; clicked_count: number; bounced_count: number; complained_count: number; unsubscribed_count: number; created_at: string };
-type ApiData = { contacts: Contact[]; lists: List[]; members: Member[]; campaigns: Campaign[]; templates: unknown[]; resendConnected: boolean; paymentSettingsReady?: boolean; settings?: { leadNotificationEmail: string; paymentUrl: string } };
-type ImportRow = { first_name: string; last_name: string; email: string; phone: string; company: string; amount_due: string; source: string; tags: string[]; email_consent_status: "subscribed" | "unknown" };
+type ApiData = { contacts: Contact[]; lists: List[]; members: Member[]; campaigns: Campaign[]; templates: unknown[]; resendConnected: boolean; paymentSettingsReady?: boolean; settings?: { leadNotificationEmail: string; paymentUrl: string; branding: EmailBranding } };
+type ImportRow = { first_name: string; last_name: string; email: string; phone: string; company: string; amount_due: string; custom_fields: Record<string, string>; source: string; tags: string[]; email_consent_status: "subscribed" | "unknown" };
 
 const TABS: Array<{ id: Tab; label: string; icon: typeof Mail01 }> = [
   { id: "overview", label: "Overview", icon: BarChartSquare02 },
@@ -84,13 +84,16 @@ function csvToContacts(text: string, subscribed: boolean): ImportRow[] {
   const headers = (rows.shift() ?? []).map(normalizeHeader);
   return rows.map((values) => {
     const record = Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ""]));
+    const reserved = new Set(["first_name", "last_name", "email", "phone", "company", "source", "tags"]);
+    const custom_fields = Object.fromEntries(Object.entries(record).filter(([key, value]) => !reserved.has(key) && value.trim()).slice(0, 50));
     return {
       first_name: record.first_name ?? "",
       last_name: record.last_name ?? "",
       email: record.email ?? "",
       phone: record.phone ?? "",
       company: record.company ?? "",
-      amount_due: record.amount_due ?? "",
+      amount_due: custom_fields.amount_due ?? "",
+      custom_fields,
       source: record.source || "csv_import",
       tags: (record.tags || "").split(/[;|]/).map((tag) => tag.trim()).filter(Boolean),
       email_consent_status: subscribed ? ("subscribed" as const) : ("unknown" as const),
@@ -110,17 +113,22 @@ function renderPlainTextPreview(value: string) {
   return `<!doctype html><html><body style="margin:0;padding:24px;font:15px/1.6 Arial,sans-serif;color:#1d2939;white-space:pre-wrap"><pre style="margin:0;font:inherit;white-space:pre-wrap">${escaped}</pre></body></html>`;
 }
 
-function renderSavedCampaignPreview(campaign: Campaign, paymentUrl = "") {
+function previewTokens(value: string, paymentUrl = "") {
+  const samples: Record<string, string> = {
+    first_name: "Alex", last_name: "Morgan", email: "alex@example.com", company: "Example Company",
+    amount_due: "$1,250.00", amount_paid: "$1,250.00", month: new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date()),
+    year: String(new Date().getFullYear()), payment_url: paymentUrl || "https://www.icesales.com/contact", portal_url: "https://www.icesales.com/portal",
+    maintenance_date: "October 30, 2026", maintenance_window: "10:00 PM–12:00 AM ET", service_name: "Managed Cloud Hosting",
+    expected_impact: "Brief service interruption expected", maintenance_details: "ICE will validate services after maintenance.",
+    advisory_title: "Important service update", affected_systems: "Your managed environment", recommended_action: "No action is required.",
+  };
+  return value.replace(/{{\s*([a-z][a-z0-9_]*)\s*}}/gi, (token, key: string) => samples[key] ?? (key === "unsubscribe_url" ? "https://www.icesales.com/unsubscribe/preview" : `Example ${key.replace(/_/g, " ")}`));
+}
+
+function renderSavedCampaignPreview(campaign: Campaign, paymentUrl = "", branding: EmailBranding = DEFAULT_EMAIL_BRANDING) {
   if (campaign.body_only) return renderPlainTextPreview(campaign.body_text ?? "");
-  return renderMarketingEmail({ preheader: campaign.preheader, blocks: campaign.blocks ?? [], includeUnsubscribe: campaign.campaign_type !== "transactional" })
-    .replace(/{{\s*first_name\s*}}/g, "Alex")
-    .replace(/{{\s*last_name\s*}}/g, "Morgan")
-    .replace(/{{\s*email\s*}}/g, "alex@example.com")
-    .replace(/{{\s*company\s*}}/g, "Example Company")
-    .replace(/{{\s*amount_due\s*}}/g, () => "$1,250.00")
-    .replace(/{{\s*payment_url\s*}}/g, paymentUrl || "https://www.icesales.com/contact")
-    .replace(/https:\/\/quickbooks\.intuit\.com\/?/gi, paymentUrl || "https://www.icesales.com/contact")
-    .replace(/{{unsubscribe_url}}/g, "https://www.icesales.com/unsubscribe/preview");
+  const html = renderMarketingEmail({ preheader: campaign.preheader, blocks: campaign.blocks ?? [], includeUnsubscribe: campaign.campaign_type !== "transactional", branding });
+  return previewTokens(html, paymentUrl).replace(/https:\/\/quickbooks\.intuit\.com\/?/gi, paymentUrl || "https://www.icesales.com/contact");
 }
 
 function StatCard({ label, value, detail, icon: Icon }: { label: string; value: string | number; detail: string; icon: typeof Mail01 }) {
@@ -164,6 +172,7 @@ export default function MarketingCenter() {
   const [testEmail, setTestEmail] = useState("");
   const [leadNotificationEmail, setLeadNotificationEmail] = useState("");
   const [paymentUrl, setPaymentUrl] = useState("");
+  const [emailBranding, setEmailBranding] = useState<EmailBranding>(DEFAULT_EMAIL_BRANDING);
   const [scheduledAt, setScheduledAt] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -173,7 +182,7 @@ export default function MarketingCenter() {
     const result = await response.json().catch(() => ({}));
     setError("");
     if (!response.ok) setError(result.setupRequired ? "Marketing Center database tables are not installed yet. Apply the 20260802_marketing_center migration, then reload this page." : result.error || "Could not load Marketing Center.");
-    else { setData(result); setLeadNotificationEmail(result.settings?.leadNotificationEmail ?? ""); setPaymentUrl(result.settings?.paymentUrl ?? ""); }
+    else { setData(result); setLeadNotificationEmail(result.settings?.leadNotificationEmail ?? ""); setPaymentUrl(result.settings?.paymentUrl ?? ""); setEmailBranding(result.settings?.branding ?? DEFAULT_EMAIL_BRANDING); }
     setLoading(false);
   };
 
@@ -208,7 +217,7 @@ export default function MarketingCenter() {
 
   const previewHtml = useMemo(() => bodyOnly
     ? renderPlainTextPreview(bodyText)
-    : renderMarketingEmail({ preheader, blocks, includeUnsubscribe: campaignType !== "transactional" }), [blocks, bodyOnly, bodyText, campaignType, preheader]);
+    : previewTokens(renderMarketingEmail({ preheader, blocks, includeUnsubscribe: campaignType !== "transactional", branding: emailBranding }), paymentUrl).replace(/https:\/\/quickbooks\.intuit\.com\/?/gi, paymentUrl || "https://www.icesales.com/contact"), [blocks, bodyOnly, bodyText, campaignType, emailBranding, paymentUrl, preheader]);
 
   const chooseTemplate = (template: MarketingTemplatePreset) => {
     setCampaignId(null); setBodyOnly(false); setBodyText("");
@@ -278,7 +287,7 @@ export default function MarketingCenter() {
         <div className="space-y-6">
           <section className="grid gap-5 xl:grid-cols-[1fr_1fr]">
             <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><h2 className="text-lg font-semibold text-primary">Create a list</h2><p className="mt-1 text-sm text-tertiary">Save groups such as Old Book of Business or QuickBooks Customers.</p><div className="mt-4 flex gap-3"><div className="flex-1"><Input label="List name" value={newListName} onChange={setNewListName} placeholder="Old book of business" /></div><Button className="self-end" iconLeading={Plus} isDisabled={!newListName.trim() || busy} onClick={async () => { const result = await post({ action: "create_list", name: newListName }); if (result) { setNewListName(""); setNotice("List created."); await load(); } }}>Create</Button></div><div className="mt-4 flex flex-wrap gap-2">{data?.lists.map((list) => <button key={list.id} onClick={() => setListFilter(list.id)} className="rounded-full bg-secondary px-3 py-2 text-sm font-semibold text-secondary ring-1 ring-secondary hover:ring-brand">{list.name} · {list.member_count}</button>)}</div></div>
-            <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-semibold text-primary">Import CSV</h2><p className="mt-1 text-sm text-tertiary">Accepts name, email, phone, company, source, tags, and optional amount_due (for billing messages).</p></div><Button color="secondary" size="sm" iconLeading={UploadCloud02} onClick={() => fileRef.current?.click()}>Choose CSV</Button></div><input ref={fileRef} className="sr-only" type="file" accept=".csv,text/csv" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; setImportRows(csvToContacts(await file.text(), importSubscribed)); }} /><label className="mt-4 flex items-start gap-3 rounded-lg bg-secondary p-3 text-sm text-secondary ring-1 ring-secondary"><input type="checkbox" checked={importSubscribed} onChange={(event) => setImportSubscribed(event.target.checked)} className="mt-0.5 size-4 accent-brand-solid" /><span><strong className="block text-primary">I can document marketing permission for this file</strong>Leave unchecked when consent is unknown. Unknown contacts remain saved but cannot receive promotional campaigns.</span></label>{importRows.length > 0 && <div className="mt-4"><p className="text-sm font-semibold text-primary">{importRows.length} rows ready</p><div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]"><select value={importListId} onChange={(event) => setImportListId(event.target.value)} className="rounded-lg bg-primary px-3 py-2 text-sm text-primary ring-1 ring-secondary"><option value="">No list</option>{data?.lists.map((list) => <option key={list.id} value={list.id}>{list.name}</option>)}</select><Button isDisabled={busy} onClick={async () => { const rows = importRows.map((row) => ({ ...row, email_consent_status: importSubscribed ? "subscribed" : "unknown" })); const result = await post({ action: "import_contacts", rows, listId: importListId }); if (result) { setNotice(`Import complete: ${result.imported} new, ${result.updated} updated, ${result.skipped} skipped.`); setImportRows([]); await load(); } }}>Import contacts</Button></div><div className="mt-3 max-h-28 overflow-auto rounded-lg bg-secondary p-3 text-xs text-tertiary">{importRows.slice(0, 8).map((row) => <div key={row.email}>{row.first_name} {row.last_name} · {row.email}{row.amount_due ? ` · Due ${row.amount_due}` : ""}</div>)}</div></div>}</div>
+            <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-semibold text-primary">Import CSV</h2><p className="mt-1 text-sm text-tertiary">Standard contact columns are supported; every extra column becomes a personal email field, such as amount_due, service_name, or maintenance_window.</p></div><Button color="secondary" size="sm" iconLeading={UploadCloud02} onClick={() => fileRef.current?.click()}>Choose CSV</Button></div><input ref={fileRef} className="sr-only" type="file" accept=".csv,text/csv" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; setImportRows(csvToContacts(await file.text(), importSubscribed)); }} /><label className="mt-4 flex items-start gap-3 rounded-lg bg-secondary p-3 text-sm text-secondary ring-1 ring-secondary"><input type="checkbox" checked={importSubscribed} onChange={(event) => setImportSubscribed(event.target.checked)} className="mt-0.5 size-4 accent-brand-solid" /><span><strong className="block text-primary">I can document marketing permission for this file</strong>Leave unchecked when consent is unknown. Unknown contacts remain saved but cannot receive promotional campaigns.</span></label>{importRows.length > 0 && <div className="mt-4"><p className="text-sm font-semibold text-primary">{importRows.length} rows ready</p><div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]"><select value={importListId} onChange={(event) => setImportListId(event.target.value)} className="rounded-lg bg-primary px-3 py-2 text-sm text-primary ring-1 ring-secondary"><option value="">No list</option>{data?.lists.map((list) => <option key={list.id} value={list.id}>{list.name}</option>)}</select><Button isDisabled={busy} onClick={async () => { const rows = importRows.map((row) => ({ ...row, email_consent_status: importSubscribed ? "subscribed" : "unknown" })); const result = await post({ action: "import_contacts", rows, listId: importListId }); if (result) { setNotice(`Import complete: ${result.imported} new, ${result.updated} updated, ${result.skipped} skipped.`); setImportRows([]); await load(); } }}>Import contacts</Button></div><div className="mt-3 max-h-28 overflow-auto rounded-lg bg-secondary p-3 text-xs text-tertiary">{importRows.slice(0, 8).map((row) => <div key={row.email}>{row.first_name} {row.last_name} · {row.email}{row.amount_due ? ` · Due ${row.amount_due}` : ""}</div>)}</div></div>}</div>
           </section>
 
           <section className="rounded-xl bg-primary ring-1 ring-secondary">
@@ -299,7 +308,7 @@ export default function MarketingCenter() {
 
             <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-semibold text-primary">Content blocks</h2><p className="mt-1 text-sm text-tertiary">Arrange accessible, email-safe sections using the ICE brand system.</p></div><select defaultValue="" onChange={(event) => { if (event.target.value) addBlock(event.target.value as EmailBlockType); event.target.value = ""; }} className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary"><option value="">+ Add block</option>{Object.entries(BLOCK_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></div><div className="mt-5 space-y-3">{blocks.map((item, index) => <div key={item.id} className="rounded-xl bg-secondary p-4 ring-1 ring-secondary"><div className="flex items-center justify-between gap-3"><Badge size="sm" color="brand">{BLOCK_LABELS[item.type]}</Badge><div className="flex gap-1"><button aria-label="Move block up" onClick={() => moveBlock(index, -1)} className="rounded-md p-1.5 text-tertiary hover:bg-primary"><ArrowUp className="size-4" /></button><button aria-label="Move block down" onClick={() => moveBlock(index, 1)} className="rounded-md p-1.5 text-tertiary hover:bg-primary"><ArrowDown className="size-4" /></button><button aria-label="Delete block" onClick={() => setBlocks((current) => current.filter((block) => block.id !== item.id))} className="rounded-md p-1.5 text-error-primary hover:bg-primary"><Trash01 className="size-4" /></button></div></div>{!["divider", "spacer", "button"].includes(item.type) && <input value={item.heading ?? ""} onChange={(event) => updateBlock(item.id, { heading: event.target.value })} placeholder="Heading" className="mt-3 w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary ring-1 ring-secondary" />}{!["divider", "spacer", "button", "metric", "balance"].includes(item.type) && <textarea value={item.body ?? ""} onChange={(event) => updateBlock(item.id, { body: event.target.value })} placeholder="Body copy" rows={3} className="mt-2 w-full resize-y rounded-lg bg-primary px-3 py-2 text-sm text-primary ring-1 ring-secondary" />}{item.type === "hero" && <input value={item.eyebrow ?? ""} onChange={(event) => updateBlock(item.id, { eyebrow: event.target.value })} placeholder="Eyebrow" className="mt-2 w-full rounded-lg bg-primary px-3 py-2 text-sm text-primary ring-1 ring-secondary" />}{item.type === "button" && <div className="mt-3 grid gap-2 sm:grid-cols-2"><input value={item.label ?? ""} onChange={(event) => updateBlock(item.id, { label: event.target.value })} placeholder="Button label" className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /><input value={item.href ?? ""} onChange={(event) => updateBlock(item.id, { href: event.target.value })} placeholder="https://… or {{payment_url}}" className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /></div>}{item.type === "balance" && <input value={item.value ?? ""} onChange={(event) => updateBlock(item.id, { value: event.target.value })} placeholder="{{amount_due}}" className="mt-3 w-full rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" />}{item.type === "metric" && <div className="mt-3 grid gap-2 sm:grid-cols-2"><input value={item.value ?? ""} onChange={(event) => updateBlock(item.id, { value: event.target.value })} placeholder="99.9%" className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /><input value={item.label ?? ""} onChange={(event) => updateBlock(item.id, { label: event.target.value })} placeholder="Metric label" className="rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /></div>}</div>)}{blocks.length === 0 && <div className="rounded-xl border border-dashed border-secondary p-8 text-center"><CodeBrowser className="mx-auto size-8 text-fg-quaternary" /><p className="mt-3 text-sm font-semibold text-primary">Choose a template or add your first block</p></div>}</div></div>
 
-              <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><div className="flex flex-wrap gap-3"><Button onClick={saveCampaign} isDisabled={busy || !campaignName.trim() || !subject.trim() || (bodyOnly ? !bodyText.trim() : blocks.length === 0)}>Save campaign</Button><div className="flex min-w-64 flex-1 gap-2"><input type="email" value={testEmail} onChange={(event) => setTestEmail(event.target.value)} placeholder="Test recipient email" className="min-w-0 flex-1 rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /><Button color="secondary" iconLeading={Send01} isDisabled={busy || !testEmail || (bodyOnly && !bodyText.trim())} onClick={async () => { const result = await post({ action: "send_test", to: testEmail, subject, preheader, blocks, bodyOnly, bodyText, campaignType, replyTo: "info@icesales.com" }); if (result) setNotice(`Test email sent to ${testEmail}.`); }}>Send test</Button></div></div><p className="mt-3 text-xs text-quaternary">Personalization variables: {`{{first_name}}, {{last_name}}, {{company}}, {{email}}`}. Promotional emails automatically include an unsubscribe link.</p></div>
+              <div className="rounded-xl bg-primary p-5 ring-1 ring-secondary"><div className="flex flex-wrap gap-3"><Button onClick={saveCampaign} isDisabled={busy || !campaignName.trim() || !subject.trim() || (bodyOnly ? !bodyText.trim() : blocks.length === 0)}>Save campaign</Button><div className="flex min-w-64 flex-1 gap-2"><input type="email" value={testEmail} onChange={(event) => setTestEmail(event.target.value)} placeholder="Test recipient email" className="min-w-0 flex-1 rounded-lg bg-primary px-3 py-2 text-sm ring-1 ring-secondary" /><Button color="secondary" iconLeading={Send01} isDisabled={busy || !testEmail || (bodyOnly && !bodyText.trim())} onClick={async () => { const result = await post({ action: "send_test", to: testEmail, subject, preheader, blocks, bodyOnly, bodyText, campaignType, replyTo: "info@icesales.com" }); if (result) setNotice(`Test email sent to ${testEmail}.`); }}>Send test</Button></div></div><p className="mt-3 text-xs text-quaternary">Use {`{{first_name}}`} and {`{{company}}`} for contact details, {`{{month}}`} for the current month, or any CSV column as {`{{field_name}}`}. Test previews fill sample values. Promotional emails always retain their unsubscribe link.</p></div>
             </div>
 
             <aside className="self-start rounded-xl bg-primary p-4 ring-1 ring-secondary 2xl:sticky 2xl:top-20"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-secondary pb-4"><div><p className="text-sm font-semibold text-primary">Live preview</p><p className="text-xs text-tertiary">Email-safe HTML, responsive layout, and dark canvas check.</p></div><div className="flex rounded-lg bg-secondary p-1"><button aria-label="Desktop preview" onClick={() => setPreviewMode("desktop")} className={cx("rounded-md p-2", previewMode === "desktop" ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary")}><Monitor01 className="size-4" /></button><button aria-label="Mobile preview" onClick={() => setPreviewMode("mobile")} className={cx("rounded-md p-2", previewMode === "mobile" ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary")}><Phone01 className="size-4" /></button><button aria-label="Toggle dark preview canvas" onClick={() => setDarkPreview((value) => !value)} className={cx("rounded-md p-2", darkPreview ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary")}><Eye className="size-4" /></button></div></div><div className={cx("mt-4 flex min-h-[700px] justify-center overflow-auto rounded-xl p-4 transition", darkPreview ? "bg-overlay" : "bg-secondary")}><iframe title="Email preview" srcDoc={previewHtml} className={cx("h-[680px] rounded-lg bg-white shadow-lg transition-all", previewMode === "mobile" ? "w-[390px]" : "w-full")} /></div></aside>
@@ -343,8 +352,24 @@ export default function MarketingCenter() {
           <div className="mt-5 max-w-xl"><Input label="Inbox for new website requests" type="email" autoComplete="email" value={leadNotificationEmail} onChange={setLeadNotificationEmail} placeholder="you@company.com" /></div>
           <div className="mt-5 max-w-xl"><Input label="Secure customer payment link" type="url" autoComplete="url" value={paymentUrl} onChange={setPaymentUrl} placeholder="https://…" /></div>
           <p className="mt-2 max-w-xl text-xs leading-5 text-tertiary">This HTTPS link is inserted into all balance-due and past-due templates when each email is sent. Update it here once; future sends use the latest saved link.</p>
+          <div className="mt-8 border-t border-secondary pt-6">
+            <p className="text-xs font-semibold tracking-widest text-brand-secondary uppercase">Brand and layout</p>
+            <h3 className="mt-2 text-lg font-semibold text-primary">Customize the shared email frame</h3>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-tertiary">These choices update the logo header, hero, buttons, and footer on future previews, test sends, and campaign sends. Content sections remain editable and reorderable in Email Studio.</p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <Input label="Logo image URL" type="url" value={emailBranding.logoUrl} onChange={(value) => setEmailBranding((current) => ({ ...current, logoUrl: value }))} placeholder="https://www.icesales.com/images/logo/ice-logo.jpg" />
+              <Input label="Logo description" value={emailBranding.logoAlt} onChange={(value) => setEmailBranding((current) => ({ ...current, logoAlt: value }))} />
+              <Input label="Company name" value={emailBranding.companyName} onChange={(value) => setEmailBranding((current) => ({ ...current, companyName: value }))} />
+              <Input label="Location" value={emailBranding.location} onChange={(value) => setEmailBranding((current) => ({ ...current, location: value }))} />
+              <Input label="Contact phone" type="tel" value={emailBranding.phone} onChange={(value) => setEmailBranding((current) => ({ ...current, phone: value }))} />
+              <Input label="Website URL" type="url" value={emailBranding.websiteUrl} onChange={(value) => setEmailBranding((current) => ({ ...current, websiteUrl: value }))} />
+              <Input label="Footer note" value={emailBranding.footerNote} onChange={(value) => setEmailBranding((current) => ({ ...current, footerNote: value }))} />
+              <label className="block text-sm font-medium text-secondary">Email font<select value={emailBranding.fontFamily} onChange={(event) => setEmailBranding((current) => ({ ...current, fontFamily: event.target.value as EmailBranding["fontFamily"] }))} className="mt-1.5 w-full rounded-lg bg-primary px-3 py-2.5 text-sm text-primary ring-1 ring-secondary"><option value="Inter">Inter</option><option value="Arial">Arial</option><option value="Georgia">Georgia</option></select></label>
+              {([ ["Accent and button", "accentColor"], ["Hero", "heroColor"], ["Header", "headerColor"], ["Footer", "footerColor"], ["Outer background", "pageColor"] ] as const).map(([label, key]) => <label key={key} className="flex items-center justify-between gap-3 rounded-lg bg-secondary px-3 py-2.5 text-sm font-medium text-secondary ring-1 ring-secondary">{label}<input aria-label={`${label} color`} type="color" value={emailBranding[key]} onChange={(event) => setEmailBranding((current) => ({ ...current, [key]: event.target.value }))} className="size-8 cursor-pointer rounded border-0 bg-transparent p-0" /></label>)}
+            </div>
+          </div>
           {data?.paymentSettingsReady === false && <p role="alert" className="mt-3 max-w-xl text-sm text-error-primary">Apply the latest ICE email database migration before saving this payment setting.</p>}
-          <Button className="mt-4" isLoading={busy} onClick={async () => { const result = await post({ action: "save_email_settings", leadNotificationEmail, paymentUrl }); if (result) setNotice("Email settings saved. Future billing emails will use this payment link."); }}>Save email settings</Button>
+          <Button className="mt-4" isLoading={busy} onClick={async () => { const result = await post({ action: "save_email_settings", leadNotificationEmail, paymentUrl, branding: emailBranding }); if (result) setNotice("Email settings saved. Future previews and sends will use your updated branding and payment link."); }}>Save email settings</Button>
           <div className="mt-7 rounded-lg bg-secondary p-4 text-sm leading-6 text-secondary ring-1 ring-secondary"><strong className="text-primary">Sending address</strong><br />Customer confirmations and admin notices use noreply@mail.icesales.com. Reply-to points to the customer on admin notices, so the team can respond directly.</div>
         </section>
       )}
@@ -371,7 +396,7 @@ export default function MarketingCenter() {
               <div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wider text-tertiary">Email preview</p><h2 id="campaign-preview-title" className="mt-1 truncate text-lg font-semibold text-primary">{campaignPreview.name}</h2><p className="mt-1 truncate text-sm text-secondary">Subject: {campaignPreview.subject}</p></div>
               <div className="flex items-center gap-2"><div className="flex rounded-lg bg-secondary p-1"><button type="button" aria-pressed={previewMode === "desktop"} onClick={() => setPreviewMode("desktop")} className={cx("rounded-md px-3 py-2 text-sm font-medium", previewMode === "desktop" ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary")}>Desktop</button><button type="button" aria-pressed={previewMode === "mobile"} onClick={() => setPreviewMode("mobile")} className={cx("rounded-md px-3 py-2 text-sm font-medium", previewMode === "mobile" ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary")}>Mobile</button></div><button type="button" onClick={() => setCampaignPreview(null)} className="rounded-lg px-3 py-2 text-sm font-semibold text-secondary hover:bg-secondary">Close</button></div>
             </header>
-            <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-secondary p-4 sm:p-6"><iframe title={`Preview of ${campaignPreview.name}`} srcDoc={renderSavedCampaignPreview(campaignPreview, paymentUrl)} className={cx("h-[70vh] min-h-[420px] rounded-lg bg-white shadow-lg", previewMode === "mobile" ? "w-[390px] max-w-full" : "w-full")} /></div>
+            <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-secondary p-4 sm:p-6"><iframe title={`Preview of ${campaignPreview.name}`} srcDoc={renderSavedCampaignPreview(campaignPreview, paymentUrl, emailBranding)} className={cx("h-[70vh] min-h-[420px] rounded-lg bg-white shadow-lg", previewMode === "mobile" ? "w-[390px] max-w-full" : "w-full")} /></div>
             <footer className="border-t border-secondary px-5 py-3 text-xs text-tertiary">Personalization fields use sample details in this preview. The recipient’s final version may vary.</footer>
           </section>
         </div>

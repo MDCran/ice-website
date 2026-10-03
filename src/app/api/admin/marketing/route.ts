@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireMarketingAdmin } from "@/lib/admin/requireMarketingAdmin";
-import { renderMarketingEmail } from "@/lib/marketing/renderEmail";
+import { normalizeEmailBranding, renderMarketingEmail, type EmailBranding } from "@/lib/marketing/renderEmail";
 import type { EmailBlock } from "@/lib/marketing/templates";
 import { campaignPreferenceKey, MARKETING_PREFERENCE_KEYS, normalizeMarketingPreferences } from "@/lib/marketing/preferences";
 
@@ -24,10 +24,38 @@ function includesPreferenceCenter(campaignType: string) {
 
 function personalize(value: string, contact: Record<string, unknown>, html = false) {
   const customFields = contact.custom_fields && typeof contact.custom_fields === "object" ? contact.custom_fields as Record<string, unknown> : {};
-  return value.replace(/{{\s*(first_name|last_name|email|company|amount_due)\s*}}/g, (_, key: string) => {
-    const source = key === "amount_due" ? customFields.amount_due : contact[key];
-    const text = clean(source, key === "amount_due" ? 80 : 500);
+  return value.replace(/{{\s*([a-z][a-z0-9_]*)\s*}}/gi, (token, key: string) => {
+    if (key === "payment_url" || key === "unsubscribe_url") return token;
+    if (key === "month") return new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date());
+    if (key === "year") return String(new Date().getFullYear());
+    const source = ["first_name", "last_name", "email", "company"].includes(key) ? contact[key] : customFields[key];
+    const text = clean(source, key === "amount_due" ? 80 : 2000);
     return html ? htmlEscape(text) : text;
+  });
+}
+
+function emailBrandingFromSettings(settings: Record<string, unknown> | null): EmailBranding {
+  return normalizeEmailBranding({
+    logoUrl: clean(settings?.email_logo_url, 2048), logoAlt: clean(settings?.email_logo_alt, 160), headerColor: clean(settings?.email_header_color, 7),
+    companyName: clean(settings?.email_company_name, 160), location: clean(settings?.email_location, 160), phone: clean(settings?.email_phone, 48),
+    websiteUrl: clean(settings?.email_website_url, 2048), footerNote: clean(settings?.email_footer_note, 300), accentColor: clean(settings?.email_accent_color, 7),
+    heroColor: clean(settings?.email_hero_color, 7), footerColor: clean(settings?.email_footer_color, 7), pageColor: clean(settings?.email_page_color, 7),
+    fontFamily: clean(settings?.email_font_family, 24) as EmailBranding["fontFamily"],
+  });
+}
+
+function fillTestTokens(html: string) {
+  const examples: Record<string, string> = {
+    first_name: "Alex", last_name: "Morgan", email: "alex@example.com", company: "Example Company",
+    amount_due: "$1,250.00", amount_paid: "$1,250.00", month: new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date()),
+    year: String(new Date().getFullYear()), portal_url: "https://www.icesales.com/portal", maintenance_date: "October 30, 2026",
+    maintenance_window: "10:00 PM–12:00 AM ET", service_name: "Managed Cloud Hosting", expected_impact: "Brief service interruption expected",
+    maintenance_details: "ICE will validate services after maintenance.", advisory_title: "Important service update",
+    affected_systems: "Your managed environment", recommended_action: "No action is required.",
+  };
+  return html.replace(/{{\s*([a-z][a-z0-9_]*)\s*}}/gi, (token, key: string) => {
+    if (key === "payment_url" || key === "unsubscribe_url") return token;
+    return examples[key] ?? `Example ${key.replace(/_/g, " ")}`;
   });
 }
 
@@ -41,8 +69,14 @@ function hasPaymentLink(html: string) {
   return /{{\s*payment_url\s*}}|https:\/\/quickbooks\.intuit\.com\/?/i.test(html);
 }
 
-function missingAmounts(recipients: Array<Record<string, unknown>>) {
-  return recipients.filter((contact) => !clean((contact.custom_fields as Record<string, unknown> | null)?.amount_due, 80)).length;
+function missingTemplateFields(html: string, recipients: Array<Record<string, unknown>>) {
+  const fixed = new Set(["first_name", "last_name", "email", "company", "month", "year", "payment_url", "unsubscribe_url"]);
+  const required = [...html.matchAll(/{{\s*([a-z][a-z0-9_]*)\s*}}/gi)].map((match) => match[1]).filter((key) => !fixed.has(key));
+  const missing = [...new Set(required)].filter((key) => recipients.some((contact) => {
+    const fields = contact.custom_fields && typeof contact.custom_fields === "object" ? contact.custom_fields as Record<string, unknown> : {};
+    return !clean(fields[key], 2000);
+  }));
+  return missing;
 }
 
 export async function GET() {
@@ -56,7 +90,7 @@ export async function GET() {
     auth.supabase.from("marketing_campaigns").select("*").order("created_at", { ascending: false }).limit(200),
     auth.supabase.from("marketing_templates").select("*").order("updated_at", { ascending: false }).limit(200),
   ]);
-  const { data: settings, error: settingsError } = await auth.supabase.from("marketing_settings").select("lead_notification_email,payment_url").eq("id", true).maybeSingle();
+  const { data: settings, error: settingsError } = await auth.supabase.from("marketing_settings").select("lead_notification_email,payment_url,email_logo_url,email_logo_alt,email_header_color,email_company_name,email_location,email_phone,email_website_url,email_footer_note,email_accent_color,email_hero_color,email_footer_color,email_page_color,email_font_family").eq("id", true).maybeSingle();
 
   const firstError = [contacts.error, lists.error, members.error, campaigns.error, templates.error].find(Boolean);
   if (firstError) {
@@ -75,7 +109,7 @@ export async function GET() {
     members: members.data ?? [],
     campaigns: campaigns.data ?? [],
     templates: templates.data ?? [],
-    settings: { leadNotificationEmail: settings?.lead_notification_email ?? "", paymentUrl: settings?.payment_url ?? "" },
+    settings: { leadNotificationEmail: settings?.lead_notification_email ?? "", paymentUrl: settings?.payment_url ?? "", branding: emailBrandingFromSettings(settings as Record<string, unknown> | null) },
     paymentSettingsReady: !settingsError,
     resendConnected: Boolean(process.env.RESEND_API_KEY),
   });
@@ -90,10 +124,29 @@ export async function POST(request: Request) {
   if (action === "save_email_settings") {
     const email = clean(body.leadNotificationEmail, 320).toLowerCase();
     const paymentUrl = clean(body.paymentUrl, 2048);
+    const rawBranding = body.branding && typeof body.branding === "object" && !Array.isArray(body.branding) ? body.branding as Record<string, unknown> : {};
+    const branding = normalizeEmailBranding({
+      logoUrl: clean(rawBranding.logoUrl, 2048), logoAlt: clean(rawBranding.logoAlt, 160), headerColor: clean(rawBranding.headerColor, 7),
+      companyName: clean(rawBranding.companyName, 160), location: clean(rawBranding.location, 160), phone: clean(rawBranding.phone, 48),
+      websiteUrl: clean(rawBranding.websiteUrl, 2048), footerNote: clean(rawBranding.footerNote, 300), accentColor: clean(rawBranding.accentColor, 7),
+      heroColor: clean(rawBranding.heroColor, 7), footerColor: clean(rawBranding.footerColor, 7), pageColor: clean(rawBranding.pageColor, 7),
+      fontFamily: clean(rawBranding.fontFamily, 24) as EmailBranding["fontFamily"],
+    });
     if (email && !validEmail(email)) return NextResponse.json({ error: "Enter a valid notification email address." }, { status: 400 });
     if (paymentUrl && !validHttpsUrl(paymentUrl)) return NextResponse.json({ error: "Enter a valid HTTPS payment link." }, { status: 400 });
+    if (rawBranding.logoUrl && !(String(rawBranding.logoUrl).startsWith("/") && !String(rawBranding.logoUrl).startsWith("//")) && !validHttpsUrl(clean(rawBranding.logoUrl, 2048))) return NextResponse.json({ error: "Logo URL must be a secure HTTPS link or a site-relative image path." }, { status: 400 });
+    if (rawBranding.websiteUrl && !validHttpsUrl(clean(rawBranding.websiteUrl, 2048))) return NextResponse.json({ error: "Website URL must use HTTPS." }, { status: 400 });
+    for (const key of ["accentColor", "heroColor", "headerColor", "footerColor", "pageColor"]) {
+      if (rawBranding[key] && !/^#[\da-f]{6}$/i.test(String(rawBranding[key]))) return NextResponse.json({ error: `Enter a valid six-digit hex color for ${key}.` }, { status: 400 });
+    }
+    if (rawBranding.fontFamily && !["Inter", "Arial", "Georgia"].includes(String(rawBranding.fontFamily))) return NextResponse.json({ error: "Choose Inter, Arial, or Georgia for the email font." }, { status: 400 });
     const { error } = await auth.supabase.from("marketing_settings").upsert({
-      id: true, lead_notification_email: email || null, payment_url: paymentUrl || null, updated_at: new Date().toISOString(), updated_by: auth.user.id,
+      id: true, lead_notification_email: email || null, payment_url: paymentUrl || null,
+      email_logo_url: branding.logoUrl, email_logo_alt: branding.logoAlt, email_header_color: branding.headerColor,
+      email_company_name: branding.companyName, email_location: branding.location, email_phone: branding.phone, email_website_url: branding.websiteUrl,
+      email_footer_note: branding.footerNote, email_accent_color: branding.accentColor, email_hero_color: branding.heroColor,
+      email_footer_color: branding.footerColor, email_page_color: branding.pageColor, email_font_family: branding.fontFamily,
+      updated_at: new Date().toISOString(), updated_by: auth.user.id,
     }, { onConflict: "id" });
     return error ? NextResponse.json({ error: error.message }, { status: 400 }) : NextResponse.json({ ok: true });
   }
@@ -129,7 +182,13 @@ export async function POST(request: Request) {
         company: clean(raw.company, 180) || null,
         source: clean(raw.source, 120) || "csv_import",
         tags: Array.isArray(raw.tags) ? raw.tags.map((tag: unknown) => clean(tag, 60)).filter(Boolean).slice(0, 30) : [],
-        custom_fields: clean(raw.amount_due, 80) ? { amount_due: clean(raw.amount_due, 80) } : undefined,
+        custom_fields: raw.custom_fields && typeof raw.custom_fields === "object" && !Array.isArray(raw.custom_fields)
+          ? Object.fromEntries(Object.entries(raw.custom_fields as Record<string, unknown>).slice(0, 50).flatMap(([key, value]) => {
+              const normalizedKey = key.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/^_+|_+$/g, "").slice(0, 80);
+              const normalizedValue = clean(value, 2000);
+              return normalizedKey && normalizedValue ? [[normalizedKey, normalizedValue]] : [];
+            }))
+          : undefined,
         email_consent_status: consent,
         email_consent_at: consent === "subscribed" ? new Date().toISOString() : null,
         email_consent_source: consent === "subscribed" ? "admin_csv_import_attestation" : null,
@@ -249,16 +308,12 @@ export async function POST(request: Request) {
     const bodyText = typeof body.bodyText === "string" ? body.bodyText.slice(0, 100000) : "";
     if (bodyOnly && body.campaignType !== "transactional") return NextResponse.json({ error: "Body-only email is available for transactional messages only." }, { status: 400 });
     if (bodyOnly && !bodyText.trim()) return NextResponse.json({ error: "Enter the plain-text email body." }, { status: 400 });
-    const { data: mailSettings } = await auth.supabase.from("marketing_settings").select("payment_url").eq("id", true).maybeSingle();
+    const { data: mailSettings } = await auth.supabase.from("marketing_settings").select("*").eq("id", true).maybeSingle();
     const paymentUrl = clean(mailSettings?.payment_url, 2048);
-    const renderedTestHtml = bodyOnly ? "" : renderMarketingEmail({ preheader: clean(body.preheader, 500), blocks, includeUnsubscribe: true });
+    const branding = emailBrandingFromSettings(mailSettings as Record<string, unknown> | null);
+    const renderedTestHtml = bodyOnly ? "" : fillTestTokens(renderMarketingEmail({ preheader: clean(body.preheader, 500), blocks, includeUnsubscribe: true, branding }));
     if (!bodyOnly && hasPaymentLink(renderedTestHtml) && !validHttpsUrl(paymentUrl)) return NextResponse.json({ error: "Set a secure customer payment link in Email settings before testing this template." }, { status: 400 });
-    const testHtml = bodyOnly ? "" : withPaymentUrl(
-      renderedTestHtml
-        .replace(/{{\s*first_name\s*}}/g, "Alex")
-        .replace(/{{\s*amount_due\s*}}/g, () => "$1,250.00"),
-      paymentUrl,
-    ).replace(/{{unsubscribe_url}}/g, "https://www.icesales.com/subscribe");
+    const testHtml = bodyOnly ? "" : withPaymentUrl(renderedTestHtml, paymentUrl).replace(/{{unsubscribe_url}}/g, "https://www.icesales.com/subscribe");
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
@@ -266,7 +321,7 @@ export async function POST(request: Request) {
         from: "International Computer Exchange <noreply@mail.icesales.com>",
         to: [to],
         reply_to: clean(body.replyTo, 320) || "info@icesales.com",
-        subject: `[TEST] ${clean(body.subject, 300) || "ICE email preview"}`,
+        subject: `[TEST] ${fillTestTokens(clean(body.subject, 300) || "ICE email preview")}`,
         ...(bodyOnly ? { text: bodyText } : { html: testHtml }),
       }),
     });
@@ -291,14 +346,13 @@ export async function POST(request: Request) {
     if (recipientError) return NextResponse.json({ error: recipientError.message }, { status: 400 });
     const recipients = (contacts ?? []).filter((contact) => isEligible(contact, campaign.campaign_type));
     if (!recipients?.length) return NextResponse.json({ error: "No eligible recipients remain after consent and suppression checks." }, { status: 400 });
-    const { data: mailSettings } = await auth.supabase.from("marketing_settings").select("payment_url").eq("id", true).maybeSingle();
+    const { data: mailSettings } = await auth.supabase.from("marketing_settings").select("*").eq("id", true).maybeSingle();
     const paymentUrl = clean(mailSettings?.payment_url, 2048);
-    const campaignHtml = campaign.body_only ? "" : renderMarketingEmail({ preheader: campaign.preheader, blocks: (campaign.blocks ?? []) as EmailBlock[], includeUnsubscribe: includesPreferenceCenter(campaign.campaign_type) });
+    const branding = emailBrandingFromSettings(mailSettings as Record<string, unknown> | null);
+    const campaignHtml = campaign.body_only ? "" : renderMarketingEmail({ preheader: campaign.preheader, blocks: (campaign.blocks ?? []) as EmailBlock[], includeUnsubscribe: includesPreferenceCenter(campaign.campaign_type), branding });
     if (!campaign.body_only && hasPaymentLink(campaignHtml) && !validHttpsUrl(paymentUrl)) return NextResponse.json({ error: "Set a secure customer payment link in Email settings before sending this campaign." }, { status: 400 });
-    if (!campaign.body_only && campaignHtml.includes("{{amount_due}}")) {
-      const missing = missingAmounts(recipients);
-      if (missing) return NextResponse.json({ error: `${missing} recipient${missing === 1 ? " is" : "s are"} missing amount_due. Add the amount_due column to your contact CSV and import it before sending.` }, { status: 400 });
-    }
+    const missingFields = campaign.body_only ? [] : missingTemplateFields(`${campaignHtml}\n${campaign.subject}\n${campaign.preheader}`, recipients);
+    if (missingFields.length) return NextResponse.json({ error: `Add values for ${missingFields.map((field) => `“${field}”`).join(", ")} to each recipient’s CSV custom fields before sending.` }, { status: 400 });
     if (campaign.body_only && recipients.length !== 1) return NextResponse.json({ error: "Body-only transactional email must have exactly one eligible recipient. Choose a list containing just that person." }, { status: 400 });
 
     await auth.supabase.from("marketing_campaigns").update({ status: "sending", recipient_count: recipients.length, updated_at: new Date().toISOString() }).eq("id", campaign.id);
