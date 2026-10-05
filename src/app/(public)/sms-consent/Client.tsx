@@ -124,6 +124,11 @@ function normalizeSections(value: unknown): LegalSection[] {
   const items = asRecord(value).items;
   if (items === undefined) return DEFAULT_SECTIONS;
   if (!Array.isArray(items)) return DEFAULT_SECTIONS;
+  const requiredSmsCopy = new Map(
+    DEFAULT_SECTIONS
+      .filter((section) => section.id === "website-opt-in" || section.id === "frequency")
+      .map((section) => [section.id, section.content]),
+  );
   return items.flatMap((item) => {
     const section = asRecord(item);
     if (
@@ -133,7 +138,11 @@ function normalizeSections(value: unknown): LegalSection[] {
     ) {
       return [];
     }
-    return [{ id: section.id, title: section.title, content: section.content }];
+    return [{
+      id: section.id,
+      title: section.title,
+      content: requiredSmsCopy.get(section.id) ?? section.content,
+    }];
   });
 }
 
