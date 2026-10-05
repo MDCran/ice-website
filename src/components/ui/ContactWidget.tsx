@@ -117,7 +117,7 @@ const DEFAULT_CONTACT_WIDGET_CONTENT: ResolvedContactWidgetContent = {
   message_placeholder: "How can we help?",
   sms_consent_aria_label: "Optional SMS consent",
   sms_consent_prefix:
-    "By checking this optional box, you agree to receive SMS messages from International Computer Exchange, Inc. about your inquiry, service and support, project updates, and appointment scheduling. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our ",
+    "By checking this box, I consent to receive Customer Care text messages from International Computer Exchange, Inc. Reply STOP to opt out. Message and data rates may apply. Message frequency may vary. Text HELP to 1-800-786-9188 for assistance. This optional consent is only for SMS and is not required to submit the form. See our ",
   sms_consent_link_label: "Privacy Policy",
   sms_consent_link_href: "/privacy-policy",
   sms_consent_suffix: ".",
@@ -876,7 +876,10 @@ export default function ContactWidget({ content }: { content?: ContactWidgetCont
                         DEFAULT_CONTACT_WIDGET_CONTENT.country_dial_code_aria_label,
                       )}
                       value={form.phone}
-                      onChange={(value) => setField("phone", value)}
+                      onChange={(value) => {
+                        setField("phone", value);
+                        setField("smsConsent", false);
+                      }}
                     />
 
                     {/* Service */}
@@ -909,6 +912,7 @@ export default function ContactWidget({ content }: { content?: ContactWidgetCont
                         widget.sms_consent_aria_label,
                         DEFAULT_CONTACT_WIDGET_CONTENT.sms_consent_aria_label,
                       )}
+                      isDisabled={form.phone.replace(/\D/g, "").length < 7}
                       isSelected={form.smsConsent}
                       onChange={(isSelected) => setField("smsConsent", isSelected)}
                       hint={<SmsConsentDisclosure />}

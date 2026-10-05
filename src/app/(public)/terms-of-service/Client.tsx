@@ -104,9 +104,9 @@ If you decide to access any of the third-party websites linked to the Site, you 
   {
     id: "sms-terms",
     title: "7. SMS Terms",
-    content: `If you separately and affirmatively opt in using the optional SMS checkbox on our website, you agree to receive messages from International Computer Exchange, Inc. about your inquiry, service and support, project updates, and appointment scheduling. Submitting a phone number alone is not SMS consent. Consent is not a condition of purchase. Message frequency varies, and message and data rates may apply. This opt-in does not cover promotional messages.
+    content: `If you separately and affirmatively opt in using the optional SMS checkbox on our website, you consent to receive text messages related to Customer Care from International Computer Exchange, Inc. Submitting a phone number alone is not SMS consent. Message frequency may vary, and message and data rates may apply. This consent is only for SMS Customer Care and does not enroll you in email or promotional marketing.
 
-Reply STOP to any ICE text message to opt out. Reply HELP for help. You can also contact us at 1-800-786-9188 or info@icesales.com. Rejoining after opting out requires a new affirmative opt-in. See our SMS Consent and Privacy Policy pages for details.`,
+Reply STOP to any ICE text message to opt out. Text HELP for assistance, or contact us at 1-800-786-9188 or info@icesales.com. Rejoining after opting out requires a new affirmative opt-in. See our SMS Consent and Privacy Policy pages for details.`,
   },
   {
     id: "changes-to-terms",

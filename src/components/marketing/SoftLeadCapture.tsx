@@ -340,7 +340,10 @@ export default function SoftLeadCapture({
                   type="tel"
                   label={resolvedContent.phone_label}
                   value={phone}
-                  onChange={(v) => setPhone(formatPhone(v))}
+                  onChange={(v) => {
+                    setPhone(formatPhone(v));
+                    setSmsConsent(false);
+                  }}
                   placeholder={resolvedContent.phone_placeholder}
                 />
                 <Input
@@ -361,6 +364,7 @@ export default function SoftLeadCapture({
                 <Checkbox
                   size="sm"
                   aria-label="Optional SMS consent"
+                  isDisabled={phone.replace(/\D/g, "").length < 7}
                   isSelected={smsConsent}
                   onChange={setSmsConsent}
                   hint={<SmsConsentDisclosure />}

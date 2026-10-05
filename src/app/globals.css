@@ -115,17 +115,12 @@ body.menu-open [data-contact-widget] {
 }
 
 /* Contact form selects are portaled outside their form/widget stacking
-   contexts. Keep the menu above page content, but keep the sticky navbar above
-   the menu when it opens near the top of the viewport. Otherwise the popover
-   can visually cover the header and make it appear to disappear. */
+   contexts. Keep their menus above page content, but below the persistent
+   navbar layer so opening a select can never cover or visually replace it. */
 .contact-form-popover {
-  z-index: 100001;
+  z-index: 10001;
   overscroll-behavior: contain;
   isolation: isolate;
-}
-
-body:has(.contact-form-popover) [data-site-navbar] {
-  z-index: 100002;
 }
 
 /* Homepage partner marquee — dedicated keyframe (the generic `marquee` name

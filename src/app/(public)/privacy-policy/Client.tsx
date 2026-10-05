@@ -34,14 +34,14 @@ We may also collect information generated when you use the Site, including IP ad
       title: "3. How We Use Information",
       content: `We use information to provide, maintain, and improve our services; respond to inquiries; coordinate project and appointment scheduling; process transactions; provide service and account notices; improve the Site and our offerings; maintain security; meet legal obligations; and send communications you have requested or agreed to receive.
 
-We do not use a phone number for promotional text messages merely because you submitted a form. Promotional SMS messages require the separate, optional SMS consent described on the form and in our SMS Consent Policy.`,
+We do not send SMS merely because you submitted a form or provided a phone number. Customer Care text messages require the separate, optional SMS consent described on the form and in our SMS Consent Policy; that consent is not email or promotional marketing consent.`,
     },
     {
       id: "sms-privacy",
       title: "4. Mobile and SMS Privacy",
       content: `Mobile opt-in, SMS consent, and phone numbers collected for SMS communication purposes will not be shared with any third party or affiliates for marketing purposes. We do not share mobile opt-in or text message consent with any third party or affiliate for its own marketing or promotional purposes.
 
-If you opt in to SMS messages, we may retain your phone number, the date and method of consent, the form or source, the disclosure version, and message or opt-out records to operate the program, honor your choices, prevent abuse, and document consent. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help.`,
+If you opt in to SMS Customer Care messages, we may retain your phone number, the date and method of consent, the form or source, the disclosure version, and message or opt-out records to operate the program, honor your choices, prevent abuse, and document consent. Message frequency may vary. Message and data rates may apply. Reply STOP to opt out or text HELP for assistance.`,
     },
     {
       id: "how-we-share-information",

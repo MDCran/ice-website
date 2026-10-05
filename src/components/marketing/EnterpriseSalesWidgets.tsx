@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ArrowRight, Calculator, Calendar, CheckCircle, ChevronDown, Phone01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
+import { SmsConsentDisclosure } from "@/components/legal/SmsConsentDisclosure";
 import { pushEvent } from "@/lib/analytics";
 import type { SalesEnablementConfig } from "@/lib/salesEnablement";
 import { cx } from "@/utils/cx";
@@ -176,6 +178,7 @@ export function EnterpriseStickyCta({
   const [isVisible, setIsVisible] = useState(false);
   const [callbackOpen, setCallbackOpen] = useState(false);
   const [callbackPhone, setCallbackPhone] = useState("");
+  const [callbackSmsConsent, setCallbackSmsConsent] = useState(false);
   const [callbackEmail, setCallbackEmail] = useState("");
   const [callbackTime, setCallbackTime] = useState(
     config.global.callbackTimeOptions[0]?.id ?? "Today",
@@ -228,6 +231,7 @@ export function EnterpriseStickyCta({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: callbackPhone,
+          smsConsent: callbackSmsConsent,
           email: callbackEmail,
           preferredTime: selectedCallbackTime,
           context: solutionName || config.global.callbackContextFallback,
@@ -359,7 +363,10 @@ export function EnterpriseStickyCta({
                     label={config.global.callbackPhoneLabel}
                     icon={Phone01}
                     value={callbackPhone}
-                    onChange={(value) => setCallbackPhone(formatPhone(value))}
+                    onChange={(value) => {
+                      setCallbackPhone(formatPhone(value));
+                      setCallbackSmsConsent(false);
+                    }}
                     placeholder={config.global.callbackPhonePlaceholder}
                     className="min-w-0"
                   />
@@ -376,6 +383,17 @@ export function EnterpriseStickyCta({
                   >
                     {(item) => <Select.Item id={item.id} label={item.label} />}
                   </Select>
+                </div>
+
+                <div className="mt-4">
+                  <Checkbox
+                    size="sm"
+                    aria-label="Optional SMS consent"
+                    isSelected={callbackSmsConsent}
+                    isDisabled={callbackPhone.replace(/\D/g, "").length < 7}
+                    onChange={setCallbackSmsConsent}
+                    hint={<SmsConsentDisclosure />}
+                  />
                 </div>
 
                 <Button

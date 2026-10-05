@@ -349,7 +349,7 @@ const DEFAULT_WIZARD_COPY = {
   company_placeholder: "Acme Corp",
   phone_label: "Phone number",
   sms_aria_label: "Optional SMS consent",
-  sms_consent_prefix: "By checking this optional box, you agree to receive SMS messages from International Computer Exchange, Inc. about your inquiry, service and support, project updates, and appointment scheduling. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our",
+  sms_consent_prefix: "By checking this box, I consent to receive Customer Care text messages from International Computer Exchange, Inc. Reply STOP to opt out. Message and data rates may apply. Message frequency may vary. Text HELP to 1-800-786-9188 for assistance. This optional consent is only for SMS and is not required to submit the form. See our",
   sms_policy_label: "Privacy Policy",
   sms_policy_href: "/privacy-policy",
   sms_consent_suffix: ".",
@@ -953,7 +953,7 @@ export default function ConsultWizard({
                   size="md"
                   label={optionalLabel(wizard.copy.phone_label)}
                   value={formData.phone}
-                  onChange={(value) => patchForm({ phone: value, ...(value.replace(/\D/g, "").length < 7 ? { smsConsent: false } : {}) })}
+                  onChange={(value) => patchForm({ phone: value, smsConsent: false })}
                   wrapperClassName="min-w-0"
                 />
               </div>

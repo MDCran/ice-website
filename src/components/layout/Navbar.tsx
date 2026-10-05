@@ -416,7 +416,7 @@ export default function Navbar({
   };
 
   return (
-    <header data-site-navbar className="sticky top-0 z-50 w-full">
+    <header data-site-navbar className="sticky top-0 z-[10002] w-full">
       {/* ══════════ Top Info Bar ══════════ */}
       <motion.div
         data-top-info-bar

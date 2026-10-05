@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { notifyNewLead } from "@/lib/notifyLead";
+import { SMS_CONSENT_DISCLOSURE_VERSION } from "@/lib/smsConsent";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -11,8 +12,24 @@ export async function POST(request: Request) {
   const pagePath = typeof body.pagePath === "string" ? body.pagePath.trim().slice(0, 500) : "";
   if (phone.replace(/\D/g, "").length < 7) return NextResponse.json({ error: "Enter a valid phone number." }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
+  const smsConsentGiven = body.smsConsent === true;
+  const smsConsentAt = smsConsentGiven ? new Date().toISOString() : null;
+  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip");
+  const userAgent = request.headers.get("user-agent");
   const supabase = await createClient();
-  const { error } = await supabase.from("callback_requests").insert({ email, phone, preferred_time: preferredTime || null, context: context || null, page_path: pagePath || null });
+  const { error } = await supabase.from("callback_requests").insert({
+    email,
+    phone,
+    preferred_time: preferredTime || null,
+    context: context || null,
+    page_path: pagePath || null,
+    sms_consent: smsConsentGiven,
+    sms_consent_at: smsConsentAt,
+    sms_consent_source: smsConsentGiven ? pagePath || "callback_widget" : null,
+    sms_consent_ip: smsConsentGiven ? forwardedFor : null,
+    sms_consent_user_agent: smsConsentGiven ? userAgent : null,
+    sms_consent_disclosure_version: smsConsentGiven ? SMS_CONSENT_DISCLOSURE_VERSION : null,
+  });
   if (error) return NextResponse.json({ error: "We could not save the callback request." }, { status: 500 });
   void notifyNewLead({ name: "Callback request", email, phone, service: context || "Callback", message: preferredTime ? `Preferred time: ${preferredTime}` : "A callback was requested.", source: pagePath || "callback_widget" });
   return NextResponse.json({ ok: true }, { status: 201 });

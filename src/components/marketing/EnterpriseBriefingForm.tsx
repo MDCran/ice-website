@@ -200,7 +200,10 @@ export function EnterpriseBriefingForm({
                 label="Direct phone"
                 autoComplete="tel"
                 value={phone}
-                onChange={setPhone}
+                onChange={(value) => {
+                  setPhone(value);
+                  setSmsConsent(false);
+                }}
               />
               <NativeSelect
                 required
@@ -237,6 +240,7 @@ export function EnterpriseBriefingForm({
                 <Checkbox
                   size="md"
                   aria-label="Optional SMS consent"
+                  isDisabled={phone.replace(/\D/g, "").length < 7}
                   isSelected={smsConsent}
                   onChange={setSmsConsent}
                   hint={<SmsConsentDisclosure />}

@@ -18,9 +18,9 @@ const DEFAULT_SECTIONS = [
   {
     id: "website-opt-in",
     title: "1. Website Opt-In",
-    content: `You opt in to SMS messages on our website only by selecting the separate, optional SMS consent checkbox beside the disclosure. Providing a phone number alone does not opt you in to text messages. Consent is not a condition of purchase, and you can submit a form without checking the box.
+    content: `You opt in to SMS Customer Care messages on our website only by selecting the separate, optional SMS consent checkbox beside the disclosure. Providing a phone number alone does not opt you in to text messages. You can submit a form without checking the box.
 
-By selecting that checkbox, you consent to receive SMS messages from International Computer Exchange, Inc. ("ICE") about your inquiry, service and support, project updates, and appointment scheduling at the number you provide. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. This opt-in does not cover promotional messages.`,
+By selecting that checkbox, you consent to receive text messages related to Customer Care from International Computer Exchange, Inc. at the number you provide. Message frequency may vary. Message and data rates may apply. Reply STOP to opt out or text HELP to 1-800-786-9188 for assistance. This consent is only for SMS Customer Care and does not enroll you in email or promotional marketing.`,
   },
   {
     id: "opting-out",
@@ -42,13 +42,12 @@ We will stop sending SMS messages to that number after the opt-out is processed.
   {
     id: "frequency",
     title: "4. Message Frequency, Types, and Charges",
-    content: `Message frequency varies. You may receive:
+    content: `Message frequency may vary. You may receive:
 
-• Responses to your inquiries or support requests
-• Project updates and appointment scheduling messages
-• Follow-up communications related to your inquiry or ongoing project
+• Responses to Customer Care inquiries or support requests
+• Customer Care follow-up related to service, project coordination, or appointment scheduling
 
-Standard message and data rates may apply. Carriers are not liable for delayed or undelivered messages.
+Message and data rates may apply. Carriers are not liable for delayed or undelivered messages.
 
 Example: “International Computer Exchange: We received your request and will follow up about your project. Reply STOP to opt out.”`,
   },

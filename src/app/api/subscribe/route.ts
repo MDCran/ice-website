@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { DEFAULT_MARKETING_PREFERENCES, normalizeMarketingPreferences } from "@/lib/marketing/preferences";
+import { SMS_CONSENT_DISCLOSURE_VERSION } from "@/lib/smsConsent";
 
 const clean = (value: unknown, max: number) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,6 +16,7 @@ export async function POST(request: NextRequest) {
     const preferences = normalizeMarketingPreferences(body.preferences, DEFAULT_MARKETING_PREFERENCES);
     const hasConsent = Object.values(preferences).some(Boolean);
     const now = new Date().toISOString();
+    const smsConsent = body.smsConsent === true && phone.replace(/\D/g, "").length >= 7;
 
     if (!name || !email || !phone) return NextResponse.json({ error: "Name, email, and phone number are required." }, { status: 400 });
     if (!emailPattern.test(email)) return NextResponse.json({ error: "Please provide a valid email address." }, { status: 400 });
@@ -37,6 +39,12 @@ export async function POST(request: NextRequest) {
       email_consent_status: hasConsent ? "subscribed" : "unsubscribed",
       email_consent_at: now,
       email_consent_source: "subscription_page",
+      sms_consent: smsConsent,
+      sms_consent_at: smsConsent ? now : null,
+      sms_consent_source: smsConsent ? "subscription_page" : null,
+      sms_consent_ip: smsConsent ? consentIp : null,
+      sms_consent_user_agent: smsConsent ? userAgent : null,
+      sms_consent_disclosure_version: smsConsent ? SMS_CONSENT_DISCLOSURE_VERSION : null,
       consent_ip: consentIp,
       consent_user_agent: userAgent,
       marketing_preferences: preferences,
@@ -56,7 +64,12 @@ export async function POST(request: NextRequest) {
       email,
       company: company || null,
       phone,
-      sms_consent: false,
+      sms_consent: smsConsent,
+      sms_consent_at: smsConsent ? now : null,
+      sms_consent_source: smsConsent ? "subscription_page" : null,
+      sms_consent_ip: smsConsent ? consentIp : null,
+      sms_consent_user_agent: smsConsent ? userAgent : null,
+      sms_consent_disclosure_version: smsConsent ? SMS_CONSENT_DISCLOSURE_VERSION : null,
       email_marketing_consent: hasConsent,
       email_consent_at: now,
       email_consent_source: "subscription_page",
