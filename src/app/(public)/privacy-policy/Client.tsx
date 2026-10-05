@@ -8,7 +8,7 @@ export const PRIVACY_POLICY_DEFAULTS: LegalPolicyDefaults = {
     eyebrow: "Legal · Privacy",
     headline: "Privacy Policy",
     subheadline: "How International Computer Exchange collects, uses, and protects information.",
-    last_updated: "October 1, 2026",
+    last_updated: "October 5, 2026",
     badge_note: "Applies to icesales.com",
     document_title: "Privacy Policy",
     document_intro:

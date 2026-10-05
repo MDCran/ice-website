@@ -42,7 +42,7 @@ const DEFAULT_HERO: LegalHero = {
   headline: "Terms of Service",
   subheadline:
     "Please read these terms and conditions carefully before using the International Computer Exchange, Inc. website.",
-  last_updated: "March 2026",
+  last_updated: "October 5, 2026",
   badge_note: "Applies to icesales.com",
   document_title: "Terms and Conditions",
   document_intro:
@@ -145,7 +145,7 @@ function normalizeHero(value: unknown, defaults: LegalHero): LegalHero {
     eyebrow: stringValue(hero.eyebrow, defaults.eyebrow),
     headline: stringValue(hero.headline, defaults.headline),
     subheadline: stringValue(hero.subheadline, defaults.subheadline),
-    last_updated: stringValue(hero.last_updated, defaults.last_updated),
+    last_updated: defaults.last_updated,
     badge_note: stringValue(hero.badge_note, defaults.badge_note),
     document_title: stringValue(hero.document_title, defaults.document_title),
     document_intro: stringValue(hero.document_intro, defaults.document_intro),

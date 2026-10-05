@@ -78,7 +78,7 @@ const DEFAULT_HERO = {
   eyebrow: "Legal · Messaging Policy",
   headline: "SMS Consent",
   subheadline: "SMS / Text messaging – opt-in & opt-out policy.",
-  last_updated: "October 1, 2026",
+  last_updated: "October 5, 2026",
   badge_note: "Reply STOP to opt out at any time",
   document_title: "SMS / Text Messaging – Opt-In & Opt-Out",
   document_intro:
@@ -111,7 +111,7 @@ function normalizeHero(value: unknown): typeof DEFAULT_HERO {
     eyebrow: stringValue(hero.eyebrow, DEFAULT_HERO.eyebrow),
     headline: stringValue(hero.headline, DEFAULT_HERO.headline),
     subheadline: stringValue(hero.subheadline, DEFAULT_HERO.subheadline),
-    last_updated: stringValue(hero.last_updated, DEFAULT_HERO.last_updated),
+    last_updated: DEFAULT_HERO.last_updated,
     badge_note: stringValue(hero.badge_note, DEFAULT_HERO.badge_note),
     document_title: stringValue(hero.document_title, DEFAULT_HERO.document_title),
     document_intro: stringValue(hero.document_intro, DEFAULT_HERO.document_intro),
