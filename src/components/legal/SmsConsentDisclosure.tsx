@@ -18,12 +18,19 @@ export function SmsConsentDisclosure() {
       >
         Privacy Policy
       </Link>{" "}
-      and{" "}
+      ,{" "}
+      <Link
+        href="/terms-of-service"
+        className="text-brand-secondary underline underline-offset-2 hover:text-brand-secondary_hover"
+      >
+        SMS Terms &amp; Conditions
+      </Link>
+      {" "}and our{" "}
       <Link
         href="/sms-consent"
         className="text-brand-secondary underline underline-offset-2 hover:text-brand-secondary_hover"
       >
-        SMS Terms of Use
+        SMS Consent Policy
       </Link>
       . This optional consent is only for SMS and is not required to submit the
       form.

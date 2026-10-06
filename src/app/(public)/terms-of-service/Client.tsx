@@ -104,9 +104,13 @@ If you decide to access any of the third-party websites linked to the Site, you 
   {
     id: "sms-terms",
     title: "7. SMS Terms",
-    content: `If you separately and affirmatively opt in using the optional SMS checkbox on our website, you consent to receive text messages related to Customer Care from International Computer Exchange, Inc. Submitting a phone number alone is not SMS consent. Message frequency may vary, and message and data rates may apply. This consent is only for SMS Customer Care and does not enroll you in email or promotional marketing.
+    content: `To opt in, complete a website form at https://www.icesales.com/contact and separately select the optional SMS checkbox. Submitting a phone number alone is not SMS consent. You may submit the form without checking the box. If you opt in, you consent to receive text messages related to Customer Care from International Computer Exchange, Inc. This consent is only for SMS Customer Care and does not enroll you in email or promotional marketing.
 
-Reply STOP to any ICE text message to opt out. Text HELP for assistance, or contact us at 1-800-786-9188 or info@icesales.com. Rejoining after opting out requires a new affirmative opt-in. See our SMS Consent and Privacy Policy pages for details.`,
+Message frequency may vary. Message and data rates may apply. Reply STOP to opt out. Text HELP for assistance, call 1-800-786-9188, email info@icesales.com, or visit www.icesales.com/contact. Mobile opt-in, SMS consent, and phone numbers collected for SMS communication purposes are not shared with third parties or affiliates for marketing purposes. See our Privacy Policy and SMS Consent Policy for details.
+
+Sample messages:
+• “International Computer Exchange: Hi Ron, Adam is on his way and will be there shortly. Reply STOP to opt out.”
+• “International Computer Exchange: We received your request and will follow up about your project. Reply STOP to opt out.”`,
   },
   {
     id: "changes-to-terms",
@@ -160,7 +164,7 @@ function normalizeSections(value: unknown, defaults: LegalSection[]): LegalSecti
   if (!Array.isArray(items)) return defaults;
   const requiredSmsCopy = new Map(
     defaults
-      .filter((section) => ["sms-terms", "how-we-use-information", "sms-privacy"].includes(section.id))
+      .filter((section) => ["sms-terms", "how-we-use-information", "how-we-share-information", "sms-privacy"].includes(section.id))
       .map((section) => [section.id, section.content]),
   );
   return items.flatMap((item) => {
@@ -370,6 +374,11 @@ export default function LegalPolicyPage({
                     <div className="prose mt-4 whitespace-pre-line">
                       {section.content.replace(/\\n/g, "\n")}
                     </div>
+                    {section.id === "sms-terms" && <nav aria-label="SMS terms links" className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+                      <Link href="/privacy-policy" className="text-brand-secondary underline underline-offset-2">Privacy Policy</Link>
+                      <Link href="/sms-consent" className="text-brand-secondary underline underline-offset-2">SMS Consent Policy</Link>
+                      <Link href="/contact" className="text-brand-secondary underline underline-offset-2">Contact ICE</Link>
+                    </nav>}
                   </div>
                 ))}
               </div>

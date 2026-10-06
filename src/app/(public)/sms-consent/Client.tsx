@@ -18,9 +18,9 @@ const DEFAULT_SECTIONS = [
   {
     id: "website-opt-in",
     title: "1. Website Opt-In",
-    content: `You opt in to SMS Customer Care messages on our website only by selecting the separate, optional SMS consent checkbox beside the disclosure. Providing a phone number alone does not opt you in to text messages. You can submit a form without checking the box.
+    content: `You opt in to SMS Customer Care messages by completing a website form at https://www.icesales.com/contact and separately selecting the optional SMS consent checkbox beside the disclosure. Providing a phone number alone does not opt you in to text messages. You can submit a form without checking the box.
 
-By selecting that checkbox, you consent to receive text messages related to Customer Care from International Computer Exchange, Inc. at the number you provide. Message frequency may vary. Message and data rates may apply. Reply STOP to opt out or text HELP to 1-800-786-9188 for assistance. This consent is only for SMS Customer Care and does not enroll you in email or promotional marketing.`,
+By selecting that checkbox, you consent to receive text messages related to Customer Care from International Computer Exchange, Inc. at the number you provide. Message frequency may vary. Message and data rates may apply. Reply STOP to opt out or text HELP to 1-800-786-9188 for assistance. This consent is only for SMS Customer Care and does not enroll you in email or promotional marketing. See the Privacy Policy and Terms & Conditions linked below.`,
   },
   {
     id: "opting-out",
@@ -36,7 +36,9 @@ We will stop sending SMS messages to that number after the opt-out is processed.
   {
     id: "help",
     title: "3. Help",
-    content: `Reply HELP for assistance. You can also contact ICE at info@icesales.com or 1-800-786-9188. Reply STOP to opt out.`,
+    content: `HELP response example: “International Computer Exchange: Reply STOP to cancel. For support, call 1-800-786-9188, email info@icesales.com, or visit www.icesales.com/contact.”
+
+Reply HELP for assistance. You can also contact ICE at info@icesales.com or 1-800-786-9188. Reply STOP to opt out.`,
 
   },
   {
@@ -47,9 +49,16 @@ We will stop sending SMS messages to that number after the opt-out is processed.
 • Responses to Customer Care inquiries or support requests
 • Customer Care follow-up related to service, project coordination, or appointment scheduling
 
-Message and data rates may apply. Carriers are not liable for delayed or undelivered messages.
+Message and data rates may apply. Carriers are not liable for delayed or undelivered messages. Every message identifies International Computer Exchange and includes opt-out instructions. Reply STOP to opt out.
 
-Example: “International Computer Exchange: We received your request and will follow up about your project. Reply STOP to opt out.”`,
+Sample messages (illustrative Customer Care examples):
+
+• “International Computer Exchange: Hi Ron, Adam is on his way and will be there shortly. Reply STOP to opt out.”
+• “International Computer Exchange: I tried to reach you at work, and they said you are out. Please give me a call at your earliest convenience. Reply STOP to opt out.”
+• “International Computer Exchange: Do you have a serial number for the machine? Can you send me a picture of it? Reply STOP to opt out.”
+• “International Computer Exchange: Thank you for contacting us. We received your request and will follow up about your project. Reply STOP to opt out.”
+• Welcome: “International Computer Exchange: You are opted in to SMS Customer Care messages. Message frequency may vary and message and data rates may apply. Reply STOP to opt out. Reply HELP for help.”
+• STOP confirmation: “International Computer Exchange: You will no longer receive messages from us. Reply START to opt in again.”`,
   },
   {
     id: "consent-records",
@@ -126,7 +135,7 @@ function normalizeSections(value: unknown): LegalSection[] {
   if (!Array.isArray(items)) return DEFAULT_SECTIONS;
   const requiredSmsCopy = new Map(
     DEFAULT_SECTIONS
-      .filter((section) => section.id === "website-opt-in" || section.id === "frequency")
+      .filter((section) => ["website-opt-in", "help", "frequency"].includes(section.id))
       .map((section) => [section.id, section.content]),
   );
   return items.flatMap((item) => {
@@ -320,6 +329,13 @@ export default function SmsConsentPage({ cmsData, orderedSections }: { cmsData?:
                   >
                     <h3 className="text-lg font-semibold text-primary">{section.title}</h3>
                     <div className="prose mt-4 whitespace-pre-line">{section.content.replace(/\\n/g, "\n")}</div>
+                    {section.id === "website-opt-in" && <nav aria-label="SMS policy links" className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+                      <Link href="/privacy-policy" className="text-brand-secondary underline underline-offset-2">Privacy Policy</Link>
+                      <Link href="/terms-of-service" className="text-brand-secondary underline underline-offset-2">SMS Terms &amp; Conditions</Link>
+                    </nav>}
+                    {section.id === "help" && <p className="mt-3 text-sm text-tertiary">
+                      Support: <Link href="/contact" className="text-brand-secondary underline underline-offset-2">www.icesales.com/contact</Link>
+                    </p>}
                   </div>
                 ))}
               </div>
