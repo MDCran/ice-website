@@ -732,9 +732,9 @@ export default function ConsultWizard({
 
   if (status === "success") {
     return (
-      <div className="flex flex-col gap-5 rounded-2xl bg-primary p-6 shadow-lg ring-1 ring-secondary ring-inset sm:p-8">
-        <div role="status" aria-live="polite" className="flex items-start gap-4 rounded-xl border border-success/30 bg-success-secondary p-5 sm:p-6">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary shadow-xs ring-1 ring-success/30">
+      <div className="flex flex-col gap-5 rounded-2xl bg-primary p-6 shadow-lg ring-1 ring-secondary/60 ring-inset sm:p-8">
+        <div role="status" aria-live="polite" className="flex items-start gap-4 rounded-xl bg-success-primary p-5 sm:p-6">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-success-secondary">
             <CheckCircle className="size-6 text-fg-success-primary" />
           </span>
           <div className="pt-0.5">
