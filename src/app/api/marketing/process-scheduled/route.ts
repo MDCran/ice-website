@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { campaignPreferenceKey, normalizeMarketingPreferences } from "@/lib/marketing/preferences";
-import { normalizeEmailBranding, renderMarketingEmail, type EmailBranding } from "@/lib/marketing/renderEmail";
+import { normalizeEmailBranding, renderMarketingEmail, removeReplyToEmailWording, type EmailBranding } from "@/lib/marketing/renderEmail";
 import type { EmailBlock } from "@/lib/marketing/templates";
 
 const clean = (value: unknown) => typeof value === "string" ? value.trim() : "";
@@ -103,9 +103,9 @@ export async function GET(request: Request) {
         from: `${campaign.from_name} <noreply@mail.icesales.com>`,
         to: [contact.email],
         reply_to: campaign.reply_to,
-        subject: personalize(campaign.subject, contact),
+        subject: removeReplyToEmailWording(personalize(campaign.subject, contact)),
         ...(campaign.body_only
-          ? { text: campaign.body_text }
+          ? { text: removeReplyToEmailWording(String(campaign.body_text ?? "")) }
           : {
               html: personalize(campaignHtml, contact, true).replace(/{{\s*payment_url\s*}}/g, htmlEscape(paymentUrl)).replace(/https:\/\/quickbooks\.intuit\.com\/?/gi, htmlEscape(paymentUrl)).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
               headers: {

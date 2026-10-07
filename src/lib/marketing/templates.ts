@@ -82,7 +82,7 @@ export const MARKETING_TEMPLATE_PRESETS: MarketingTemplatePreset[] = [
     subject: "A note from Dave at ICE", preheader: "A personal message from International Computer Exchange.",
     blocks: [
       block("ceo-hero", "hero", { eyebrow: "FROM THE OFFICE OF THE PRESIDENT", heading: "A message from ICE leadership", body: "Thank you for the trust you place in International Computer Exchange. Our team remains committed to responsive, personal support for your business." }),
-      block("ceo-text", "text", { heading: "Here when you need us", body: "As a long-standing IBM Business Partner, ICE brings experienced people and practical guidance to every relationship. If there is anything we can do to help, simply reply to this email." }),
+      block("ceo-text", "text", { heading: "Here when you need us", body: "As a long-standing IBM Business Partner, ICE brings experienced people and practical guidance to every relationship. Contact our team if we can help." }),
       block("ceo-signature", "signature", { heading: "Dave Cran", body: "President, International Computer Exchange", imageUrl: "https://www.icesales.com/images/branding/ceo-signature.png" }),
     ],
   },
@@ -101,7 +101,7 @@ export const MARKETING_TEMPLATE_PRESETS: MarketingTemplatePreset[] = [
   {
     id: "invoice-available", name: "Balance due notice", category: "billing", transactional: true,
     description: "Notify a client that their QuickBooks balance is ready to pay. Add the QuickBooks payment link to the button.", subject: "Your ICE account balance is ready", preheader: "Your current ICE account balance and payment options.",
-    blocks: [block("balance-hero", "hero", { eyebrow: "ACCOUNT NOTICE", heading: "Your account balance is ready", body: "Hello {{first_name}}, please review the amount due on your ICE account." }), block("balance-amount", "balance", { heading: "Amount due", value: "{{amount_due}}" }), block("balance-notice", "notice", { heading: "Payment options", body: "Use the secure payment link below. If you have already paid or have a question, reply to this email.", tone: "neutral" }), block("balance-button", "button", { label: "Pay your balance", href: "{{payment_url}}" })],
+    blocks: [block("balance-hero", "hero", { eyebrow: "ACCOUNT NOTICE", heading: "Your account balance is ready", body: "Hello {{first_name}}, please review the amount due on your ICE account." }), block("balance-amount", "balance", { heading: "Amount due", value: "{{amount_due}}" }), block("balance-notice", "notice", { heading: "Payment options", body: "Use the secure payment link below. For questions, contact our team.", tone: "neutral" }), block("balance-button", "button", { label: "Pay your balance", href: "{{payment_url}}" })],
   },
   {
     id: "payment-due", name: "Balance due reminder", category: "billing", transactional: true,
@@ -111,12 +111,12 @@ export const MARKETING_TEMPLATE_PRESETS: MarketingTemplatePreset[] = [
   {
     id: "payment-overdue", name: "Balance overdue", category: "billing", transactional: true,
     description: "Clear, professional notice for an overdue QuickBooks balance.", subject: "Action requested: balance overdue", preheader: "Please review your outstanding ICE balance.",
-    blocks: [block("overdue-hero", "hero", { eyebrow: "ACCOUNT ACTION", heading: "Your balance needs attention", body: "Please review the overdue amount on your ICE account." }), block("overdue-amount", "balance", { heading: "Amount due", value: "{{amount_due}}" }), block("overdue-notice", "notice", { heading: "Need help?", body: "If payment has already been sent or you need assistance, reply to this email and our team will help.", tone: "warning" }), block("overdue-button", "button", { label: "Pay your balance", href: "{{payment_url}}" })],
+    blocks: [block("overdue-hero", "hero", { eyebrow: "ACCOUNT ACTION", heading: "Your balance needs attention", body: "Please review the overdue amount on your ICE account." }), block("overdue-amount", "balance", { heading: "Amount due", value: "{{amount_due}}" }), block("overdue-notice", "notice", { heading: "Need help?", body: "If payment has already been sent or you need assistance, contact our team.", tone: "warning" }), block("overdue-button", "button", { label: "Pay your balance", href: "{{payment_url}}" })],
   },
   {
     id: "payment-received", name: "Payment received", category: "billing", transactional: true,
     description: "Payment confirmation and thank-you for a QuickBooks payment.", subject: "Payment received — thank you", preheader: "Thank you—your payment has been recorded.",
-    blocks: [block("paid-hero", "hero", { eyebrow: "PAYMENT CONFIRMATION", heading: "Thank you—payment received", body: "We received your payment of {{amount_paid}}. Thank you for taking care of your ICE account." }), block("paid-notice", "notice", { heading: "Payment recorded", body: "No further action is required. Reply to this email if you need a receipt or account assistance.", tone: "success" }), block("paid-button", "button", { label: "Open client portal", href: "{{portal_url}}" })],
+    blocks: [block("paid-hero", "hero", { eyebrow: "PAYMENT CONFIRMATION", heading: "Thank you—payment received", body: "We received your payment of {{amount_paid}}. Thank you for taking care of your ICE account." }), block("paid-notice", "notice", { heading: "Payment recorded", body: "No further action is required. Contact our team for a receipt or account assistance.", tone: "success" }), block("paid-button", "button", { label: "Open client portal", href: "{{portal_url}}" })],
   },
   {
     id: "special-message", name: "Special company message", category: "messages",
@@ -141,7 +141,7 @@ export const MARKETING_TEMPLATE_PRESETS: MarketingTemplatePreset[] = [
   {
     id: "maintenance-complete", name: "Maintenance completed", category: "maintenance", transactional: true,
     description: "Confirm completion and service status.", subject: "Maintenance complete: {{service_name}}", preheader: "The scheduled work is complete.",
-    blocks: [block("complete-hero", "hero", { eyebrow: "SERVICE UPDATE", heading: "Maintenance is complete", body: "The scheduled work for {{service_name}} has been completed." }), block("complete-notice", "notice", { heading: "Current status", body: "Services are operating normally. If you notice an issue, reply to this email or call 1-800-786-9188.", tone: "success" })],
+    blocks: [block("complete-hero", "hero", { eyebrow: "SERVICE UPDATE", heading: "Maintenance is complete", body: "The scheduled work for {{service_name}} has been completed." }), block("complete-notice", "notice", { heading: "Current status", body: "Services are operating normally. If you notice an issue, call 1-800-786-9188.", tone: "success" })],
   },
   {
     id: "security-advisory", name: "Security advisory", category: "maintenance", transactional: true,

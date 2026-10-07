@@ -28,7 +28,7 @@ import { Badge } from "@/components/base/badges/badges";
 import { Input } from "@/components/base/input/input";
 import { cx } from "@/utils/cx";
 import { MARKETING_TEMPLATE_PRESETS, cloneTemplateBlocks, type EmailBlock, type EmailBlockType, type MarketingTemplatePreset } from "@/lib/marketing/templates";
-import { DEFAULT_EMAIL_BRANDING, renderMarketingEmail, type EmailBranding } from "@/lib/marketing/renderEmail";
+import { DEFAULT_EMAIL_BRANDING, renderMarketingEmail, removeReplyToEmailWording, type EmailBranding } from "@/lib/marketing/renderEmail";
 import { campaignTypeLabel } from "@/lib/marketing/preferences";
 
 type Tab = "overview" | "audience" | "studio" | "campaigns" | "settings";
@@ -109,7 +109,7 @@ function statusColor(status: string): "success" | "warning" | "error" | "brand" 
 }
 
 function renderPlainTextPreview(value: string) {
-  const escaped = value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
+  const escaped = removeReplyToEmailWording(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
   return `<!doctype html><html><body style="margin:0;padding:24px;font:15px/1.6 Arial,sans-serif;color:#1d2939;white-space:pre-wrap"><pre style="margin:0;font:inherit;white-space:pre-wrap">${escaped}</pre></body></html>`;
 }
 

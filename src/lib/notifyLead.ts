@@ -17,14 +17,49 @@ export interface LeadPayload {
 }
 
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
+const EMAIL_LOGO_URL = "https://www.icesales.com/images/logo/ice-logo.jpg";
 
 function leadEmailHtml(lead: LeadPayload, confirmation = false) {
-  const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.icesales.com";
   const rows = [
     ["Name", lead.name], ["Email", lead.email], ["Company", lead.company],
     ["Phone", lead.phone], ["Service", lead.service], ["Request", lead.message],
   ].filter(([, value]) => Boolean(value)).map(([label, value]) => `<tr><th align="left" style="padding:12px 14px;border-bottom:1px solid #e4e7ec;color:#667085;font-size:13px;font-weight:600">${escapeHtml(String(label))}</th><td style="padding:12px 14px;border-bottom:1px solid #e4e7ec;color:#344054;font-size:14px;line-height:1.6">${escapeHtml(String(value)).replace(/\n/g, "<br>")}</td></tr>`).join("");
-  return `<!doctype html><html><body style="margin:0;background:#eef2f6;font-family:Arial,Helvetica,sans-serif;color:#101828"><div style="display:none;max-height:0;overflow:hidden">${confirmation ? "We received your message and our team will follow up." : "A new request has been received by ICE."}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef2f6"><tr><td align="center" style="padding:28px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border:1px solid #d0d5dd;border-radius:16px;overflow:hidden"><tr><td style="padding:20px 32px;border-bottom:1px solid #e4e7ec"><img src="${site}/images/logo/ice-logo.jpg" width="150" alt="International Computer Exchange" style="display:block;width:150px;height:auto"></td></tr><tr><td style="padding:32px"><div style="width:40px;height:40px;line-height:40px;text-align:center;border-radius:50%;background:#ecfdf3;color:#039855;font-size:24px;font-weight:700">✓</div><h1 style="margin:18px 0 8px;font-size:25px;line-height:1.25">${confirmation ? "We received your request" : "New website request"}</h1><p style="margin:0 0 22px;color:#475467;font-size:15px;line-height:1.65">${confirmation ? "Thank you for contacting International Computer Exchange. A member of our team will review your note and follow up using the contact details you provided." : `A new ${escapeHtml(lead.source || "website")} request has arrived.`}</p>${confirmation ? `<p style="margin:0 0 12px;color:#344054;font-size:14px;font-weight:700">A copy of your request</p>` : ""}<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e4e7ec;border-radius:10px;border-collapse:separate">${rows}</table>${confirmation ? `<p style="margin:22px 0 0;color:#475467;font-size:14px;line-height:1.6">If you need to add anything, reply to this email or call <a href="tel:18007869188" style="color:#027aab">1-800-786-9188</a>.</p>` : `<p style="margin:22px 0 0"><a href="mailto:${encodeURIComponent(lead.email)}" style="display:inline-block;padding:12px 18px;background:#027aab;color:#fff;border-radius:8px;text-decoration:none;font-weight:700">Reply to ${escapeHtml(lead.name)}</a></p>`}</td></tr><tr><td style="padding:22px 32px;background:#101828;color:#d0d5dd;font-size:12px;line-height:1.7"><strong style="color:#fff">International Computer Exchange</strong><br>Boca Raton, Florida · 1-800-786-9188</td></tr></table></td></tr></table></body></html>`;
+  const title = confirmation ? "We received your request" : "New website request";
+  const intro = confirmation
+    ? "Thank you for contacting International Computer Exchange. A member of our team will review your note and follow up using the contact details you provided."
+    : `A new ${escapeHtml(lead.source || "website")} request has arrived.`;
+  const help = confirmation
+    ? `For assistance, call <a href="tel:18007869188" style="color:#027aab;font-weight:600">1-800-786-9188</a>.`
+    : `<a href="mailto:${encodeURIComponent(lead.email)}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#027aab;color:#fff;text-decoration:none;font-size:14px;font-weight:700">Email ${escapeHtml(lead.name)}</a>`;
+
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background:#eef2f6;font-family:Arial,Helvetica,sans-serif;color:#101828">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0">${confirmation ? "We received your message and our team will follow up." : "A new request has been received by ICE."}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#eef2f6">
+    <tr><td align="center" style="padding:28px 12px">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;overflow:hidden;border:1px solid #d0d5dd;border-radius:16px;background:#fff">
+        <tr><td style="padding:18px 28px;border-bottom:1px solid #e4e7ec;background:#fff">
+          <a href="https://www.icesales.com" style="display:inline-block;text-decoration:none"><img src="${EMAIL_LOGO_URL}" width="150" height="73" alt="International Computer Exchange" style="display:block;width:150px;height:73px;border:0;object-fit:contain"></a>
+        </td></tr>
+        <tr><td bgcolor="#0b1628" style="padding:26px 28px 28px;background-color:#0b1628;background-image:linear-gradient(rgba(145,217,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(145,217,255,.07) 1px,transparent 1px);background-size:32px 32px;color:#fff">
+          <p style="margin:0 0 9px;color:#91d9ff;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:1.8px;text-transform:uppercase">${confirmation ? "Contact request" : "Website notification"}</p>
+          <h1 style="margin:0;font-size:26px;line-height:1.25;font-weight:700;color:#fff">${title}</h1>
+          <p style="margin:10px 0 0;color:#d4e2ef;font-size:15px;line-height:1.65">${intro}</p>
+        </td></tr>
+        <tr><td style="padding:24px 28px 28px">
+          ${confirmation ? `<p style="margin:0 0 12px;color:#344054;font-size:14px;line-height:1.5;font-weight:700">A copy of your request</p>` : `<p style="margin:0 0 16px;color:#475467;font-size:14px;line-height:1.6">Review the submitted contact details and request below.</p>`}
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #dce3eb;border-radius:10px;border-collapse:separate">${rows}</table>
+          <p style="margin:20px 0 0;color:#475467;font-size:14px;line-height:1.6">${help}</p>
+        </td></tr>
+        <tr><td bgcolor="#0b1628" style="padding:20px 28px;background:#0b1628;color:#c7d5e2;font-size:12px;line-height:1.7">
+          <strong style="color:#fff">International Computer Exchange</strong><br>Boca Raton, Florida · <a href="tel:18007869188" style="color:#91d9ff;text-decoration:underline">1-800-786-9188</a><br>
+          <a href="https://www.icesales.com" style="color:#91d9ff;text-decoration:underline">www.icesales.com</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
 }
 
 async function sendLeadEmail(to: string, lead: LeadPayload, confirmation: boolean): Promise<boolean> {

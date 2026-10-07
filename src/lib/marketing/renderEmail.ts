@@ -58,8 +58,12 @@ export function normalizeEmailBranding(value?: Partial<EmailBranding> | null): E
   };
 }
 
+export function removeReplyToEmailWording(value = "") {
+  return value.replace(/\b(?:simply\s+)?reply to (?:this|the) email\b/gi, "contact our team");
+}
+
 const escapeHtml = (value = "") =>
-  value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
+  removeReplyToEmailWording(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
 
 function paragraphs(value = "") {
   return escapeHtml(value)

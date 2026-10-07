@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireMarketingAdmin } from "@/lib/admin/requireMarketingAdmin";
-import { normalizeEmailBranding, renderMarketingEmail, type EmailBranding } from "@/lib/marketing/renderEmail";
+import { normalizeEmailBranding, renderMarketingEmail, removeReplyToEmailWording, type EmailBranding } from "@/lib/marketing/renderEmail";
 import type { EmailBlock } from "@/lib/marketing/templates";
 import { campaignPreferenceKey, MARKETING_PREFERENCE_KEYS, normalizeMarketingPreferences } from "@/lib/marketing/preferences";
 
@@ -251,7 +251,7 @@ export async function POST(request: Request) {
       name,
       category: clean(body.category, 80) || "general",
       description: clean(body.description, 500) || null,
-      subject: clean(body.subject, 300),
+      subject: removeReplyToEmailWording(clean(body.subject, 300)),
       preheader: clean(body.preheader, 500),
       blocks,
       html: renderMarketingEmail({ preheader: clean(body.preheader, 500), blocks, includeUnsubscribe: body.transactional !== true }),
@@ -286,7 +286,7 @@ export async function POST(request: Request) {
       reply_to: clean(body.replyTo, 320) || "info@icesales.com",
       blocks,
       body_only: bodyOnly,
-      body_text: bodyOnly ? bodyText : "",
+      body_text: bodyOnly ? removeReplyToEmailWording(bodyText) : "",
       html: bodyOnly ? "" : renderMarketingEmail({ preheader: clean(body.preheader, 500), blocks, includeUnsubscribe: includesPreferenceCenter(campaignType) }),
       scheduled_at: body.scheduledAt || null,
       created_by: auth.user.id,
@@ -321,8 +321,8 @@ export async function POST(request: Request) {
         from: "International Computer Exchange <noreply@mail.icesales.com>",
         to: [to],
         reply_to: clean(body.replyTo, 320) || "info@icesales.com",
-        subject: `[TEST] ${fillTestTokens(clean(body.subject, 300) || "ICE email preview")}`,
-        ...(bodyOnly ? { text: bodyText } : { html: testHtml }),
+        subject: `[TEST] ${removeReplyToEmailWording(fillTestTokens(clean(body.subject, 300) || "ICE email preview"))}`,
+        ...(bodyOnly ? { text: removeReplyToEmailWording(bodyText) } : { html: testHtml }),
       }),
     });
     const result = await response.json().catch(() => ({}));
@@ -363,9 +363,9 @@ export async function POST(request: Request) {
         from: `${campaign.from_name} <noreply@mail.icesales.com>`,
         to: [contact.email],
         reply_to: campaign.reply_to,
-        subject: personalize(campaign.subject, contact),
+        subject: removeReplyToEmailWording(personalize(campaign.subject, contact)),
         ...(campaign.body_only
-          ? { text: campaign.body_text }
+          ? { text: removeReplyToEmailWording(String(campaign.body_text ?? "")) }
           : {
               html: withPaymentUrl(personalize(campaignHtml, contact, true), paymentUrl).replace(/{{unsubscribe_url}}/g, `${siteUrl}/unsubscribe/${contact.id}`),
               headers: {
