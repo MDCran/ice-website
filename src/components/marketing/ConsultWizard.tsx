@@ -644,6 +644,9 @@ export default function ConsultWizard({
         : STEP_META[2];
 
   const goToStep = (next: Step, source: "manual" | "back") => {
+    // Progress only through an explicit Continue action; the step indicator is
+    // for returning to completed steps, not a shortcut that can skip the form.
+    if (next > step && (next !== step + 1 || (step === 2 && !canContinueStep2))) return;
     if (source === "manual") {
       pushEvent("consult_wizard_step", { step, next, source });
     }
@@ -670,6 +673,7 @@ export default function ConsultWizard({
   const canContinueStep1 = true;
   const hasValidPhone = formData.phone.replace(/\D/g, "").length >= 7;
   const canContinueStep2 = Boolean(formData.name.trim() && isValidEmail(formData.email));
+  const canSubmitStep3 = canContinueStep2 && Boolean(formData.message.trim());
 
   const buildMessage = () => {
     const urgencyLabel =
@@ -688,7 +692,7 @@ export default function ConsultWizard({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (step !== 3) return;
+    if (step !== 3 || !canSubmitStep3 || status === "loading") return;
     setStatus("loading");
     setStatusMessage("");
 
@@ -728,12 +732,14 @@ export default function ConsultWizard({
 
   if (status === "success") {
     return (
-      <div className="flex min-h-[32rem] flex-col justify-center gap-4 rounded-2xl bg-primary p-5 shadow-lg ring-1 ring-secondary ring-inset sm:p-7 md:p-8">
-        <div role="alert" className="flex items-start gap-3 rounded-lg bg-success-secondary px-4 py-3">
-          <CheckCircle className="mt-0.5 size-5 shrink-0 text-fg-success-primary" />
-          <div>
-            <p className="text-sm font-semibold text-success-primary">{wizard.copy.success_heading}</p>
-            <p className="mt-1 text-sm text-success-primary">{statusMessage}</p>
+      <div className="flex flex-col gap-5 rounded-2xl bg-primary p-6 shadow-lg ring-1 ring-secondary ring-inset sm:p-8">
+        <div role="status" aria-live="polite" className="flex items-start gap-4 rounded-xl border border-success/30 bg-success-secondary p-5 sm:p-6">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary shadow-xs ring-1 ring-success/30">
+            <CheckCircle className="size-6 text-fg-success-primary" />
+          </span>
+          <div className="pt-0.5">
+            <p className="text-base font-semibold text-success-primary">{wizard.copy.success_heading}</p>
+            <p className="mt-1 text-sm leading-6 text-success-primary">{statusMessage}</p>
           </div>
         </div>
         {bookingUrl && (
@@ -788,21 +794,16 @@ export default function ConsultWizard({
           {wizard.steps.map((s) => {
             const done = step > s.id;
             const current = step === s.id;
-            const reachable =
-              s.id < step ||
-              s.id === step ||
-              (s.id === 2 && canContinueStep1) ||
-              (s.id === 3 && canContinueStep1 && canContinueStep2);
+            const reachable = s.id < step || current;
             return (
               <li key={s.id} className="min-w-0">
                 <button
                   type="button"
                   onClick={() => {
-                    // Allow jumping back to completed / current steps only
+                    // Future steps are reached only with the Continue button.
                     if (s.id < step) goToStep(s.id, "back");
-                    else if (s.id === 2 && canContinueStep1) goToStep(2, "manual");
-                    else if (s.id === 3 && canContinueStep1 && canContinueStep2) goToStep(3, "manual");
                   }}
+                  aria-disabled={!reachable}
                   className={cx(
                     "flex min-h-12 w-full min-w-0 items-center gap-2 border-b-2 px-2 py-2.5 text-left outline-focus-ring transition focus-visible:outline-2 focus-visible:outline-offset-2 sm:gap-3 sm:px-3",
                     current && "border-brand-solid text-brand-secondary",
@@ -964,11 +965,13 @@ export default function ConsultWizard({
             <div className="flex flex-col gap-5">
               <TextArea
                 name="message"
-                label={activeProfile.detailLabel}
+                isRequired
+                label={activeProfile.detailLabel.replace(/\s*\(optional\)\s*/i, "")}
                 placeholder={activeProfile.detailPlaceholder}
                 rows={6}
                 value={formData.message}
                 onChange={(value) => patchForm({ message: value })}
+                hint="Add a short message so our team knows how to help."
                 textAreaClassName="min-h-[10rem]"
               />
               <Checkbox
@@ -981,6 +984,7 @@ export default function ConsultWizard({
                 hint={(
                   <>
                     <SmsConsentDisclosure />
+                    <span className="mt-1 block text-xs">SMS consent is optional and is not required to send your request.</span>
                     {!hasValidPhone && <span className="mt-1 block text-xs">Add a phone number above to enable SMS consent. You can still submit by email.</span>}
                   </>
                 )}
@@ -1039,7 +1043,7 @@ export default function ConsultWizard({
               iconLeading={status === "loading" ? undefined : Send01}
               isLoading={status === "loading"}
               showTextWhileLoading
-              isDisabled={status === "loading"}
+              isDisabled={!canSubmitStep3 || status === "loading"}
             >
               {status === "loading" ? wizard.copy.sending_label : wizard.copy.submit_label}
             </Button>
