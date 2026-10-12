@@ -2,11 +2,38 @@
 
 [![Security checks](https://github.com/MDCran/ice-website/actions/workflows/security-checks.yml/badge.svg)](https://github.com/MDCran/ice-website/actions/workflows/security-checks.yml) [![CodeQL](https://github.com/MDCran/ice-website/actions/workflows/codeql.yml/badge.svg)](https://github.com/MDCran/ice-website/actions/workflows/codeql.yml)
 
-The public website, solutions catalog, guided solution finder, and live CMS for International Computer Exchange.
+A Next.js website and content-management application for International Computer Exchange. The codebase combines public service pages, a filterable solutions catalog, a guided solution finder, and an administrative CMS backed by Supabase.
+
+[Documented sandbox](https://sandbox.icesales.com/) · [Public routes](src/app/%28public%29) · [CMS implementation](src/lib/cms) · [Contributing](CONTRIBUTING.md)
+
+## Engineering overview
+
+- **Content-driven pages:** public routes read structured CMS content, with reusable sections and solution-page layouts.
+- **Discovery:** a solutions catalog and guided finder help visitors explore service offerings.
+- **Administration:** the codebase includes content editing, resource management, and access-page workflows.
+- **Presentation:** responsive React components, motion effects, and Three.js visual elements.
+- **Metadata:** shared SEO configuration, canonical URLs, structured data, sitemap, and social-image generation.
+
+This README describes the tracked implementation. The screenshots and sandbox link are project references, not evidence of performance, conversion rates, or production-security certification.
+
+## Stack and code map
+
+Next.js 16, React 19, TypeScript, Tailwind CSS 4, Supabase Auth/PostgreSQL/Storage, Motion/GSAP, and Three.js. Exact dependencies and available scripts are in [package.json](package.json).
+
+| Path | Responsibility |
+| --- | --- |
+| [src/app/(public)](src/app/%28public%29) | Public pages, catalog, and solution finder |
+| [src/app/admin](src/app/admin) | Administrative interface |
+| [src/app/api](src/app/api) | Server-side route handlers |
+| [src/lib/cms](src/lib/cms) | CMS retrieval, page registry, and content composition |
+| [src/lib/supabase](src/lib/supabase) | Browser, server, public-read, and privileged database clients |
+| [src/lib/seo](src/lib/seo) | Shared metadata and URL utilities |
+| [supabase/migrations](supabase/migrations) | Database evolution |
+| [src/components](src/components) | Shared layout, content, and UI components |
 
 ## Website preview
 
-Screenshots below are from the live sandbox site at [sandbox.icesales.com](https://sandbox.icesales.com/).
+Committed screenshots were captured from the documented sandbox.
 
 ### Homepage
 
@@ -24,53 +51,63 @@ Screenshots below are from the live sandbox site at [sandbox.icesales.com](https
 
 ![ICE solution finder recommending AS400 services for an IBM i modernization scenario](docs/screenshots/solution-finder.png)
 
-## Getting Started
+## Local development
 
-First, run the development server:
+Requires Node.js 20.9 or newer, npm, and an isolated Supabase development project.
+
+1. Install the locked dependencies with `npm ci`.
+2. Create an uncommitted `.env.local` with your development project's `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Server-side administrative features also use `SUPABASE_SERVICE_ROLE_KEY`; never prefix that key with `NEXT_PUBLIC_`.
+3. Review [supabase-setup.sql](supabase-setup.sql), [SQL updates](sql), and [Supabase migrations](supabase/migrations) with the maintainer before initializing your development database. The repository does not provide a single fully automated environment/bootstrap command. Use synthetic data and keep production credentials and client documents out of local test fixtures.
+4. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [localhost:3000](http://localhost:3000). Public routes live under `src/app/(public)` and update as source files change. Supabase-dependent pages and administrative features require the corresponding schema, policies, and account setup.
 
-Public routes live under `src/app/(public)`. The page auto-updates as you edit the source files.
+Additional integrations have their own server-side configuration. Do not point a development checkout at production systems to satisfy missing settings.
 
-## Admin access
+## Validation and security checks
 
-The deployed admin login is [sandbox.icesales.com/admin/login](https://sandbox.icesales.com/admin/login). To safely reset the demo administrator from a trusted local checkout, run:
+```bash
+npm run lint
+npm run build
+# After a successful build:
+npm start
+```
+
+A focused [SEO audit script](scripts/test-seo-audit.mjs) checks URL handling and service-content definitions. It imports TypeScript directly and requires a Node runtime capable of loading those files. It is not wired into an npm test script or the checked-in workflows; the repository has no general application test command.
+
+- [CodeQL](.github/workflows/codeql.yml) analyzes JavaScript/TypeScript on pushes, pull requests, and a weekly schedule.
+- [Security checks](.github/workflows/security-checks.yml) installs dependencies, runs `npm audit --audit-level=high`, and checks whitespace.
+- npm audit is **non-blocking** (`continue-on-error: true`). A green badge may still accompany dependency advisories; inspect the [workflow logs](https://github.com/MDCran/ice-website/actions/workflows/security-checks.yml).
+- These workflows do not run lint, an application build, browser tests, or a deployment verification. They are useful checks, not a guarantee of application security.
+
+## Administrative operations
+
+The existing demo administrator reset workflow is available to authorized maintainers from a trusted checkout:
 
 ```bash
 npm run admin:reset-password -- --email admin-demo@icesales.com
 ```
 
-The command reads the local Supabase configuration from `.env.local`, generates a strong temporary password, verifies it, and prints it once. It does not delete administrators or store the password. Change the temporary password immediately under **Admin Center → Settings**.
+The command reads local Supabase configuration from `.env.local`, generates a temporary password, verifies it, and prints it once. Change that temporary password immediately under **Admin Center → Settings**. Do not copy it into issues, commits, screenshots, or logs.
 
-Resetting any other address is blocked; manage personal administrators in the Admin Center instead. Omit `--password` whenever possible so a chosen password is not retained in shell history.
+Resetting any other address is blocked by the script; manage personal administrators in the Admin Center instead. Omit `--password` whenever possible so a chosen password is not retained in shell history.
 
-### Client access pages
+### Access pages
 
-Open **Admin Center → Access Pages** to create or duplicate a client proposal, edit every section, choose its hero media, attach a PDF from private storage, and set the page to Draft, Active, or Archived. Each recipient can have a separately revocable link with an optional password, expiration, and maximum-open limit. Raw link secrets, passwords, and client documents must never be committed to this repository.
+**Admin Center → Access Pages** manages proposal content, attached private documents, publication state, and recipient links. Raw link secrets, passwords, and client documents must never be committed to this repository. Evaluate these features only with authorized accounts and synthetic documents.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Framework and deployment references
 
-## Learn More
+The app uses [next/font](https://nextjs.org/docs/app/getting-started/fonts) with Inter and [Geist](https://vercel.com/font).
 
-To learn more about Next.js, take a look at the following resources:
+- [Next.js documentation](https://nextjs.org/docs)
+- [Learn Next.js](https://nextjs.org/learn)
+- [Next.js source](https://github.com/vercel/next.js)
+- [Next.js deployment documentation](https://nextjs.org/docs/app/getting-started/deploying)
+- [Vercel](https://vercel.com/new)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployment requires the matching environment, database migrations, storage policies, and integration configuration. A hosting build alone does not validate those services. Follow [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and attribution guidance.
